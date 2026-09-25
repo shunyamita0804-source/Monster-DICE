@@ -1,0 +1,9 @@
+[
+  {
+    "id": "market_nobiton",
+    "flag": "market.nobiton",
+    "trigger": "marketEntry",
+    "condition": { "type": "raisedCount", "gte": 3 },
+    "event": "nobiton_unlock"
+  }
+]

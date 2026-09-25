@@ -1,0 +1,40 @@
+{
+  "version": "0.1.0-step1",
+  "saveVersion": 1,
+  "design": {
+    "width": 1080,
+    "height": 1920,
+    "bgHeight": 2340
+  },
+  "layout": {
+    "minTapPt": 44,
+    "maxBgWidthStretch": 1.2,
+    "landscapeMaxHeight": 600,
+    "coreCropTolerance": 0.03
+  },
+  "rules": {
+    "defaultPlayerName": "アルト",
+    "initialGold": 1000,
+    "rescueThreshold": 500,
+    "rescueTarget": 500,
+    "ranchMax": 20,
+    "maxLearnedMoves": 10,
+    "maxEquippedMoves": 6
+  },
+  "calendar": {
+    "year": 1000,
+    "month": 4,
+    "week": 1,
+    "weeksPerMonth": 4
+  },
+  "saveSlots": {
+    "manual": 3
+  },
+  "storagePrefix": "monster-master.",
+  "messages": {
+    "ranchFull": "ぽかぽか牧場がいっぱいです。\n合体などで空きを作ってください",
+    "notEnoughGold": "ゴールドが足りません",
+    "noRaisingMonster": "現在育成中のモンスターはいません。\n市場などでモンスターを迎えよう",
+    "raisingLocksTown": "育成中は街へ戻れません"
+  }
+}

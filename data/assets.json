@@ -1,0 +1,538 @@
+{
+  "statuses": {
+    "official": "正式",
+    "provisional": "仮",
+    "missing": "未作成",
+    "reference": "基準画像（ゲーム画面には出さない）"
+  },
+  "entries": [
+    {
+      "id": "ref.town",
+      "kind": "reference",
+      "status": "reference",
+      "path": "assets/reference/town.png",
+      "usage": "街の完成図",
+      "note": "UI焼き込み済み。数値・文字はデータとして使わない"
+    },
+    {
+      "id": "ref.market",
+      "kind": "reference",
+      "status": "reference",
+      "path": "assets/reference/market.png",
+      "usage": "市場の完成図",
+      "note": "左の赤い獣はガウルではない（不採用）"
+    },
+    {
+      "id": "ref.title",
+      "kind": "reference",
+      "status": "reference",
+      "path": "assets/reference/title_screenshot.png",
+      "usage": "タイトル画面の見た目",
+      "note": "スマホのスクリーンショット"
+    },
+    {
+      "id": "ref.farm_old",
+      "kind": "reference",
+      "status": "reference",
+      "path": "assets/reference/farm_old_screenshot.png",
+      "usage": "旧ファーム試作",
+      "note": "UIは不採用。背景の雰囲気のみ参考"
+    },
+    {
+      "id": "ref.status_old",
+      "kind": "reference",
+      "status": "reference",
+      "path": "assets/reference/status_old_screenshot.png",
+      "usage": "ステータス画面（ゲージ形状）",
+      "note": "形状のみ継承。色は6色ルール"
+    },
+    {
+      "id": "monster.soramo.profile",
+      "kind": "monster",
+      "status": "official",
+      "path": "assets/monsters/soramo/profile.png",
+      "usage": "ソラモのプロフィールイラスト",
+      "note": "絵の部分のみ使用。焼き込みのゲージ色・文字はルール外"
+    },
+    {
+      "id": "monster.gauru.profile",
+      "kind": "monster",
+      "status": "official",
+      "path": "assets/monsters/gauru/profile.png",
+      "usage": "ガウルのプロフィールイラスト",
+      "note": "絵の部分のみ使用。技イラストは単体切り出し待ち"
+    },
+    {
+      "id": "font.main",
+      "kind": "font",
+      "status": "provisional",
+      "path": "https://fonts.googleapis.com (M PLUS Rounded 1c)",
+      "usage": "ゲーム内の文字",
+      "note": "アプリ化前に assets/fonts/ へ同梱する"
+    },
+    {
+      "id": "bg.title",
+      "kind": "background",
+      "status": "missing",
+      "path": "assets/backgrounds/title.png",
+      "usage": "タイトル（上下描き足し版の元画像）",
+      "note": "1080×2340。重要な要素は中央1080×1920に収める"
+    },
+    {
+      "id": "bg.town",
+      "kind": "background",
+      "status": "missing",
+      "path": "assets/backgrounds/town.png",
+      "usage": "街（UIなし）",
+      "note": "1080×2340。重要な要素は中央1080×1920に収める"
+    },
+    {
+      "id": "bg.market",
+      "kind": "background",
+      "status": "missing",
+      "path": "assets/backgrounds/market.png",
+      "usage": "市場（UIなし）",
+      "note": "1080×2340。重要な要素は中央1080×1920に収める"
+    },
+    {
+      "id": "bg.farm",
+      "kind": "background",
+      "status": "missing",
+      "path": "assets/backgrounds/farm.png",
+      "usage": "ファーム（元画像）",
+      "note": "1080×2340。重要な要素は中央1080×1920に収める"
+    },
+    {
+      "id": "bg.ranch",
+      "kind": "background",
+      "status": "missing",
+      "path": "assets/backgrounds/ranch.png",
+      "usage": "ぽかぽか牧場",
+      "note": "1080×2340。重要な要素は中央1080×1920に収める"
+    },
+    {
+      "id": "bg.museum",
+      "kind": "background",
+      "status": "missing",
+      "path": "assets/backgrounds/museum.png",
+      "usage": "博物館",
+      "note": "1080×2340。重要な要素は中央1080×1920に収める"
+    },
+    {
+      "id": "bg.arena",
+      "kind": "background",
+      "status": "missing",
+      "path": "assets/backgrounds/arena.png",
+      "usage": "闘技場",
+      "note": "1080×2340。重要な要素は中央1080×1920に収める"
+    },
+    {
+      "id": "ui.panel.wood",
+      "kind": "ui",
+      "status": "missing",
+      "path": "assets/ui/panel_wood.png",
+      "usage": "木枠パネル（伸縮用）",
+      "note": ""
+    },
+    {
+      "id": "ui.button.normal",
+      "kind": "ui",
+      "status": "missing",
+      "path": "assets/ui/button_normal.png",
+      "usage": "ボタン（通常）",
+      "note": ""
+    },
+    {
+      "id": "ui.button.pressed",
+      "kind": "ui",
+      "status": "missing",
+      "path": "assets/ui/button_pressed.png",
+      "usage": "ボタン（押下）",
+      "note": ""
+    },
+    {
+      "id": "ui.button.disabled",
+      "kind": "ui",
+      "status": "missing",
+      "path": "assets/ui/button_disabled.png",
+      "usage": "ボタン（無効）",
+      "note": ""
+    },
+    {
+      "id": "ui.plate.name",
+      "kind": "ui",
+      "status": "missing",
+      "path": "assets/ui/plate_name.png",
+      "usage": "名札プレート",
+      "note": ""
+    },
+    {
+      "id": "ui.signboard",
+      "kind": "ui",
+      "status": "missing",
+      "path": "assets/ui/signboard.png",
+      "usage": "見出し看板",
+      "note": ""
+    },
+    {
+      "id": "ui.dialog",
+      "kind": "ui",
+      "status": "missing",
+      "path": "assets/ui/dialog.png",
+      "usage": "ダイアログ枠",
+      "note": ""
+    },
+    {
+      "id": "ui.tab",
+      "kind": "ui",
+      "status": "missing",
+      "path": "assets/ui/tab.png",
+      "usage": "タブ",
+      "note": ""
+    },
+    {
+      "id": "ui.command.panel",
+      "kind": "ui",
+      "status": "missing",
+      "path": "assets/ui/command_panel.png",
+      "usage": "街の右コマンドパネル",
+      "note": ""
+    },
+    {
+      "id": "ui.command.farm",
+      "kind": "ui",
+      "status": "missing",
+      "path": "assets/ui/command_farm.png",
+      "usage": "ファーム特別枠",
+      "note": ""
+    },
+    {
+      "id": "ui.bar.status",
+      "kind": "ui",
+      "status": "missing",
+      "path": "assets/ui/bar_status.png",
+      "usage": "日付・所持金バー",
+      "note": ""
+    },
+    {
+      "id": "ui.gauge.frame",
+      "kind": "ui",
+      "status": "missing",
+      "path": "assets/ui/gauge_frame.png",
+      "usage": "パラメーターゲージの器",
+      "note": ""
+    },
+    {
+      "id": "icon.gold",
+      "kind": "icon",
+      "status": "missing",
+      "path": "assets/ui/icon_gold.png",
+      "usage": "通貨アイコン（金貨）",
+      "note": "金貨1種に統一"
+    },
+    {
+      "id": "icon.param.life",
+      "kind": "icon",
+      "status": "missing",
+      "path": "assets/ui/param_life.png",
+      "usage": "パラメーターアイコン：ライフ",
+      "note": "6色ルールに合わせる"
+    },
+    {
+      "id": "icon.param.power",
+      "kind": "icon",
+      "status": "missing",
+      "path": "assets/ui/param_power.png",
+      "usage": "パラメーターアイコン：ちから",
+      "note": "6色ルールに合わせる"
+    },
+    {
+      "id": "icon.param.wisdom",
+      "kind": "icon",
+      "status": "missing",
+      "path": "assets/ui/param_wisdom.png",
+      "usage": "パラメーターアイコン：かしこさ",
+      "note": "6色ルールに合わせる"
+    },
+    {
+      "id": "icon.param.hit",
+      "kind": "icon",
+      "status": "missing",
+      "path": "assets/ui/param_hit.png",
+      "usage": "パラメーターアイコン：命中",
+      "note": "6色ルールに合わせる"
+    },
+    {
+      "id": "icon.param.evasion",
+      "kind": "icon",
+      "status": "missing",
+      "path": "assets/ui/param_evasion.png",
+      "usage": "パラメーターアイコン：回避",
+      "note": "6色ルールに合わせる"
+    },
+    {
+      "id": "icon.param.toughness",
+      "kind": "icon",
+      "status": "missing",
+      "path": "assets/ui/param_toughness.png",
+      "usage": "パラメーターアイコン：丈夫さ",
+      "note": "6色ルールに合わせる"
+    },
+    {
+      "id": "icon.farm.board",
+      "kind": "icon",
+      "status": "missing",
+      "path": "assets/ui/farm_board.png",
+      "usage": "ファームコマンド：ボード",
+      "note": ""
+    },
+    {
+      "id": "icon.farm.training",
+      "kind": "icon",
+      "status": "missing",
+      "path": "assets/ui/farm_training.png",
+      "usage": "ファームコマンド：修行",
+      "note": ""
+    },
+    {
+      "id": "icon.farm.status",
+      "kind": "icon",
+      "status": "missing",
+      "path": "assets/ui/farm_status.png",
+      "usage": "ファームコマンド：ステータス",
+      "note": ""
+    },
+    {
+      "id": "icon.farm.moves",
+      "kind": "icon",
+      "status": "missing",
+      "path": "assets/ui/farm_moves.png",
+      "usage": "ファームコマンド：技管理",
+      "note": ""
+    },
+    {
+      "id": "icon.farm.items",
+      "kind": "icon",
+      "status": "missing",
+      "path": "assets/ui/farm_items.png",
+      "usage": "ファームコマンド：アイテム",
+      "note": ""
+    },
+    {
+      "id": "facility.market.thumb",
+      "kind": "facility",
+      "status": "missing",
+      "path": "assets/facilities/market_thumb.png",
+      "usage": "右コマンドのサムネ：市場",
+      "note": ""
+    },
+    {
+      "id": "facility.market.pin",
+      "kind": "facility",
+      "status": "missing",
+      "path": "assets/facilities/market_pin.png",
+      "usage": "街マップのピン：市場",
+      "note": ""
+    },
+    {
+      "id": "facility.ranch.thumb",
+      "kind": "facility",
+      "status": "missing",
+      "path": "assets/facilities/ranch_thumb.png",
+      "usage": "右コマンドのサムネ：ぽかぽか牧場",
+      "note": ""
+    },
+    {
+      "id": "facility.ranch.pin",
+      "kind": "facility",
+      "status": "missing",
+      "path": "assets/facilities/ranch_pin.png",
+      "usage": "街マップのピン：ぽかぽか牧場",
+      "note": ""
+    },
+    {
+      "id": "facility.museum.thumb",
+      "kind": "facility",
+      "status": "missing",
+      "path": "assets/facilities/museum_thumb.png",
+      "usage": "右コマンドのサムネ：博物館",
+      "note": ""
+    },
+    {
+      "id": "facility.museum.pin",
+      "kind": "facility",
+      "status": "missing",
+      "path": "assets/facilities/museum_pin.png",
+      "usage": "街マップのピン：博物館",
+      "note": "博物館は研究員完成まで施設アイコン"
+    },
+    {
+      "id": "facility.arena.thumb",
+      "kind": "facility",
+      "status": "missing",
+      "path": "assets/facilities/arena_thumb.png",
+      "usage": "右コマンドのサムネ：闘技場",
+      "note": ""
+    },
+    {
+      "id": "facility.arena.pin",
+      "kind": "facility",
+      "status": "missing",
+      "path": "assets/facilities/arena_pin.png",
+      "usage": "街マップのピン：闘技場",
+      "note": ""
+    },
+    {
+      "id": "icon.system.player",
+      "kind": "icon",
+      "status": "missing",
+      "path": "assets/ui/system_player.png",
+      "usage": "システムコマンド：プレイヤー情報",
+      "note": ""
+    },
+    {
+      "id": "icon.system.items",
+      "kind": "icon",
+      "status": "missing",
+      "path": "assets/ui/system_items.png",
+      "usage": "システムコマンド：アイテム",
+      "note": ""
+    },
+    {
+      "id": "icon.system.save",
+      "kind": "icon",
+      "status": "missing",
+      "path": "assets/ui/system_save.png",
+      "usage": "システムコマンド：セーブ",
+      "note": ""
+    },
+    {
+      "id": "monster.soramo.stand",
+      "kind": "monster",
+      "status": "missing",
+      "path": "assets/monsters/soramo/stand.png",
+      "usage": "ソラモの背景透過立ち絵",
+      "note": "市場・ファームの大表示に使用"
+    },
+    {
+      "id": "monster.gauru.stand",
+      "kind": "monster",
+      "status": "missing",
+      "path": "assets/monsters/gauru/stand.png",
+      "usage": "ガウルの背景透過立ち絵",
+      "note": "市場・ファームの大表示に使用"
+    },
+    {
+      "id": "monster.nobiton.stand",
+      "kind": "monster",
+      "status": "missing",
+      "path": "assets/monsters/nobiton/stand.png",
+      "usage": "ノビトンの背景透過立ち絵",
+      "note": "市場・ファームの大表示に使用"
+    },
+    {
+      "id": "monster.nobiton.profile",
+      "kind": "monster",
+      "status": "missing",
+      "path": "assets/monsters/nobiton/profile.png",
+      "usage": "ノビトンのプロフィール",
+      "note": ""
+    },
+    {
+      "id": "moves.gauru",
+      "kind": "move",
+      "status": "missing",
+      "path": "assets/moves/",
+      "usage": "ガウルの技イラスト9種",
+      "note": "プロフィール画像内に存在。単体切り出し待ち"
+    },
+    {
+      "id": "moves.soramo",
+      "kind": "move",
+      "status": "missing",
+      "path": "assets/moves/",
+      "usage": "ソラモの技一覧と技イラスト",
+      "note": ""
+    },
+    {
+      "id": "npc.alto.face",
+      "kind": "npc",
+      "status": "missing",
+      "path": "assets/npc/alto_face.png",
+      "usage": "アルトの顔",
+      "note": "顔の枠は空で表示。正式アルト確定待ち"
+    },
+    {
+      "id": "npc.alto.portrait",
+      "kind": "npc",
+      "status": "missing",
+      "path": "assets/npc/alto_portrait.png",
+      "usage": "アルトの立ち絵",
+      "note": "正式アルト確定待ち"
+    },
+    {
+      "id": "npc.mother",
+      "kind": "npc",
+      "status": "missing",
+      "path": "assets/npc/mother.png",
+      "usage": "アルトの母",
+      "note": ""
+    },
+    {
+      "id": "npc.market_girl",
+      "kind": "npc",
+      "status": "missing",
+      "path": "assets/npc/market_girl.png",
+      "usage": "市場の女の子",
+      "note": ""
+    },
+    {
+      "id": "npc.rancher",
+      "kind": "npc",
+      "status": "missing",
+      "path": "assets/npc/rancher.png",
+      "usage": "牧場のおじいさん",
+      "note": ""
+    },
+    {
+      "id": "npc.researcher",
+      "kind": "npc",
+      "status": "missing",
+      "path": "assets/npc/researcher.png",
+      "usage": "博物館の研究員",
+      "note": ""
+    },
+    {
+      "id": "npc.merchant",
+      "kind": "npc",
+      "status": "missing",
+      "path": "assets/npc/merchant.png",
+      "usage": "アイテム商人",
+      "note": ""
+    },
+    {
+      "id": "npc.arena_receptionist",
+      "kind": "npc",
+      "status": "missing",
+      "path": "assets/npc/arena_receptionist.png",
+      "usage": "闘技場の受付",
+      "note": ""
+    },
+    {
+      "id": "items.all",
+      "kind": "item",
+      "status": "missing",
+      "path": "assets/items/",
+      "usage": "アイテム画像・特殊キーアイテム",
+      "note": ""
+    },
+    {
+      "id": "audio.bgm",
+      "kind": "audio",
+      "status": "missing",
+      "path": "assets/audio/",
+      "usage": "BGM・効果音",
+      "note": ""
+    }
+  ]
+}

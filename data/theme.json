@@ -1,0 +1,29 @@
+{
+  "params": [
+    { "key": "life",      "label": "ライフ",   "color": "#F4C430", "dark": "#A87A0C" },
+    { "key": "power",     "label": "ちから",   "color": "#E2403A", "dark": "#8E1C18" },
+    { "key": "wisdom",    "label": "かしこさ", "color": "#3DB04F", "dark": "#1C6A2A" },
+    { "key": "hit",       "label": "命中",     "color": "#F06EA9", "dark": "#A0305F" },
+    { "key": "evasion",   "label": "回避",     "color": "#46C8EC", "dark": "#1A7896" },
+    { "key": "toughness", "label": "丈夫さ",   "color": "#3A6FDB", "dark": "#1B3B8C" }
+  ],
+  "moveCategories": {
+    "power":   { "label": "ちから",   "param": "power" },
+    "wisdom":  { "label": "かしこさ", "param": "wisdom" },
+    "support": { "label": "補助",     "param": "wisdom" }
+  },
+  "palette": {
+    "wood-dark": "#3A2314",
+    "wood": "#6B4425",
+    "wood-light": "#9A6A3A",
+    "gold": "#D9A441",
+    "gold-light": "#F6D77E",
+    "parchment": "#F4E7C8",
+    "ink": "#3A2413",
+    "cream": "#FFF7E2",
+    "night": "#140C06"
+  },
+  "fonts": {
+    "main": "\"M PLUS Rounded 1c\", \"Hiragino Maru Gothic ProN\", \"Hiragino Sans\", \"Yu Gothic\", sans-serif"
+  }
+}
