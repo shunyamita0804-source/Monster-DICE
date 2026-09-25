@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#140C06">
+  <meta name="format-detection" content="telephone=no">
+  <title>モンスターマスター</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&display=swap">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/ui.css">
+</head>
+<body>
+  <div id="app">
+    <!-- 背景層：画面の端まで（ノッチ・ホームインジケータの下も）描く -->
+    <div id="layer-bg" class="layer">
+      <div id="bg-fill"></div>
+      <div id="bg-stage"></div>
+    </div>
+    <!-- UI層：安全領域の内側。基準座標1080×1920を共通倍率で配置 -->
+    <div id="layer-ui" class="layer">
+      <div id="ui-frame"></div>
+    </div>
+    <!-- 重ね表示層：会話・ダイアログ・通知 -->
+    <div id="layer-overlay" class="layer"></div>
+
+    <div id="rotate-notice" hidden>
+      <p>スマートフォンを縦向きにしてください</p>
+    </div>
+    <div id="boot-error" hidden></div>
+    <div id="safe-probe" aria-hidden="true"></div>
+  </div>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
