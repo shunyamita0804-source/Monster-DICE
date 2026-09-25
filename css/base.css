@@ -1,0 +1,147 @@
+/* =========================================================
+   モンスターマスター：画面の器
+   ・背景層 / UI層 / 重ね表示層の3層
+   ・--u   … UI用の倍率（基準座標1pxあたりの実寸）
+   ・--bgu … 背景用の倍率
+   ・色は data/theme.json から --param-* / --wood などとして注入
+   ========================================================= */
+
+:root {
+  --u: 0.36px;
+  --bgu: 0.36px;
+  --frame-x: 0px;
+  --frame-y: 0px;
+  --frame-w: 100vw;
+  --frame-h: 100vh;
+  --core-top: 0px;
+  --bg-x: 0px;
+  --bg-y: 0px;
+  --font-main: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Hiragino Sans", sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--night, #140C06);
+  color: var(--cream, #FFF7E2);
+  font-family: var(--font-main);
+  overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  touch-action: manipulation;          /* ダブルタップ拡大を防ぐ */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#app {
+  position: fixed;
+  inset: 0;
+  height: 100%;
+  height: 100dvh;                      /* ブラウザのバーの増減に追従 */
+  overflow: hidden;
+}
+
+.layer { position: absolute; inset: 0; }
+
+/* ---------- 背景層 ---------- */
+#layer-bg { overflow: hidden; background: var(--night, #140C06); }
+
+/* 横に広い画面（iPad等）で左右を埋める、ぼかした同じ背景 */
+#bg-fill {
+  position: absolute;
+  inset: -48px;
+  background-size: cover;
+  background-position: center;
+  filter: blur(28px) brightness(0.62) saturate(1.1);
+  transform: scale(1.06);
+  opacity: 0;
+  transition: opacity .3s;
+}
+#app.is-side-fill #bg-fill { opacity: 1; }
+
+/* 背景本体：1080×2340（中央1080×1920が基準枠） */
+#bg-stage {
+  position: absolute;
+  left: var(--bg-x);
+  top: var(--bg-y);
+  width: calc(1080 * var(--bgu));
+  height: calc(2340 * var(--bgu));
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+}
+
+/* ---------- UI層 ---------- */
+#layer-ui { pointer-events: none; }
+#ui-frame {
+  position: absolute;
+  left: var(--frame-x);
+  top: var(--frame-y);
+  width: var(--frame-w);
+  height: var(--frame-h);
+}
+#ui-frame > * { pointer-events: auto; }
+
+/* 基準枠（1080×1920）の中央配置領域 */
+.core-box {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  top: var(--core-top);
+  height: calc(1920 * var(--u));
+}
+
+/* ---------- 重ね表示層 ---------- */
+#layer-overlay { pointer-events: none; }
+#layer-overlay > * { pointer-events: auto; }
+
+/* ---------- 安全領域の測定用（見えない） ---------- */
+#safe-probe {
+  position: fixed;
+  left: 0; top: 0;
+  width: 0; height: 0;
+  visibility: hidden;
+  pointer-events: none;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+}
+
+/* ---------- 縦向き案内 ---------- */
+#rotate-notice {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at 50% 40%, #3A2314, #140C06 70%);
+  color: var(--gold-light, #F6D77E);
+  font-weight: 800;
+  font-size: 18px;
+  text-align: center;
+  padding: 24px;
+}
+#rotate-notice[hidden] { display: none; }
+
+/* ---------- 起動エラー ---------- */
+#boot-error {
+  position: absolute;
+  inset: 0;
+  z-index: 110;
+  padding: calc(env(safe-area-inset-top, 0px) + 24px) 24px 24px;
+  background: #140C06;
+  color: #FFF7E2;
+  font-size: 14px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+#boot-error[hidden] { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: 0s !important; animation-duration: 0s !important; }
+}

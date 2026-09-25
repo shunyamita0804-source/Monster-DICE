@@ -1,0 +1,29 @@
+/* =========================================================
+   UI部品の共通ルール
+   部品の見た目（木枠・ボタン等）はステップ3で追加する。
+   ここには全部品が守る「操作のルール」だけを置く。
+   ========================================================= */
+
+/* 見た目が小さくても、タップできる範囲は44pt以上 */
+.tap { position: relative; cursor: pointer; }
+.tap::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: max(100%, 44px);
+  height: max(100%, 44px);
+  transform: translate(-50%, -50%);
+}
+
+/* 縦に長い画面（ステータス・技管理・図鑑）の中身だけをスクロール */
+.scroll-area {
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+}
+
+/* 素材が未完成の箇所：表示しないための共通クラス */
+.asset-missing-hidden { display: none !important; }
