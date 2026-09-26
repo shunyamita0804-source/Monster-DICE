@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><linearGradient id="leather" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="#dcae74"/><stop offset="0.55" stop-color="#b9834a"/><stop offset="1" stop-color="#7d5324"/></linearGradient><linearGradient id="leatherTop" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e9c48f"/><stop offset="1" stop-color="#a9764a"/></linearGradient><linearGradient id="herbLeaf" x1="0" y1="0" x2="0.3" y2="1"><stop offset="0" stop-color="#c8ed92"/><stop offset="1" stop-color="#5c9a34"/></linearGradient><radialGradient id="berry" cx="0.35" cy="0.3" r="0.75"><stop offset="0" stop-color="#ffb0c8"/><stop offset="0.6" stop-color="#e0507e"/><stop offset="1" stop-color="#8a2048"/></radialGradient><linearGradient id="vial" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#bfe8ff"/><stop offset="1" stop-color="#5aa8e0"/></linearGradient></defs>
+<path d="M34 42 C22 49 16 58 16 67 C16 79 30 87 50 87 C70 87 84 79 84 67 C84 58 78 49 66 42 Z" fill="url(#leather)" stroke="#4a3320" stroke-width="4.6" stroke-linejoin="round"/>
+<path d="M33 42 C29 35 29 28 33 22 C39 26 44 27 50 27 C56 27 61 26 67 22 C71 28 71 35 67 42 Z" fill="url(#leatherTop)" stroke="#4a3320" stroke-width="4" stroke-linejoin="round"/>
+<path d="M44 30 L38 15 L43 13 L50 27 Z" fill="url(#vial)" stroke="#4a3320" stroke-width="2.4" stroke-linejoin="round"/>
+<path d="M54 27 C55 17 63 11 69 13 C68 21 62 27 54 27 Z" fill="url(#herbLeaf)" stroke="#4a3320" stroke-width="2.4" stroke-linejoin="round"/>
+<circle cx="59" cy="22" r="5" fill="url(#berry)" stroke="#4a3320" stroke-width="2.2"/>
+<path d="M30 39 H70" stroke="#4a3320" stroke-width="4.2" stroke-linecap="round"/>
+<path d="M26 57 C34 54 66 54 74 57" stroke="#fff3da" stroke-width="2.2" opacity=".45" fill="none" stroke-linecap="round"/>
+</svg>

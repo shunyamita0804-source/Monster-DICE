@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><linearGradient id="ironBar" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eef1f4"/><stop offset="0.5" stop-color="#aab4bd"/><stop offset="1" stop-color="#5c666f"/></linearGradient><linearGradient id="ironPlate" x1="0" y1="0" x2="0.4" y2="1"><stop offset="0" stop-color="#dfe4e8"/><stop offset="0.55" stop-color="#8f99a3"/><stop offset="1" stop-color="#4a5158"/></linearGradient><radialGradient id="impactOrange" cx="0.35" cy="0.3" r="0.75"><stop offset="0" stop-color="#fff2b0"/><stop offset="0.55" stop-color="#ff9a3c"/><stop offset="1" stop-color="#d85a12"/></radialGradient></defs>
+<g transform="rotate(-14 50 52)">
+  <rect x="30" y="46" width="40" height="9" rx="3" fill="url(#ironBar)" stroke="#4a3320" stroke-width="3.4"/>
+  <rect x="16" y="32" width="15" height="36" rx="5" fill="url(#ironPlate)" stroke="#4a3320" stroke-width="4"/>
+  <rect x="22" y="24" width="8" height="52" rx="3.4" fill="url(#ironPlate)" stroke="#4a3320" stroke-width="3.4"/>
+  <rect x="69" y="32" width="15" height="36" rx="5" fill="url(#ironPlate)" stroke="#4a3320" stroke-width="4"/>
+  <rect x="70" y="24" width="8" height="52" rx="3.4" fill="url(#ironPlate)" stroke="#4a3320" stroke-width="3.4"/>
+  <rect x="20" y="36" width="10" height="4" rx="2" fill="#fff" opacity=".5"/>
+  <rect x="68" y="36" width="10" height="4" rx="2" fill="#fff" opacity=".5"/>
+</g>
+<path d="M78 22 L82 30 L91 31 L84 37 L86 46 L78 41 L70 46 L72 37 L65 31 L74 30 Z" fill="url(#impactOrange)" stroke="#4a3320" stroke-width="2.6" stroke-linejoin="round"/>
+</svg>

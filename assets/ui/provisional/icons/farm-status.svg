@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><linearGradient id="shieldBody" x1="0" y1="0" x2="0.3" y2="1"><stop offset="0" stop-color="#f4e6bd"/><stop offset="0.5" stop-color="#dcb96c"/><stop offset="1" stop-color="#a97c34"/></linearGradient><radialGradient id="gemViolet" cx="0.38" cy="0.3" r="0.8"><stop offset="0" stop-color="#d6c4ff"/><stop offset="0.4" stop-color="#8f6cf0"/><stop offset="0.75" stop-color="#5230b8"/><stop offset="1" stop-color="#2c1668"/></radialGradient>
+<filter id="softGlow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="3.2"/></filter>
+</defs>
+<circle cx="50" cy="46" r="19" fill="#caa6ff" opacity=".4" filter="url(#softGlow)"/>
+<path d="M50 14 L80 26 V50 C80 68 68 80 50 88 C32 80 20 68 20 50 V26 Z" fill="url(#shieldBody)" stroke="#4a3320" stroke-width="4.6" stroke-linejoin="round"/>
+<path d="M50 21 L73 30 V50 C73 64 63 74 50 81 C37 74 27 64 27 50 V30 Z" fill="none" stroke="#fff6da" stroke-width="1.6" opacity=".55"/>
+<path d="M50 34 L60 42 L56 58 L44 58 L40 42 Z" fill="url(#gemViolet)" stroke="#4a3320" stroke-width="3"/>
+<path d="M46 39 L50 34 L48 42 Z" fill="#f0e6ff" opacity=".8"/>
+</svg>
