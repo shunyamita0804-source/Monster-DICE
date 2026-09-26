@@ -11,6 +11,7 @@ import { initSave } from './core/save.js';
 import { setState, createNewGame } from './core/state.js';
 import { startPlayClock } from './core/playtime.js';
 import { registerScreen, go } from './core/router.js';
+import { applySkins } from './ui/skins.js';
 
 async function boot() {
   const [config, theme, ledger, unlocks] = await Promise.all([
@@ -22,18 +23,24 @@ async function boot() {
   setConfig(config, unlocks);
   applyTheme(theme);
   setLedger(ledger);
+  applySkins();
   initLayout(config);
+  // iOS Safari で :active（押下の見た目）を効かせる
+  document.addEventListener('touchstart', () => {}, { passive: true });
   initSave(createStorage(config.storagePrefix), config);
 
-  // ステップ1：ゲーム画面はまだ無い。
-  // 基盤を確認するため、新規ゲームの状態を作って開発用の「基盤チェック」画面を開く。
+  // ステップ3：ゲーム画面はまだ無い。開発用の画面だけを開く。
+  //   既定 …… UI部品集（dev.gallery）
+  //   ?dev=foundation …… 基盤チェック
   // （ステップ4でタイトル画面からの起動に置き換える）
   setState(createNewGame(config), 'boot');
   startPlayClock();
 
-  const dev = await import('./dev/foundation.js');
-  dev.register(registerScreen);
-  await go('dev.foundation');
+  const [foundation, gallery] = await Promise.all([import('./dev/foundation.js'), import('./dev/gallery.js')]);
+  foundation.register(registerScreen);
+  gallery.register(registerScreen);
+  const which = new URLSearchParams(location.search).get('dev');
+  await go(which === 'foundation' ? 'dev.foundation' : 'dev.gallery');
 }
 
 boot().catch((err) => {
