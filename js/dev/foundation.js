@@ -167,7 +167,8 @@ function mount(ctx) {
       table(rows),
       h('div', { class: 'dev-row' },
         h('button', { onclick: () => setBgTest('grid') }, '背景：格子'),
-        h('button', { onclick: () => setBgTest('town') }, '背景：街の完成図＋ピン')),
+        h('button', { onclick: () => setBgTest('town') }, '背景：街の完成図＋ピン'),
+        h('button', { onclick: () => ctx.go('dev.gallery') }, 'UI部品集を開く')),
       h('p', { class: 'dev-note' }, '端末を切り替えても、ピンの円が建物のピンからずれないこと。赤い帯が Safe Area、黄の点線が基準枠です。'),
     );
   }
