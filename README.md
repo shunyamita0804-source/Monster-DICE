@@ -3,9 +3,10 @@
 王道JRPG風のモンスター育成ゲーム。HTML / CSS / JavaScript の通常のWebプロジェクトです。
 GitHub Pages で動作確認し、将来は Capacitor で iOS / Android アプリにします。
 
-現在：**PHASE 1 ステップ1（土台）**
-土台・状態管理・レスポンシブ・Safe Area・セーブ・素材台帳まで。ゲーム画面はまだありません。
-起動すると開発用の「基盤チェック」画面が開きます。
+現在：**PHASE 1 ステップ3（共通UI部品集）**
+ステップ1（土台）の上に、全画面で使う共通UI部品を追加しました。ゲーム画面はまだありません。
+起動すると開発用の「UI部品集」が開きます。`?dev=foundation` を付けると「基盤チェック」が開きます。
+部品の一覧・定義場所・差し替え方法は docs/ui-parts.md にあります。
 
 ## 動かし方
 
@@ -38,16 +39,18 @@ npm test
 
 ```
 index.html
-css/        base.css（3層の器・Safe Area）／ ui.css（操作の共通ルール）／ dev.css（開発用）
+css/        base.css（3層の器・Safe Area）／ ui.css（操作の共通ルール）／ dev.css・dev-gallery.css（開発用）
+  ui/       共通UI部品の見た目（tokens / text / frames / buttons / values / markers / dialogs / lists / cards / skins-official）
 js/
   main.js   起動
   core/     layout（倍率・Safe Area・背景）state（状態）save（手動3＋オート1）storage（保存先）
             assets（素材台帳）background router（画面切替とモード判定）theme config data bus playtime migrations
   systems/  raising（育成の開始・終了）entry（街・市場に入った時の判定）conditions（解放条件）
             individual（個体）flows（画面から呼ぶ入口＋オートセーブ）
-  dev/      基盤チェック画面（開発用）
+  ui/       共通UI部品を作る関数（frames / buttons / values / markers / dialogs / lists / cards / icons / skins / dom）
+  dev/      基盤チェック・UI部品集（開発用）
 data/       config / theme（パラメーター6色）/ unlocks（解放条件）/ assets（素材台帳）
-assets/     素材（reference/ は完成図。ゲーム画面には出さない）
+assets/     素材（reference/ は完成図。ゲーム画面には出さない。ui/provisional/ は仮素材）
 docs/       確定仕様
 tests/      ルールの自動テスト
 ```
