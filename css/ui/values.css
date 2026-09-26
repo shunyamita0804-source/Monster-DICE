@@ -1,0 +1,112 @@
+/* =========================================================
+   金貨・所持G／数値／能力名／能力値＋ゲージ／能力分析図
+   ========================================================= */
+.mm-icon { display: inline-block; width: 6rem; height: 6rem; object-fit: contain; flex: none; }
+
+/* 所持G：紙の窪み＋金貨。数字は右揃え */
+.mm-gold {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 7.6rem;
+  min-width: 36rem;
+  padding: 0 2.8rem 0 9rem;
+  border-radius: 1.2rem;
+  background: var(--surface-paper-2);
+  box-shadow: inset 0 0.25rem 0.5rem rgba(110, 80, 50, .14), 0 0 0 0.25rem var(--line);
+}
+.mm-gold .mm-icon { position: absolute; left: 1.6rem; top: 50%; width: 6rem; height: 6rem; transform: translateY(-50%); filter: drop-shadow(0 0.2rem 0.2rem rgba(70, 45, 20, .3)); }
+.mm-gold__value { flex: 1; text-align: right; font: 800 4.6rem / 1 var(--font-main); }
+.mm-gold__unit { margin-left: 0.8rem; font: 700 3.2rem / 1 var(--font-main); color: #9a7632; }
+
+/* 数値：現在値が主役、最大値は小さく薄く */
+.mm-num { display: inline-flex; align-items: baseline; gap: 0.8rem; font-family: var(--font-main); }
+.mm-num__value { font-size: 6.4rem; line-height: 1; }
+.mm-num__max { font-size: 2.8rem; font-weight: 500; color: var(--muted); }
+.mm-num--sm .mm-num__value { font-size: 4.6rem; }
+.mm-num--sm .mm-num__max { font-size: 2.6rem; }
+.mm-delta { font: 800 4.4rem / 1 var(--font-main); font-variant-numeric: tabular-nums; }
+.mm-delta--up { color: #2f8540; }
+.mm-delta--down { color: #b8452f; }
+
+/* 能力名：文字＋能力色の短い縦線（アイコンは使わない） */
+.mm-param { display: inline-flex; align-items: center; gap: 1.2rem; font-size: 3.8rem; font-weight: 700; color: var(--ink); }
+.mm-param::before { content: ""; width: 0.6rem; height: 3.4rem; border-radius: 0.3rem; background: var(--c); }
+
+/* =========================================================
+   能力値＋ゲージ
+   能力名　　　　　　　120 / 999
+   ━━━━━━━━━━━━━━━━
+   ========================================================= */
+.mm-abilities { display: grid; gap: 3.8rem; }
+.mm-ability { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; row-gap: 1.4rem; }
+.mm-ability__name { display: inline-flex; align-items: center; font-size: 4rem; font-weight: 700; color: var(--ink); align-self: center; }
+.mm-ability__num { display: inline-flex; align-items: baseline; gap: 0.7rem; }
+.mm-ability__value { font: 800 6.2rem / 1 var(--font-main); color: var(--ink); font-variant-numeric: tabular-nums; }
+.mm-ability__max { font: 600 3rem / 1 var(--font-main); color: var(--muted); font-variant-numeric: tabular-nums; }
+.mm-meter-wrap { grid-column: 1 / -1; }
+
+/* パラメーターゲージ：JRPGのステータスバー。角丸は小さく、カプセル形にはしない */
+.mm-meter {
+  position: relative;
+  height: 4.4rem;
+  border-radius: 0.7rem;
+  overflow: hidden;
+  background: linear-gradient(180deg, #ddd4c2, #e6ddc9);
+  box-shadow: inset 0 0.3rem 0.5rem rgba(90, 66, 48, .22), 0 0 0 0.2rem var(--line), 0 0 0 0.36rem rgba(184, 153, 90, .35);
+}
+.mm-meter__well { position: absolute; inset: 0; }
+.mm-meter__fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: var(--fill, 0%);
+  min-width: var(--fillmin, 0);
+  border-radius: 0.45rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .75) 0%, rgba(255, 255, 255, 0) 38%),
+    linear-gradient(180deg, color-mix(in srgb, var(--c) 55%, #ffffff) 0%, var(--c) 44%, color-mix(in srgb, var(--c) 80%, #2a1d12) 100%);
+  box-shadow: inset -0.25rem 0 0.3rem color-mix(in srgb, var(--c) 65%, #2a1d12), inset 0 -0.3rem 0.4rem color-mix(in srgb, var(--c) 40%, #2a1d12);
+  transition: width .6s cubic-bezier(.2, .8, .2, 1);
+}
+.mm-meter__fill::after {                     /* 先端の小さな光 */
+  content: "";
+  position: absolute;
+  right: 0.15rem;
+  top: 0.35rem;
+  bottom: 0.35rem;
+  width: 0.5rem;
+  border-radius: 0.25rem;
+  background: rgba(255, 255, 255, .85);
+  filter: blur(0.15rem);
+}
+.mm-meter__ticks {                           /* ごく薄い目盛り（10%ごと） */
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 0.1rem), rgba(90, 66, 48, .16) calc(10% - 0.1rem) 10%);
+}
+.mm-meter__shine {                           /* 上がった時の光の走り */
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: var(--fill, 0%);
+  border-radius: inherit;
+  overflow: hidden;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, .7) 50%, transparent 100%) no-repeat;
+  background-size: 32% 100%;
+  background-position: -45% 0;
+  opacity: 0;
+  transition: width .6s cubic-bezier(.2, .8, .2, 1);
+}
+.mm-meter.is-rising .mm-meter__shine { animation: mm-meter-rise .8s ease-out; }
+@keyframes mm-meter-rise { 0% { opacity: 1; background-position: -45% 0; } 100% { opacity: 0; background-position: 145% 0; } }
+
+/* 能力分析図（紙の上のレーダーチャート） */
+.mm-chart { display: block; width: 100%; height: auto; overflow: visible; }
+.mm-chart text { font-family: var(--font-main); }
+
+/* 能力分析図の器：青がよく映えるよう、他のパネルより少しだけ明るい紙 */
+.mm-chart-frame { background: linear-gradient(180deg, #fffdf8, #f8f2e4); border-radius: 1.2rem; padding: 1rem; }

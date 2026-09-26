@@ -1,0 +1,60 @@
+/* =========================================================
+   リストの行／所持アイテム行／図鑑のマス／モンスター選択
+   通常＝一段沈んだ紙に細い線（静か）。選択中だけ金の細線とやわらかな光
+   ========================================================= */
+.mm-list { display: grid; gap: 1.4rem; }
+.mm-list.scroll-area { max-height: 58rem; padding: 0.4rem 1.4rem 0.4rem 0.4rem; }
+
+.mm-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 2.4rem;
+  min-height: 12.4rem;
+  padding: 1.2rem 2.8rem 1.2rem 1.4rem;
+  border-radius: 1.2rem;
+  background: var(--surface-paper-2);
+  box-shadow: 0 0 0 0.22rem var(--line-soft);
+  cursor: pointer;
+  transition: transform .07s, box-shadow .07s, background .15s;
+}
+.mm-row:active, .mm-row.is-pressed { transform: translateY(0.25rem); background: #e9e0cd; box-shadow: inset 0 0.4rem 0.8rem rgba(110, 80, 50, .16), 0 0 0 0.22rem var(--line-soft); }
+.mm-row.is-selected { background: linear-gradient(90deg, #fbf0d6, #faf5ea 60%); box-shadow: 0 0 0 0.28rem var(--gold), 0 0 0 0.9rem var(--gold-soft); }
+.mm-row.is-selected::after { content: ""; position: absolute; left: -0.9rem; top: 50%; width: 1.6rem; height: 1.6rem; transform: translateY(-50%) rotate(45deg); background: linear-gradient(135deg, #f6d98a, #c9973a); box-shadow: 0 0 0 0.16rem #7a5421; }
+.mm-row__slot { display: grid; place-items: center; width: 9.6rem; height: 9.6rem; border-radius: 0.9rem; overflow: hidden; background: var(--paper-3); box-shadow: 0 0 0 0.2rem var(--line); }
+.mm-row__slot .mm-pending { width: 100%; height: 100%; border-radius: 0; box-shadow: none; font-size: 2.2rem; }
+.mm-row__main { display: grid; gap: 0.6rem; min-width: 0; }
+.mm-row__title { font-size: 4rem; font-weight: 700; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mm-row__sub { font-size: 3rem; font-weight: 500; color: var(--muted); }
+.mm-row__end { display: flex; align-items: center; gap: 2rem; }
+.mm-chevron { width: 1.6rem; height: 2.8rem; background: var(--muted); clip-path: polygon(0 0, 100% 50%, 0 100%, 0 78%, 62% 50%, 0 22%); }
+.mm-row.is-selected .mm-chevron { background: var(--gold); }
+
+.mm-row--item { cursor: default; }
+.mm-row--item .mm-row__sub { line-height: 1.5; white-space: normal; color: var(--ink-2); font-size: 3rem; }
+.mm-count { display: inline-flex; align-items: baseline; gap: 0.4rem; font: 800 4.2rem / 1 var(--font-main); color: var(--ink); font-variant-numeric: tabular-nums; }
+.mm-count small { font-size: 2.8rem; font-weight: 500; color: var(--muted); }
+
+/* 図鑑：入手済み＝明るい紙／未発見＝一段沈んだ紙と封印の紋 */
+.mm-dex-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2.2rem; }
+.mm-dex { display: grid; justify-items: center; gap: 1rem; padding: 1.6rem 0.8rem; border-radius: 1.2rem; background: var(--paper); box-shadow: 0 0 0 0.22rem var(--line), 0 0.3rem 0.6rem rgba(70, 45, 20, .1); }
+.mm-dex__no { font: 500 2.5rem / 1 var(--font-main); color: var(--muted); font-variant-numeric: tabular-nums; }
+.mm-dex .mm-row__slot { width: 12rem; height: 12rem; }
+.mm-dex__name { font-size: 2.9rem; font-weight: 700; color: var(--ink); white-space: nowrap; }
+.mm-dex.is-unknown { padding: 0; background: none; box-shadow: none; }
+.mm-dex.is-unknown .mm-sealed { width: 100%; height: 100%; padding: 1.6rem 0.8rem; gap: 1rem; align-content: start; }
+.mm-dex.is-unknown .mm-unknown-mark { font-size: 7rem; height: 12rem; display: grid; place-items: center; }
+.mm-dex.is-unknown .mm-unknown-text { font-size: 2.8rem; letter-spacing: 0.2rem; }
+
+/* モンスター選択：モンスターが主役。枠は細い線だけ、名前は絵の下 */
+.mm-mslot { position: relative; display: grid; gap: 1.6rem; width: 32rem; cursor: pointer; transition: transform .12s ease-out; }
+.mm-mslot__window { position: relative; height: 36rem; border-radius: 1.4rem; overflow: hidden; background: var(--paper-3); box-shadow: 0 0 0 0.25rem var(--line), 0 0.6rem 1.4rem rgba(70, 45, 20, .18); }
+.mm-mslot__art { position: absolute; inset: 0; background-repeat: no-repeat; }
+.mm-mslot__name { text-align: center; font-size: 3.8rem; font-weight: 700; color: var(--ink); }
+.mm-mslot.is-locked .mm-mslot__name, .mm-mslot.is-unknown .mm-mslot__name { color: var(--muted); }
+.mm-mslot__tag { position: absolute; top: -1.4rem; left: 50%; transform: translateX(-50%); z-index: 2; padding: 0.7rem 2.2rem; border-radius: 0.8rem; background: var(--paper); box-shadow: 0 0 0 0.22rem var(--gold); font: 700 2.8rem / 1 var(--font-main); color: #8a5a14; }
+.mm-mslot:active { transform: translateY(0.3rem); }
+.mm-mslot.is-selected { transform: translateY(-0.8rem); }
+.mm-mslot.is-selected .mm-mslot__window { box-shadow: 0 0 0 0.3rem var(--gold), 0 0 0 1rem var(--gold-soft), 0 1.2rem 2rem rgba(70, 45, 20, .22); }
+.mm-mslot .mm-sealed { position: absolute; inset: 0; border-radius: 0; box-shadow: none; }

@@ -1,0 +1,93 @@
+/* =========================================================
+   デザイン言語の基本値（明るいアイボリーを基調とした上質な王道JRPG）
+   1rem = 基準座標の10px（html の font-size を --u×10 にしている）
+
+   面 …… 温かいアイボリーの紙（白70・クリーム20・古紙感10）
+   線 …… 細い焦げ茶。必要な所だけ、ごく細い落ち着いた真鍮
+   金 …… 重要な決定・選択中・特別な場面だけ
+   木 …… 施設・街の看板など、木で作られているのが自然な物だけ
+   色 …… 能力色・技の分類色は、細い線・塗り・小さな印だけに使う
+   上質さは装飾の足し算ではなく、余白・整列・文字の階層・細い線で作る
+   ========================================================= */
+:root {
+  /* 文字 */
+  --ink: #3b2c1f;            /* 見出し・重要な数値 */
+  --ink-2: #54402f;          /* 本文 */
+  --muted: #8d7a66;          /* 補助 */
+  --faint: #b3a591;          /* 無効 */
+
+  /* 面 */
+  --paper: #faf6ec;
+  --paper-2: #f3ecdd;        /* 一段沈んだ面（行・枠の中） */
+  --paper-3: #e8dfcd;        /* さらに沈んだ面（未発見など） */
+
+  /* 線 */
+  --line: #6b5240;           /* 外枠の細い焦げ茶 */
+  --line-soft: rgba(107, 82, 64, .28);
+  --brass: #b8995a;          /* ごく細い真鍮 */
+  --gold: #c9973a;           /* 選択中・重要 */
+  --gold-soft: rgba(214, 170, 80, .28);
+
+  /* 旧名（互換：以前の部品や開発画面が参照） */
+  --mm-outline: #2a1d13;
+  --mm-ivory: #f7efdd;
+  --mm-ivory-soft: #eadfca;
+  --mm-muted: var(--muted);
+  --mm-ink: var(--ink);
+  --mm-ink-soft: var(--ink-2);
+  --mm-cream: var(--mm-ivory);
+  --mm-cream-dim: var(--mm-ivory-soft);
+  --mm-gold: linear-gradient(180deg, #fff4c2 0%, #f6cf5e 20%, #c98e24 52%, #f2c65a 78%, #8a5812 100%);
+  --mm-gold-text: linear-gradient(180deg, #fffdf0 0%, #ffe9a0 38%, #f2c14e 62%, #d08e22 100%);
+  --mm-brass: linear-gradient(180deg, #f0dfa4 0%, #c29b4c 34%, #8a6829 64%, #c09a55 86%, #5c4218 100%);
+  --mm-ts-soft: 0 0.2rem 0.4rem rgba(0, 0, 0, .55);
+  --mm-text-outline:
+    0.26rem 0 0 var(--mm-outline), -0.26rem 0 0 var(--mm-outline),
+    0 0.26rem 0 var(--mm-outline), 0 -0.26rem 0 var(--mm-outline),
+    0.18rem 0.18rem 0 var(--mm-outline), -0.18rem 0.18rem 0 var(--mm-outline),
+    0.18rem -0.18rem 0 var(--mm-outline), -0.18rem -0.18rem 0 var(--mm-outline);
+  --mm-text-outline-thin: 0.16rem 0 0 var(--mm-outline), -0.16rem 0 0 var(--mm-outline), 0 0.16rem 0 var(--mm-outline), 0 -0.16rem 0 var(--mm-outline);
+
+  /* 影（控えめ） */
+  --shadow: 0 0.2rem 0.4rem rgba(70, 45, 20, .12), 0 0.8rem 2.2rem rgba(70, 45, 20, .16);
+
+  /* 文字サイズ（iPhone 393pt 幅で 3rem ≒ 11pt） */
+  --fs-title: 5.2rem;
+  --fs-heading: 4.4rem;
+  --fs-body: 3.8rem;
+  --fs-small: 3.2rem;
+  --fs-micro: 2.8rem;
+  --mm-fs-body: var(--fs-body);
+  --mm-fs-display: 7rem;
+
+  /* 質感（skins.js が素材台帳から入れる） */
+  --tex-paper: none;
+  --tex-leather: none;
+  --tex-iron: none;
+  --tex-parchment: none;
+  --tex-wood-dark: none;
+  --tex-wood-light: none;
+  --tex-seal: none;
+  --tex-size: 51.2rem;
+
+  --surface-paper: linear-gradient(180deg, rgba(255, 255, 255, .5), rgba(255, 255, 255, 0) 45%), var(--tex-paper) center / var(--tex-size) repeat, var(--paper);
+  --surface-paper-2: linear-gradient(rgba(236, 226, 206, .55), rgba(236, 226, 206, .55)), var(--tex-paper) center / var(--tex-size) repeat, var(--paper-2);
+  /* 技カード専用：白80/クリーム15/古紙感5に近づけた、より明るい紙 */
+  --surface-paper-bright: linear-gradient(180deg, rgba(255, 255, 255, .72), rgba(255, 255, 255, 0) 40%), var(--tex-paper) center / var(--tex-size) repeat, #fdfbf6;
+}
+
+html { font-size: calc(var(--u) * 10); }
+body { font-size: var(--fs-body); }
+
+/* 能力色（data/theme.json が唯一の定義） */
+.p-life      { --c: var(--param-life);      --c-dark: var(--param-life-dark); }
+.p-power     { --c: var(--param-power);     --c-dark: var(--param-power-dark); }
+.p-wisdom    { --c: var(--param-wisdom);    --c-dark: var(--param-wisdom-dark); }
+.p-hit       { --c: var(--param-hit);       --c-dark: var(--param-hit-dark); }
+.p-evasion   { --c: var(--param-evasion);   --c-dark: var(--param-evasion-dark); }
+.p-toughness { --c: var(--param-toughness); --c-dark: var(--param-toughness-dark); }
+
+/* 技の分類色：ちから＝赤〜オレンジ／かしこさ＝緑／補助＝ターコイズ */
+.cat-power   { --c: #d9542f; --c-dark: #9a3218; }
+.cat-wisdom  { --c: #3a9a4c; --c-dark: #226a30; }
+.cat-support { --c: #22a39a; --c-dark: #13706a; }

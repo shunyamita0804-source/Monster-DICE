@@ -1,0 +1,29 @@
+/* =========================================================
+   文字の階層（縁取りは、絵の上に直接置いて読みにくい時だけ）
+   見出し … 濃い焦げ茶（.mm-t-heading）
+   本文 …… 濃い茶（.mm-t-body）
+   補助 …… 薄い茶（.mm-t-muted）
+   重要な数値 … 濃く大きく（.mm-t-num）
+   金文字 … タイトル・看板など特別な場面だけ（.mm-t-gold）
+   ========================================================= */
+.mm-t-heading { color: var(--ink); font-weight: 700; }
+.mm-t-body { color: var(--ink-2); font-weight: 500; line-height: 1.65; }
+.mm-t-ink { color: var(--ink-2); font-weight: 500; }
+.mm-t-num { color: var(--ink); font-weight: 800; font-variant-numeric: tabular-nums; }
+.mm-t-muted { color: var(--muted); font-weight: 500; }
+/* 絵の上に直接置く文字だけ */
+.mm-t-outline { color: #fffaf0; text-shadow: var(--mm-text-outline), 0 0.4rem 0.6rem rgba(0, 0, 0, .4); font-weight: 700; }
+.mm-t-outline-thin { color: #fffaf0; text-shadow: var(--mm-text-outline-thin), 0 0.3rem 0.5rem rgba(0, 0, 0, .4); font-weight: 700; }
+
+/* 金文字（看板・タイトル用）：外側の ::before に焦げ茶の縁、内側の span に金 */
+.mm-t-gold { position: relative; display: inline-block; isolation: isolate; font-weight: 800; text-shadow: none; }
+.mm-t-gold::before {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  color: var(--mm-outline);
+  -webkit-text-stroke: 0.7rem var(--mm-outline);
+  text-shadow: 0 0.4rem 0.6rem rgba(0, 0, 0, .45);
+}
+.mm-t-gold > span { color: transparent; text-shadow: none; background: var(--mm-gold-text); -webkit-background-clip: text; background-clip: text; }

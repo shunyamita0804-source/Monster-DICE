@@ -1,0 +1,108 @@
+/* =========================================================
+   ボタン
+   標準 …… アイボリーの面＋細い焦げ茶の線。わずかな厚み
+   --primary 重要な決定：やわらかい金
+   --special 特別な枠：落ち着いた青
+   状態：押下＝沈む／選択中＝金の細線とやわらかな光、小さな金の印／無効＝淡い灰色
+   ========================================================= */
+.mm-btn {
+  --h: 9.6rem;
+  --face: linear-gradient(180deg, #fffdf8 0%, #f8f1e2 100%);
+  --edge: var(--line);
+  --diamond: var(--brass);
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.2rem;
+  height: var(--h);
+  min-width: 26rem;
+  padding: 0 4rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--face);
+  color: var(--ink);
+  font: 700 3.8rem / 1 var(--font-main);
+  letter-spacing: 0.04rem;
+  cursor: pointer;
+  transform: translateY(0);
+  box-shadow: 0 0 0 0.16rem var(--edge), 0 0.25rem 0 rgba(70, 45, 20, .06), 0 0.5rem 1rem rgba(70, 45, 20, .12);
+  transition: transform .07s ease-out, box-shadow .07s ease-out, background .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.mm-btn::before, .mm-btn::after {           /* 両端の小さな菱形飾り */
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 1rem;
+  height: 1rem;
+  transform: translateY(-50%) rotate(45deg);
+  background: var(--diamond);
+  opacity: .8;
+}
+.mm-btn::before { left: 2rem; }
+.mm-btn::after { right: 2rem; }
+.mm-btn__label { position: relative; white-space: nowrap; }
+.mm-btn__icon { position: relative; width: 5.2rem; height: 5.2rem; flex: none; }
+.mm-btn__gem { display: none; }
+
+.mm-btn:active:not(.is-disabled):not(:disabled), .mm-btn.is-pressed {
+  transform: translateY(0.15rem);
+  background: linear-gradient(180deg, #f0e7d6, #e9ddc5);
+  box-shadow: 0 0 0 0.16rem var(--edge), inset 0 0.3rem 0.6rem rgba(110, 80, 50, .14);
+}
+
+.mm-btn.is-selected {
+  --edge: var(--gold);
+  --diamond: var(--gold);
+  --face: linear-gradient(180deg, #fffaec 0%, #f8e6ba 100%);
+  box-shadow: 0 0 0 0.2rem var(--edge), 0 0 0 0.6rem var(--gold-soft), 0 0.4rem 0.9rem rgba(70, 45, 20, .14);
+}
+
+.mm-btn.is-disabled, .mm-btn:disabled {
+  --face: linear-gradient(180deg, #ece7de, #e2dccf);
+  --edge: #c9c0ae;
+  --diamond: #c9c0ae;
+  color: var(--faint);
+  cursor: default;
+  box-shadow: 0 0 0 0.16rem var(--edge);
+}
+
+.mm-btn--primary {
+  --face: linear-gradient(180deg, #fce6a0 0%, #eab55a 100%);
+  --edge: #b8862e;
+  --diamond: #7a5421;
+  color: #43290c;
+}
+.mm-btn--special {
+  --face: linear-gradient(180deg, #6b93cc 0%, #3d68a8 100%);
+  --edge: #294a80;
+  --diamond: #e8dcc0;
+  color: #fffaf0;
+}
+.mm-btn--primary.is-disabled, .mm-btn--primary:disabled, .mm-btn--special.is-disabled, .mm-btn--special:disabled { --face: linear-gradient(180deg, #ece7de, #e2dccf); --edge: #c9c0ae; --diamond: #c9c0ae; color: var(--faint); }
+
+.mm-btn--lg { --h: 11.6rem; min-width: 44rem; font-size: 4.4rem; }
+.mm-btn--sm { --h: 7.2rem; min-width: 16rem; padding: 0 2.8rem; font-size: 3.1rem; }
+.mm-btn--sm::before { left: 1.2rem; width: .8rem; height: .8rem; }
+.mm-btn--sm::after { right: 1.2rem; width: .8rem; height: .8rem; }
+
+/* =========================================================
+   タブ：選択中は紙の白さで下のパネルとつながり、上端に金の細線
+   ========================================================= */
+.mm-tabs { display: flex; align-items: flex-end; gap: 0.6rem; padding: 0 2.6rem; position: relative; z-index: 2; margin-bottom: -0.3rem; }
+.mm-tab {
+  position: relative;
+  height: 8.4rem;
+  min-width: 22rem;
+  padding: 0 3rem;
+  border: 0;
+  border-radius: 1.2rem 1.2rem 0 0;
+  background: var(--paper-3);
+  color: var(--muted);
+  font: 700 3.4rem / 1 var(--font-main);
+  box-shadow: 0 0 0 0.25rem var(--line-soft);
+  cursor: pointer;
+}
+.mm-tab.is-active { height: 9.4rem; background: var(--paper); color: var(--ink); box-shadow: 0 -0.28rem 0 0 var(--line), 0.28rem 0 0 0 var(--line), -0.28rem 0 0 0 var(--line); }
+.mm-tab.is-active::after { content: ""; position: absolute; left: 1.6rem; right: 1.6rem; top: 0.8rem; height: 0.25rem; border-radius: 0.2rem; background: var(--gold); }

@@ -1,0 +1,73 @@
+/* =========================================================
+   ロック／未発見（封印）／素材準備中
+   未発見は「まだ知らないもの」：一段沈んだ紙、淡い封印の紋、やわらかな霧
+   シルエットは正式な立ち絵がある時だけ（.mm-silhouette）
+   ========================================================= */
+.mm-lock {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 9.6rem;
+  height: 9.6rem;
+  border-radius: 50%;
+  background: var(--paper);
+  box-shadow: 0 0 0 0.25rem var(--line), 0 0.3rem 0.6rem rgba(70, 45, 20, .15);
+}
+.mm-lock .mm-icon { width: 5.8rem; height: 5.8rem; }
+.mm-lock--sm { width: 6rem; height: 6rem; box-shadow: 0 0 0 0.2rem var(--line); }
+.mm-lock--sm .mm-icon { width: 3.8rem; height: 3.8rem; }
+
+/* 未発見：まだ記録されていない生物。薄い羊皮紙＋淡い図鑑紋様＋やわらかな霧（怖い封印ではない） */
+.mm-sealed {
+  position: relative;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 1.2rem;
+  background: radial-gradient(70% 60% at 50% 42%, rgba(255, 250, 238, .8), transparent 75%), var(--paper-3);
+  box-shadow: inset 0 0.3rem 0.8rem rgba(90, 66, 48, .14), 0 0 0 0.2rem var(--line-soft);
+}
+.mm-sealed::before {                          /* 淡い図鑑の紋様 */
+  content: "";
+  position: absolute;
+  width: 86%;
+  aspect-ratio: 1;
+  left: 7%;
+  top: 48%;
+  transform: translateY(-50%);
+  background: var(--tex-seal) center / contain no-repeat;
+  opacity: .3;
+}
+.mm-sealed::after {                           /* 下からのやわらかな霧 */
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 52%;
+  background: linear-gradient(0deg, rgba(255, 252, 245, .75), transparent);
+  pointer-events: none;
+}
+.mm-sealed > * { position: relative; z-index: 1; }
+.mm-unknown-text { font: 700 3.8rem / 1 var(--font-main); letter-spacing: 0.4rem; color: var(--muted); }
+.mm-unknown-mark { font: 700 11rem / 1 var(--font-main); color: #a8957c; opacity: .85; }
+
+/* ロック：存在は分かっているが条件未達成。未発見より少し落ち着いた色調＋鍵を中心に強調（霧や紋様は出さない） */
+.mm-sealed--locked {
+  background: #ddd3c0;
+  box-shadow: inset 0 0.35rem 0.9rem rgba(90, 66, 48, .24), 0 0 0 0.2rem var(--line-soft);
+}
+.mm-sealed--locked::before { display: none; }
+.mm-sealed--locked::after { display: none; }
+.mm-sealed--locked .mm-lock { box-shadow: 0 0 0 0.25rem var(--line), 0 0 0 0.4rem rgba(184, 153, 90, .35), 0 0.3rem 0.6rem rgba(70, 45, 20, .2); }
+.mm-silhouette { filter: brightness(0); opacity: .75; }
+
+.mm-pending {
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 0.8rem;
+  border-radius: 1rem;
+  background: var(--paper-3);
+  box-shadow: inset 0 0.2rem 0.5rem rgba(90, 66, 48, .15);
+  font: 500 2.4rem / 1.3 var(--font-main);
+  color: var(--muted);
+}

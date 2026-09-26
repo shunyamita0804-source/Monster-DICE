@@ -1,0 +1,106 @@
+/* =========================================================
+   パネル
+   paper …… 通常：アイボリーの紙＋細い焦げ茶の外線＋ごく細い真鍮の内線
+   soft ……… 一段沈んだ面（枠の中の小さなまとまり）
+   important 重要な確認：金の細線を2本だけ（太い金枠は使わない）
+   wood …… 看板の見せ場だけ
+   旧名 leather / iron / parchment → paper、gold → important として扱う
+   ========================================================= */
+.mm-panel {
+  position: relative;
+  border-radius: 1.6rem;
+  color: var(--ink-2);
+  background: var(--surface-paper);
+  box-shadow: 0 0 0 0.3rem var(--line), var(--shadow);
+}
+.mm-panel::before {                        /* ごく細い真鍮の内線 */
+  content: "";
+  position: absolute;
+  inset: 0.9rem;
+  border: 0.16rem solid rgba(184, 153, 90, .55);
+  border-radius: 0.9rem;
+  pointer-events: none;
+}
+.mm-panel__bg, .mm-panel__inlay, .mm-panel__rivets { display: none; }
+.mm-panel__body { position: relative; padding: 4rem 4.4rem; }
+.mm-orn { position: absolute; z-index: 2; width: 6.4rem; height: 6.4rem; background-size: 100% 100%; pointer-events: none; opacity: .9; }
+.mm-orn--tl { left: 0.3rem; top: 0.3rem; background-image: var(--orn-corner-tl); }
+.mm-orn--tr { right: 0.3rem; top: 0.3rem; background-image: var(--orn-corner-tr); }
+.mm-orn--bl { left: 0.3rem; bottom: 0.3rem; background-image: var(--orn-corner-bl); }
+.mm-orn--br { right: 0.3rem; bottom: 0.3rem; background-image: var(--orn-corner-br); }
+
+.mm-panel--soft, .mm-panel--iron { background: var(--surface-paper-2); box-shadow: 0 0 0 0.25rem var(--line-soft); }
+.mm-panel--soft::before, .mm-panel--iron::before { display: none; }
+
+.mm-panel--important, .mm-panel--gold { box-shadow: 0 0 0 0.22rem var(--gold), var(--shadow), 0 0 0 0.7rem var(--gold-soft); }
+.mm-panel--important::before, .mm-panel--gold::before { border-color: var(--gold); border-width: 0.16rem; }
+.mm-panel--important::after, .mm-panel--gold::after {
+  content: "";
+  position: absolute;
+  inset: 1.4rem;
+  border: 0.12rem solid rgba(201, 151, 58, .45);
+  border-radius: 0.6rem;
+  pointer-events: none;
+}
+
+.mm-panel.is-translucent { background: rgba(250, 246, 236, .86); -webkit-backdrop-filter: blur(1.4rem) saturate(1.1); backdrop-filter: blur(1.4rem) saturate(1.1); }
+
+.mm-panel--wood { color: #fffaf0; background: linear-gradient(180deg, rgba(255, 214, 150, .1), rgba(0, 0, 0, .3)), var(--tex-wood-dark) center / var(--tex-size) repeat, #3a2314; box-shadow: 0 0 0 0.3rem #2a1a0e, var(--shadow); }
+
+/* =========================================================
+   名札（アイボリー＋細い焦げ茶と真鍮の線）
+   見出し看板（木＋金文字）… 施設・街の看板だけ
+   ========================================================= */
+.mm-plate {
+  --h: 8rem;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 0.2rem;
+  height: var(--h);
+  min-width: 16rem;
+  padding: 0 3.2rem;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #fffcf5, #efe5d0);
+  box-shadow: 0 0 0 0.16rem var(--line), 0 0.25rem 0.5rem rgba(70, 45, 20, .14);
+  font-size: 3.6rem;
+  font-weight: 700;
+  line-height: 1.1;
+  white-space: nowrap;
+  color: var(--ink);
+}
+.mm-plate::before, .mm-plate::after {         /* 両端の小さな菱形飾り（ボタンと共通の語彙） */
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 0.9rem;
+  height: 0.9rem;
+  transform: translateY(-50%) rotate(45deg);
+  background: var(--brass);
+  opacity: .85;
+}
+.mm-plate::before { left: 1.5rem; }
+.mm-plate::after { right: 1.5rem; }
+.mm-plate__cap { display: none; }
+.mm-plate__text { position: relative; }
+.mm-plate--tall { --h: 11.6rem; padding: 0 3rem; }
+.mm-plate--inline { --h: 9.2rem; flex-direction: row; gap: 1.2rem; }
+
+/* 見出し看板：木＋金文字。施設・街の看板だけに使う */
+.mm-sign {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 11.6rem;
+  min-width: 28rem;
+  padding: 0 4.4rem;
+  border-radius: 1.2rem;
+  background: linear-gradient(180deg, rgba(255, 214, 150, .1), rgba(0, 0, 0, .3)), var(--tex-wood-dark) center / var(--tex-size) repeat, #3a2314;
+  box-shadow: 0 0 0 0.28rem #2a1a0e, 0 0 0 0.4rem var(--brass), 0 0.6rem 1.2rem rgba(0, 0, 0, .35);
+  font-size: 6rem;
+  letter-spacing: 0.2rem;
+}
+.mm-sign .mm-plate__cap, .mm-sign::before, .mm-sign::after { display: none; }

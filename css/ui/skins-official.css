@@ -1,0 +1,24 @@
+/* =========================================================
+   正式の部品画像への切り替え
+   素材台帳で ui.panel.wood などを official にすると、html に has-ui-panel-wood が付き、
+   CSSで作った縁・影を消して、1枚絵を9分割で伸縮して表示する。
+   ========================================================= */
+.has-ui-panel-wood .mm-panel--wood,
+.has-ui-panel-gold .mm-panel--gold,
+.has-ui-panel-parchment .mm-panel--parchment { box-shadow: 0 1.4rem 2.8rem rgba(0, 0, 0, .5); }
+
+.has-ui-panel-wood .mm-panel--wood { border: var(--width-ui-panel-wood) solid transparent; border-image: var(--img-ui-panel-wood) var(--slice-ui-panel-wood) fill / var(--width-ui-panel-wood) stretch; }
+.has-ui-panel-gold .mm-panel--gold { border: var(--width-ui-panel-gold) solid transparent; border-image: var(--img-ui-panel-gold) var(--slice-ui-panel-gold) fill / var(--width-ui-panel-gold) stretch; }
+.has-ui-panel-parchment .mm-panel--parchment { border: var(--width-ui-panel-parchment) solid transparent; border-image: var(--img-ui-panel-parchment) var(--slice-ui-panel-parchment) fill / var(--width-ui-panel-parchment) stretch; }
+
+.has-ui-panel-wood .mm-panel--wood > :is(.mm-panel__bg, .mm-panel__inlay),
+.has-ui-panel-gold .mm-panel--gold > :is(.mm-panel__bg, .mm-panel__inlay, .mm-orn),
+.has-ui-panel-parchment .mm-panel--parchment > :is(.mm-panel__bg, .mm-panel__inlay, .mm-orn),
+.has-ui-panel-wood .mm-panel--wood::before, .has-ui-panel-wood .mm-panel--wood::after,
+.has-ui-panel-gold .mm-panel--gold::before, .has-ui-panel-gold .mm-panel--gold::after,
+.has-ui-panel-parchment .mm-panel--parchment::before, .has-ui-panel-parchment .mm-panel--parchment::after { display: none; }
+
+.has-ui-button-normal .mm-btn--wood { background: none; border-image: var(--img-ui-button-normal) var(--slice-ui-button-normal) fill / var(--width-ui-button-normal) stretch; box-shadow: none; }
+.has-ui-button-pressed .mm-btn--wood:active, .has-ui-button-pressed .mm-btn--wood.is-pressed { border-image-source: var(--img-ui-button-pressed); }
+.has-ui-button-disabled .mm-btn--wood:disabled, .has-ui-button-disabled .mm-btn--wood.is-disabled { border-image-source: var(--img-ui-button-disabled); filter: none; }
+.has-ui-button-normal .mm-btn--wood::before, .has-ui-button-normal .mm-btn--wood::after { display: none; }

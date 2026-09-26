@@ -1,0 +1,115 @@
+/* =========================================================
+   ファームの操作プレート／技のセット6枠／技カード
+   ========================================================= */
+
+/* ファーム操作コマンド：横長プレート。テキストを主役に、小さな丸アイコンを添える。
+   街の施設コマンドと同じ「文字で読んで操作する」思想だが、ファーム専用の形にする。
+   選択中だけ：少し浮く・金の細線・アイコンの背景が明るくなる */
+.mm-cmd {
+  --depth: 0.35rem;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 1.6rem;
+  width: 100%;
+  height: 10.4rem;
+  padding: 0 2.6rem;
+  border: 0;
+  border-radius: 1.4rem;
+  background: linear-gradient(180deg, #fffdf8, #f6f0e2);
+  /* 焦げ茶の細い縁＋ごく薄い金の外周アクセント＋内側の柔らかいハイライトと陰影 */
+  box-shadow:
+    0 0 0 0.18rem var(--line),
+    0 0 0 0.26rem rgba(199, 163, 90, .3),
+    inset 0 0.16rem 0 rgba(255, 255, 255, .65),
+    inset 0 -0.35rem 0.6rem rgba(70, 45, 20, .07),
+    0 var(--depth) 0.7rem rgba(70, 45, 20, .1);
+  font-family: var(--font-main);
+  cursor: pointer;
+  transition: transform .1s ease-out, box-shadow .12s ease-out, background .15s;
+}
+.mm-cmd__sweep, .mm-cmd__gem { display: none; }
+.mm-cmd__socket {
+  --socket-c: var(--muted);
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 6.2rem;
+  height: 6.2rem;
+  border-radius: 50%;
+  background: radial-gradient(65% 65% at 38% 32%, color-mix(in srgb, var(--socket-c) 22%, #fffdf8), var(--paper-2));
+  box-shadow: inset 0 0.12rem 0 rgba(255, 255, 255, .7), inset 0 -0.18rem 0.3rem rgba(70, 45, 20, .1), 0 0 0 0.09rem color-mix(in srgb, var(--socket-c) 35%, transparent);
+  transition: background .15s;
+}
+/* コマンドごとの控えめな色味（金属・エナメル・宝石を思わせる上品な色差） */
+.mm-cmd__socket--board     { --socket-c: #3f8f6a; }  /* 深い緑：地図・大地 */
+.mm-cmd__socket--training  { --socket-c: #b8503a; }  /* 落ち着いた辰砂色：鍛錬 */
+.mm-cmd__socket--status    { --socket-c: #3f6fc0; }  /* 青：盾のエナメル */
+.mm-cmd__socket--moves     { --socket-c: #c98a2e; }  /* 金〜オレンジ：技のきらめき */
+.mm-cmd__socket--items     { --socket-c: #8a6a2e; }  /* アンバー：道具袋 */
+.mm-cmd__socket .mm-icon { width: 4.2rem; height: 4.2rem; opacity: .88; }
+.mm-cmd__label { flex: 1; text-align: left; font-size: 3.8rem; font-weight: 700; color: var(--ink-2); white-space: nowrap; }
+.mm-cmd__chevron { flex: none; width: 1.4rem; height: 2.6rem; background: var(--faint); clip-path: polygon(0 0, 100% 50%, 0 100%, 0 76%, 60% 50%, 0 24%); }
+
+.mm-cmd:active:not(.is-disabled), .mm-cmd.is-pressed { transform: translateY(0.12rem); background: linear-gradient(180deg, #f3ecdb, #ece3cf); box-shadow: 0 0 0 0.18rem var(--line), 0 0 0 0.26rem rgba(199, 163, 90, .22), inset 0 0.25rem 0.5rem rgba(70, 45, 20, .12); }
+.mm-cmd.is-selected {
+  transform: translateY(-0.15rem);
+  background: linear-gradient(180deg, #fffaec, #faeeca);
+  box-shadow: 0 0 0 0.2rem var(--gold), 0 0 0 0.5rem var(--gold-soft), 0 var(--depth) 0.9rem rgba(70, 45, 20, .14);
+}
+.mm-cmd.is-selected .mm-cmd__socket { background: linear-gradient(180deg, #fff3cf, #f4dfa0); box-shadow: 0 0 0 0.14rem rgba(201, 151, 58, .55); }
+.mm-cmd.is-selected .mm-cmd__socket .mm-icon { opacity: 1; }
+.mm-cmd.is-selected .mm-cmd__label { color: var(--ink); }
+.mm-cmd.is-selected .mm-cmd__chevron { background: var(--gold); }
+.mm-cmd.is-disabled { cursor: default; filter: saturate(.3); opacity: .55; }
+
+/* 技のセット6枠（番号は小さな補助） */
+.mm-slots { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2rem; }
+.mm-slot {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1.6rem;
+  height: 11.6rem;
+  padding: 0 2rem 0 2.2rem;
+  border-radius: 1rem;
+  background: linear-gradient(90deg, var(--c, transparent) 0 0.6rem, transparent 0.6rem), var(--surface-paper);
+  box-shadow: 0 0 0 0.22rem var(--line), 0 0.3rem 0.6rem rgba(70, 45, 20, .1);
+}
+.mm-slot__no { display: grid; place-items: center; width: 3.8rem; height: 3.8rem; border-radius: 50%; box-shadow: 0 0 0 0.16rem var(--line-soft); font: 700 2.4rem / 1 var(--font-main); color: var(--muted); }
+.mm-slot__main { min-width: 0; }
+.mm-slot__name { font-size: 3.8rem; font-weight: 700; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mm-slot__cat { margin-top: 0.4rem; font-size: 2.6rem; font-weight: 700; color: var(--c-dark, var(--muted)); }
+.mm-grip { width: 2.6rem; height: 3rem; background: repeating-linear-gradient(180deg, var(--faint) 0 0.35rem, transparent 0.35rem 0.9rem); }
+.mm-slot.is-empty { background: var(--paper-3); box-shadow: inset 0 0.25rem 0.6rem rgba(90, 66, 48, .12); }
+.mm-slot.is-empty::after { content: ""; position: absolute; inset: 1.2rem; border: 0.2rem dashed var(--line-soft); border-radius: 0.6rem; pointer-events: none; }
+
+/* 技カード：白に近いアイボリー。技イラストが主役。色は左端の細い線と分類タグだけ */
+.mm-move {
+  position: relative;
+  display: grid;
+  grid-template-columns: 34rem minmax(0, 1fr);
+  gap: 2.8rem;
+  padding: 1.9rem 2.5rem 1.9rem 2.7rem;
+  border: 0.14rem solid var(--line);
+  border-radius: 1.4rem;
+  background: linear-gradient(90deg, var(--c) 0 0.6rem, transparent 0.6rem), var(--surface-paper-bright);
+  /* 実線の焦げ茶〜アンティークゴールドの縁ではっきり境界を作り、内側にごく薄いハイライトを添える */
+  box-shadow: 0 0 0 0.22rem rgba(199, 163, 90, .42), inset 0 0.12rem 0 rgba(255, 255, 255, .55), var(--shadow);
+}
+.mm-move__art { position: relative; align-self: center; height: 19.6rem; border-radius: 1rem; overflow: hidden; background: var(--paper-3); box-shadow: 0 0 0 0.2rem var(--line); }
+.mm-move__art > div { position: absolute; inset: 0; background-repeat: no-repeat; }
+.mm-move__art .mm-pending { position: absolute; inset: 0; border-radius: 0; box-shadow: none; }
+.mm-move__main { display: grid; gap: 1.2rem; align-content: center; min-width: 0; }
+.mm-move__top { display: flex; align-items: center; gap: 1.4rem; }
+.mm-move__name { font-size: 4.8rem; font-weight: 700; color: var(--ink); white-space: nowrap; }
+.mm-move__desc { font-size: 3rem; font-weight: 500; color: var(--muted); line-height: 1.5; }
+.mm-move__effect { font-size: 2.9rem; font-weight: 700; color: var(--c-dark); line-height: 1.45; }
+.mm-badge { display: inline-flex; align-items: center; margin-left: auto; padding: 0.7rem 1.6rem; border-radius: 0.7rem; background: var(--c); font: 700 2.7rem / 1 var(--font-main); color: #fffaf0; white-space: nowrap; }
+.mm-badge .mm-icon { display: none; }
+.mm-stats { display: flex; align-items: stretch; margin-top: 0.4rem; }
+.mm-stat { display: grid; gap: 0.5rem; padding: 0 2.4rem; border-left: 0.16rem solid var(--line-soft); }
+.mm-stat:first-child { padding-left: 0; border-left: 0; }
+.mm-stat__k { font-size: 2.5rem; font-weight: 500; color: var(--muted); white-space: nowrap; }
+.mm-stat__v { font-size: 4.2rem; font-weight: 800; line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; }

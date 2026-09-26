@@ -1,0 +1,48 @@
+/* =========================================================
+   会話（紙）／確認（重要：金の細線）／案内（紙）
+   会話：立ち絵がある時だけ .mm-talk__portrait を置く（空の枠は作らない）
+   ========================================================= */
+.mm-talk { position: relative; padding-top: 4.2rem; }
+.mm-talk__portrait { position: absolute; left: 3rem; bottom: calc(100% - 5.6rem); width: 30rem; height: 30rem; z-index: 0; pointer-events: none; }
+.mm-talk__portrait img { width: 100%; height: 100%; object-fit: contain; object-position: bottom; }
+.mm-talk__portrait.is-framed { width: 22rem; height: 22rem; bottom: calc(100% - 5.6rem); border-radius: 50%; overflow: hidden; background: var(--paper-2); box-shadow: 0 0 0 0.3rem var(--line), 0 0.5rem 1rem rgba(70, 45, 20, .2); }
+.mm-talk.has-portrait { margin-top: 20rem; }
+.mm-talk .mm-panel { z-index: 1; }
+.mm-talk__name { position: absolute; left: 4rem; top: 0; z-index: 3; }
+.mm-talk.has-portrait .mm-talk__name { left: 28rem; }
+.mm-talk__text { min-height: 18rem; margin: 0; padding: 1.2rem 0.8rem 0.8rem; font-size: var(--fs-body); line-height: 1.75; color: var(--ink-2); white-space: pre-line; }
+.mm-talk__next { position: absolute; right: 4rem; bottom: 3.4rem; z-index: 3; width: 3rem; height: 2.2rem; background: var(--line); clip-path: polygon(0 0, 100% 0, 50% 100%); animation: mm-bob 1.1s ease-in-out infinite; }
+@keyframes mm-bob { 50% { transform: translateY(0.7rem); } }
+
+.mm-dialog { position: relative; }
+.mm-dialog .mm-panel__body { padding: 5.2rem 4.8rem 4.8rem; text-align: center; }
+.mm-dialog__title {                            /* 題：濃い焦げ茶の文字＋両脇に小さな金の印 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  margin: 0 0 3.2rem;
+  font-size: var(--fs-heading);
+  font-weight: 700;
+  color: var(--ink);
+}
+.mm-dialog__title::before, .mm-dialog__title::after { content: ""; width: 1.4rem; height: 1.4rem; transform: rotate(45deg); background: var(--gold); }
+.mm-dialog__icon { display: flex; justify-content: center; margin: 0 0 2.4rem; }
+.mm-dialog__icon .mm-icon { width: 9.6rem; height: 9.6rem; }
+.mm-dialog__message { margin: 0 0 4.6rem; font-size: 4rem; line-height: 1.7; color: var(--ink-2); white-space: pre-line; }
+.mm-dialog__actions { display: flex; justify-content: center; gap: 3.6rem; }
+.mm-dialog__actions .mm-btn { min-width: 28rem; }
+
+.mm-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: calc(env(safe-area-inset-top, 0px) + 2rem) 4rem calc(env(safe-area-inset-bottom, 0px) + 2rem);
+  background: rgba(40, 28, 16, .45);
+  animation: mm-fade .16s ease-out;
+}
+.mm-modal > * { width: min(100%, 96rem); animation: mm-pop .2s cubic-bezier(.2, 1.2, .4, 1); }
+@keyframes mm-fade { from { opacity: 0; } }
+@keyframes mm-pop { from { transform: scale(.96); opacity: 0; } }
