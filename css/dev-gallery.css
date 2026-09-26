@@ -1,0 +1,85 @@
+/* 開発用：UI部品集のレイアウト（部品そのものの見た目は css/ui/ にある） */
+.gx-dim { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(20, 10, 4, .35), rgba(20, 10, 4, .55)); pointer-events: none; }
+.gx-header {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 19rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 3rem;
+  z-index: 5;
+  background: linear-gradient(180deg, rgba(20, 10, 4, .75), rgba(20, 10, 4, 0));
+}
+.gx-header .mm-sign { --h: 12rem; }
+.gx-header .mm-sign .mm-plate__body { font-size: 6rem; min-width: 26rem; }
+.gx-header__tools { display: grid; gap: 2rem; justify-items: end; }
+.gx-header__tools .mm-btn { min-width: 26rem; }
+.gx-scroll { position: absolute; left: 0; right: 0; top: 19rem; bottom: 0; }
+.gx-content { padding: 3rem 4.4rem 16rem; display: grid; grid-template-columns: minmax(0, 1fr); gap: 7rem; }
+.gx-lead, .gx-foot { margin: 0; font-size: 3.4rem; line-height: 1.6; }
+.gx-section { display: grid; grid-template-columns: minmax(0, 1fr); gap: 5.2rem; }
+.gx-section__title { display: flex; justify-content: center; }
+.gx-section__title .mm-plate { --h: 10.4rem; }
+.gx-section__title .mm-plate__body { font-size: 4.8rem; min-width: 30rem; }
+.gx-item { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2.6rem; }
+.gx-item__body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 3.6rem; }
+.gx-cap {
+  display: flex;
+  align-items: center;
+  gap: 1.6rem;
+  font-size: 3.2rem;
+  font-weight: 800;
+  line-height: 1.35;
+  color: var(--mm-cream);
+  text-shadow: var(--mm-text-outline-thin);
+}
+.gx-cap__no {
+  flex: none;
+  display: grid;
+  place-items: center;
+  min-width: 6rem;
+  height: 6rem;
+  padding: 0 1.2rem;
+  border-radius: 3rem;
+  background: linear-gradient(180deg, #5a3519, #2c180b);
+  box-shadow: 0 0 0 0.3rem #c99a44, 0 0 0 0.55rem var(--mm-outline);
+  font-size: 3rem;
+}
+.gx-row { display: flex; flex-wrap: wrap; gap: 4rem; align-items: center; }
+.gx-row--center { justify-content: center; }
+.gx-row--baseline { align-items: baseline; }
+.gx-grid2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 4.4rem 3rem; }
+.gx-grid2 .mm-btn { min-width: 0; width: 100%; padding: 0 2rem; font-size: 4.2rem; }
+.gx-grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4rem 2rem; }
+.gx-stack { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4rem; justify-items: stretch; }
+.gx-stack .mm-gold { justify-self: center; }
+.gx-gauges { gap: 4.4rem; padding: 1rem 1.2rem; }
+.gx-panel-demo { display: grid; gap: 1.8rem; }
+.gx-panel-title { font-size: 5.2rem; }
+.gx-body-ink { font-size: 4rem; line-height: 1.6; }
+.gx-tab-body { padding: 2rem 0; }
+.gx-coins { gap: 5rem; }
+.gx-coin-lg { width: 16rem; height: 16rem; }
+.gx-coin-md { width: 10rem; height: 10rem; }
+.gx-radar { padding: 1rem 2rem; }
+.gx-unknown-plate {
+  display: grid;
+  place-items: center;
+  height: 10rem;
+  padding: 0 4rem;
+  border-radius: 5rem;
+  background: linear-gradient(180deg, rgba(0, 0, 0, .45), rgba(0, 0, 0, .2)), var(--tex-wood-dark) center / var(--tex-size) repeat, #24130a;
+  box-shadow: inset 0 0.5rem 1rem rgba(0, 0, 0, .7), 0 0 0 0.4rem #6f6452, 0 0 0 0.7rem var(--mm-outline);
+}
+.gx-mslots { display: grid; grid-template-columns: repeat(2, 32rem); justify-content: space-evenly; gap: 6rem 4rem; padding: 3rem 0 2rem; }
+.gx-tiles { display: grid; gap: 1.4rem; padding: 1.2rem 0; }
+.gx-tiles--row { display: flex; flex-direction: column; gap: 1.4rem; }
+
+.gx-ladder { display: grid; gap: 4rem; }
+.gx-crests { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4rem 2rem; justify-items: center; }
+.gx-crest { display: grid; justify-items: center; gap: 1.4rem; }
+.gx-crest .mm-icon { width: 20rem; height: 20rem; }
+.gx-sealed-plate .mm-sealed { height: 11rem; padding: 0 5rem; }
