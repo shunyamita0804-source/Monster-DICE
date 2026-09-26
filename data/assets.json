@@ -129,66 +129,66 @@
     {
       "id": "ui.panel.wood",
       "kind": "ui",
-      "status": "missing",
-      "path": "assets/ui/panel_wood.png",
-      "usage": "木枠パネル（伸縮用）",
-      "note": ""
+      "status": "provisional",
+      "path": null,
+      "usage": "木枠パネル",
+      "note": "CSSで仮制作（css/ui/）。正式画像は path・slice・width を書いて official に"
     },
     {
       "id": "ui.button.normal",
       "kind": "ui",
-      "status": "missing",
-      "path": "assets/ui/button_normal.png",
+      "status": "provisional",
+      "path": null,
       "usage": "ボタン（通常）",
-      "note": ""
+      "note": "CSSで仮制作（css/ui/）。正式画像は path・slice・width を書いて official に"
     },
     {
       "id": "ui.button.pressed",
       "kind": "ui",
-      "status": "missing",
-      "path": "assets/ui/button_pressed.png",
+      "status": "provisional",
+      "path": null,
       "usage": "ボタン（押下）",
-      "note": ""
+      "note": "CSSで仮制作（css/ui/）。正式画像は path・slice・width を書いて official に"
     },
     {
       "id": "ui.button.disabled",
       "kind": "ui",
-      "status": "missing",
-      "path": "assets/ui/button_disabled.png",
+      "status": "provisional",
+      "path": null,
       "usage": "ボタン（無効）",
-      "note": ""
+      "note": "CSSで仮制作（css/ui/）。正式画像は path・slice・width を書いて official に"
     },
     {
       "id": "ui.plate.name",
       "kind": "ui",
-      "status": "missing",
-      "path": "assets/ui/plate_name.png",
+      "status": "provisional",
+      "path": null,
       "usage": "名札プレート",
-      "note": ""
+      "note": "CSSで仮制作（css/ui/frames.css）"
     },
     {
       "id": "ui.signboard",
       "kind": "ui",
-      "status": "missing",
-      "path": "assets/ui/signboard.png",
+      "status": "provisional",
+      "path": null,
       "usage": "見出し看板",
-      "note": ""
+      "note": "CSSで仮制作（css/ui/frames.css）"
     },
     {
       "id": "ui.dialog",
       "kind": "ui",
-      "status": "missing",
-      "path": "assets/ui/dialog.png",
+      "status": "provisional",
+      "path": null,
       "usage": "ダイアログ枠",
-      "note": ""
+      "note": "CSSで仮制作（css/ui/dialogs.css）"
     },
     {
       "id": "ui.tab",
       "kind": "ui",
-      "status": "missing",
-      "path": "assets/ui/tab.png",
+      "status": "provisional",
+      "path": null,
       "usage": "タブ",
-      "note": ""
+      "note": "CSSで仮制作（css/ui/buttons.css）"
     },
     {
       "id": "ui.command.panel",
@@ -196,7 +196,7 @@
       "status": "missing",
       "path": "assets/ui/command_panel.png",
       "usage": "街の右コマンドパネル",
-      "note": ""
+      "note": "街の画面で制作（ステップ5）。部品はパネル・ボタンを流用"
     },
     {
       "id": "ui.command.farm",
@@ -204,119 +204,119 @@
       "status": "missing",
       "path": "assets/ui/command_farm.png",
       "usage": "ファーム特別枠",
-      "note": ""
+      "note": "街の画面で制作（ステップ5）。部品はパネル・ボタンを流用"
     },
     {
       "id": "ui.bar.status",
       "kind": "ui",
-      "status": "missing",
-      "path": "assets/ui/bar_status.png",
+      "status": "provisional",
+      "path": null,
       "usage": "日付・所持金バー",
-      "note": ""
+      "note": "CSSで仮制作（css/ui/values.css（所持G表示を流用予定））"
     },
     {
       "id": "ui.gauge.frame",
       "kind": "ui",
-      "status": "missing",
-      "path": "assets/ui/gauge_frame.png",
-      "usage": "パラメーターゲージの器",
-      "note": ""
+      "status": "provisional",
+      "path": null,
+      "usage": "能力計器の枠",
+      "note": "CSSで仮制作（css/ui/values.css）"
     },
     {
       "id": "icon.gold",
       "kind": "icon",
-      "status": "missing",
-      "path": "assets/ui/icon_gold.png",
+      "status": "provisional",
+      "path": "assets/ui/provisional/icons/coin.svg",
       "usage": "通貨アイコン（金貨）",
-      "note": "金貨1種に統一"
+      "note": "SVG仮素材（羅針の星）。固有の紋章が決まったら差し替え"
     },
     {
       "id": "icon.param.life",
       "kind": "icon",
       "status": "missing",
-      "path": "assets/ui/param_life.png",
-      "usage": "パラメーターアイコン：ライフ",
-      "note": "6色ルールに合わせる"
+      "path": "assets/ui/provisional/icons/param-life.svg",
+      "usage": "能力紋章：ライフ（太陽）",
+      "note": "今回の方針で能力アイコンは廃止。能力名の文字＋能力色の細い線で表現（未参照）"
     },
     {
       "id": "icon.param.power",
       "kind": "icon",
       "status": "missing",
-      "path": "assets/ui/param_power.png",
-      "usage": "パラメーターアイコン：ちから",
-      "note": "6色ルールに合わせる"
+      "path": "assets/ui/provisional/icons/param-power.svg",
+      "usage": "能力紋章：ちから（剣）",
+      "note": "今回の方針で能力アイコンは廃止。能力名の文字＋能力色の細い線で表現（未参照）"
     },
     {
       "id": "icon.param.wisdom",
       "kind": "icon",
       "status": "missing",
-      "path": "assets/ui/param_wisdom.png",
-      "usage": "パラメーターアイコン：かしこさ",
-      "note": "6色ルールに合わせる"
+      "path": "assets/ui/provisional/icons/param-wisdom.svg",
+      "usage": "能力紋章：かしこさ（三日月と星）",
+      "note": "今回の方針で能力アイコンは廃止。能力名の文字＋能力色の細い線で表現（未参照）"
     },
     {
       "id": "icon.param.hit",
       "kind": "icon",
       "status": "missing",
-      "path": "assets/ui/param_hit.png",
-      "usage": "パラメーターアイコン：命中",
-      "note": "6色ルールに合わせる"
+      "path": "assets/ui/provisional/icons/param-hit.svg",
+      "usage": "能力紋章：命中（狙う目）",
+      "note": "今回の方針で能力アイコンは廃止。能力名の文字＋能力色の細い線で表現（未参照）"
     },
     {
       "id": "icon.param.evasion",
       "kind": "icon",
       "status": "missing",
-      "path": "assets/ui/param_evasion.png",
-      "usage": "パラメーターアイコン：回避",
-      "note": "6色ルールに合わせる"
+      "path": "assets/ui/provisional/icons/param-evasion.svg",
+      "usage": "能力紋章：回避（翼）",
+      "note": "今回の方針で能力アイコンは廃止。能力名の文字＋能力色の細い線で表現（未参照）"
     },
     {
       "id": "icon.param.toughness",
       "kind": "icon",
       "status": "missing",
-      "path": "assets/ui/param_toughness.png",
-      "usage": "パラメーターアイコン：丈夫さ",
-      "note": "6色ルールに合わせる"
+      "path": "assets/ui/provisional/icons/param-toughness.svg",
+      "usage": "能力紋章：丈夫さ（城壁の盾）",
+      "note": "今回の方針で能力アイコンは廃止。能力名の文字＋能力色の細い線で表現（未参照）"
     },
     {
       "id": "icon.farm.board",
       "kind": "icon",
-      "status": "missing",
-      "path": "assets/ui/farm_board.png",
+      "status": "provisional",
+      "path": "assets/ui/provisional/icons/farm-board.svg",
       "usage": "ファームコマンド：ボード",
-      "note": ""
+      "note": "SVG仮素材（羊皮紙のゲームボード＋カラフルな3つのマス＋サイコロ）。複数色のカラーイラスト調"
     },
     {
       "id": "icon.farm.training",
       "kind": "icon",
-      "status": "missing",
-      "path": "assets/ui/farm_training.png",
+      "status": "provisional",
+      "path": "assets/ui/provisional/icons/farm-training.svg",
       "usage": "ファームコマンド：修行",
-      "note": ""
+      "note": "SVG仮素材（鉄製の訓練用ダンベル＋橙色の衝撃エフェクト）。複数色のカラーイラスト調"
     },
     {
       "id": "icon.farm.status",
       "kind": "icon",
-      "status": "missing",
-      "path": "assets/ui/farm_status.png",
+      "status": "provisional",
+      "path": "assets/ui/provisional/icons/farm-status.svg",
       "usage": "ファームコマンド：ステータス",
-      "note": ""
+      "note": "SVG仮素材（盾＋中央に紫の宝石＋淡い光）。複数色のカラーイラスト調"
     },
     {
       "id": "icon.farm.moves",
       "kind": "icon",
-      "status": "missing",
-      "path": "assets/ui/farm_moves.png",
+      "status": "provisional",
+      "path": "assets/ui/provisional/icons/farm-moves.svg",
       "usage": "ファームコマンド：技管理",
-      "note": ""
+      "note": "SVG仮素材（オリジナルの緑スライムが木製の的に体当たりする瞬間。スピードライン＋黄色い衝撃エフェクト）。葉や既存モンスターのモチーフは使用しない"
     },
     {
       "id": "icon.farm.items",
       "kind": "icon",
-      "status": "missing",
-      "path": "assets/ui/farm_items.png",
+      "status": "provisional",
+      "path": "assets/ui/provisional/icons/farm-items.svg",
       "usage": "ファームコマンド：アイテム",
-      "note": ""
+      "note": "SVG仮素材（革の小袋。開口部から小瓶・薬草・木の実が覗く）。複数色のカラーイラスト調"
     },
     {
       "id": "facility.market.thumb",
@@ -444,7 +444,7 @@
       "status": "missing",
       "path": "assets/moves/",
       "usage": "ガウルの技イラスト9種",
-      "note": "プロフィール画像内に存在。単体切り出し待ち"
+      "note": "単体素材待ち。UI部品集では正式プロフィール画像から切り出して表示"
     },
     {
       "id": "moves.soramo",
@@ -533,6 +533,182 @@
       "path": "assets/audio/",
       "usage": "BGM・効果音",
       "note": ""
+    },
+    {
+      "id": "ui.tex.wood_dark",
+      "kind": "ui",
+      "status": "provisional",
+      "path": "assets/ui/provisional/wood_dark.jpg",
+      "usage": "質感：濃い木目（大型看板・施設名だけ）",
+      "note": "プログラム生成の仮素材"
+    },
+    {
+      "id": "ui.tex.wood_light",
+      "kind": "ui",
+      "status": "provisional",
+      "path": "assets/ui/provisional/wood_light.jpg",
+      "usage": "質感：明るい木目（現在は未使用。看板の予備）",
+      "note": "プログラム生成の仮素材"
+    },
+    {
+      "id": "ui.tex.parchment",
+      "kind": "ui",
+      "status": "provisional",
+      "path": "assets/ui/provisional/parchment.jpg",
+      "usage": "質感：現在未使用（技カード等はpaperに統一）",
+      "note": "プログラム生成の仮素材"
+    },
+    {
+      "id": "ui.orn.corner_tl",
+      "kind": "ui",
+      "status": "provisional",
+      "path": "assets/ui/provisional/corner-tl.svg",
+      "usage": "パネル角の蔦飾り（軽い装飾）",
+      "note": "葉のシルエットSVG。参考画像の方向に合わせて作り直し"
+    },
+    {
+      "id": "ui.orn.corner_tr",
+      "kind": "ui",
+      "status": "provisional",
+      "path": "assets/ui/provisional/corner-tr.svg",
+      "usage": "パネル角の蔦飾り（軽い装飾）",
+      "note": "葉のシルエットSVG。参考画像の方向に合わせて作り直し"
+    },
+    {
+      "id": "ui.orn.corner_bl",
+      "kind": "ui",
+      "status": "provisional",
+      "path": "assets/ui/provisional/corner-bl.svg",
+      "usage": "パネル角の蔦飾り（軽い装飾）",
+      "note": "葉のシルエットSVG。参考画像の方向に合わせて作り直し"
+    },
+    {
+      "id": "ui.orn.corner_br",
+      "kind": "ui",
+      "status": "provisional",
+      "path": "assets/ui/provisional/corner-br.svg",
+      "usage": "パネル角の蔦飾り（軽い装飾）",
+      "note": "葉のシルエットSVG。参考画像の方向に合わせて作り直し"
+    },
+    {
+      "id": "ui.plate.cap_l",
+      "kind": "ui",
+      "status": "provisional",
+      "path": "assets/ui/provisional/plate-cap-l.svg",
+      "usage": "名札：現在未使用（バナー型に変更しCSSのみで表現）",
+      "note": "参照は残すが描画では使っていない"
+    },
+    {
+      "id": "ui.sign.cap_l",
+      "kind": "ui",
+      "status": "provisional",
+      "path": "assets/ui/provisional/sign-cap-l.svg",
+      "usage": "看板：現在未使用（CSSのみで表現）",
+      "note": "SVG仮素材"
+    },
+    {
+      "id": "ui.plate.cap_r",
+      "kind": "ui",
+      "status": "provisional",
+      "path": "assets/ui/provisional/plate-cap-r.svg",
+      "usage": "名札：現在未使用（バナー型に変更しCSSのみで表現）",
+      "note": "参照は残すが描画では使っていない"
+    },
+    {
+      "id": "ui.sign.cap_r",
+      "kind": "ui",
+      "status": "provisional",
+      "path": "assets/ui/provisional/sign-cap-r.svg",
+      "usage": "看板：現在未使用（CSSのみで表現）",
+      "note": "SVG仮素材"
+    },
+    {
+      "id": "ui.panel.gold",
+      "kind": "ui",
+      "status": "provisional",
+      "path": null,
+      "usage": "金装飾付きパネル",
+      "note": "CSSで仮制作（css/ui/）。正式画像は path・slice・width を書いて official に"
+    },
+    {
+      "id": "ui.panel.parchment",
+      "kind": "ui",
+      "status": "provisional",
+      "path": null,
+      "usage": "羊皮紙パネル",
+      "note": "CSSで仮制作（css/ui/）。正式画像は path・slice・width を書いて official に"
+    },
+    {
+      "id": "icon.lock",
+      "kind": "icon",
+      "status": "provisional",
+      "path": "assets/ui/provisional/icons/lock.svg",
+      "usage": "錠前",
+      "note": "SVG仮素材（金の南京錠）。ロック状態（条件未達成）専用。未発見（ui.tex.seal）とは背景色調で区別"
+    },
+    {
+      "id": "icon.notice",
+      "kind": "icon",
+      "status": "provisional",
+      "path": "assets/ui/provisional/icons/notice.svg",
+      "usage": "案内の印",
+      "note": "SVG仮素材（葉の芽生え）"
+    },
+    {
+      "id": "icon.cat.power",
+      "kind": "icon",
+      "status": "missing",
+      "path": "assets/ui/provisional/icons/param-power.svg",
+      "usage": "技分類：ちから",
+      "note": "能力メダリオンと共に不使用（技カードは色帯とタグ文字のみ）"
+    },
+    {
+      "id": "icon.cat.wisdom",
+      "kind": "icon",
+      "status": "missing",
+      "path": "assets/ui/provisional/icons/param-wisdom.svg",
+      "usage": "技分類：かしこさ",
+      "note": "能力メダリオンと共に不使用（技カードは色帯とタグ文字のみ）"
+    },
+    {
+      "id": "icon.cat.support",
+      "kind": "icon",
+      "status": "missing",
+      "path": "assets/ui/provisional/icons/cat-support.svg",
+      "usage": "技分類：補助",
+      "note": "能力メダリオンと共に不使用（技カードは色帯とタグ文字のみ）"
+    },
+    {
+      "id": "ui.tex.leather",
+      "kind": "ui",
+      "status": "provisional",
+      "path": "assets/ui/provisional/leather.jpg",
+      "usage": "質感：濃い革（通常パネル・リスト・ステータス）",
+      "note": "現在未使用（前回案の名残）。紙(paper)に置き換え"
+    },
+    {
+      "id": "ui.tex.iron",
+      "kind": "ui",
+      "status": "provisional",
+      "path": "assets/ui/provisional/iron.jpg",
+      "usage": "質感：黒鉄（システム・ゲージ・無効）",
+      "note": "現在未使用（前回案の名残）。紙(paper)に置き換え"
+    },
+    {
+      "id": "ui.tex.seal",
+      "kind": "ui",
+      "status": "provisional",
+      "path": "assets/ui/provisional/icons/seal.svg",
+      "usage": "封印の紋（未発見・ロック）",
+      "note": "青みがかった羅針の星（線を細く）。未発見（まだ記録されていない生物）専用の淡い図鑑紋様。ロック状態では使用しない"
+    },
+    {
+      "id": "ui.tex.paper",
+      "kind": "ui",
+      "status": "provisional",
+      "path": "assets/ui/provisional/paper.jpg",
+      "usage": "質感：明るいアイボリーの紙（通常面の基本）",
+      "note": "プログラム生成の仮素材。白70/クリーム20/古紙感10"
     }
   ]
 }
