@@ -1,0 +1,602 @@
+// =========================================================
+// Phase 8：育成進行システム（window.MMP8）
+//  「育成を開始した1体のモンスター」に、育成開始から育成完了までの進行を完全に紐づける。
+//   ・セーブv6（v4→v5→v6の段階移行・原文退避・自分より新しい版のセーブは読まない／上書きしない）
+//   ・個体uid／個体の育成状態（m.raise）
+//   ・Chapter進行（20ターン制・移動途中／分岐待ち／マス効果の途中保存）
+//   ・公式ランク大会（挑戦可能ランク・総当たりリーグ・優勝報酬）／育成放棄／最終Chapter判定
+//   ・戦闘前状態の保存と、旧fight()が付ける報酬の正規化（fight()本体・Battle Engineは無変更）
+//  画面描画・SE・Battle Engineには一切触れない純粋ロジック層。
+//  【暫定】と書いたものは正式データ未確定のための仮実装（差し替え口を用意）。
+// =========================================================
+(function (root) {
+  'use strict';
+  const P7 = root.MMP7;
+  if (!P7) throw new Error('MMP8：先に js/phase7/progression.js を読み込んでください');
+  const API = {};
+  const isObj = (o) => !!o && typeof o === 'object' && !Array.isArray(o);
+  const clone = (o) => JSON.parse(JSON.stringify(o));
+  const RAISE = P7.RAISE;
+  const monstersOf = (S) => [S.m, ...(Array.isArray(S.box) ? S.box : [])].filter(Boolean);
+  // Phase 10：個体の補正フック。後から読み込むモジュール（正式モンスターマスターなど）が登録し、
+  // 新しい個体の生成時（initIndividual）とセーブの読み込み時（normalizeV6）の両方で必ず呼ばれる。
+  const INDIVIDUAL_NORMALIZERS = [];
+  function addIndividualNormalizer(fn) { if (typeof fn === 'function' && !INDIVIDUAL_NORMALIZERS.includes(fn)) INDIVIDUAL_NORMALIZERS.push(fn); }
+  const runNormalizers = (m) => { for (const fn of INDIVIDUAL_NORMALIZERS) fn(m); return m; };
+
+  // =========================================================
+  // Chapter定義（ターン上限・挑戦ランク上限はここだけで管理する）
+  // =========================================================
+  const DEFAULT_TURN_LIMIT = 20;   // 通常Chapterの基本ターン数（1ターン＝サイコロ1回）。25/30へ変える場合はここを変えるだけ
+  const FINAL = 'final';           // 最終Chapter（旧称：裏ボスChapter）
+  const LAST_NORMAL_CHAPTER = 4;
+  const RANK_LETTERS = Object.freeze(['E', 'D', 'C', 'B', 'A', 'S']);
+  const RANK_E = 0, RANK_D = 1, RANK_A = 4, RANK_S = 5;
+  const CHAPTER_RULES = Object.freeze({
+    1: Object.freeze({ turnLimit: DEFAULT_TURN_LIMIT, rankCap: RANK_D, tournament: true }),   // Chapter 1だけ挑戦上限D
+    2: Object.freeze({ turnLimit: DEFAULT_TURN_LIMIT, rankCap: null, tournament: true }),
+    3: Object.freeze({ turnLimit: DEFAULT_TURN_LIMIT, rankCap: null, tournament: true }),
+    4: Object.freeze({ turnLimit: DEFAULT_TURN_LIMIT, rankCap: null, tournament: true }),
+    // 最終Chapter：正式マップ・名称・ボス・ターン数は未確定。ターン上限なし（null）で、
+    // ゴール到達で育成完了へ進む「土台」だけを持つ。
+    [FINAL]: Object.freeze({ turnLimit: null, rankCap: null, tournament: false }),
+  });
+  const FINAL_CHAPTER_MIN_RANK = RANK_A;   // Chapter 4終了時にA以上をクリア済みなら最終Chapterへ強制進行
+  function chapterRule(key) { return CHAPTER_RULES[key] || null; }
+  function chapterName(key) { if (key === FINAL) return '最終Chapter'; const d = P7.getChapterDef(key); return d ? d.name : ''; }
+  function highestCleared(m) { if (!m) return -1; P7.ensureProg(m); let h = -1; m.prog.rankClr.forEach((v, i) => { if (v) h = i; }); return h; }
+  /** 個体の表示ランク＝その個体がクリアした最高ランク（未クリアは「ー」） */
+  function rankLabel(m) { const h = highestCleared(m); return h >= 0 ? RANK_LETTERS[h] : 'ー'; }
+  Object.assign(API, { DEFAULT_TURN_LIMIT, FINAL, LAST_NORMAL_CHAPTER, RANK_LETTERS, CHAPTER_RULES, FINAL_CHAPTER_MIN_RANK,
+    chapterRule, chapterName, highestCleared, rankLabel });
+
+  // =========================================================
+  // 個体の育成状態（m.raise）と uid
+  // =========================================================
+  function newRaise() {
+    return {
+      state: RAISE.NONE,   // none=未育成 / board=Chapter進行中 / farm=Chapter間ファーム / final=最終Chapter進行中 / done=育成完了
+      ch: null,            // board・final：進行中のChapter、farm：次に出発するChapter（1〜4 または 'final'）
+      node: null,          // Chapter内の現在位置（null＝そのChapterの開始地点）
+      turnsUsed: 0,        // このChapterで使ったターン
+      turnLimit: null,     // 出発時に確定したターン上限（null＝上限なし）
+      pend: null,          // 1ターンの途中状態（出目・残り移動・分岐待ち・マス処理）
+      goal: false,         // このChapterのゴールに到達したか
+      tour: null,          // 公式ランク大会の状態
+      battle: null,        // 戦闘前状態（fight()前後の正規化用）
+      trainRun: null,      // 修行中の状態
+      log: [],             // 終えたChapterごとの結果
+    };
+  }
+  const RAISE_STATES = Object.values(RAISE);
+  function ensureRaise(m) {
+    if (!m) return m;
+    if (!isObj(m.raise)) m.raise = newRaise();
+    const r = m.raise, d = newRaise();
+    for (const k of Object.keys(d)) if (!(k in r)) r[k] = d[k];
+    if (!Array.isArray(r.log)) r.log = [];
+    if (!RAISE_STATES.includes(r.state)) Object.assign(r, newRaise(), { log: r.log });
+    if (!Number.isInteger(r.turnsUsed) || r.turnsUsed < 0) r.turnsUsed = 0;
+    return m;
+  }
+  function resetRaise(m) { const log = m.raise && Array.isArray(m.raise.log) ? m.raise.log : []; m.raise = Object.assign(newRaise(), { log }); }
+
+  let uidSeq = 0;
+  const genUid = (rnd) => 'm-' + Date.now().toString(36) + '-' + Math.floor(rnd() * 0x7fffffff).toString(36) + '-' + (++uidSeq).toString(36);
+  /** セーブ内で重複しないuidを作る */
+  function uniqueUid(S, self, rnd = Math.random) {
+    const used = new Set(monstersOf(S).filter((x) => x !== self).map((x) => x.uid).filter(Boolean));
+    let id; do { id = genUid(rnd); } while (used.has(id));
+    return id;
+  }
+  /** uidが無い・重複している個体にだけ新しいuidを付ける（既存のuidは変えない） */
+  function ensureUids(S) {
+    const seen = new Set();
+    for (const x of monstersOf(S)) {
+      if (typeof x.uid !== 'string' || !x.uid || seen.has(x.uid)) x.uid = uniqueUid(S, x);
+      seen.add(x.uid);
+    }
+  }
+  /** 新しい個体（市場・合体など）に uid と「未育成」の状態を付ける */
+  function initIndividual(S, m) { m.uid = uniqueUid(S, m); m.raise = newRaise(); return runNormalizers(m); }
+  Object.assign(API, { addIndividualNormalizer, RAISE, newRaise, ensureRaise, initIndividual, uniqueUid, ensureUids,
+    raiseState: P7.raiseState, isRaising: P7.isRaising, inChapter: P7.inChapter });
+
+  // =========================================================
+  // セーブv6
+  // =========================================================
+  const SAVE_VERSION = 6;
+  // v6以降の本セーブのキー。旧キー mr4 は旧版（Phase 7.1以前）が読み書きするキーなので、v6は一切書き込まない。
+  // → 旧版のゲームを開いてもv6のデータは上書きされない。版の新旧は v で判定する（v7以降も同じキー）。
+  const SAVE_KEY = 'mr4v6';
+  const LEGACY_KEY = 'mr4';
+  const BACKUP_V4 = 'mr4_v4backup', BACKUP_V5 = 'mr4_v5backup', BACKUP_BAD = 'mr4_unreadable_backup';
+
+  function newSave() {
+    const S = P7.newSave();            // 所持金・バッグ・チケット等の初期値はv5と同じ
+    delete S.chap; delete S.trainRun;  // Chapter進行・修行状態はセーブ全体では持たない（個体側）
+    S.v = SAVE_VERSION;
+    return S;
+  }
+  /** v6の欠けた値を補う（既存の値は変えない）。育成中の個体は常に「連れている個体（S.m）」の1体だけにそろえる */
+  function normalizeV6(S) {
+    if (!Array.isArray(S.box)) S.box = [];
+    delete S.chap; delete S.board; delete S.trainRun;
+    if (!isObj(S.inv)) S.inv = { bag: [], bagCapUnlocked: false, vault: [], vaultCap: null };
+    if (!Array.isArray(S.inv.bag)) S.inv.bag = [];
+    if (!Array.isArray(S.inv.vault)) S.inv.vault = [];
+    if (typeof S.inv.bagCapUnlocked !== 'boolean') S.inv.bagCapUnlocked = false;
+    if (!('vaultCap' in S.inv) || !(S.inv.vaultCap === null || (Number.isInteger(S.inv.vaultCap) && S.inv.vaultCap >= 0))) S.inv.vaultCap = null;
+    if (!Number.isInteger(S.trainTix) || S.trainTix < 0) S.trainTix = 0;
+    if (!isObj(S.rankRec) || !Array.isArray(S.rankRec.cleared)) S.rankRec = { cleared: Array(P7.RANK_COUNT).fill(false) };
+    while (S.rankRec.cleared.length < P7.RANK_COUNT) S.rankRec.cleared.push(false);
+    ensureUids(S);
+    monstersOf(S).forEach((x) => { P7.ensureProg(x); ensureRaise(x); runNormalizers(x); });
+    const boxRaising = S.box.filter((x) => P7.isRaising(x));
+    if (boxRaising.length) {
+      if (!(S.m && P7.isRaising(S.m))) { const t = boxRaising[0]; S.box = S.box.filter((x) => x !== t); if (S.m) S.box.push(S.m); S.m = t; }
+      S.box.forEach((x) => { if (P7.isRaising(x)) resetRaise(x); });
+    }
+    S.v = SAVE_VERSION;
+    return S;
+  }
+  const isNewerSave = (raw) => isObj(raw) && typeof raw.v === 'number' && raw.v > SAVE_VERSION;
+  /**
+   * セーブをv6にする（元のオブジェクトは変更しない）。v4 → v5（Phase 7.1の救済込み：MMP7.migrateSave）→ v6 の段階移行。
+   * 読めないデータ・未知の版・自分より新しい版は null（新しい版かどうかは isNewerSave で判定）。
+   */
+  function migrateSave(raw) {
+    if (!isObj(raw)) return null;
+    if (raw.v === SAVE_VERSION) return ('box' in raw && !Array.isArray(raw.box)) ? null : normalizeV6(clone(raw));
+    const S = P7.migrateSave(raw);   // v4/v5 → 正規化済みv5（コピー）。それ以外は null
+    if (!S) return null;
+    const chap = isObj(S.chap) ? S.chap : null, board = isObj(S.board) ? S.board : null, run = isObj(S.trainRun) ? S.trainRun : null;
+    delete S.chap; delete S.board; delete S.trainRun;
+    ensureUids(S);
+    monstersOf(S).forEach((x) => { x.raise = newRaise(); });   // 預け個体にはChapter進行を割り当てない（未育成の牧場個体のまま）
+    const m = S.m;
+    if (m && chap) {   // 旧セーブの進行は「現在連れている個体」に紐づける（連れていなければ進行は引き継がない）
+      const r = m.raise, cleared = Math.max(0, Math.min(LAST_NORMAL_CHAPTER, chap.clearedMax | 0));
+      for (let ch = 1; ch <= cleared; ch++) r.log.push({ ch, legacy: true });   // 旧版で終えたChapter（ゴール・大会の詳細は旧版に無い）
+      if (chap.status === 'board') {
+        // 旧セーブのChapter途中：新仕様の途中状態が無いため、そのChapterの開始地点・使用0ターンから再開する
+        let ch = board && Number.isInteger(board.ch) ? board.ch : cleared + 1;
+        ch = Math.max(1, Math.min(LAST_NORMAL_CHAPTER, ch));
+        Object.assign(r, { state: RAISE.BOARD, ch, node: null, turnsUsed: 0, turnLimit: chapterRule(ch).turnLimit });
+      } else if (cleared >= LAST_NORMAL_CHAPTER) {
+        if (highestCleared(m) >= FINAL_CHAPTER_MIN_RANK) Object.assign(r, { state: RAISE.FARM, ch: FINAL });
+        else Object.assign(r, { state: RAISE.DONE, ch: null });
+      } else if (cleared >= 1) {
+        Object.assign(r, { state: RAISE.FARM, ch: cleared + 1 });
+      }
+      if (run && r.state === RAISE.FARM) r.trainRun = { kind: run.kind, pos: run.pos };
+    }
+    S.migratedFrom = raw.v;
+    return normalizeV6(S);
+  }
+  /**
+   * 起動時の読み込み（storage は localStorage 互換）。
+   *  新キー → 無ければ旧キー の順に読む。旧キーから移行した場合は原文を版ごとの退避キーへ（既存の退避は上書きしない）。
+   *  自分より新しい版のセーブは読み込まず、何も書き込まない（locked）。壊れたデータは原文を退避してから新規扱い。
+   */
+  function loadFromStorage(st) {
+    const out = { S: null, status: 'new', locked: false, version: null, from: null };
+    if (!st) return out;
+    const get = (k) => { try { return st.getItem(k); } catch (e) { return null; } };
+    const set = (k, v) => { try { st.setItem(k, v); return true; } catch (e) { return false; } };
+    let text = get(SAVE_KEY), key = SAVE_KEY;
+    if (text == null) { text = get(LEGACY_KEY); key = LEGACY_KEY; }
+    if (text == null) return out;
+    let raw; try { raw = JSON.parse(text); } catch (e) { raw = undefined; }
+    if (isNewerSave(raw)) { out.status = 'locked'; out.locked = true; out.version = raw.v; return out; }
+    const S = migrateSave(raw);
+    if (!S) {
+      const bk = get(BACKUP_BAD) == null ? BACKUP_BAD : BACKUP_BAD + '_' + Date.now();
+      set(bk, text); out.status = 'unreadable'; out.backup = bk; return out;
+    }
+    out.from = raw.v;
+    if (key === LEGACY_KEY) {
+      if (raw.v === 4 && get(BACKUP_V4) == null) set(BACKUP_V4, text);
+      if (raw.v === 5 && get(BACKUP_V5) == null) set(BACKUP_V5, text);
+      set(SAVE_KEY, JSON.stringify(S));
+      out.status = 'migrated';
+    } else out.status = 'ok';
+    out.S = S;
+    return out;
+  }
+  Object.assign(API, { SAVE_VERSION, SAVE_KEY, LEGACY_KEY, BACKUP_V4, BACKUP_V5, BACKUP_BAD,
+    newSave, normalizeV6, isNewerSave, migrateSave, loadFromStorage });
+
+  // =========================================================
+  // Chapterボードの登録・出発・位置／育成中の画面遷移（Step 3）
+  // =========================================================
+  let finalBoard = null;   // 最終Chapterのマップ（正式マップ未制作のため、本番では未登録）
+  const validTrack = (t) => isObj(t) && isObj(t.nodes) && isObj(t.conn) && !!t.start && !!t.nodes[t.start];
+  function registerFinalBoard(track, meta) {
+    if (!validTrack(track)) throw new Error('ボードデータが不正です');
+    finalBoard = { track, provisional: !!(meta && meta.provisional), note: (meta && meta.note) || '' };
+  }
+  /** Chapterのマップ（1〜4は MMP7.registerChapterBoard の登録、'final' は registerFinalBoard の登録） */
+  function trackOf(key) { if (key === FINAL) return finalBoard ? finalBoard.track : null; const b = P7.getChapterBoard(key); return b ? b.track : null; }
+  function boardOf(m) { return m && isObj(m.raise) ? trackOf(m.raise.ch) : null; }
+  const isPlayable = (key) => !!trackOf(key);
+  /** 次に出発するChapter（未育成ならChapter 1、Chapter間ファームなら記録済みの次Chapter。それ以外は null） */
+  function nextChapterKey(m) { const st = P7.raiseState(m); return st === RAISE.NONE ? 1 : st === RAISE.FARM ? m.raise.ch : null; }
+  function canDepart(S, m) {
+    if (!m || m !== S.m) return { ok: false, reason: 'no_monster' };
+    ensureRaise(m);
+    const st = m.raise.state;
+    if (st === RAISE.DONE) return { ok: false, reason: 'finished' };
+    if (st === RAISE.BOARD || st === RAISE.FINAL) return { ok: false, reason: 'not_at_farm' };
+    if (P7.trainRunOf(m)) return { ok: false, reason: 'training' };
+    const key = nextChapterKey(m);
+    if (!chapterRule(key)) return { ok: false, reason: 'finished' };
+    if (!isPlayable(key)) return { ok: false, reason: 'no_map', key };
+    return { ok: true, key };
+  }
+  /** 出発（未育成の個体はここで育成開始）。ターン上限は出発時のChapter定義の値で確定する */
+  function depart(S, m) {
+    const c = canDepart(S, m); if (!c.ok) return c;
+    Object.assign(m.raise, { state: c.key === FINAL ? RAISE.FINAL : RAISE.BOARD, ch: c.key, node: trackOf(c.key).start, turnsUsed: 0,
+      turnLimit: chapterRule(c.key).turnLimit, pend: null, goal: false, tour: null, battle: null });
+    return { ok: true, key: c.key };
+  }
+  /** ボードを開くときの補正：開始地点（node=null）をスタートへ。地図の無いChapterならChapter間ファームへ退避（7.1の救済と同じ考え方） */
+  function ensureBoardPosition(S, m) {
+    if (!m || !P7.inChapter(m)) return { changed: false };
+    const r = m.raise, trk = trackOf(r.ch);
+    if (!trk) { Object.assign(r, { state: RAISE.FARM, node: null, turnsUsed: 0, turnLimit: null, pend: null, goal: false, tour: null, battle: null }); return { changed: true, rescued: true }; }
+    if (r.node == null || !trk.nodes[r.node]) {
+      // 公式大会の途中（旧仮マップのゴールで大会中）なら、大会はそのまま続ける（ゴール地点に置く）
+      if (r.tour) { Object.assign(r, { node: trk.goal || trk.start, pend: null, goal: true }); return { changed: true }; }
+      // それ以外（旧仮マップの途中・移行直後など）は、同じChapterの開始地点・使用0ターンから
+      Object.assign(r, { node: trk.start, turnsUsed: 0, pend: null, goal: false }); return { changed: true };
+    }
+    return { changed: false };
+  }
+  /** 街（街・牧場・市場・博物館・セーブ画面）へ行けるか：育成開始から育成完了までは不可（交換・合体も不可） */
+  const canVisitTown = (S) => !(S && S.m && P7.isRaising(S.m));
+  /** 起動・中断からの復帰先：training（修行ボード）/ board（Chapter）/ farm（Chapter間ファーム）/ town（街） */
+  function resumeTarget(S) {
+    const m = S && S.m;
+    if (!m) return 'town';
+    if (P7.trainRunOf(m)) return 'training';
+    if (P7.inChapter(m)) return 'board';
+    return P7.raiseState(m) === RAISE.FARM ? 'farm' : 'town';
+  }
+  Object.assign(API, { registerFinalBoard, trackOf, boardOf, isPlayable, nextChapterKey, canDepart, depart, ensureBoardPosition, canVisitTown, resumeTarget });
+
+  // =========================================================
+  // 20ターン制のChapter進行（1ターン＝サイコロ1回）とマス効果（Step 4）
+  //  出目・残り移動・分岐待ち・マス処理は m.raise.pend に置き、演出より前に確定する。
+  //  → 中断・アプリ終了・再読み込みでも、サイコロの振り直し・イベントの引き直しは起きない。
+  // =========================================================
+  const STAT_MAX = 999;
+  const isGoalNode = (trk, id) => !!trk && id != null && (id === trk.goal || !((trk.conn[id] || []).length));
+  function turnsLeft(m) { const r = m.raise; return r.turnLimit == null ? Infinity : Math.max(0, r.turnLimit - r.turnsUsed); }
+  /** ボードの局面：roll / move / branch / resolve / battle / goal / timeup / tour / tour_done */
+  function boardPhase(m) {
+    const r = m.raise;
+    if (r.tour) return r.tour.status === 'settled' ? 'tour_done' : 'tour';
+    if (r.pend) return r.pend.stage;
+    if (r.goal) return 'goal';
+    return turnsLeft(m) === 0 ? 'timeup' : 'roll';
+  }
+  function canRoll(m) {
+    if (!m || !P7.inChapter(m)) return false;
+    const r = m.raise;
+    return !r.pend && !r.goal && !r.tour && !r.battle && r.node != null && turnsLeft(m) > 0;
+  }
+  /** サイコロ（1〜3）を振る＝1ターン消費。出目はここで確定して pend に記録する */
+  function roll(S, m, rnd = Math.random) {
+    if (!canRoll(m)) return { ok: false };
+    const value = P7.rollDice(rnd), r = m.raise;
+    r.turnsUsed += 1;
+    r.pend = { roll: value, left: value, stage: 'move' };
+    return { ok: true, value };
+  }
+  /** 1マスだけ進める（演出用に1歩ずつ保存できる）。分岐に来たら branch、止まる位置に来たら resolve */
+  function step(S, m) {
+    const r = m && m.raise, p = r && r.pend, trk = boardOf(m);
+    if (!p || p.stage !== 'move' || !trk) return { stage: p ? p.stage : null };
+    const opts = trk.conn[r.node] || [];
+    if (p.left <= 0 || !opts.length) { p.left = 0; p.stage = 'resolve'; return { stage: 'resolve' }; }
+    if (opts.length > 1) { p.stage = 'branch'; p.opts = [...opts]; return { stage: 'branch', opts: p.opts }; }
+    r.node = opts[0]; p.left -= 1;
+    if (p.left <= 0 || isGoalNode(trk, r.node)) { p.left = 0; p.stage = 'resolve'; }   // ゴールに着いたら残り移動は消える
+    return { stage: p.stage, node: r.node };
+  }
+  /** 分岐の選択（プレイヤーが選ぶ。ランダムには決めない） */
+  function chooseBranch(S, m, id) {
+    const r = m && m.raise, p = r && r.pend, trk = boardOf(m);
+    if (!p || p.stage !== 'branch' || !Array.isArray(p.opts) || !p.opts.includes(id)) return { ok: false };
+    r.node = id; p.left -= 1; delete p.opts;
+    if (p.left <= 0 || isGoalNode(trk, id)) { p.left = 0; p.stage = 'resolve'; } else p.stage = 'move';
+    return { ok: true, stage: p.stage, node: id };
+  }
+
+  // ---- マス効果（マスの種類ごと。将来の正式マップのマスは registerSquareEffect で追加できる） ----
+  // 【暫定】能力マス・イベントの値は旧CH1（Phase 7.1の暫定マップ）由来。正式マップ制作時に見直す。
+  // 疲労・ストレス（Phase 8で廃止）に作用していたイベント・休息マスは、新しい育成では効果なし。
+  const PROVISIONAL_STAT_SQUARE = Object.freeze([5, 7]);
+  const STAT_SQUARE_KEY = Object.freeze({ power: 'po', wisdom: 'in', hit: 'hi', evasion: 'ev', toughness: 'de' });
+  const FIVE = Object.freeze(['po', 'in', 'hi', 'ev', 'de']);
+  const pickOf = (arr, rnd) => arr[Math.floor(rnd() * arr.length)];
+  const addStat = (m, k, n) => { const b = m[k]; m[k] = Math.max(0, Math.min(STAT_MAX, m[k] + n)); return m[k] - b; };
+  const PROVISIONAL_EVENTS = Object.freeze([
+    { id: 'herb', run: (S, m, rnd) => { const key = pickOf(FIVE, rnd); return { kind: 'stat', ev: 'herb', key, amount: addStat(m, key, 6) }; } },
+    { id: 'trip', run: (S, m, rnd) => { const key = pickOf(FIVE, rnd); return { kind: 'stat', ev: 'trip', key, amount: addStat(m, key, -4) }; } },
+    { id: 'treasure', run: (S) => { S.g = (S.g || 0) + 50; return { kind: 'gold', ev: 'treasure', amount: 50 }; } },
+  ]);
+  const PROVISIONAL_RARE_EVENTS = Object.freeze([
+    { id: 'spring', run: (S, m) => ({ kind: 'multi', ev: 'spring', gains: FIVE.map((key) => ({ key, amount: addStat(m, key, 8) })) }) },
+    { id: 'sage', run: (S, m, rnd) => { const key = pickOf(FIVE, rnd); return { kind: 'stat', ev: 'sage', key, amount: addStat(m, key, 20) }; } },
+    { id: 'charm', run: (S) => { S.g = (S.g || 0) + 150; return { kind: 'gold', ev: 'charm', amount: 150 }; } },
+  ]);
+  const noEffect = (note) => () => ({ kind: 'none', note });
+  const statSquare = (type) => (S, m, rnd) => {
+    const key = STAT_SQUARE_KEY[type], [lo, hi] = PROVISIONAL_STAT_SQUARE;
+    return { kind: 'stat', key, amount: addStat(m, key, lo + Math.floor(rnd() * (hi - lo + 1))) };
+  };
+  const SQUARE_EFFECTS = {
+    normal: noEffect('normal'),        // 何も起きないマス
+    start: noEffect('normal'),
+    tournament: noEffect('goal'),      // ゴール（公式大会はゴール到達として扱う）
+    train: noEffect('old_train'),      // 旧「修行マス」：修行はChapter間ファームで行う（Phase 7で師匠バトルへの入口は切断済み）
+    rest: noEffect('rest'),            // 旧「休息マス」：疲労・ストレス廃止のため効果なし
+    power: statSquare('power'), wisdom: statSquare('wisdom'), hit: statSquare('hit'), evasion: statSquare('evasion'), toughness: statSquare('toughness'),
+    event: (S, m, rnd) => pickOf(PROVISIONAL_EVENTS, rnd).run(S, m, rnd),
+    rare: (S, m, rnd) => pickOf(PROVISIONAL_RARE_EVENTS, rnd).run(S, m, rnd),
+    battle: () => ({ kind: 'battle' }),   // 練習試合（挑戦するかはプレイヤーが選ぶ）
+  };
+  function registerSquareEffect(type, fn) { if (typeof type !== 'string' || typeof fn !== 'function') throw new Error('マス効果の登録が不正です'); SQUARE_EFFECTS[type] = fn; }
+  /** 止まったマスの効果を1回だけ適用し、ターンを終える（バトルマスはプレイヤーの選択待ちにする） */
+  function resolveLanding(S, m, rnd = Math.random) {
+    const r = m && m.raise, p = r && r.pend;
+    if (!p || p.stage !== 'resolve') return { ok: false };
+    const nd = ((boardOf(m) || {}).nodes || {})[r.node] || {};
+    const fx = (SQUARE_EFFECTS[nd.type] || SQUARE_EFFECTS.normal)(S, m, rnd);
+    p.fx = fx;
+    if (fx.kind === 'battle') { p.stage = 'battle'; return { ok: true, fx, wait: true }; }
+    return { ok: true, fx, ...finishTurn(S, m) };
+  }
+  function finishTurn(S, m) {
+    const r = m.raise; r.pend = null;
+    if (isGoalNode(boardOf(m), r.node)) { r.goal = true; return { goal: true }; }
+    return turnsLeft(m) === 0 ? { timeUp: true } : {};
+  }
+  function skipBattleSquare(S, m) {
+    const r = m && m.raise;
+    if (!r || !r.pend || r.pend.stage !== 'battle' || r.battle) return { ok: false };
+    return { ok: true, ...finishTurn(S, m) };
+  }
+
+  // ---- Chapterの終了（ゴール後の大会終了・辞退、またはターン切れ）→ Chapter間ファーム ----
+  function canEndChapter(m) {
+    if (!m || !P7.inChapter(m)) return { ok: false, reason: 'not_in_chapter' };
+    const r = m.raise, rule = chapterRule(r.ch);
+    if (r.pend || r.battle) return { ok: false, reason: 'turn_in_progress' };
+    if (r.tour) return r.tour.status === 'settled' ? { ok: true } : { ok: false, reason: 'tournament_in_progress' };
+    if (r.goal) return rule && rule.tournament ? { ok: false, reason: 'tournament_pending' } : { ok: true };
+    return turnsLeft(m) === 0 ? { ok: true } : { ok: false, reason: 'turns_left' };
+  }
+  /**
+   * Chapter終了後の行き先（Step 9）
+   *  Chapter 1〜3 → 次のChapterの前のChapter間ファーム
+   *  Chapter 4   → その時点のクリア最高ランクがA以上なら最終Chapterへ強制進行（選択不可）、B以下なら育成完了
+   *  最終Chapter → 育成完了（最終Chapterに育成失敗は無い）
+   */
+  function nextAfterChapter(m, key) {
+    if (key === FINAL) return { state: RAISE.DONE, ch: null, next: 'done' };
+    if (key >= LAST_NORMAL_CHAPTER) {
+      return highestCleared(m) >= FINAL_CHAPTER_MIN_RANK ? { state: RAISE.FARM, ch: FINAL, next: FINAL } : { state: RAISE.DONE, ch: null, next: 'done' };
+    }
+    return { state: RAISE.FARM, ch: key + 1, next: key + 1 };
+  }
+  function closeChapter(S, m, extra) {
+    const r = m.raise, key = r.ch, res = r.tour && r.tour.result;
+    const entry = { ch: key, reachedGoal: !!r.goal, turnsUsed: r.turnsUsed, turnLimit: r.turnLimit, declined: !!extra.declined,
+      tour: res ? { rank: res.rank, place: res.place, won: res.won, firstClear: res.firstClear } : null };
+    r.log.push(entry);
+    const nx = nextAfterChapter(m, key);
+    Object.assign(r, { state: nx.state, ch: nx.ch, node: null, turnsUsed: 0, turnLimit: null, pend: null, goal: false, tour: null, battle: null });
+    return { ok: true, next: nx.next, entry };
+  }
+  function endChapter(S, m) { const c = canEndChapter(m); return c.ok ? closeChapter(S, m, {}) : c; }
+  /** ゴール到達後に公式大会へ参加しない（報酬なしでChapter終了） */
+  function declineTournament(S, m) {
+    if (!m || !P7.inChapter(m)) return { ok: false, reason: 'not_in_chapter' };
+    const r = m.raise;
+    if (!r.goal || r.tour || r.pend || r.battle || !chapterRule(r.ch).tournament) return { ok: false, reason: 'cannot_decline' };
+    return closeChapter(S, m, { declined: true });
+  }
+
+  // =========================================================
+  // 戦闘前状態の保存と、旧fight()報酬の正規化（練習試合。Step 6で大会を追加）
+  //  fight()（Phase 6保護対象）は終了時に旧式の賞金・勝利数・ブリーダーランク・ランクアップを付けてすぐ save() する。
+  //  fight()は変えず、開始前の状態を保存しておき、終了後（または途中終了からの再開時）にこの値へ戻す。
+  // =========================================================
+  const BATTLE_KINDS = {};   // 練習試合以外の戦闘種別（大会はStep 6で登録）
+  function beginBattle(S, m, info) {
+    if (!m || m !== S.m || !P7.inChapter(m)) return { ok: false, reason: 'not_in_chapter' };
+    const r = m.raise;
+    if (r.battle) return { ok: false, reason: 'busy' };
+    const b = { kind: info.kind, rank: info.rank, done: false, snap: { g: S.g, wins: S.wins, br: S.br, rk: m.rk, fa: m.fa, st: m.st } };
+    if (info.kind === 'practice') { if (!(r.pend && r.pend.stage === 'battle')) return { ok: false, reason: 'no_battle_square' }; }
+    else if (!BATTLE_KINDS[info.kind] || !BATTLE_KINDS[info.kind].begin(S, m, b)) return { ok: false, reason: 'bad_kind' };
+    r.battle = b;
+    return { ok: true };
+  }
+  /** fight()の終了時（index.html の adv() から）に呼ぶ：戦闘が最後まで終わった印 */
+  function markBattleDone(S) { const m = S && S.m; if (m && isObj(m.raise) && m.raise.battle) m.raise.battle.done = true; }
+  const restore = (o, k, v) => { if (v === undefined) delete o[k]; else o[k] = v; };
+  function finishBattle(S, m, rnd = Math.random) {
+    const r = m && isObj(m.raise) ? m.raise : null, b = r && r.battle;
+    if (!b) return null;
+    r.battle = null;
+    if (!b.done) return { kind: b.kind, interrupted: true };   // 途中終了：結果なし（同じ戦闘をもう一度行える）
+    const won = (S.wins || 0) > (b.snap.wins || 0);
+    // 旧fight()が付けた賞金・勝利数・ブリーダーランク・ランクアップは取り消す（正式な報酬は大会全体の結果で1回だけ）
+    restore(S, 'g', b.snap.g); restore(S, 'wins', b.snap.wins); restore(S, 'br', b.snap.br); restore(m, 'rk', b.snap.rk);
+    // 廃止した疲労・ストレスをfight()が内部で増やしても、残さない（fight()本体は無変更のまま外側で無効化）
+    restore(m, 'fa', b.snap.fa); restore(m, 'st', b.snap.st);
+    const out = { kind: b.kind, won };
+    if (b.kind === 'practice') { if (r.pend && r.pend.stage === 'battle') Object.assign(out, finishTurn(S, m)); }
+    else if (BATTLE_KINDS[b.kind]) Object.assign(out, BATTLE_KINDS[b.kind].finish(S, m, b, won, rnd));
+    return out;
+  }
+  /** 【暫定】練習試合の相手の強さ＝個体の表示ランク（未クリアはE）。旧仕様の「現在ランク」に相当 */
+  const practiceRank = (m) => Math.max(RANK_E, highestCleared(m));
+  Object.assign(API, { turnsLeft, boardPhase, canRoll, roll, step, chooseBranch, registerSquareEffect, resolveLanding, skipBattleSquare,
+    canEndChapter, endChapter, declineTournament, beginBattle, markBattleDone, finishBattle, practiceRank });
+
+  // =========================================================
+  // 公式ランク大会：挑戦できるランクと優勝報酬（Step 5）
+  //  挑戦上限＝その個体のクリア最高ランク＋2（Sまで）。未クリアの個体はE・Dまで。Chapterごとの上限はCHAPTER_RULES.rankCap。
+  //  クリア済みランク・下位ランクへの再挑戦も可。報酬は「大会で最終1位」のときに1大会1回だけ。
+  // =========================================================
+  const RANK_UNLOCK_STEP = 2;
+  const PRIZE = Object.freeze([100, 200, 350, 550, 800, 1200]);                                    // 初回優勝の賞金（E〜S）
+  const FIRST_CLEAR_TICKETS = Object.freeze([1, 1, 2, 2, 2, 2]);                                 // 初回優勝の修行チケット（E〜S）
+  const WIN_BONUS_RANGE = Object.freeze([[2, 4], [3, 5], [4, 7], [6, 9], [8, 12], [11, 16]].map(Object.freeze)); // 優勝ボーナス（1能力あたり、E〜S）
+  const WIN_BONUS_COUNT = 3;                                                                     // 6能力から異なる3能力
+  const BONUS_STATS = Object.freeze(['li', 'po', 'in', 'hi', 'ev', 'de']);
+  function maxChallengeRank(m, key) {
+    let cap = Math.min(RANK_S, highestCleared(m) + RANK_UNLOCK_STEP);
+    const rule = chapterRule(key);
+    if (rule && rule.rankCap != null) cap = Math.min(cap, rule.rankCap);
+    return cap;
+  }
+  /** そのChapterで挑戦できるランク（E〜上限。クリア済み・下位ランクも含む） */
+  function eligibleRanks(m, key) { const cap = maxChallengeRank(m, key); return RANK_LETTERS.map((_, i) => i).filter((i) => i <= cap); }
+  const canChallenge = (m, key, rank) => Number.isInteger(rank) && eligibleRanks(m, key).includes(rank);
+  /**
+   * 大会で最終1位になったときの正式報酬（大会の決着時に1回だけ呼ばれる）。
+   *  初回優勝：賞金・修行チケット・ステータスボーナス・実績。再優勝：ステータスボーナスのみ。
+   *  上位ランクの優勝で下位ランクもクリア扱いになるが、飛ばした下位ランクの初回報酬は付与しない。
+   */
+  function grantTournamentWin(S, m, rank, rnd = Math.random) {
+    P7.ensureProg(m);
+    const firstClear = !m.prog.rankClr[rank];
+    const reward = { rank, firstClear, prize: 0, tickets: 0, bonus: [], bagUnlocked: false };
+    if (firstClear) {
+      reward.prize = PRIZE[rank]; reward.tickets = FIRST_CLEAR_TICKETS[rank];
+      S.g = (S.g || 0) + reward.prize;
+      S.trainTix = (S.trainTix || 0) + reward.tickets;
+      reward.bagUnlocked = P7.recordRankClear(S, m, rank).bagUnlocked;   // 実績（下位ランクもクリア扱い）
+    }
+    const pool = [...BONUS_STATS], [lo, hi] = WIN_BONUS_RANGE[rank];
+    for (let i = 0; i < WIN_BONUS_COUNT; i++) {
+      const key = pool.splice(Math.floor(rnd() * pool.length), 1)[0];
+      reward.bonus.push({ key, amount: addStat(m, key, lo + Math.floor(rnd() * (hi - lo + 1))) });
+    }
+    // 旧来の記録（大会勝利数・ブリーダーランク・個体のランク欄）は「大会優勝1回」として1回だけ更新（個別試合では増やさない）
+    S.wins = (S.wins || 0) + 1;
+    S.br = Math.max(S.br == null ? -1 : S.br, rank);
+    m.rk = Math.max(m.rk || 0, highestCleared(m));
+    return reward;
+  }
+  Object.assign(API, { PRIZE, FIRST_CLEAR_TICKETS, WIN_BONUS_RANGE, WIN_BONUS_COUNT, maxChallengeRank, eligibleRanks, canChallenge, grantTournamentWin });
+
+  // =========================================================
+  // 公式ランク大会：総当たりリーグの進行と決着（Step 6。計算は js/phase8/league.js）
+  //  大会状態（参加者・勝敗・順位・残り試合）は m.raise.tour に保存し、中断・再開で再抽選しない。
+  //  個別試合では報酬を付けず（旧fight()の報酬は finishBattle で戻す）、最終1位のときだけ決着時に1回付与する。
+  // =========================================================
+  const LG = () => { const x = root.MMP8L; if (!x) throw new Error('MMP8：先に js/phase8/league.js を読み込んでください'); return x; };
+  function canStartTournament(S, m, rank) {
+    if (!m || m !== S.m || !P7.inChapter(m)) return { ok: false, reason: 'not_in_chapter' };
+    const r = m.raise, rule = chapterRule(r.ch);
+    if (!rule || !rule.tournament) return { ok: false, reason: 'no_tournament' };
+    if (r.tour) return { ok: false, reason: 'already_entered' };   // 各Chapterで大会は1回だけ
+    if (!r.goal || r.pend || r.battle) return { ok: false, reason: 'not_at_goal' };
+    if (!canChallenge(m, r.ch, rank)) return { ok: false, reason: 'rank_locked' };
+    return { ok: true };
+  }
+  function startTournament(S, m, rank, seed = Math.floor(Math.random() * 0x7fffffff)) {
+    const c = canStartTournament(S, m, rank); if (!c.ok) return c;
+    m.raise.tour = { rank, status: 'league', league: LG().createLeague(rank, seed, m.name), result: null };
+    return { ok: true };
+  }
+  /** 大会で次に行う自分の試合（無ければ null） */
+  function tourNext(m) { const t = m && isObj(m.raise) && m.raise.tour; return t && t.status === 'league' ? LG().playerMatch(t.league) : null; }
+  /** リーグ終了時の決着（1大会1回だけ）：最終1位のときだけ正式報酬 */
+  function settleTournament(S, m, rnd = Math.random) {
+    const t = m.raise.tour;
+    if (!t || t.status !== 'league' || !LG().isFinished(t.league)) return {};
+    const place = LG().playerPlace(t.league), won = place === 1;
+    const reward = won ? grantTournamentWin(S, m, t.rank, rnd) : null;
+    t.status = 'settled';
+    t.result = { rank: t.rank, place, won, firstClear: !!(reward && reward.firstClear), reward };
+    return { settled: true, place, won, reward };
+  }
+  BATTLE_KINDS.league = {
+    begin(S, m, b) { const t = m.raise.tour, pm = tourNext(m); if (!pm || b.rank !== t.rank) return false; b.round = pm.round; return true; },
+    finish(S, m, b, won, rnd) {
+      const t = m.raise.tour;
+      if (!t || t.status !== 'league' || t.league.round !== b.round) return {};
+      LG().recordPlayerResult(t.league, won);
+      const out = { round: b.round };
+      if (LG().isFinished(t.league)) Object.assign(out, settleTournament(S, m, rnd));
+      return out;
+    },
+  };
+  Object.assign(API, { canStartTournament, startTournament, tourNext });
+
+  // =========================================================
+  // 育成リソース（HUD）と修行チケットマス（Step 7）
+  //  修行チケットはバッグ枠外の育成リソース（セーブ全体で所持、Chapterをまたいで保持、修行1回で1枚消費）。
+  //  HUDは複数リソースを並べられる形にしておき、今回は修行チケットだけを表示する。
+  // =========================================================
+  const RESOURCES = [{ id: 'trainTix', icon: '🎫', label: '修行チケット', get: (S) => S.trainTix || 0 }];
+  function registerResource(def) {
+    if (!def || typeof def.id !== 'string' || typeof def.get !== 'function') throw new Error('育成リソースの登録が不正です');
+    const i = RESOURCES.findIndex((x) => x.id === def.id); if (i >= 0) RESOURCES.splice(i, 1, def); else RESOURCES.push(def);
+  }
+  const resources = (S) => RESOURCES.map((x) => ({ id: x.id, icon: x.icon, label: x.label, value: x.get(S) }));
+  const TICKET_SQUARE_AMOUNT = 1;   // 修行チケットマス：止まると+1枚
+  SQUARE_EFFECTS.ticket = (S) => { S.trainTix = (S.trainTix || 0) + TICKET_SQUARE_AMOUNT; return { kind: 'ticket', amount: TICKET_SQUARE_AMOUNT }; };
+  Object.assign(API, { TICKET_SQUARE_AMOUNT, registerResource, resources });
+
+  // =========================================================
+  // 育成放棄（Step 8）
+  //  Chapter進行中・Chapter間ファームのどちらでも可（修行中・戦闘中は不可）。確認画面は index.html 側で2段階。
+  //  育成中の個体とその進行を削除して街へ戻る。所持金・修行チケット・バッグ・保管庫・育成数などは特別な処理をしない。
+  // =========================================================
+  function canAbandon(S) {
+    const m = S && S.m;
+    if (!m || !P7.isRaising(m)) return { ok: false, reason: 'not_raising' };
+    if (P7.trainRunOf(m)) return { ok: false, reason: 'training' };
+    if (m.raise.battle) return { ok: false, reason: 'in_battle' };
+    return { ok: true };
+  }
+  /** uid は確認画面を出した個体。違う個体に対しては何もしない */
+  function abandon(S, uid) {
+    const c = canAbandon(S); if (!c.ok) return c;
+    if (uid !== S.m.uid) return { ok: false, reason: 'uid_mismatch' };
+    const name = S.m.name; S.m = null;
+    return { ok: true, name };
+  }
+  Object.assign(API, { canAbandon, abandon });
+
+  // =========================================================
+  // Phase 9：正式Chapterマップ用のマス（ライフ・宝箱）
+  //  能力マスの上昇量は既存の【暫定】値（旧CH1由来の+5〜7）をそのまま使う（正式値は未確定）。
+  //  宝箱は【暫定】で所持金のみ（正式アイテムが未確定のため）：旧イベント「お宝発見」+50G／「幸運のお守り」+150G と同じ値。
+  // =========================================================
+  const PROVISIONAL_CHEST = Object.freeze([{ w: 4, gold: 50 }, { w: 1, gold: 150 }]);
+  SQUARE_EFFECTS.life = (S, m, rnd) => {
+    const [lo, hi] = PROVISIONAL_STAT_SQUARE;
+    return { kind: 'stat', key: 'li', amount: addStat(m, 'li', lo + Math.floor(rnd() * (hi - lo + 1))) };
+  };
+  SQUARE_EFFECTS.treasure = (S, m, rnd) => {
+    const tot = PROVISIONAL_CHEST.reduce((a, x) => a + x.w, 0); let t = rnd() * tot, pick = PROVISIONAL_CHEST[0];
+    for (const x of PROVISIONAL_CHEST) { if (t < x.w) { pick = x; break; } t -= x.w; }
+    S.g = (S.g || 0) + pick.gold;
+    return { kind: 'gold', ev: 'chest', amount: pick.gold };
+  };
+  Object.assign(API, { SQUARE_TYPES: Object.freeze(Object.keys(SQUARE_EFFECTS)) });
+
+  // @@P8_SECTIONS_END@@
+  root.MMP8 = Object.freeze(API);
+})(typeof window !== 'undefined' ? window : globalThis);
