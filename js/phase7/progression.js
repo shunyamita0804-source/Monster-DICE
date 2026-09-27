@@ -7,6 +7,8 @@
 //  ・ランククリア実績（Bランク→丈夫さ修行解放、Sランク初回→バッグ6枠）
 //  ・通常合体の技継承（初期4＋親の追加技から1つ）
 //  ・バッグ／保管庫／アイテム屋の基盤
+//  ・（Phase 8）個体の育成状態 m.raise の読み取り。修行・保管庫の可否は「個体」の状態で判定する
+//    （Chapter進行・セーブv6本体は js/phase8/raising.js）
 //
 //  このファイルは「状態の計算・検証」だけを行う純粋ロジック層です。
 //  画面描画・SE・Battle Engineには一切触れません（Phase 6部分は無変更）。
@@ -27,7 +29,10 @@
 
   // ---------- ランク ----------
   const RANK_COUNT = 6;          // E, D, C, B, A, S（index.html の RN と同じ並び）
+  const RANK_C = 2;
   const RANK_B = 3;
+  // Phase 8：丈夫さ修行の解放条件＝Cランク以上の大会クリア（旧：Bランククリア）
+  const TOUGH_UNLOCK_RANK = RANK_C;
   const RANK_S = 5;
 
   // ---------- バッグ ----------
@@ -49,19 +54,27 @@
   const TRAIN_GAIN = Object.freeze({ stat: Object.freeze([2, 3]), life: Object.freeze([2, 3]) });
   const STAT_MAX = 999;
 
+  // ---------- Phase 8：個体の育成状態（m.raise） ----------
+  // 育成進行は個体ごとに持つ（セーブ全体には持たない）。進行の管理は js/phase8/raising.js（MMP8）が行い、
+  // ここでは修行・保管庫の可否判定に必要な読み取りだけを行う。
+  const RAISE = Object.freeze({ NONE: 'none', BOARD: 'board', FARM: 'farm', FINAL: 'final', DONE: 'done' });
+
   // ---------- 技（種族ごとの10枠） ----------
   const MOVESET_SLOTS = Object.freeze({ initial: 4, po: 1, in: 1, hi: 1, ev: 1, de: 2 });
 
   // ---------- Chapter ----------
   const CHAPTER_DEFS = Object.freeze([
     Object.freeze({ no: 1, name: 'はじまりの草原' }),
-    Object.freeze({ no: 2, name: '海岸地方' }),
-    Object.freeze({ no: 3, name: '空のエリア' }),
-    Object.freeze({ no: 4, name: '火山地方' }),
+    Object.freeze({ no: 2, name: '潮風の海岸' }),
+    Object.freeze({ no: 3, name: '天空の浮島' }),
+    Object.freeze({ no: 4, name: '灼熱の火山' }),
   ]);
   const CHAPTER_COUNT = CHAPTER_DEFS.length;
-  // 通常Chapterにターン制限はない（約30マス規模のボード、止まったマスだけ効果発生）。
-  // ここにターン上限のフィールドは意図的に持たせない。
+  // ここはChapterの番号と名前だけ。ターン上限・挑戦ランク上限などのルールは js/phase8/raising.js の CHAPTER_RULES で管理する（Phase 8）。
+  // Phase 7.1：v4→v5移行時点で「ボード進行中のまま」引き継いでも安全なChapter数。
+  // 現在は正式Chapter 1のみ地図が用意されている（Chapter 2〜4は未実装）。
+  // Chapter 2〜4の地図が実装されたら、この値もあわせて見直すこと。
+  const MIGRATABLE_IN_PROGRESS_CHAPTERS = 1;
 
   const STATUS_FARM = 'farm';    // Chapter外（ファームで準備中）
   const STATUS_BOARD = 'board';  // Chapter進行中
@@ -113,6 +126,14 @@
     for (const k of m.sk || []) m.prog.learnSrc[k] = 'init';
     return m;
   }
+  function raiseState(m) { return m && isObj(m.raise) && typeof m.raise.state === 'string' ? m.raise.state : RAISE.NONE; }
+  function trainRunOf(m) { return m && isObj(m.raise) && isObj(m.raise.trainRun) ? m.raise.trainRun : null; }
+  /** 育成中（育成開始〜育成完了の間。Chapter進行中・Chapter間ファーム・最終Chapter進行中） */
+  function isRaising(m) { const s = raiseState(m); return s === RAISE.BOARD || s === RAISE.FARM || s === RAISE.FINAL; }
+  /** Chapter（最終Chapterを含む）のボードを進行中 */
+  function inChapter(m) { const s = raiseState(m); return s === RAISE.BOARD || s === RAISE.FINAL; }
+  /** その個体が指定のChapterを終えたか（ゴールの有無・大会の結果は問わない） */
+  function hasEndedChapter(m, no) { return !!(m && isObj(m.raise) && Array.isArray(m.raise.log) && m.raise.log.some((e) => e && e.ch === no)); }
 
   // =========================================================
   // セーブ v5
@@ -176,8 +197,13 @@
       const clearedMax = Math.min(CHAPTER_COUNT, ch - 1);
       // 旧版はChapterクリア後にスタート地点("s")へ戻るだけだった。スタート地点以外にいれば進行中とみなす。
       const inProgress = !!(bd && bd.node && bd.node !== 's');
+      // Phase 7.1：地図が存在しないChapter（現在はChapter2〜4）の途中だった場合、
+      // 「ボード進行中」のまま引き継ぐと地図が見つからず進行不能（ソフトロック）になる。
+      // 正式な地図を仮実装する代わりに、安全なファーム帰還状態へ退避する
+      // （個体・所持金・ランク実績など他のデータは一切変更しない。途中位置だけを失う）。
+      const stuckOnUnmappedChapter = inProgress && ch > MIGRATABLE_IN_PROGRESS_CHAPTERS;
       d.chap = {
-        status: inProgress ? STATUS_BOARD : STATUS_FARM,
+        status: (inProgress && !stuckOnUnmappedChapter) ? STATUS_BOARD : STATUS_FARM,
         clearedMax,
         cleared: Array.from({ length: clearedMax }, (_, i) => i + 1),
       };
@@ -187,6 +213,11 @@
       // --- バッグ6枠：旧セーブでSランク大会に勝っていれば解放済みとする ---
       d.inv.bagCapUnlocked = br >= RANK_S;
       Object.assign(S, d);
+      if (stuckOnUnmappedChapter) {
+        // 途中位置（node）だけを手放し、次に出発し直せる「ファーム待機中」の形に揃える。
+        // 元のv4原文はp7Load側でmr4_v4backupへ必ず退避されるため、必要なら復元できる。
+        S.board = { ch, node: null, done: false };
+      }
       // --- 個体：旧 rk は「勝ってランクアップした回数」。rk未満のランクはクリア済みとみなす ---
       monstersOf(S).forEach((m) => {
         m.prog = newProg();
@@ -210,36 +241,7 @@
   }
   function getChapterBoard(no) { return chapterBoards[no] || null; }
   function isChapterPlayable(no) { return !!chapterBoards[no]; }
-  function chapterStatus(S) { return S.chap.status; }
-  /** 次に出発するChapter番号（全Chapterクリア済みなら null） */
-  function nextChapterNo(S) {
-    const n = S.chap.clearedMax + 1;
-    return n <= CHAPTER_COUNT ? n : null;
-  }
-  function canDepart(S, no) {
-    if (S.chap.status !== STATUS_FARM) return { ok: false, reason: 'not_at_farm' };
-    if (S.trainRun) return { ok: false, reason: 'training' };
-    if (no !== nextChapterNo(S)) return { ok: false, reason: 'not_next' };
-    if (!isChapterPlayable(no)) return { ok: false, reason: 'no_map' };
-    return { ok: true };
-  }
-  function departChapter(S, no) {
-    const c = canDepart(S, no);
-    if (!c.ok) return c;
-    const b = getChapterBoard(no);
-    S.board = { ch: no, node: b.track.start, done: false };
-    S.chap.status = STATUS_BOARD;
-    return { ok: true };
-  }
-  /** Chapter章末大会に勝利：ファームへ帰還状態にする（次Chapterへは直行しない） */
-  function clearChapter(S, no) {
-    if (!S.chap.cleared.includes(no)) S.chap.cleared.push(no);
-    S.chap.clearedMax = Math.max(S.chap.clearedMax, no);
-    S.chap.status = STATUS_FARM;
-    const nx = nextChapterNo(S);
-    S.board = { ch: nx || no, node: null, done: false };
-    return { next: nx };
-  }
+  // Phase 8：Chapterの出発・終了・次Chapterは「個体ごとの進行」として js/phase8/raising.js（MMP8）が管理する（セーブ全体の S.chap は廃止）。
   /** 「何も起きないマス」判定 */
   const NOTHING_SQUARE = 'normal';
   function isNothingSquare(type) { return type === NOTHING_SQUARE; }
@@ -269,11 +271,14 @@
   // ランククリア実績
   // =========================================================
   function hasClearedRank(m, rank) { ensureProg(m); return !!m.prog.rankClr[rank]; }
+  /** 指定ランク以上のどれかをクリアしているか */
+  function hasClearedRankAtLeast(m, rank) { ensureProg(m); return m.prog.rankClr.some((v, i) => v && i >= rank); }
   /** ランク大会に勝利したときに呼ぶ。Sランク初回ならバッグを6枠へ永久拡張する */
   function recordRankClear(S, m, rank) {
     if (!Number.isInteger(rank) || rank < 0 || rank >= RANK_COUNT) throw new Error(`ランクが不正です：${rank}`);
-    if (m) { ensureProg(m); m.prog.rankClr[rank] = true; }
-    S.rankRec.cleared[rank] = true;
+    // Phase 8：上位ランクをクリアしたら、それ以下のランクもクリア扱い（飛ばした下位ランクの初回報酬は呼び出し側で付与しない）
+    if (m) { ensureProg(m); for (let i = 0; i <= rank; i++) m.prog.rankClr[i] = true; }
+    for (let i = 0; i <= rank; i++) S.rankRec.cleared[i] = true;
     let bagUnlocked = false;
     if (rank === RANK_S && !S.inv.bagCapUnlocked) { S.inv.bagCapUnlocked = true; bagUnlocked = true; }
     return { bagUnlocked };
@@ -296,12 +301,15 @@
   function canStartTraining(S, m, kind) {
     if (!TRAIN_KINDS.includes(kind)) return { ok: false, reason: 'bad_kind' };
     if (!m) return { ok: false, reason: 'no_monster' };
-    if (S.chap.status !== STATUS_FARM) return { ok: false, reason: 'not_at_farm' };
-    if (S.trainRun) return { ok: false, reason: 'in_progress' };
-    // 修行はChapter 1をクリアしてファームへ帰還して以降に解禁
-    if (!(S.chap.clearedMax >= 1)) return { ok: false, reason: 'before_ch1' };
+    // Phase 8：可否は個体の育成状態で判定する（セーブ全体の状態は見ない）
+    const st = raiseState(m);
+    if (st === RAISE.BOARD || st === RAISE.FINAL) return { ok: false, reason: 'not_at_farm' };
+    if (st === RAISE.DONE) return { ok: false, reason: 'finished' };
+    if (trainRunOf(m)) return { ok: false, reason: 'in_progress' };
+    // 修行は、その個体がChapter 1を終えてChapter間ファームにいる間だけ
+    if (st !== RAISE.FARM || !hasEndedChapter(m, 1)) return { ok: false, reason: 'before_ch1' };
     ensureProg(m);
-    if (kind === 'de' && !hasClearedRank(m, RANK_B)) return { ok: false, reason: 'locked' };
+    if (kind === 'de' && !hasClearedRankAtLeast(m, TOUGH_UNLOCK_RANK)) return { ok: false, reason: 'locked' };
     if (m.prog.train[kind] >= TRAIN_MAX[kind]) return { ok: false, reason: 'max' };
     if (S.trainTix < 1) return { ok: false, reason: 'no_ticket' };
     return { ok: true };
@@ -310,12 +318,12 @@
     const c = canStartTraining(S, m, kind);
     if (!c.ok) return c;
     S.trainTix -= 1;
-    S.trainRun = { kind, pos: 0 };
+    m.raise.trainRun = { kind, pos: 0 };   // 修行中の状態は個体が持つ
     return { ok: true };
   }
   /** サイコロの出目ぶん進み、止まったマスの効果だけを適用する */
   function advanceTraining(S, m, steps, rng = Math.random) {
-    const run = S.trainRun;
+    const run = trainRunOf(m);
     if (!run) throw new Error('修行中ではありません');
     if (!Number.isInteger(steps) || steps < DICE_MIN || steps > DICE_MAX) throw new Error(`出目が不正です：${steps}`);
     const from = run.pos;
@@ -335,7 +343,7 @@
   }
   /** ゴール到達時：技習得（固定対応・重複なし）とクリア回数の記録 */
   function finishTraining(S, m, rng = Math.random) {
-    const run = S.trainRun;
+    const run = trainRunOf(m);
     if (!run || run.pos !== TRAIN_LEN) throw new Error('まだゴールしていません');
     ensureProg(m);
     const kind = run.kind;
@@ -356,7 +364,7 @@
       }
     }
     m.prog.train[kind] += 1;
-    S.trainRun = null;
+    m.raise.trainRun = null;
     return { kind, learned, reason };
   }
 
@@ -414,8 +422,8 @@
   function bagCap(S) { return S.inv.bagCapUnlocked ? BAG_UNLOCKED_CAP : BAG_BASE_CAP; }
   function bagFree(S) { return Math.max(0, bagCap(S) - S.inv.bag.length); }
   function vaultHasRoom(S) { return S.inv.vaultCap === null || S.inv.vault.length < S.inv.vaultCap; }
-  /** 保管庫にアクセスできるのはファーム滞在中（Chapter外・修行中でない）だけ */
-  function canAccessVault(S) { return S.chap.status === STATUS_FARM && !S.trainRun; }
+  /** 保管庫・アイテム屋を使えるのは、連れている個体がChapter進行中・修行中でない間だけ（Phase 8：個体の状態で判定） */
+  function canAccessVault(S) { const m = S.m; return !(m && (inChapter(m) || trainRunOf(m))); }
   const mkItem = (id) => ({ id });
 
   // ---- バッグ満杯時の扱い：【未確定】 ----
@@ -485,9 +493,10 @@
     TRAIN_KINDS, TRAIN_LEN, TRAIN_TEMPLATE, TRAIN_GAIN, TOUGH_MAX_CLEARS, TRAIN_MAX, DICE_MIN, DICE_MAX,
     MOVESET_SLOTS, CHAPTER_DEFS, CHAPTER_COUNT, STATUS_FARM, STATUS_BOARD, NOTHING_SQUARE,
     configureLegacy, newProg, ensureProg, initProgForNew,
+    RAISE, raiseState, trainRunOf, isRaising, inChapter, hasEndedChapter, TOUGH_UNLOCK_RANK, hasClearedRankAtLeast,
     newSave, migrateSave, normalizeV5,
-    getChapterDef, registerChapterBoard, getChapterBoard, isChapterPlayable, chapterStatus,
-    nextChapterNo, canDepart, departChapter, clearChapter, isNothingSquare,
+    getChapterDef, registerChapterBoard, getChapterBoard, isChapterPlayable,
+    isNothingSquare,
     registerMoveset, getMoveset,
     hasClearedRank, recordRankClear,
     rollDice, trainSquare, canStartTraining, startTraining, advanceTraining, finishTraining,
