@@ -70,7 +70,7 @@ async function readRecord(slotId) {
   const raw = await storage.get(`save.${slotId}`);
   if (raw == null) return null;
   const record = JSON.parse(raw);
-  if (record.format !== FORMAT) throw new Error('モンスターマスターのセーブデータではありません');
+  if (record.format !== FORMAT) throw new Error('ミスティックモンスターズのセーブデータではありません');
   return migrate(record, cfg.saveVersion);
 }
 
