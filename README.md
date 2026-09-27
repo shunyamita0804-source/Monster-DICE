@@ -1,4 +1,4 @@
-# モンスターマスター
+# ミスティックモンスターズ / Mystic Monsters
 
 王道JRPG風のモンスター育成ゲーム。HTML / CSS / JavaScript の通常のWebプロジェクトです。
 GitHub Pages で動作確認し、将来は Capacitor で iOS / Android アプリにします。

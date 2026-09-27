@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ja"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>モンスターマスター</title>
+<title>ミスティックモンスターズ | Mystic Monsters</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800&display=swap" rel="stylesheet">
 <style>
@@ -847,7 +847,7 @@ button.mkc b{font-size:.9rem}button.mkc small{font-size:.66rem;color:#ffe9b0}
 .p7note{display:block;margin-top:6px;opacity:.7}
 #p7msg{color:#3a2410;font-weight:700}
 </style></head><body><main>
-<h1>モンスターマスター</h1>
+<h1>ミスティックモンスターズ</h1>
 <div id="app"></div>
 </main>
 <div id="ov"></div>
@@ -1103,7 +1103,7 @@ function arm(b,t){if(b.dataset.a!="1"){const o=b.textContent;b.dataset.a="1";b.t
 function slotSave(n,b){if(sl(n)&&!arm(b,"もう一度押すと上書き"))return;let ok=false;try{const j=JSON.stringify(S);localStorage.setItem("mr4s"+n,j);ok=localStorage.getItem("mr4s"+n)==j}catch(e){}savescr(ok?`スロット${n}にセーブしました！`:"セーブできませんでした。セーブコードを使ってください。")}
 function slotLoad(n,b){const d=MMP7.migrateSave(sl(n));if(!d)return;if(!arm(b,"もう一度押すと読み込み"))return;S=d;sel=[];save();lobby(`スロット${n}をロードしました！`)}
 function exp(){const t=$("#sc");t.value=btoa(unescape(encodeURIComponent(JSON.stringify(S))));t.select();const ok=()=>msg0("コードを作って、コピーしました！メモなどに貼って保管してください。"),ng=()=>msg0("コードを作りました。入力欄を長押ししてコピーしてください。");try{nv.clipboard&&nv.clipboard.writeText(t.value).then(ok,ng)||ng()}catch(e){ng()}}
-function shareCode(){exp();if(nv.share)nv.share({title:"モンスターマスター セーブコード",text:$("#sc").value}).catch(()=>{})}
+function shareCode(){exp();if(nv.share)nv.share({title:"ミスティックモンスターズ セーブコード",text:$("#sc").value}).catch(()=>{})}
 function pasteCode(){if(nv.clipboard&&nv.clipboard.readText)nv.clipboard.readText().then(x=>{$("#sc").value=x;msg0("貼り付けました。「このコードで読み込む」を押してください。")},()=>msg0("貼り付けできませんでした。入力欄を長押しして貼り付けてください。"));else msg0("入力欄を長押しして貼り付けてください。")}
 function imp(){try{const o=MMP7.migrateSave(JSON.parse(decodeURIComponent(escape(atob($("#sc").value.trim())))));if(!o||!Array.isArray(o.box))throw 0;S=o;sel=[];save();lobby("ロードしました！")}catch(e){msg0("セーブコードが正しくありません。")}}
 function selm(i){const j=sel.indexOf(i);j>=0?sel.splice(j,1):sel.length<2&&sel.push(i);farm("","c")}
