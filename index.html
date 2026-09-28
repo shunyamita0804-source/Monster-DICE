@@ -1550,7 +1550,7 @@ function p11NameScr(msg){bgm("town");p9Immersive(false);const d=MMP11P.DEFAULT_N
  <p class="p11s">ミスティックモンスターズへようこそ！<br>あなたの名前を教えてください。</p>
  <label class="p11lb" for="p11nm">プレイヤー名（${MMP11P.MAX_LEN}文字まで）</label><input id="p11nm" maxlength="${MMP11P.MAX_LEN*2}" value="${p11Esc(S.playerName||d)}" autocomplete="off" enterkeyhint="done" onkeydown="if(event.key==='Enter'&&!event.isComposing)p11NameGo()">
  <p class="p11hint">空欄のままなら「${d}」ではじまります。</p><button class="p11go" onclick="p11NameGo()">この名前ではじめる</button></div></div>`}
-function p11NameGo(){const e=$("#p11nm"),n=MMP11P.confirmName(S,e?e.value:"");save();lobby(`ようこそ、${p11Esc(n)}さん！ まずは市場でモンスターを選ぼう。`)}
+function p11NameGo(){const e=$("#p11nm"),n=MMP11P.confirmName(S,e?e.value:"");save();lobby(`ようこそ、${p11Esc(n)}さん！ まずは市場でモンスターを選ぼう。`);finaIntro()}
 // ---- Phase 11：ステータス画面の正式情報（種族名・英字名・種類・素早さ）。データは正式モンスターマスター（MMP10M）から取る ----
 function p11SpLine(m){const s=MMP10M.byId(m.sp);return s?`<small class="p11spn">${s.name}${s.en?`<span>${s.en}</span>`:""}</small>`:""}
 // 素早さ：1〜10（数値が大きいほど速い）。0〜999の能力ゲージとは別の、10段階の目盛りで表示する
@@ -2244,7 +2244,7 @@ function p8Hud(pre=""){return `<div class="p8hud">${pre}${MMP8.resources(S).map(
 function p8TourDecline(b){if(!arm(b,"もう一度押すと辞退（報酬なしでChapter終了）"))return;const r=MMP8.declineTournament(S,S.m);if(!r.ok)return board();save();p8AfterChapterEnd(r)}
 function p8EndChapter(){if(bBusy)return;const r=MMP8.endChapter(S,S.m);if(!r.ok)return board();save();p8AfterChapterEnd(r)}
 function p8AfterChapterEnd(r){if(r.next=="done")return p8DoneScr();hall("t",`${p8ChLabel(r.entry.ch)}が終わった。`+(r.next==MMP8.FINAL?(MMP8.isPlayable(MMP8.FINAL)?"Aランク以上をクリアしたので、次は最終Chapterへ進みます！":"Aランク以上をクリアした！ 最終ルートは準備中のため、ここで育成を完了して街へ戻れます。"):"準備ができたら次のChapterへ出発しよう。"))}
-function p8DoneScr(msg){const m=S.m,lg=(m.raise&&m.raise.log)||[];bgm("farm");p9Immersive(true);const cf=Array.from({length:14},(_,i)=>`<i style="left:${(i*41)%100}%;animation-delay:${(i%5)*.4}s"></i>`).join("");$("#app").innerHTML=`<div class="p9farm p9done"><div class="p9win p9dn"><div class="cf">${cf}</div><small class="p9dt">育成完了</small><div class="mon p9bob">${msv(m)}</div><b class="big">🎉 ${m.name}の育成が完了した！</b><div class="sub">最高クリアランク：<b>${MMP8.rankLabel(m)}</b></div>${msg?`<div class="sub">${msg}</div>`:""}</div>${lg.length?`<section class="p9card"><h3>育成の記録</h3><div class="p9res2">${lg.map(e=>`<span>${p8ChLabel(e.ch)}</span><b>${e.skipped?"準備中のため未実施（ここで育成完了）":e.legacy?"（旧セーブから引き継ぎ）":`${e.reachedGoal?`${e.turnsUsed}ターンでゴール`:"ゴールできず"}${e.tour?`／ランク${RN[e.tour.rank]}大会 ${e.tour.place}位`:e.declined?"／大会辞退":""}`}</b>`).join("")}</div></section>`:""}<div class="p9card p9dnb"><button class="p9btn" onclick="farm('','a')">牧場へ</button></div></div>`;try{window.scrollTo(0,0)}catch(e){}}
+function p8DoneScr(msg){const m=S.m,lg=(m.raise&&m.raise.log)||[];bgm("farm");p9Immersive(true);const cf=Array.from({length:14},(_,i)=>`<i style="left:${(i*41)%100}%;animation-delay:${(i%5)*.4}s"></i>`).join("");$("#app").innerHTML=`<div class="p9farm p9done"><div class="p9win p9dn"><div class="cf">${cf}</div><small class="p9dt">育成完了</small><div class="mon p9bob">${msv(m)}</div><b class="big">🎉 ${m.name}の育成が完了した！</b><div class="sub">最高クリアランク：<b>${MMP8.rankLabel(m)}</b></div>${msg?`<div class="sub">${msg}</div>`:""}</div>${lg.length?`<section class="p9card"><h3>育成の記録</h3><div class="p9res2">${lg.map(e=>`<span>${p8ChLabel(e.ch)}</span><b>${e.skipped?"準備中のため未実施（ここで育成完了）":e.legacy?"（旧セーブから引き継ぎ）":`${e.reachedGoal?`${e.turnsUsed}ターンでゴール`:"ゴールできず"}${e.tour?`／ランク${RN[e.tour.rank]}大会 ${e.tour.place}位`:e.declined?"／大会辞退":""}`}</b>`).join("")}</div></section>`:""}<div class="p9card p9dnb"><button class="p9btn" onclick="farm('','a')">牧場へ</button></div></div>`;try{window.scrollTo(0,0)}catch(e){}finaTalk("done")}
 // ---- 通し試遊の修正：最終ルートのマップが未登録のときだけ、Chapter間ファームから育成を完了して街へ戻れる（最終ルートの内容・ルールは作らない） ----
 function pfixFinalNote(){if(MMP8.isPlayable(MMP8.FINAL))return `<p class="p9s">Aランク以上をクリアしたため、最終ルートへ進みます。</p>`;
  return `<p class="p9s">Aランク以上をクリアしたため、本来は最終ルートへ進みます。<br>最終ルートはまだ準備中のため、ここで育成を完了して街へ戻れます。<br><small>大会の結果・賞金・育成の記録はそのまま残ります。</small></p><button class="p9btn" onclick="pfixFinishNoFinal(this)">育成を完了して街へ戻る</button>`}
@@ -2355,7 +2355,22 @@ function prepScr(msg){if(!S.m)return lobby();if(!MMP7.canAccessVault(S))return h
 const P7_ERR={finished:"育成は完了しています。",no_monster:"モンスターがいません。",full:"バッグがいっぱいです。",vault_full:"保管庫がいっぱいです。",vault_locked:"いまは保管庫を使えません。",not_next:"そのChapterにはまだ行けません。",no_map:"このChapterのマップは準備中です。",not_at_farm:"いまは出発できません。",training:"修行中です。",no_money:"お金が足りません。",no_price:"価格が設定されていません。",not_sold:"その商品はありません。"};
 function p7ToBag(i){const r=MMP7.moveVaultToBag(S,i);if(r.ok)save();prepScr(r.ok?"":P7_ERR[r.reason])}
 function p7ToVault(i){const r=MMP7.moveBagToVault(S,i);if(r.ok)save();prepScr(r.ok?"":P7_ERR[r.reason])}
-function p7Depart(b){const m=S.m;if(!m)return lobby();if(MMP7.raiseState(m)=="none"&&b&&!arm(b,"もう一度押すと育成開始（完了か放棄まで街へ戻れません）"))return;const r=MMP8.depart(S,m);if(!r.ok)return prepScr(P7_ERR[r.reason]||"出発できません。");save();board(`${p8ChLabel(r.key)}に出発！サイコロを振って進もう！`)}
+// ---- フィナの登場（正式に指定された3か所だけ）：名前登録後の初回あいさつ／育成開始の確認（初回だけ説明つき）／育成完了。会話は共通会話 MMNPC ----
+//  表示済みの記録は S.npcFlags（任意項目。セーブversionは6のまま）：finaIntro＝初回あいさつ済み、raiseIntro＝育成開始の説明済み。
+const FINA_TALK={
+ intro:[{npc:"fina",expression:"smile",text:"はじめまして。私はフィナです！"},{expression:"normal",text:"これからあなたのモンスター育成をお手伝いしますね。"},{expression:"guide",text:"まずは市場へ行って、一緒に育てるモンスターを迎えてみましょう！"}],
+ raiseFirst:[{npc:"fina",expression:"normal",text:"このモンスターで育成を始めますか？"},{expression:"serious",text:"育成を始めると、途中で街へ戻ることはできません。"},{expression:"smile",text:"準備ができたら、出発しましょう！"}],
+ raiseAgain:[{npc:"fina",expression:"normal",text:"このモンスターで育成を始めますか？"}],
+ done:[{npc:"fina",expression:"happy",text:"お疲れさまでした！　育成完了です！"},{expression:"smile",text:"ここまで育ててきた時間が、この子の力になっていますね。"},{expression:"guide",text:"育て終わったモンスターは、牧場でいつでも確認できますよ。"}]};
+function finaFlags(){if(!S.npcFlags||typeof S.npcFlags!="object"||Array.isArray(S.npcFlags))S.npcFlags={};return S.npcFlags}
+function finaTalk(key){return window.MMNPC&&FINA_TALK[key]?MMNPC.talk(FINA_TALK[key]):Promise.resolve()}
+/** 名前登録の直後に1度だけ：先に「表示済み」を保存してから会話を出す（再読込しても二度出ない） */
+function finaIntro(){const f=finaFlags();if(f.finaIntro)return;f.finaIntro=1;save();finaTalk("intro")}
+function p7Depart(b){const m=S.m;if(!m)return lobby();
+ // 育成開始（未育成→Chapter 1）の1回目の押下：フィナの確認会話（初回だけ説明つき）→ 終わったら従来の2度押し確認へ（押さなければ従来どおり取り消し）
+ if(MMP7.raiseState(m)=="none"&&b&&b.dataset.a!="1"&&window.MMNPC){if(b.dataset.fina)return;b.dataset.fina="1";const f=finaFlags(),first=!f.raiseIntro;if(first){f.raiseIntro=1;save()}
+  finaTalk(first?"raiseFirst":"raiseAgain").then(()=>{delete b.dataset.fina;if(document.body.contains(b)&&MMP7.raiseState(S.m)=="none")arm(b,"もう一度押すと育成開始（完了か放棄まで街へ戻れません）")});return}
+ if(MMP7.raiseState(m)=="none"&&b&&!arm(b,"もう一度押すと育成開始（完了か放棄まで街へ戻れません）"))return;const r=MMP8.depart(S,m);if(!r.ok)return prepScr(P7_ERR[r.reason]||"出発できません。");save();board(`${p8ChLabel(r.key)}に出発！サイコロを振って進もう！`)}
 
 // ---- アイテム屋（購入品は保管庫へ。バッグは直接操作しない） ----
 function shopScr(msg){if(!S.m)return lobby();if(!MMP7.canAccessVault(S))return hall("t","Chapter中はアイテム屋に行けません。");bgm("market");

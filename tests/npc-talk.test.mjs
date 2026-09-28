@@ -67,12 +67,26 @@ test('NT-4：表情・表示の種類（closeup／fullbody）を行ごとに切�
   assert.throws(() => M.register('', {}), /不正/);
 });
 
-test('NT-5：フィナは案内役として登録（Chapterボードには置かない）。正式PNGを受け取るまで画像は未登録で、名前と本文だけを表示する', () => {
+test('NT-5：フィナは案内役として登録（Chapterボードには置かない）。上半身の8表情と、6コマのアニメーション2種。全身は未着のため上半身で代わりに表示', () => {
   const M = load(), f = M.get('fina');
   assert.deepEqual([f.name, f.role, f.board, f.defaultView, f.defaultExpr], ['フィナ', '案内役', false, 'closeup', 'normal']);
-  assert.deepEqual([M.expressionsOf('fina', 'closeup'), M.expressionsOf('fina', 'fullbody')], [[], []]); assert.equal(M.imageOf('fina', 'closeup', 'smile'), null);
-  const s = M.createTalk([{ npc: 'fina', expression: 'smile', text: 'こんにちは' }], clock()).start().state();
-  assert.deepEqual([s.name, s.img], ['フィナ', null]);
+  assert.deepEqual(M.expressionsOf('fina', 'closeup'), ['normal', 'smile', 'happy', 'surprised', 'troubled', 'worried', 'serious', 'guide']);
+  assert.deepEqual(M.expressionsOf('fina', 'fullbody'), []); assert.deepEqual(M.animationsOf('fina', 'closeup'), ['wave', 'wave_blink']);
+  const fb = M.imageOf('fina', 'fullbody', 'happy'); assert.deepEqual([fb.view, fb.expr, fb.fallback, fb.src], ['closeup', 'happy', true, 'assets/npc/fina/closeup/happy.png']);
+  for (const a of ['wave', 'wave_blink']) { const x = M.animOf('fina', 'closeup', a); assert.equal(x.frames.length, 6); assert.ok(x.loop); x.frames.forEach((s, i) => assert.equal(s, `assets/npc/fina/animations/${a}/${a}_0${i + 1}.png`)); }
+  assert.equal(M.animOf('fina', 'closeup', 'dance'), null, '存在しないアニメーションは静止画のまま');
+  // 素材：すべて透過PNG（RGBA）で、四隅は透明
+  const all = [...Object.values(f.views.closeup), ...Object.values(f.anims.closeup).flatMap((a) => a.frames)];
+  assert.equal(all.length, 20);
+  for (const src of all) {
+    const buf = readFileSync(path.join(ROOT, src));
+    assert.equal(buf.subarray(1, 4).toString(), 'PNG', src); assert.equal(buf[25], 6, `${src}：カラータイプ6（RGBA）`);
+  }
+  assert.match(rd('assets/npc/fina/README.md'), /背景（描き込まれた市松模様・緑背景）だけを透明にした透過PNG/);
+  const c = clock(), T = M.createTalk([{ npc: 'fina', expression: 'happy', text: 'a' }, { anim: 'wave', text: 'b' }, { text: 'c' }], c).start();
+  assert.deepEqual([T.state().img, T.state().anim], ['assets/npc/fina/closeup/happy.png', null]); c.run(100); T.tap(); c.run(100);
+  const s2 = T.state(); assert.deepEqual([s2.idx, s2.anim, s2.frames.length, s2.fps], [1, 'wave', 6, 8]);
+  T.tap(); c.run(100); assert.deepEqual([T.state().idx, T.state().anim], [2, null], 'アニメーションは行ごとの指定（次の行へは引き継がない）');
 });
 
 test('NT-6：既存NPC会話（NP）は文章を変えずに共通会話へ変換できる。index.html の画面には会話を常設していない', () => {
@@ -81,7 +95,8 @@ test('NT-6：既存NPC会話（NP）は文章を変えずに共通会話へ変�
   const L = M.fromLegacy(NP.b, [0, 1]); assert.deepEqual(L, [{ name: 'コウ', text: NP.b.t[0] }, { name: 'コウ', text: NP.b.t[1] }]);
   assert.equal(M.fromLegacy(NP.f).length, NP.f.t.length); assert.equal(JSON.stringify(NP), before, '既存の会話データは変えない');
   assert.equal((HTML.match(/<script src="\.\/js\/npc\/npc\.js"><\/script>/g) || []).length, 1);
-  assert.doesNotMatch(HTML, /MMNPC\./, '街・市場・牧場・ファームなどの画面から呼び出していない（登場させていない）');
+  assert.deepEqual(HTML.match(/MMNPC\.[a-zA-Z]+/g), ['MMNPC.talk'], '画面からは finaTalk の1か所だけで呼ぶ（正式に指定された場所だけ：fina-appear.test.mjs）');
+  for (const f of ['function market(', 'function farm(', 'function _hall(', 'function board(', 'function museum(']) { const i = HTML.indexOf(f); if (i >= 0) assert.doesNotMatch(HTML.slice(i, HTML.indexOf('\nfunction ', i + 10)), /finaTalk|MMNPC/, `${f} には置かない`); }
   const css = HTML.slice(HTML.indexOf('/* ===== 共通NPC会話（MMNPC'), HTML.indexOf('</style></head>'));
   assert.doesNotMatch(css, /filter|hue-rotate/, '立ち絵の色を変えない'); assert.match(css, /font-family:"Noto Sans JP"/); assert.match(css, /font-family:"Shippori Mincho"/);
 });
