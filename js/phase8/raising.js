@@ -23,6 +23,10 @@
   const INDIVIDUAL_NORMALIZERS = [];
   function addIndividualNormalizer(fn) { if (typeof fn === 'function' && !INDIVIDUAL_NORMALIZERS.includes(fn)) INDIVIDUAL_NORMALIZERS.push(fn); }
   const runNormalizers = (m) => { for (const fn of INDIVIDUAL_NORMALIZERS) fn(m); return m; };
+  // Phase 11：セーブ全体の補正フック（プレイヤー名など）。新規セーブ作成時（isNew:true）とセーブ読み込み時（isNew:false）に呼ばれる。
+  const SAVE_NORMALIZERS = [];
+  function addSaveNormalizer(fn) { if (typeof fn === 'function' && !SAVE_NORMALIZERS.includes(fn)) SAVE_NORMALIZERS.push(fn); }
+  const runSaveNormalizers = (S, isNew) => { for (const fn of SAVE_NORMALIZERS) fn(S, { isNew }); return S; };
 
   // =========================================================
   // Chapter定義（ターン上限・挑戦ランク上限はここだけで管理する）
@@ -99,7 +103,7 @@
   }
   /** 新しい個体（市場・合体など）に uid と「未育成」の状態を付ける */
   function initIndividual(S, m) { m.uid = uniqueUid(S, m); m.raise = newRaise(); return runNormalizers(m); }
-  Object.assign(API, { addIndividualNormalizer, RAISE, newRaise, ensureRaise, initIndividual, uniqueUid, ensureUids,
+  Object.assign(API, { addIndividualNormalizer, addSaveNormalizer, RAISE, newRaise, ensureRaise, initIndividual, uniqueUid, ensureUids,
     raiseState: P7.raiseState, isRaising: P7.isRaising, inChapter: P7.inChapter });
 
   // =========================================================
@@ -116,7 +120,7 @@
     const S = P7.newSave();            // 所持金・バッグ・チケット等の初期値はv5と同じ
     delete S.chap; delete S.trainRun;  // Chapter進行・修行状態はセーブ全体では持たない（個体側）
     S.v = SAVE_VERSION;
-    return S;
+    return runSaveNormalizers(S, true);
   }
   /** v6の欠けた値を補う（既存の値は変えない）。育成中の個体は常に「連れている個体（S.m）」の1体だけにそろえる */
   function normalizeV6(S) {
@@ -138,7 +142,7 @@
       S.box.forEach((x) => { if (P7.isRaising(x)) resetRaise(x); });
     }
     S.v = SAVE_VERSION;
-    return S;
+    return runSaveNormalizers(S, false);
   }
   const isNewerSave = (raw) => isObj(raw) && typeof raw.v === 'number' && raw.v > SAVE_VERSION;
   /**
