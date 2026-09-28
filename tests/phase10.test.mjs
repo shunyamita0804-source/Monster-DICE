@@ -245,7 +245,8 @@ test('M4-4：市場画面は正式データから作る横スワイプのカル�
   assert.doesNotMatch(mk, /jiol|ジオル|🔒|ロック|未解放|近日|MKH|AS\.mkt|sprH/, 'ジオル・鍵・旧ホットスポット・旧アニメを使わない');
   assert.match(mk, /MMP10M\.silhouetteOf\(c\.key\)\.src/); assert.match(mk, /p10Img\(c\.key\)/); assert.match(mk, /入荷待ち/);
   assert.match(mk, /1-\.3\*k/, '左右は約70%'); assert.match(mk, /p10dot/); assert.match(mk, /\$\{p10Who\(\)\}/);
-  assert.match(line('function p10Who(){'), /<b>ブリーダー<\/b><small>ランク \$\{br\}<\/small>/, 'プレイヤー名・顔は作らず「ブリーダー」＋ブリーダーランク'); assert.match(line('function p10Who(){'), /RN\[S\.br\]/);
+  // Phase 11で改訂：「ブリーダー」の仮表示 → 実際のプレイヤー名（HTMLとして安全に表示）＋ブリーダーランク
+  assert.match(line('function p10Who(){'), /<b>\$\{p11Esc\(S\.playerName\|\|MMP11P\.DEFAULT_NAME\)\}<\/b><small>ランク \$\{br\}<\/small>/); assert.match(line('function p10Who(){'), /RN\[S\.br\]/);
   assert.match(mk, /<button class="p10buy" disabled>入荷待ち<\/button>/, '入荷待ちは購入ボタンが使えない');
   const css = between('/* ===== Phase 10：市場', '</style></head>');
   assert.match(css, /\.p10car\{[^}]*overflow-x:auto;[^}]*scroll-snap-type:x mandatory;[^}]*overscroll-behavior-x:contain/, '横方向はカルーセル内部だけ');

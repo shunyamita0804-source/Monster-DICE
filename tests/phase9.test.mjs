@@ -88,7 +88,8 @@ test('T1-4：正式マップは仮CH1より十分長く、分岐・合流・ル�
   const m = HTML.match(/const CH1=(\{.*?\});\n/s); const OLD = new Function(`return ${m[1]}`)();
   const oldMin = minSteps({ ...OLD, goal: OLD.goal || 'goal' });
   const forks = C.CHAPTERS.map((c) => Object.values(c.track.conn).filter((o) => o.length > 1).length);
-  assert.deepEqual(forks, [2, 3, 4, 4], 'Chapterが進むほど分岐が増える');
+  // Chapter 1 は正式地理（Map Pattern A「大橋と清流の草原」）で分岐3か所になった（旧：2か所）。ほかの条件はそのまま
+  assert.deepEqual(forks, [3, 3, 4, 4], 'Chapter 1-Aは正式地理の3分岐。Chapter 2〜4は従来どおり');
   for (const c of C.CHAPTERS) {
     const t = c.track;
     assert.ok(minSteps(t) >= oldMin * 1.5, `CH${c.no}：最短${minSteps(t)}マス（仮CH1は${oldMin}）`);
@@ -281,7 +282,7 @@ test('T3-5：大会の途中保存・再開：参加者（種族・能力）・�
 
 test('T3-6：初回優勝＝賞金・修行チケット・ステータスボーナス／クリア済みランクの再優勝＝ステータスボーナスのみ（報酬の値はPhase 8のまま）', () => {
   const { P7, P8 } = load();
-  const A = tourSave(P7, P8, 0, 1); A.g = 0; let f; for (let i = 0; i < 5; i++) f = playLeague(P8, A, true);
+  const A = tourSave(P7, P8, 0, 1); A.g = 0; A.trainTix = 0; let f; for (let i = 0; i < 5; i++) f = playLeague(P8, A, true);   // ボードで拾った修行チケットと大会の報酬を分けて数える（B・Cと同じ）
   assert.equal(f.won, true); assert.deepEqual([f.reward.firstClear, f.reward.prize, f.reward.tickets, f.reward.bonus.length], [true, 100, 1, 3]);
   assert.deepEqual([A.g, A.trainTix], [100, 1]);
   const B = tourSave(P7, P8, 1, 2); B.m.prog.rankClr[1] = true; B.g = 0; B.trainTix = 0; for (let i = 0; i < 5; i++) f = playLeague(P8, B, true);
