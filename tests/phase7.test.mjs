@@ -522,7 +522,7 @@ function loadFuse(P, S, sel, rng) {
   const cnLine = lineOf(HTML, 'const cname=');
   const stubs = { S, sel, MMP7: P, MMP8: loadP8(P), p8Blocked: () => false, IMG: [], save: () => {}, lobby: () => {}, fx: async () => {}, Math: Object.create(Math, { random: { value: rng } }) };
   const names = Object.keys(stubs);
-  return new Function(...names, [spLine, ksLine, cnLine, mkLine, src, 'return fuse;'].join('\n'))(...names.map((n) => stubs[n]));
+  return new Function(...names, [spLine, ksLine, cnLine, mkLine, lineOf(HTML, 'function p11Esc(t){'), src, 'return fuse;'].join('\n'))(...names.map((n) => stubs[n]));
 }
 
 test('P7-21：index.htmlの合体：子は自身の初期4技＋継承1技（全継承しない）', async () => {

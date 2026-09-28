@@ -149,7 +149,7 @@ test('SL-8：画面：牧場に「モンスターを売る」→ 一覧（売却
   assert.match(farm, /^function farm\(msg,tab\)\{if\(p8Blocked\(\)\)return;/, '育成中は牧場（売却画面）へ進めない');
   assert.match(farm, /else if\(ft=="d"\)b=pfSellPanel\(all\);/); assert.match(farm, /onclick="farm\('','d'\)">💰 モンスターを売る<\/button>/);
   const panel = lineOf('function pfSellPanel(all){') + between('function pfSellPanel(all){', '\nfunction pfSellPick(');
-  assert.match(panel, /売却の確認<\/b>.*\$\{x\.name\}<\/b><br><small>種族：\$\{sp\}/); assert.match(panel, /売却額：<b>\$\{c\.price\}G<\/b>/);
+  assert.match(panel, /売却の確認<\/b>.*\$\{p11Esc\(x\.name\)\}<\/b><br><small>種族：\$\{sp\}/); assert.match(panel, /売却額：<b>\$\{c\.price\}G<\/b>/);
   assert.match(panel, /<button \$\{own>=2&&q\[i\]\.ok\?"":"disabled"\} onclick="pfSellPick\(\$\{i\}\)">売る<\/button>/, '最後の1体・育成中は押せない');
   const go = lineOf('function pfSellGo(b){');
   assert.match(go, /^function pfSellGo\(b\)\{if\(p8Blocked\(\)\|\|!pfSellUid\)return;const c=MMP10M\.canSell\(S,pfSellUid\);/);

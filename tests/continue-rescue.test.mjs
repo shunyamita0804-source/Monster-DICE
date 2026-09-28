@@ -28,7 +28,7 @@ function save(P7, P8, states, g) { const S = P8.newSave(); S.g = g; const ms = s
 /** index.html の adopt() を実物のまま動かす（個体生成は正式データの未育成個体） */
 function adoptOf(P7, P8, M, S, log) {
   const mk = (i) => mon(P7, P8, S, 'none', { sp: i, name: M.byId(i).name, ...M.baseOf(i) });
-  return new Function('S', 'MMP10M', 'P10_WHY', 'mk', 'save', 'lobby', 'market', 'p8Blocked', 'sel', `${lineOf('function adopt(i,nm){')}\nreturn adopt;`)(
+  return new Function('S', 'MMP10M', 'P10_WHY', 'mk', 'save', 'lobby', 'market', 'p8Blocked', 'sel', `${lineOf('function p11Esc(t){')}\n${lineOf('function adopt(i,nm){')}\nreturn adopt;`)(
     S, M, { no_money: 'お金が足りません。', full: '手持ちと牧場で8体までです。' }, mk, () => log.push('save'), (m) => log.push(['lobby', m]), (m, k) => log.push(['market', m, k]), () => false, []);
 }
 

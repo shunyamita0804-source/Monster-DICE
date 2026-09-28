@@ -220,13 +220,13 @@ test('QA-G2-8：育成放棄（p8AbandonGo）・最初からやり直す（reset
   // 守ること：以前は放棄で個体の並び（番号）が変わっても選択が残り、合体タブで選んでいない2体が選ばれた状態になっていた
   const log = [];
   const ab = new Function('S', '$', 'MMP8', 'p8ModalClose', 'p8Resume', 'save', 'lobby',
-    `let sel=[2,0];${lineOf('function p8AbandonGo(')};return {go:p8AbandonGo,get sel(){return sel}};`)(
+    `let sel=[2,0];${lineOf('function p11Esc(t){')}\n${lineOf('function p8AbandonGo(')};return {go:p8AbandonGo,get sel(){return sel}};`)(
     { m: {} }, () => ({ disabled: false }), { abandon: () => ({ ok: true, name: 'A' }) }, () => {}, () => log.push('resume'), () => log.push('save'), (m) => log.push(m));
   ab.go('u1');
   assert.deepEqual(ab.sel, []); assert.deepEqual(log, ['save', 'Aの育成を放棄しました。']);
   // 放棄できなかったとき（別の個体など）は何も変えない
   const ng = new Function('S', '$', 'MMP8', 'p8ModalClose', 'p8Resume', 'save', 'lobby',
-    `let sel=[2,0];${lineOf('function p8AbandonGo(')};return {go:p8AbandonGo,get sel(){return sel}};`)(
+    `let sel=[2,0];${lineOf('function p11Esc(t){')}\n${lineOf('function p8AbandonGo(')};return {go:p8AbandonGo,get sel(){return sel}};`)(
     { m: {} }, () => ({ disabled: false }), { abandon: () => ({ ok: false }) }, () => {}, () => {}, () => { throw new Error('保存しない'); }, () => {});
   ng.go('u1'); assert.deepEqual(ng.sel, [2, 0]);
   const clk = { t: 1000 };   // QA G3：reset の2回目は確認状態から0.4秒以上たってから（連打対策）。時計を差し替える
@@ -242,7 +242,7 @@ function loadFuse(w, S, sel, src, rng = () => 0.5) {
   const log = [];
   const stubs = { S, sel, MMP7: w.P7, MMP8: w.P8, p8Blocked: () => false, save: () => log.push('save'), lobby: (m) => log.push(['lobby', m]), fx: async () => {}, Math: Object.create(Math, { random: { value: rng } }) };
   const names = Object.keys(stubs);
-  const f = new Function(...names, [lineOf('const SP='), lineOf('const KS='), lineOf('const cname='), lineOf('function mk(sp){'), src, 'return fuse;'].join('\n'))(...names.map((n) => stubs[n]));
+  const f = new Function(...names, [lineOf('const SP='), lineOf('const KS='), lineOf('const cname='), lineOf('function mk(sp){'), lineOf('function p11Esc(t){'), src, 'return fuse;'].join('\n'))(...names.map((n) => stubs[n]));
   return { fuse: f, log };
 }
 const fuseNew = () => between('async function fuse(){', '\nfunction tog(k)');

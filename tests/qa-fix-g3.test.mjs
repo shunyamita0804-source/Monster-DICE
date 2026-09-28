@@ -148,7 +148,7 @@ function abandonEnv() {
   const T = vtimers(); let modal = null, btn = null;
   const open = () => { const d = { remove() { if (modal === d) { modal = null; btn = null; } }, querySelector: () => ({ set innerHTML(h) { btn = { disabled: /id="p8abgo" disabled/.test(h), textContent: '' }; } }) }; modal = d; };
   const $ = (s) => (s === '#p8m' ? modal : s === '#p8abgo' ? btn : null);
-  const src = [lineOf('let p8AbT='), between('function p8AbandonAsk2(uid){', '\nfunction p8AbandonGo('), lineOf('function p8ModalClose(')].join('\n');
+  const src = [lineOf('function p11Esc(t){'), lineOf('let p8AbT='), between('function p8AbandonAsk2(uid){', '\nfunction p8AbandonGo('), lineOf('function p8ModalClose(')].join('\n');
   const api = new Function('S', '$', 'setInterval', 'clearInterval', `${src}\nreturn {ask2:p8AbandonAsk2,close:p8ModalClose};`)({ m: { uid: 'u1', name: 'ソラ' } }, $, T.setInterval, T.clearInterval);
   return { T, api, open, btn: () => btn };
 }

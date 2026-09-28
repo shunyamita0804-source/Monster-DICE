@@ -228,7 +228,7 @@ test('M4-2：価格500G・初回購入救済（手持ち0・牧場0・500G未満
 test('M4-3：購入は既存の個体生成処理で行い、種族・正式初期能力・素早さ・所持金が正しく入る（救済時も同じ処理）', () => {
   const { P7, P8, M } = load(); const S = P8.newSave(); S.g = 300;
   const log = []; const mkReal = (i) => { const b = M.baseOf(i); return P8.initIndividual(S, mon(P7, { sp: i, name: M.byId(i).name, ...b })); };
-  const adopt = new Function('S', 'MMP10M', 'P10_WHY', 'mk', 'save', 'lobby', 'market', 'p8Blocked', 'sel', `${line('function adopt(i,nm){')}\nreturn adopt;`)(
+  const adopt = new Function('S', 'MMP10M', 'P10_WHY', 'mk', 'save', 'lobby', 'market', 'p8Blocked', 'sel', `${line('function p11Esc(t){')}\n${line('function adopt(i,nm){')}\nreturn adopt;`)(
     S, M, { no_money: 'お金が足りません。' }, mkReal, () => log.push('save'), (m) => log.push(['lobby', m]), (m, k) => log.push(['market', m, k]), () => false, []);
   adopt(1, 'ガウル');
   assert.deepEqual([S.g, S.m.sp, S.m.speed, S.m.li, S.m.de, S.cnt], [0, 1, 7, 80, 60, 1]);
