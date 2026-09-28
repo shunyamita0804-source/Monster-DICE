@@ -84,6 +84,21 @@
     return m;
   }
   function resetRaise(m) { const log = m.raise && Array.isArray(m.raise.log) ? m.raise.log : []; m.raise = Object.assign(newRaise(), { log }); }
+  // ---- 読み込み時だけの補正（壊れた・手で書き換えられたセーブ対策）：今のコードが作らない形の途中状態だけを、
+  //      既存の「中断」と同じ安全な状態（null）へ戻す。正しい値（ゲームが保存した形）は一切変えない。
+  const PEND_STAGES = Object.freeze(['move', 'branch', 'resolve', 'battle']);   // roll/step/chooseBranch/resolveLanding が作る段階
+  const validPend = (p) => isObj(p) && PEND_STAGES.includes(p.stage)
+    && ((p.stage !== 'move' && p.stage !== 'branch') || Number.isInteger(p.left)) && (p.stage !== 'branch' || Array.isArray(p.opts));
+  const validTrainRun = (t) => isObj(t) && P7.TRAIN_KINDS.includes(t.kind) && Number.isInteger(t.pos) && t.pos >= 0 && t.pos <= P7.TRAIN_LEN;
+  const validBattle = (b) => isObj(b) && isObj(b.snap) && (b.kind === 'practice' || Object.prototype.hasOwnProperty.call(BATTLE_KINDS, b.kind));
+  function sanitizeLoadedRaise(m) {
+    const r = m.raise;
+    if (!r.log.every(isObj)) r.log = r.log.filter(isObj);                     // 記録の壊れた要素（null・数値など）は外す
+    if (r.pend !== null && !validPend(r.pend)) r.pend = null;                   // 出目のターンは消費済みのまま（振り直しにはならない。ensureBoardPositionと同じ）
+    if (r.trainRun !== null && !validTrainRun(r.trainRun)) r.trainRun = null;   // v5の読み込み（MMP7.normalizeV5）と同じく、読めない修行は取り消す
+    if (r.battle !== null && !validBattle(r.battle)) r.battle = null;           // 戦闘の途中終了と同じ（結果なし・同じ戦闘をもう一度選べる）
+    return m;
+  }
 
   let uidSeq = 0;
   const genUid = (rnd) => 'm-' + Date.now().toString(36) + '-' + Math.floor(rnd() * 0x7fffffff).toString(36) + '-' + (++uidSeq).toString(36);
@@ -123,21 +138,34 @@
     S.v = SAVE_VERSION;
     return runSaveNormalizers(S, true);
   }
+  /** 個体ではない値（数値・文字列・真偽値・配列など）を「連れている個体」と牧場から外す（壊れたセーブ対策。正しいセーブは変わらない） */
+  const hasBadMonsters = (S) => (S.m != null && !isObj(S.m)) || (Array.isArray(S.box) && !S.box.every(isObj));
+  function dropBadMonsters(S) {
+    if (S.m != null && !isObj(S.m)) S.m = null;
+    if (Array.isArray(S.box) && !S.box.every(isObj)) S.box = S.box.filter(isObj);
+    return S;
+  }
   /** v6の欠けた値を補う（既存の値は変えない）。育成中の個体は常に「連れている個体（S.m）」の1体だけにそろえる */
   function normalizeV6(S) {
     if (!Array.isArray(S.box)) S.box = [];
+    dropBadMonsters(S);
     delete S.chap; delete S.board; delete S.trainRun;
     if (!isObj(S.inv)) S.inv = { bag: [], bagCapUnlocked: false, vault: [], vaultCap: null };
     if (!Array.isArray(S.inv.bag)) S.inv.bag = [];
     if (!Array.isArray(S.inv.vault)) S.inv.vault = [];
+    if (!S.inv.bag.every(isObj)) S.inv.bag = S.inv.bag.filter(isObj);         // アイテムは { id } の形だけ（null・数値などの壊れた要素は外す）
+    if (!S.inv.vault.every(isObj)) S.inv.vault = S.inv.vault.filter(isObj);
     if (typeof S.inv.bagCapUnlocked !== 'boolean') S.inv.bagCapUnlocked = false;
     if (!('vaultCap' in S.inv) || !(S.inv.vaultCap === null || (Number.isInteger(S.inv.vaultCap) && S.inv.vaultCap >= 0))) S.inv.vaultCap = null;
     if (!Number.isInteger(S.trainTix) || S.trainTix < 0) S.trainTix = 0;
+    // 所持金：数字だけの文字列は数値へ。数値でない（無い・NaN・文字・配列など）・負の値は0（0以上の数値はそのまま）
+    if (typeof S.g === 'string' && S.g.trim() !== '' && Number.isFinite(+S.g)) S.g = +S.g;
+    if (!Number.isFinite(S.g) || S.g < 0) S.g = 0;
     if (!isObj(S.rankRec) || !Array.isArray(S.rankRec.cleared)) S.rankRec = { cleared: Array(P7.RANK_COUNT).fill(false) };
     while (S.rankRec.cleared.length < P7.RANK_COUNT) S.rankRec.cleared.push(false);
     normalizeRaiseRec(S);   // 育成完了回数：記録が無い旧セーブは推測せず0回から（fromStart:false）
     ensureUids(S);
-    monstersOf(S).forEach((x) => { P7.ensureProg(x); ensureRaise(x); runNormalizers(x); });
+    monstersOf(S).forEach((x) => { P7.ensureProg(x); ensureRaise(x); sanitizeLoadedRaise(x); runNormalizers(x); });
     const boxRaising = S.box.filter((x) => P7.isRaising(x));
     if (boxRaising.length) {
       if (!(S.m && P7.isRaising(S.m))) { const t = boxRaising[0]; S.box = S.box.filter((x) => x !== t); if (S.m) S.box.push(S.m); S.m = t; }
@@ -154,7 +182,7 @@
   function migrateSave(raw) {
     if (!isObj(raw)) return null;
     if (raw.v === SAVE_VERSION) return ('box' in raw && !Array.isArray(raw.box)) ? null : normalizeV6(clone(raw));
-    const S = P7.migrateSave(raw);   // v4/v5 → 正規化済みv5（コピー）。それ以外は null
+    const S = P7.migrateSave(hasBadMonsters(raw) ? dropBadMonsters({ ...raw }) : raw);   // v4/v5 → 正規化済みv5（コピー）。それ以外は null（元のオブジェクトは変えない）
     if (!S) return null;
     const chap = isObj(S.chap) ? S.chap : null, board = isObj(S.board) ? S.board : null, run = isObj(S.trainRun) ? S.trainRun : null;
     delete S.chap; delete S.board; delete S.trainRun;
@@ -195,7 +223,8 @@
     if (text == null) return out;
     let raw; try { raw = JSON.parse(text); } catch (e) { raw = undefined; }
     if (isNewerSave(raw)) { out.status = 'locked'; out.locked = true; out.version = raw.v; return out; }
-    const S = migrateSave(raw);
+    // 形は読めても中身が壊れていて変換中に失敗したデータも、読めないデータと同じ扱い（原文を退避して新規。起動を止めない）
+    let S = null; try { S = migrateSave(raw); } catch (e) { S = null; }
     if (!S) {
       const bk = get(BACKUP_BAD) == null ? BACKUP_BAD : BACKUP_BAD + '_' + Date.now();
       set(bk, text); out.status = 'unreadable'; out.backup = bk; return out;
