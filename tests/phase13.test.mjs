@@ -141,9 +141,9 @@ test('A1-5：画面にはノード同士をつなぐ線・番号を出さない�
 test('P15-1：開始画面は旧画像（TITLEIMG）を使わず、正式名称（ミスティックモンスターズ／Mystic Monsters）と開始ボタンを背景と分けたHTMLで表示', () => {
   const t = between('function title(){', '\nfunction togh(');
   assert.doesNotMatch(t, /TITLEIMG|モンスターマスター|MONSTER MASTER/i, '旧画像・旧名称を使わない');
-  assert.match(t, /<div class="p15logo"><b>ミスティックモンスターズ<\/b><span>Mystic Monsters<\/span><\/div>/);
-  assert.match(t, /<button class="p15start" data-nsfx="1" onclick="startGame\(this\)">タップしてはじめる<\/button>/, '開始ボタンは画像ではなくボタン');
-  assert.match(t, /MMP12S\.FARM_INTERVAL\.src/, '背景は文字・UIの描き込みがない正式背景');
+  // デザイン改修1で、正式開始画面画像（タイトル・開始ボタンの絵を含む）に置き換え。HTMLのタイトル文字は重ねない（詳細は title-design.test.mjs）
+  assert.doesNotMatch(t, /p15logo|FARM_INTERVAL/, 'HTMLのタイトル文字・仮背景は使わない');
+  assert.match(t, /<button class="p15start" data-nsfx="1" onclick="startGame\(this\)">タップしてはじめる<\/button>/, '開始ボタンは画像ではなくボタン（画像のボタン位置に重ねる）');
   assert.match(HTML, /const TITLEIMG="data:image/, '旧画像のデータ自体は削除しない（開始画面から外すだけ）');
   assert.match(rd('js/phase8/raising.js'), /const SAVE_KEY = 'mr4v6';/, 'セーブのキーは変えない');
 });
@@ -153,7 +153,7 @@ test('P15-2：市場は背景候補（台座付き）を使い、CSSの台座を
   assert.match(mk, /const MB=window\.MMP12S&&MMP12S\.MARKET_BG;/); assert.match(mk, /<div class="p15mkbg" style="background-image:url\(\$\{MB\.src\}\)"><\/div>`:P10_SCENE/, '背景候補が無ければ従来の描画背景');
   assert.match(mk, /\$\{MB\?"":`<div class="p10sign">/, '背景の看板と描いた看板を二重にしない');
   assert.match(HTML, /\.p15img \.p10ped\{display:none\}/, '背景の台座とCSSの台座を二重にしない');
-  assert.match(mk, /1-\.3\*k/, '左右は中央の約70%'); assert.match(mk, /P15MK\?-Math\.sign\(ds\)\*\(w-P15MK\.dx\)\*k/, '左右は奥の台座の位置へ');
+  assert.match(mk, /1-\.3\*k/, '左右は中央の約70%'); assert.match(mk, /dx=P15MK\?P15MK\.dx:\.73\*w,dy=P15MK\?P15MK\.dy:0;/, '左右は奥の台座の位置へ（市場カルーセル改修後）');
   assert.match(mk, /MMP10M\.canPurchase\(S,c\.key,owned\)/, '購入条件は従来の判定のまま');
   const { SC } = (() => { const w = {}; new Function('window', rd('js/phase12/scenes.js'))(w); return { SC: w.MMP12S }; })();
   assert.deepEqual(SC.MARKET_BG.pedestals, { center: [482, 1100], left: [200, 960], right: [748, 960] });

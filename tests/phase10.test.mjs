@@ -239,7 +239,7 @@ test('M4-3：購入は既存の個体生成処理で行い、種族・正式初�
   assert.ok(log.includes('save'));
 });
 
-test('M4-4：市場画面は正式データから作る横スワイプのカルーセル（中央100%・左右約70%・ドット連動・ジオルなし・鍵なし）', () => {
+test('M4-4：市場画面は正式データから作るカルーセル（左右の矢印・横スワイプ・端から端へ循環／中央100%・左右約70%・ドット連動・ジオルなし・鍵なし）', () => {
   const mk = between('function market(msg,focus){', '\nfunction mkd(');
   assert.match(mk, /const cat=MMP10M\.MARKET_CATALOG/); assert.match(mk, /cat\.map\(\(c,i\)=>p10Slide\(c,i\)\)/);
   assert.doesNotMatch(mk, /jiol|ジオル|🔒|ロック|未解放|近日|MKH|AS\.mkt|sprH/, 'ジオル・鍵・旧ホットスポット・旧アニメを使わない');
@@ -249,8 +249,10 @@ test('M4-4：市場画面は正式データから作る横スワイプのカル�
   assert.match(line('function p10Who(){'), /<b>\$\{p11Esc\(S\.playerName\|\|MMP11P\.DEFAULT_NAME\)\}<\/b><small>ランク \$\{br\}<\/small>/); assert.match(line('function p10Who(){'), /RN\[S\.br\]/);
   assert.match(mk, /<button class="p10buy" disabled>入荷待ち<\/button>/, '入荷待ちは購入ボタンが使えない');
   const css = between('/* ===== Phase 10：市場', '</style></head>');
-  assert.match(css, /\.p10car\{[^}]*overflow-x:auto;[^}]*scroll-snap-type:x mandatory;[^}]*overscroll-behavior-x:contain/, '横方向はカルーセル内部だけ');
-  assert.match(css, /\.p10sl\{[^}]*scroll-snap-align:center;scroll-snap-stop:always/);
+  // 市場カルーセル改修：横スクロール（scroll-snap）から、左右の矢印・スワイプで切り替えるループ型へ（詳細は market-carousel.test.mjs）
+  assert.match(css, /\.p10car\{[^}]*touch-action:pan-y/, '横方向の操作はカルーセルが受け取り、縦のスクロールはページのまま');
+  assert.match(css, /\.p10sl\{position:absolute;left:50%;top:0;width:var\(--sw\);margin-left:calc\(var\(--sw\) \/ -2\)/, '候補は中央に重ねて置き、位置は計算で決める');
+  assert.match(mk, /<button class="p10arw prev" aria-label="前のモンスター" onclick="p10Step\(-1\)">/); assert.match(mk, /<button class="p10arw next" aria-label="次のモンスター" onclick="p10Step\(1\)">/);
   assert.match(css, /\.p10mk\{[^}]*overflow:hidden/, 'ページ全体を横にはみ出させない');
   assert.doesNotMatch(css, /hue-rotate|saturate|grayscale|sepia/, '正式画像の色を変えない');
 });
