@@ -119,6 +119,7 @@
   function newSave() {
     const S = P7.newSave();            // 所持金・バッグ・チケット等の初期値はv5と同じ
     delete S.chap; delete S.trainRun;  // Chapter進行・修行状態はセーブ全体では持たない（個体側）
+    S.raiseRec = { done: 0, fromStart: true };   // 育成完了回数（新規セーブは最初から記録する）
     S.v = SAVE_VERSION;
     return runSaveNormalizers(S, true);
   }
@@ -134,6 +135,7 @@
     if (!Number.isInteger(S.trainTix) || S.trainTix < 0) S.trainTix = 0;
     if (!isObj(S.rankRec) || !Array.isArray(S.rankRec.cleared)) S.rankRec = { cleared: Array(P7.RANK_COUNT).fill(false) };
     while (S.rankRec.cleared.length < P7.RANK_COUNT) S.rankRec.cleared.push(false);
+    normalizeRaiseRec(S);   // 育成完了回数：記録が無い旧セーブは推測せず0回から（fromStart:false）
     ensureUids(S);
     monstersOf(S).forEach((x) => { P7.ensureProg(x); ensureRaise(x); runNormalizers(x); });
     const boxRaising = S.box.filter((x) => P7.isRaising(x));
@@ -241,8 +243,10 @@
   /** 出発（未育成の個体はここで育成開始）。ターン上限は出発時のChapter定義の値で確定する */
   function depart(S, m) {
     const c = canDepart(S, m); if (!c.ok) return c;
+    const fresh = m.raise.state === RAISE.NONE;   // 新しい育成の開始（未育成→Chapter 1）
     Object.assign(m.raise, { state: c.key === FINAL ? RAISE.FINAL : RAISE.BOARD, ch: c.key, node: trackOf(c.key).start, turnsUsed: 0,
       turnLimit: chapterRule(c.key).turnLimit, pend: null, goal: false, tour: null, battle: null });
+    if (fresh) m.raise.startStats = statSnap(m);   // 売却額用：育成開始時の永続能力値（Chapter移行では取り直さない）
     return { ok: true, key: c.key };
   }
   /** ボードを開くときの補正：開始地点（node=null）をスタートへ。地図の無いChapterならChapter間ファームへ退避（7.1の救済と同じ考え方） */
@@ -404,6 +408,7 @@
     r.log.push(entry);
     const nx = nextAfterChapter(m, key);
     Object.assign(r, { state: nx.state, ch: nx.ch, node: null, turnsUsed: 0, turnLimit: null, pend: null, goal: false, tour: null, battle: null });
+    if (nx.state === RAISE.DONE) { r.endStats = statSnap(m); recordRaiseDone(S); }   // 育成完了1回につき1回だけ（売却額用に完了時の能力値も記録）
     return { ok: true, next: nx.next, entry };
   }
   function endChapter(S, m) { const c = canEndChapter(m); return c.ok ? closeChapter(S, m, {}) : c; }
@@ -600,6 +605,54 @@
     return { kind: 'gold', ev: 'chest', amount: pick.gold };
   };
   Object.assign(API, { SQUARE_TYPES: Object.freeze(Object.keys(SQUARE_EFFECTS)) });
+
+  // =========================================================
+  // 通し試遊の修正（進行上の問題）
+  //  1) 育成完了回数：個体が育成完了（done）になった時だけ、1回につき1回加算する（購入・合体・再読込では加算しない）。
+  //     セーブ全体の S.raiseRec = { done, fromStart }（セーブversion・保存キーは変えない）。
+  //     この版より前のセーブには記録が無く、合体・育成放棄で消えた個体の分は復元できないため推測で埋めない：
+  //     0回から数え始め、fromStart:false（記録開始より前の育成完了は含まない）で区別する。
+  //  2) 最終ルートのマップが未登録のときだけ：Chapter間ファーム（次＝最終ルート）から育成を完了して街へ戻れる（代替処理）。
+  //     最終ルートの内容・ルールは作らない。マップが登録済みなら代替処理は使えず、通常どおり最終ルートへ出発する。
+  //     大会結果・賞金・育成記録（log）はそのまま残し、log には「最終ルート未実施」の記録を1件だけ足す。
+  // =========================================================
+  function normalizeRaiseRec(S) {
+    const x = S.raiseRec;
+    if (!isObj(x) || !Number.isInteger(x.done) || x.done < 0) S.raiseRec = { done: 0, fromStart: false };
+    else if (typeof x.fromStart !== 'boolean') x.fromStart = false;
+    return S.raiseRec;
+  }
+  /** 育成完了回数（ノビトンの入荷条件などに使う。S.cnt＝購入・合体の回数とは別） */
+  function raiseDoneCount(S) { const x = S && S.raiseRec; return isObj(x) && Number.isInteger(x.done) && x.done >= 0 ? x.done : 0; }
+  /** 育成完了回数を最初から記録しているセーブか（false＝この版より前の育成完了は含まない） */
+  const raiseCountFromStart = (S) => !!(S && isObj(S.raiseRec) && S.raiseRec.fromStart === true);
+  /** 育成完了の記録（状態が done へ変わる処理＝closeChapter・finishWithoutFinal からだけ呼ぶ） */
+  function recordRaiseDone(S) { normalizeRaiseRec(S); S.raiseRec.done += 1; return S.raiseRec.done; }
+  function canFinishWithoutFinal(S, m) {
+    if (!S || !m || m !== S.m) return { ok: false, reason: 'no_monster' };
+    ensureRaise(m);
+    const r = m.raise;
+    if (r.state !== RAISE.FARM || r.ch !== FINAL) return { ok: false, reason: 'not_final_farm' };
+    if (isPlayable(FINAL)) return { ok: false, reason: 'final_available' };   // 登録済みなら代替処理は使わない
+    if (P7.trainRunOf(m)) return { ok: false, reason: 'training' };
+    return { ok: true };
+  }
+  function finishWithoutFinal(S, m) {
+    const c = canFinishWithoutFinal(S, m); if (!c.ok) return c;
+    const r = m.raise, entry = { ch: FINAL, skipped: true, reason: 'final_unavailable' };
+    r.log.push(entry);
+    Object.assign(r, { state: RAISE.DONE, ch: null, node: null, turnsUsed: 0, turnLimit: null, pend: null, goal: false, tour: null, battle: null });
+    r.endStats = statSnap(m);
+    return { ok: true, next: 'done', entry, raiseDone: recordRaiseDone(S) };
+  }
+  Object.assign(API, { raiseDoneCount, raiseCountFromStart, canFinishWithoutFinal, finishWithoutFinal });
+
+  // ---- 牧場のモンスター売却用：育成開始時（m.raise.startStats）・育成完了時（m.raise.endStats）の永続能力値 ----
+  //  対象はライフ・ちから・かしこさ・命中・回避・丈夫さ（素早さは含めない）。どちらも任意項目（セーブversionは6のまま）。
+  //  記録は「未育成→Chapter 1へ出発」と「育成完了」の時だけ。大会の一時効果は個体の能力値に入らないため含まれない。
+  const STAT_SNAP_KEYS = Object.freeze(['li', 'po', 'in', 'hi', 'ev', 'de']);
+  function statSnap(m) { const o = {}; for (const k of STAT_SNAP_KEYS) o[k] = Number.isFinite(m[k]) ? m[k] : 0; return o; }
+  Object.assign(API, { STAT_SNAP_KEYS });
 
   // @@P8_SECTIONS_END@@
   root.MMP8 = Object.freeze(API);
