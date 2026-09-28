@@ -13,6 +13,8 @@
   const TYPE_MS = 32;
   /** 1回のタップが二重に処理されないための最短間隔（ミリ秒） */
   const MIN_TAP_MS = 80;
+  /** 会話を開いた直後、タップ・キーを受け付けない時間（ミリ秒）。会話を開いた入力（名前欄の Enter／完了、ダブルタップの2打目）を1回目のタップとして扱わない（画面の会話 talk で使う） */
+  const OPEN_GUARD_MS = 200;
 
   // ---------------------------------------------------------
   // NPCの登録
@@ -78,14 +80,15 @@
     });
   }
   /**
-   * 会話の進行役を作る。opts = { schedule(fn, ms), cancel(id), now(), onUpdate(snapshot), onEnd() }
+   * 会話の進行役を作る。opts = { schedule(fn, ms), cancel(id), now(), onUpdate(snapshot), onEnd(), openGuardMs }
    *  文字送りのタイマーは常に1つだけ。新しい行へ移る・全文表示・終了のときは必ず前のタイマーを止め、番号（token）の古いタイマーは何もしない。
+   *  openGuardMs：start() からこの時間（now() で測る）のタップは無視する（省略時は0＝無視しない）。
    */
   function createTalk(lines, opts = {}) {
     const L = resolveLines(lines);
     const schedule = opts.schedule || ((fn, ms) => setTimeout(fn, ms)), cancel = opts.cancel || ((id) => clearTimeout(id));
-    const now = opts.now || (() => Date.now()), typeMs = Number.isFinite(opts.typeMs) ? opts.typeMs : TYPE_MS;
-    const st = { idx: -1, chars: [], shown: 0, typing: false, ended: false, timer: null, token: 0, lastTap: -1e9 };
+    const now = opts.now || (() => Date.now()), typeMs = Number.isFinite(opts.typeMs) ? opts.typeMs : TYPE_MS, guardMs = opts.openGuardMs > 0 ? opts.openGuardMs : 0;
+    const st = { idx: -1, chars: [], shown: 0, typing: false, ended: false, timer: null, token: 0, lastTap: -1e9, openedAt: -1e9 };
     const stop = () => { if (st.timer != null) { cancel(st.timer); st.timer = null; } };
     const snap = () => { const l = L[st.idx] || {}; return { idx: st.idx, total: L.length, npc: l.npc || null, name: l.name || '', view: l.img ? l.img.view : l.view || null, expr: l.img ? l.img.expr : l.expr || null,
       img: l.img ? l.img.src : null, fallback: !!(l.img && l.img.fallback), anim: l.anim ? l.anim.name : null, frames: l.anim ? l.anim.frames : null, fps: l.anim ? l.anim.fps : 0, loop: l.anim ? l.anim.loop : false, text: st.chars.slice(0, st.shown).join(''), full: l.text || '', typing: st.typing, ended: st.ended, timer: st.timer != null }; };
@@ -104,12 +107,13 @@
     function end() { if (st.ended) return; stop(); st.token++; st.ended = true; st.typing = false; emit(); if (opts.onEnd) opts.onEnd(); }
     function tap() {
       if (st.ended) return 'ended';
-      const t = now(); if (t - st.lastTap < MIN_TAP_MS) return 'ignored'; st.lastTap = t;
+      const t = now(); if (t >= st.openedAt && t - st.openedAt < guardMs) return 'ignored';   // 開いた直後：会話を開いた入力の続き（連打の間隔の記録にも入れない。時計が戻っても止まらない）
+      if (t - st.lastTap < MIN_TAP_MS) return 'ignored'; st.lastTap = t;
       if (st.typing) { stop(); st.token++; st.shown = st.chars.length; st.typing = false; emit(); return 'full'; }   // 表示中：全文表示
       if (st.idx < L.length - 1) { show(st.idx + 1); return 'next'; }   // 全文表示後：次のセリフ
       end(); return 'end';   // 最後のセリフ：会話終了
     }
-    function start() { if (!L.length) { end(); return api; } show(0); return api; }
+    function start() { st.openedAt = now(); if (!L.length) { end(); return api; } show(0); return api; }
     const api = { start, tap, end, state: snap, lines: L };
     return api;
   }
@@ -133,10 +137,12 @@
       ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); img.alt = ''; img.draggable = false; nx.textContent = '▼'; nx.setAttribute('aria-hidden', 'true');
       fig.appendChild(img); win.append(nm, tx, nx); stage.append(fig, win); ov.appendChild(stage); document.body.appendChild(ov);
       const onKey = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); c.tap(); } };
+      let keyT = null;   // keydown を受け付け始めるタイマー（会話を開いたキー操作そのものは会話に届けない）
       const c = createTalk(lines, {
+        openGuardMs: OPEN_GUARD_MS,   // ダブルタップの2打目（会話を開いたタップの続き）などで、1行目の文字送りを飛ばさない
         onUpdate(s) {
           if (s.ended) return;
-          ov.dataset.npc = s.npc || ''; fig.className = 'mmtalk-fig ' + (s.view || 'closeup'); fig.hidden = !s.img;
+          ov.dataset.npc = s.npc || ''; fig.className = 'mmtalk-fig ' + (s.view || 'closeup'); fig.hidden = !(s.img || s.frames);   // アニメーションだけのNPCでも立ち絵を隠さない
           const key = s.frames ? `${s.idx}:${s.anim}` : '';
           if (key !== ANIM.key) { stopAnim(); if (s.frames) { ANIM.key = key; ANIM.name = s.anim; s.frames.forEach((f) => { const p = new Image(); p.src = f; });
             img.src = s.frames[0]; fig.hidden = false; const fr = s.frames, loop = s.loop;
@@ -145,10 +151,10 @@
           img.alt = s.name ? `${s.name}（${s.expr || ''}）` : '';
           nm.textContent = s.name; nm.hidden = !s.name; tx.textContent = s.text; win.setAttribute('aria-label', (s.name ? s.name + '：' : '') + s.full); nx.hidden = s.typing;
         },
-        onEnd() { stopAnim(); document.removeEventListener('keydown', onKey); ov.remove(); if (CUR && CUR.c === c) CUR = null; resolve(); },
+        onEnd() { stopAnim(); clearTimeout(keyT); document.removeEventListener('keydown', onKey); ov.remove(); if (CUR && CUR.c === c) CUR = null; resolve(); },
       });
       ov.addEventListener('click', (e) => { e.stopPropagation(); c.tap(); });
-      document.addEventListener('keydown', onKey);
+      keyT = setTimeout(() => { keyT = null; document.addEventListener('keydown', onKey); }, 0);   // 名前欄の Enter で開いたとき、その同じ keydown が document へ伝わって1行目を飛ばさないよう、次のタスクから受け付ける
       CUR = { c, ov };
       c.start();
     });
