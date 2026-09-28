@@ -229,11 +229,12 @@ test('QA-G2-8：育成放棄（p8AbandonGo）・最初からやり直す（reset
     `let sel=[2,0];${lineOf('function p8AbandonGo(')};return {go:p8AbandonGo,get sel(){return sel}};`)(
     { m: {} }, () => ({ disabled: false }), { abandon: () => ({ ok: false }) }, () => {}, () => {}, () => { throw new Error('保存しない'); }, () => {});
   ng.go('u1'); assert.deepEqual(ng.sel, [2, 0]);
-  const rs = new Function('p8Blocked', 'p10NewSave', 'save', 'render',
-    `let S={g:1},sel=[1,0];${lineOf('function reset(')};return {reset,get sel(){return sel},get S(){return S}};`)(() => false, () => ({ g: 300 }), () => {}, () => {});
+  const clk = { t: 1000 };   // QA G3：reset の2回目は確認状態から0.4秒以上たってから（連打対策）。時計を差し替える
+  const rs = new Function('p8Blocked', 'p10NewSave', 'save', 'render', 'performance',
+    `let S={g:1},sel=[1,0];${lineOf('function tapAt(')}\n${lineOf('function tapSoon(')}\n${lineOf('function reset(')};return {reset,get sel(){return sel},get S(){return S}};`)(() => false, () => ({ g: 300 }), () => {}, () => {}, { now: () => clk.t });
   const b = { dataset: {}, textContent: '' };
   rs.reset(b); assert.deepEqual(rs.sel, [1, 0], '1回目の押下では何も変えない');
-  rs.reset(b); assert.deepEqual(rs.sel, []); assert.deepEqual(rs.S, { g: 300 });
+  clk.t += 600; rs.reset(b); assert.deepEqual(rs.sel, []); assert.deepEqual(rs.S, { g: 300 });
 });
 
 /** index.html の fuse()（src を差し替えると変更前のコードでも動かせる） */
@@ -312,6 +313,7 @@ async function slotLoadUI(page, n) {
   await openSaveScreen(page);
   await page.click(`button[onclick="slotLoad(${n},this)"]`);
   await page.waitForFunction((k) => /もう一度押すと読み込み/.test(document.querySelector(`button[onclick="slotLoad(${k},this)"]`).textContent), n);
+  await page.waitForTimeout(450);   // QA G3：2度押しの確定は確認状態から0.4秒以上たってから
   await page.click(`button[onclick="slotLoad(${n},this)"]`);
 }
 async function impUI(page, c) {
@@ -466,6 +468,7 @@ test('QA-G2-B5：実ブラウザ：新規開始→市場で購入→牧場→出
   await p.page.waitForFunction(() => !P10_ANIM);
   await p.page.click('.p10buy');
   await p.page.waitForSelector('#p10ov .p10ok');
+  await p.page.waitForTimeout(400);   // QA G3：確認シートを開いた直後（0.35秒）のタップは受け付けない
   await p.page.click('#p10ov .p10ok');
   await p.page.waitForSelector('#app .map');
   let S = await H.getS(p.page);
@@ -480,6 +483,7 @@ test('QA-G2-B5：実ブラウザ：新規開始→市場で購入→牧場→出
   await p.page.click('#app button[onclick="p7Depart(this)"]');
   await H.finishTalk(p.page);
   await p.page.waitForFunction(() => /もう一度押すと育成開始/.test((document.querySelector('#app button[onclick="p7Depart(this)"]') || {}).textContent || ''));
+  await p.page.waitForTimeout(450);   // QA G3：2度押しの確定は確認状態から0.4秒以上たってから
   await p.page.click('#app button[onclick="p7Depart(this)"]');
   await p.page.waitForSelector('#brollbtn');
   S = await H.getS(p.page);

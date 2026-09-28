@@ -36,16 +36,17 @@ test('FA-2：名前登録の直後に1度だけあいさつ。表示前に「表
 });
 
 test('FA-3：育成開始：1回目の押下でフィナの会話（初回は説明つき・2回目以降は簡潔）→ 終わると従来の2度押し確認 → もう一度押すと出発。押さなければ取り消し', async () => {
-  const mk = () => { const S = { m: { raise: { state: 'none' } } }, log = [], timers = [];
-    let res; const run = new Function('S', 'window', 'document', 'setTimeout', 'save', 'finaTalk', 'MMP7', 'MMP8', 'board', 'prepScr', 'lobby', 'P7_ERR', 'p8ChLabel', `${fnSrc('finaFlags')}\n${fnSrc('arm')}\n${fnSrc('p7Depart')}\nreturn p7Depart;`)(
-      S, { MMNPC: {} }, { body: { contains: () => true } }, (fn) => timers.push(fn), () => log.push('save'), (k) => { log.push('talk:' + k); return new Promise((r) => { res = r; }); },
+  const mk = () => { const S = { m: { raise: { state: 'none' } } }, log = [], timers = [], clk = { t: 1000 };
+    let res; const run = new Function('S', 'window', 'document', 'setTimeout', 'performance', 'save', 'finaTalk', 'MMP7', 'MMP8', 'board', 'prepScr', 'lobby', 'P7_ERR', 'p8ChLabel', `${fnSrc('finaFlags')}\n${fnSrc('tapAt')}\n${fnSrc('tapSoon')}\n${fnSrc('arm')}\n${fnSrc('p7Depart')}\nreturn p7Depart;`)(
+      S, { MMNPC: {} }, { body: { contains: () => true } }, (fn) => timers.push(fn), { now: () => clk.t }, () => log.push('save'), (k) => { log.push('talk:' + k); return new Promise((r) => { res = r; }); },
       { raiseState: (m) => m.raise.state }, { depart: () => { log.push('depart'); S.m.raise.state = 'board'; return { ok: true, key: 1 }; } }, (m) => log.push('board'), () => log.push('prep'), () => log.push('lobby'), {}, () => 'CHAPTER 1');
-    return { S, log, timers, run, done: () => res() }; };
+    return { S, log, timers, run, clk, done: () => res() }; };
   const t = mk(), b = { dataset: {}, textContent: 'CHAPTER 1へ出発（育成開始）' };
   t.run(b); assert.deepEqual(t.log, ['save', 'talk:raiseFirst'], '初回：説明つきの会話。まだ出発しない'); assert.equal(t.S.npcFlags.raiseIntro, 1);
   t.run(b); assert.deepEqual(t.log, ['save', 'talk:raiseFirst'], '会話中の二度押しは無視');
   t.done(); await new Promise((r) => setTimeout(r, 0));
   assert.equal(b.dataset.a, '1'); assert.match(b.textContent, /もう一度押すと育成開始（完了か放棄まで街へ戻れません）/, '会話のあと、従来の確認（2度押し）');
+  t.clk.t += 600;   // QA G3：確認状態になってから0.4秒未満の押下では確定しない（連打対策）。少し待ってからもう一度押す
   t.run(b); assert.deepEqual(t.log.slice(-3), ['depart', 'save', 'board'], 'もう一度押すと従来どおり出発');
   const u = mk(); u.S.npcFlags = { raiseIntro: 1 }; const c = { dataset: {}, textContent: '出発' };
   u.run(c); assert.deepEqual(u.log, ['talk:raiseAgain'], '2回目以降は簡潔な確認'); u.done(); await new Promise((r) => setTimeout(r, 0));

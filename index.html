@@ -1649,7 +1649,7 @@ function p10Go(i,instant){const car=$("#p10car"),n=MMP10M.MARKET_CATALOG.length;
  if(P10_ANIM||(P10_SW&&P10_SW.moved))return;const d=p10Slot(i,P10_MK,n);if(!d)return;P10_TGT=i;p10Step(Math.sign(d))}
 /** 横スワイプ（従来どおり）：左へ払う＝次、右へ払う＝前（矢印と同じ処理。切り替え中は受け付けない） */
 function p10Swipe(car){if(!car)return;let x0=null,y0=0;
- car.addEventListener("pointerdown",e=>{if(e.target.closest(".p10arw"))return;x0=e.clientX;y0=e.clientY});
+ car.addEventListener("pointerdown",e=>{if(e.target.closest(".p10arw")){x0=null;return}x0=e.clientX;y0=e.clientY;document.addEventListener("pointerup",()=>{x0=null},{once:true})});
  car.addEventListener("pointerup",e=>{if(x0==null)return;const dx=e.clientX-x0,dy=e.clientY-y0;x0=null;if(Math.abs(dx)>40&&Math.abs(dx)>Math.abs(dy)*1.2){P10_SW={moved:true};setTimeout(()=>{P10_SW=null},400);p10Step(dx<0?1:-1)}});
  car.addEventListener("pointercancel",()=>{x0=null})}
 /** 購入の直前確認：演出中でなく、中央に表示中の候補・情報欄の候補・P10_MK がすべて同じ種族のときだけ購入に進む */
@@ -1666,7 +1666,7 @@ function p10BuyAsk(){if(P10_ANIM)return;const c=MMP10M.MARKET_CATALOG[P10_MK];if
  d.innerHTML=`<div class="p10sheet" role="dialog" aria-modal="true"><div class="p10shm">${p10Img(c.key)}</div><b class="p10sht">${s.name}を連れて帰りますか？</b>
  <label class="p10lb">名前（8文字まで）<input id="mnm" maxlength="8" value="${s.name}" autocomplete="off"></label>
  ${chk.rescue?`<p class="p10note">はじめての1体のため、所持金を${MMP10M.ECONOMY.marketPrice}Gまで補填してから支払います。</p>`:""}${chk.continueRescue?`<p class="p10note">育成を続けられるモンスターがいないため、所持金を${MMP10M.ECONOMY.marketPrice}Gまで補填してから支払います（購入後の所持金は0Gになります）。</p>`:""}
- <div class="p10shb"><button class="p10no" onclick="p10Close()">やめる</button><button class="p10ok" onclick="mkgo(${s.id});p10Close()">連れて帰る（${c.price}G）</button></div></div>`;document.body.appendChild(d)}
+ <div class="p10shb"><button class="p10no" onclick="p10Close()">やめる</button><button class="p10ok" onclick="mkgo(${s.id});p10Close()">連れて帰る（${c.price}G）</button></div></div>`;document.body.appendChild(d);tapHold(d.querySelector(".p10shb"),350)}
 function p10Close(){const d=$("#p10ov");if(d)d.remove()}
 document.addEventListener("keydown",e=>{if(!document.getElementById("p10car")||document.getElementById("p10ov"))return;if(e.key=="ArrowRight")p10Step(1);else if(e.key=="ArrowLeft")p10Step(-1)});
 function mkd(i,step){if(p8Blocked())return;market(null,MMP10M.keyOf(i)||0)} // Phase 10：旧・詳細画面は新しい市場（カルーセル）へ統合
@@ -1682,8 +1682,14 @@ const sl=n=>{try{return JSON.parse(localStorage.getItem("mr4s"+n))}catch(e){retu
 const slab=d=>!d?"（空き）":`${d.m?d.m.name+"（ランク"+(d.m.prog?MMP8.rankLabel(d.m):RN[d.m.rk||0])+"）":"モンスターなし"}　🪙${d.g}G`;
 function savescr(msg){if(p8Blocked())return;
  bgm("town");
- $("#app").innerHTML=`<button class="back" onclick="lobby()">◀ 街にもどる</button><h2>セーブ・ロード</h2><div class="dbub" id="msg">${msg||"3つのスロットにセーブできます。進行は自動でも保存されています。"}</div>${[1,2,3].map(n=>{const d=sl(n);return `<div class="card slot"><b>スロット${n}</b><small>${slab(d)}</small><div class="row2"><button onclick="slotSave(${n},this)">セーブ</button><button ${d?"":"disabled"} onclick="slotLoad(${n},this)">ロード</button></div></div>`}).join("")}<div class="card slot"><b>いまの進行（オートセーブ）</b><small>${slab(S)}</small></div><details><summary>セーブコードで引っこし・バックアップ</summary><p><small>コードを別の端末に貼り付ければ、続きから遊べます。</small></p><div class="row2"><button onclick="exp()">コードを作る（コピー）</button><button onclick="shareCode()">共有</button></div><textarea id="sc" rows="3" placeholder="ここにコードが出ます／貼り付け"></textarea><div class="row2"><button onclick="pasteCode()">貼り付け</button><button onclick="imp()">このコードで読み込む</button></div></details><button class="ghost" onclick="reset(this)">最初からやり直す</button>`}
-function arm(b,t){if(b.dataset.a!="1"){const o=b.textContent;b.dataset.a="1";b.textContent=t;setTimeout(()=>{b.dataset.a="";b.textContent=o},3000);return false}return true}
+ $("#app").innerHTML=`<button class="back" onclick="lobby()">◀ 街にもどる</button><h2>セーブ・ロード</h2><div class="dbub" id="msg">${msg||"3つのスロットにセーブできます。進行は自動でも保存されています。"}</div>${[1,2,3].map(n=>{const d=sl(n);return `<div class="card slot"><b>スロット${n}</b><small>${slab(d)}</small><div class="row2"><button onclick="slotSave(${n},this)">セーブ</button><button ${d?"":"disabled"} onclick="slotLoad(${n},this)">ロード</button></div></div>`}).join("")}<div class="card slot"><b>いまの進行（オートセーブ）</b><small>${slab(S)}</small></div><details><summary>セーブコードで引っこし・バックアップ</summary><p><small>コードを別の端末に貼り付ければ、続きから遊べます。</small></p><div class="row2"><button onclick="exp()">コードを作る（コピー）</button><button onclick="shareCode()">共有</button></div><textarea id="sc" rows="3" placeholder="ここにコードが出ます／貼り付け"></textarea><div class="row2"><button onclick="pasteCode()">貼り付け</button><button onclick="imp()">このコードで読み込む</button></div></details><button class="ghost" onclick="reset(this)">最初からやり直す</button>`;tapAt($("#app .ghost"))}
+// 連打・すり抜けタップ対策（1か所で管理）：tapAt(el)＝el が押せるようになった時刻を記録／tapSoon(el,ms)＝その時刻から ms 未満なら true（その押下は受け付けず、そこから数え直す＝連打が続くあいだは確定しない）
+//  ・2度押し確認（arm・p9arm・reset）：確認状態になってから0.4秒未満の押下では確定しない（ダブルタップで確認を飛ばさない）
+//  ・tapHold(box,ms)：画面・シートを出した直後（ms 未満）は box の中のボタンを押せない（前の画面での連打の2打目が、同じ位置に出たボタンに届くのを防ぐ。指定したボタンだけに使う）
+function tapAt(el){if(el&&el.dataset)el.dataset.tapt=performance.now();return el}
+function tapSoon(el,ms){const t=el&&el.dataset&&el.dataset.tapt,s=!!t&&performance.now()-t<ms;if(s)tapAt(el);return s}
+function tapHold(box,ms){if(!tapAt(box))return;box.addEventListener("click",e=>{if(tapSoon(box,ms))e.stopPropagation()},true)}
+function arm(b,t){if(b.dataset.a!="1"){const o=b.innerHTML;b.dataset.a="1";tapAt(b);b.textContent=t;setTimeout(()=>{b.dataset.a="";b.innerHTML=o},3000);return false}return !tapSoon(b,400)}
 function slotSave(n,b){if(p8Blocked())return;if(sl(n)&&!arm(b,"もう一度押すと上書き"))return;let ok=false;try{const j=JSON.stringify(S);localStorage.setItem("mr4s"+n,j);ok=localStorage.getItem("mr4s"+n)==j}catch(e){}savescr(ok?`スロット${n}にセーブしました！`:"セーブできませんでした。セーブコードを使ってください。")}
 function slotLoad(n,b){if(p8Blocked())return;let d=null;try{d=MMP8.migrateSave(sl(n))}catch(e){d=null}if(!d)return savescr("このスロットは読み込めません（この版より新しい版のデータ、または壊れたデータです）。");if(!arm(b,"もう一度押すと読み込み"))return;const p=S;S=d;sel=[];try{save();lobby(`スロット${n}をロードしました！`)}catch(e){S=p;sel=[];save();savescr("このスロットは読み込めません（この版より新しい版のデータ、または壊れたデータです）。")}}
 function exp(){const t=$("#sc");t.value=btoa(unescape(encodeURIComponent(JSON.stringify(S))));t.select();const ok=()=>msg0("コードを作って、コピーしました！メモなどに貼って保管してください。"),ng=()=>msg0("コードを作りました。入力欄を長押ししてコピーしてください。");try{nv.clipboard&&nv.clipboard.writeText(t.value).then(ok,ng)||ng()}catch(e){ng()}}
@@ -1824,6 +1830,7 @@ function dscr(id,msg){if(id=="b")return hall("t"); // Phase 8：旧「腕試し�
   c=`<div class="dcard"><div class="dh">バトルのルーレット <small>${n} / 6 セット中</small></div><div class="dhint">枠をタップして選び、下の技をタップしてセット</div><div class="drl">${rows}</div></div>
   <div class="dcard"><div class="dh">技の一覧 <small>${own.length} / ${skl(m).length} 習得</small></div><div class="dflt">${[["a","すべて"],["p","✊ ちから"],["i","📖 かしこさ"]].map(([v,l])=>`<button class="${wflt==v?"on":""}" onclick="wflt='${v}';hall('w')">${l}</button>`).join("")}</div><div class="dskg">${cards}</div></div>`}
  $("#app").innerHTML=`<div class="ds ds-${id}" style="--dc:${D[3]}"><div class="dbg" style="background-image:url(${TRIMG2})"></div><div class="dtop"><button class="dback" onclick="lastSk=-1;hall('t')">${S.m&&MMP7.inChapter(S.m)?"◀ ボードへ":"◀ ファーム"}</button><div class="dmoney">🪙 ${S.g}G</div></div><div class="dtitle"><img src="${TABS[D[2]]}" alt=""><div><b>${D[0]}</b><small>${D[1]}</small></div></div>${msg?`<div class="dmsg"><img src="${NPI.b}" alt=""><span>${msg}</span></div>`:""}<div class="dbody">${c}</div></div>`;
+ if(id=="s")tapHold($("#app .dbody"),350); // 修行メニューを出したタップの2打目で、修行（チケット1枚）を始めない
  if(id=="w"&&lastSk>=0&&document.body.insertAdjacentHTML)document.body.insertAdjacentHTML("beforeend",`<div id="dsh">${skSheet(lastSk,m)}</div>`);try{window.scrollTo(0,0)}catch(e){}}
 function skd(k){lastSk=k;hall("w")}
 function skSheet(k,m){const x=SK[k],ok=Array.isArray(m.sk)&&m.sk.includes(k),at=m.eq.indexOf(k),B=(v,mx)=>`<div class="dbar"><i style="width:${Math.min(100,v/mx*100)}%"></i></div>`;
@@ -1887,7 +1894,7 @@ async function train(k){const m=S.m;let up=k=="li"?15+R(6):12+R(4);const fail=Ma
  if(fail){up=0;m.fa=Math.min(100,m.fa+10);m.st=Math.min(100,m.st+10)}else{up=Math.max(1,Math.round(up*(1-m.st/200)));m[k]=Math.min(999,m[k]+up);m.fa=Math.min(100,m.fa+12);m.st=Math.min(100,m.st+(m.last==k?8:3))}
  m.last=k;adv();save();await fx(fail?"💦":TE[k],fail?"#888888":TC[k],fail?"しっぱい…":`${LAB[k]} +${up}`,fail?"fail":k,fail?null:{lab:LAB[k],up,a:v0,b:m[k]});after(fail?"疲れがたまっていて、失敗してしまった…":`${LAB[k]}が ${up} 上がった！（${v0}→${m[k]}）`)}
 async function rest(){const m=S.m;m.fa=Math.max(0,m.fa-40);m.st=Math.max(0,m.st-25);m.last=null;adv();save();await fx("💤🌙","#7c8cff","きゅうけい","rest");after("ゆっくり休んで、疲れがとれた。")}
-function reset(b){if(p8Blocked())return;if(b.dataset.s!="1"){b.dataset.s="1";b.textContent="もう一度押すと最初から";return}sel=[];S=p10NewSave();save();render()}
+function reset(b){if(p8Blocked())return;if(tapSoon(b,b.dataset.s=="1"?400:350))return;if(b.dataset.s!="1"){b.dataset.s="1";tapAt(b);b.textContent="もう一度押すと最初から";return}sel=[];S=p10NewSave();save();render()}
 function drawBar(A){const ws=A.eq.map(k=>SK[k][2]),t=ws.reduce((a,b)=>a+b,0);$("#rb").innerHTML=A.eq.map((k,j)=>`<div class="rs ${SK[k][7]=="p"?"cp":"ci"}" style="width:${ws[j]/t*100}%;background-image:url(${SKART[k]})"><span>${SK[k][4]}</span></div>`).join("")+'<div id="cur"></div>';return ws.map(w=>w/t)}
 async function sweep(A,auto){
  const fr=drawBar(A),cur=$("#cur"),go=$("#go");
@@ -2060,7 +2067,7 @@ function p9Lane(ch,id){const c=p9Ch(ch),n=c&&c.track.nodes[id];return (n&&c.trac
 function p9Immersive(on){const h1=$("h1");if(h1)h1.style.display=on?"none":""}
 function p8TurnText(m){const r=m.raise;return r.turnLimit==null?`<b>${r.turnsUsed}</b>ターン目`:`残りターン <b>${MMP8.turnsLeft(m)}</b><small>/${r.turnLimit}</small>`}
 function p8BoardMenu(){return `<div class="p8menu"><button onclick="p9MenuClose();hall('st')">📊 ステータス</button><button onclick="p9MenuClose();hall('w')">⚔️ わざ</button><button onclick="p9Legend()">🗺 マスの説明</button><button onclick="p9MenuClose();p8Suspend()">⏸ 中断</button><button class="p8danger" onclick="p9MenuClose();p8AbandonAsk()">🏳 育成放棄</button></div>`}
-function p9Menu(){if(bBusy)return;p9MenuClose();const d=document.createElement("div");d.className="p9ov";d.id="p9ov";d.onclick=e=>{if(e.target===d)p9MenuClose()};
+function p9Menu(){if(bBusy)return;p9MenuClose();const d=document.createElement("div");d.className="p9ov";d.id="p9ov";tapAt(d);d.onclick=e=>{if(e.target===d&&!tapSoon(d,350))p9MenuClose()};
  d.innerHTML=`<div class="p9ovc" role="dialog" aria-modal="true"><div class="p9ovh">メニュー<button class="p9x" onclick="p9MenuClose()" aria-label="閉じる">✕</button></div>${p8BoardMenu()}</div>`;document.body.appendChild(d)}
 function p9MenuClose(){const d=$("#p9ov");if(d)d.remove()}
 function p9Legend(){const d=$("#p9ov .p9ovc");if(!d)return;const T=["life","power","wisdom","hit","evasion","toughness","event","rare","treasure","battle","ticket","normal"];
@@ -2090,7 +2097,7 @@ function board(msg){
  document.querySelectorAll("#p9mapw .p9n").forEach(g=>{const id=g.dataset.id;if(id==r.node)g.classList.add("cur");if(ph=="branch"&&r.pend.opts.includes(id))g.classList.add("opt")});
  if(fld){p13Fit();p13Mark(ph,r.pend&&r.pend.opts)}
  bPositionMon(n,true);
- if(ph=="move")setTimeout(p8Continue,350);else if(ph=="resolve")setTimeout(p8Resolve,350);
+ if(ph=="move")setTimeout(p8Continue,350);else if(ph=="resolve")setTimeout(()=>{if(document.getElementById("bmonw"))p8Resolve()},350);
 }
 /** 分岐：ルートごとに種別（通常・近道・寄り道）、ルート名、この先のマス、合流までのマス数を表示 */
 function p9BranchHtml(m){const r=m.raise,c=p9Ch(r.ch),t=c.track,K={main:"通常ルート",short:"近道",detour:"寄り道"};
@@ -2194,7 +2201,7 @@ function p8GoalHtml(m){const r=m.raise,rule=MMP8.chapterRule(r.ch);
  const rs=MMP8.eligibleRanks(m,r.ch).map(k=>{const sz=MMP8L.LEAGUE_SIZE[k],cl=m.prog.rankClr[k];return `<button class="p9rank" onclick="p8TourStart(${k},this)"><span class="p9em">${RN[k]}</span><span class="p9tx"><b>ランク${RN[k]}大会</b><small>${sz}体の総当たり（${sz-1}試合）</small><small>${cl?"クリア済み：優勝でステータスボーナスのみ":`初回優勝：${MMP8.PRIZE[k]}G・修行チケット×${MMP8.FIRST_CLEAR_TICKETS[k]}・ステータスボーナス`}</small></span></button>`}).join("");
  return `<h3>🏟 公式ランク大会</h3><p class="p9s">このChapterで挑戦できるのは1回だけ。総当たりで<b>最終1位</b>になった時だけ報酬があります。</p><div class="p9ranks">${rs}</div><button class="p9btn2" onclick="p8TourDecline(this)">大会に参加しない（辞退）</button>`}
 // 2度押しの確認（中の見た目を保ったまま戻す版。既存の arm() は文字だけのボタン用）
-function p9arm(b,t){if(b.dataset.a!="1"){const o=b.innerHTML;b.dataset.a="1";b.classList.add("arm");b.innerHTML=`<span class="p9tx"><b>${t}</b></span>`;setTimeout(()=>{b.dataset.a="";b.classList.remove("arm");b.innerHTML=o},3000);return false}return true}
+function p9arm(b,t){if(b.dataset.a!="1"){const o=b.innerHTML;b.dataset.a="1";tapAt(b);b.classList.add("arm");b.innerHTML=`<span class="p9tx"><b>${t}</b></span>`;setTimeout(()=>{b.dataset.a="";b.classList.remove("arm");b.innerHTML=o},3000);return false}return !tapSoon(b,400)}
 function p8TourStart(k,b){if(bBusy||!p9arm(b,`もう一度押すとランク${RN[k]}大会に参加`))return;const r=MMP8.startTournament(S,S.m,k);if(!r.ok)return board();save();board()}
 // ---- Phase 9：公式大会（大会掲示板＝順位表・対戦表／VS画面／結果） ----
 // 大会参加者（NPC）は【暫定】データ（js/phase8/league.js）。表示の元は MMP8L.entrantView だけにしてあり、
@@ -2308,15 +2315,16 @@ function p8LockScr(){$("#app").innerHTML=`<div class="p8lock"><b>このセーブ
 // 中断：いまの進行を保存してタイトルへ（ターンは消費しない。再開はタイトル→p8Resume）
 function p8Suspend(){if(bBusy||p7Busy)return;save();title()}
 // 育成放棄：誤操作を防ぐため2段階で確認し、最後のボタンは数秒待たないと押せない。確認中に対象の個体が変わったら何もしない（uidで照合）。
+let p8AbT=0; // 最終確認のカウントダウン（setInterval）。閉じる・開き直すときに止める
 function p8AbandonAsk(){const m=S.m;if(!m||bBusy||p7Busy||!MMP8.canAbandon(S).ok)return;p8ModalClose();
  const d=document.createElement("div");d.className="p8m";d.id="p8m";
  d.innerHTML=`<div class="p8mc" role="dialog" aria-modal="true"><b>⚠️ 育成放棄</b><p><b>${m.name}</b>の育成をやめますか？</p><p>この個体とChapterの進行はすべて削除され、元に戻せません。放棄すると街へ戻ります。<br><small>所持金・修行チケット・バッグ・保管庫はそのまま残ります。</small></p><div class="p8mbtn"><button class="go" onclick="p8ModalClose()">やめない</button><button class="p8danger" onclick="p8AbandonAsk2('${m.uid}')">放棄に進む</button></div></div>`;
  document.body.appendChild(d)}
 function p8AbandonAsk2(uid){const m=S.m,d=$("#p8m");if(!d||!m||m.uid!==uid)return p8ModalClose();
  d.querySelector(".p8mc").innerHTML=`<b>⚠️ 最終確認</b><p>本当に<b>${m.name}</b>を放棄しますか？<br>この操作は取り消せません。</p><div class="p8mbtn"><button class="go" onclick="p8ModalClose()">やめない</button><button class="p8danger" id="p8abgo" disabled onclick="p8AbandonGo('${uid}')">放棄する（3）</button></div>`;
- let n=3;const t=setInterval(()=>{const b=$("#p8abgo");if(!b){clearInterval(t);return}n--;if(n>0)b.textContent=`放棄する（${n}）`;else{clearInterval(t);b.disabled=false;b.textContent="放棄する"}},1000)}
+ clearInterval(p8AbT);let n=3;const t=p8AbT=setInterval(()=>{const b=$("#p8abgo");if(!b){clearInterval(t);return}n--;if(n>0)b.textContent=`放棄する（${n}）`;else{clearInterval(t);b.disabled=false;b.textContent="放棄する"}},1000)}
 function p8AbandonGo(uid){const b=$("#p8abgo");if(!b||b.disabled)return;const r=MMP8.abandon(S,uid);p8ModalClose();if(!r.ok)return p8Resume();sel=[];save();lobby(`${r.name}の育成を放棄しました。`)}
-function p8ModalClose(){const d=$("#p8m");if(d)d.remove()}
+function p8ModalClose(){clearInterval(p8AbT);const d=$("#p8m");if(d)d.remove()}
 
 // ---- 修行 ----
 const P7_WHY={finished:"育成完了後は修行できません",not_at_farm:"Chapter中は修行できません",no_ticket:"修行チケットがありません",locked:"🔒 Cランク以上の大会をクリアすると解放",before_ch1:"🔒 Chapter 1クリア後に解放",max:"クリア済み（再挑戦できません）",in_progress:"修行中"};
