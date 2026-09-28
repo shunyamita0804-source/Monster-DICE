@@ -103,28 +103,105 @@
   /**
    * 初回購入救済：手持ち0体・牧場0体・所持金が500G未満のときだけ、市場での購入操作の時点で所持金を500Gにする。
    *  「所持金500G未満ならいつでも補填」ではない（1体でも所有していれば補填しない）。ゲーム開始時や他の画面では起きない。
+   *  1体以上所有しているときの行き詰まりは、下の継続用救済（continueRescueApplies）が別の条件で扱う。
    */
   const firstPurchaseRescueApplies = (S, owned) => owned === 0 && (S.g || 0) < ECONOMY.marketPrice;
-  /** 購入できるか：not_in_market（市場に無い：ジオルなど）/ waiting（入荷待ち）/ full（8体まで）/ no_money */
+  // ---- 継続用救済（初回救済とは別の独立した条件。市場価格・購入条件・合体料金は変えない） ----
+  //  次の育成を続けられる個体（未育成・育成中）が手持ち・牧場に1体もおらず（＝全員が育成完了）、所持金が500G未満で、
+  //  今の個体数と所持金では合体（200G）もできないときだけ、通常販売中の500Gのモンスターの購入を確定する時点で
+  //  不足分を補い、所持金を500Gにして通常どおり購入する（購入後は0G）。
+  //  補填は purchase()（購入の確定処理）の中だけで行い、確定前の所持金には加えない（アイテム購入・合体費用には使えない）。
+  //  手持ち・牧場とも0体のときは初回救済の対象で、ここでは扱わない。所持上限（8体）の判定もこれまでどおり先に行う。
+  const FUSION_COST = 200;   // 合体費用（index.html の fuse() と同じ値。判定の参照用で、合体料金はここでは決めない）
+  const ownedMonsters = (S) => [S && S.m, ...(S && Array.isArray(S.box) ? S.box : [])].filter(Boolean);
+  const raiseStateOf = (m) => { const P7 = root.MMP7; return P7 && typeof P7.raiseState === 'function' ? P7.raiseState(m) : ((m && m.raise && m.raise.state) || 'none'); };
+  function continueRescueApplies(S, key, owned) {
+    const c = marketItem(key);
+    if (!S || !c || c.status !== 'sale' || c.price !== ECONOMY.marketPrice) return false;   // 通常販売中の500Gのモンスターだけ
+    if ((S.g || 0) >= ECONOMY.marketPrice) return false;                                        // 500G以上なら通常どおり代金だけ
+    const mons = ownedMonsters(S);
+    if (!mons.length || owned !== mons.length) return false;                                     // 0体は初回救済の対象
+    if (!mons.every((m) => raiseStateOf(m) === 'done')) return false;                            // 未育成・育成中の個体がいれば発動しない
+    if (mons.length >= 2 && (S.g || 0) >= FUSION_COST) return false;                            // 今の所持金で合体できるなら発動しない
+    return true;
+  }
+  /** 購入できるか：not_in_market（市場に無い：ジオルなど）/ waiting（入荷待ち）/ full（8体まで）/ no_money
+   *  rescue＝初回救済（従来どおり）、continueRescue＝継続用救済（確定時に不足分を補填） */
   function canPurchase(S, key, owned) {
     const c = marketItem(key);
     if (!c) return { ok: false, reason: 'not_in_market' };
     if (c.status !== 'sale') return { ok: false, reason: 'waiting' };
     if (owned >= OWN_LIMIT) return { ok: false, reason: 'full' };
     const rescue = firstPurchaseRescueApplies(S, owned);
-    if (!rescue && (S.g || 0) < c.price) return { ok: false, reason: 'no_money' };
+    if (!rescue && (S.g || 0) < c.price) {
+      if (continueRescueApplies(S, key, owned)) return { ok: true, price: c.price, rescue: false, continueRescue: true };
+      return { ok: false, reason: 'no_money' };
+    }
     return { ok: true, price: c.price, rescue };
   }
-  /** 代金の支払い（個体の生成は既存の個体生成処理で行う）。救済が発生したら先に所持金を500Gにしてから支払う */
+  /** 代金の支払い（個体の生成は既存の個体生成処理で行う）。救済が発生したら、この確定処理の中でだけ所持金を500Gにしてから支払う */
   function purchase(S, key, owned) {
     const c = canPurchase(S, key, owned); if (!c.ok) return c;
     const before = S.g || 0;
-    if (c.rescue) S.g = ECONOMY.marketPrice;
+    if (c.rescue || c.continueRescue) S.g = ECONOMY.marketPrice;
     S.g -= c.price;
-    return { ok: true, key, price: c.price, rescued: c.rescue, before, after: S.g };
+    const r = { ok: true, key, price: c.price, rescued: c.rescue, before, after: S.g };
+    if (c.continueRescue) Object.assign(r, { continueRescued: true, topUp: ECONOMY.marketPrice - before });
+    return r;
+  }
+
+  // ---- モンスター売却（牧場） ----
+  //  未育成＝50G。育成完了＝100G＋育成中に増えた6能力（ライフ・ちから・かしこさ・命中・回避・丈夫さ）の合計（上限150G）
+  //  ＋その個体自身の最高到達公式ランクの加算（E25・D50・C75・B100・A125・S150G、未到達0G）。最終売却額は最大400G（市場価格500G未満）。
+  //  能力上昇＝育成開始時（m.raise.startStats）と育成完了時（m.raise.endStats）の差（1回の育成全体。MMP8 が記録）。
+  //  記録の無い旧セーブは推測せず0G（基本額とランク加算だけ）。育成中の個体がいるとき・最後の1体は売却できない。
+  const SELL = fz({ unraised: 50, base: 100, gainCap: 150, max: 400, rankBonus: fz([25, 50, 75, 100, 125, 150]) });
+  const SELL_STATS = fz(['li', 'po', 'in', 'hi', 'ev', 'de']);
+  const statsOk = (x) => !!x && typeof x === 'object' && SELL_STATS.every((k) => Number.isFinite(x[k]));
+  const statTotal = (x) => SELL_STATS.reduce((a, k) => a + x[k], 0);
+  function topRankOf(m) { const rc = m && m.prog && Array.isArray(m.prog.rankClr) ? m.prog.rankClr : []; let h = -1; rc.forEach((v, i) => { if (v === true && i < SELL.rankBonus.length) h = i; }); return h; }
+  /** 売却額（個体単体の見積もり）：{ok, kind:'unraised'|'done', price, base, gain（上限後）, gainRaw（上限前）, gainKnown, rankIdx, rank} / 育成中は raising */
+  function sellQuote(m) {
+    if (!m) return { ok: false, reason: 'not_found' };
+    const st = raiseStateOf(m);
+    if (st === 'none') return { ok: true, kind: 'unraised', price: SELL.unraised };
+    if (st !== 'done') return { ok: false, reason: 'raising' };
+    const r = m.raise || {}, known = statsOk(r.startStats) && statsOk(r.endStats);
+    const gainRaw = known ? Math.max(0, statTotal(r.endStats) - statTotal(r.startStats)) : 0, gain = Math.min(SELL.gainCap, gainRaw);
+    const rankIdx = topRankOf(m), rank = rankIdx >= 0 ? SELL.rankBonus[rankIdx] : 0;
+    return { ok: true, kind: 'done', price: Math.min(SELL.max, SELL.base + gain + rank), base: SELL.base, gain, gainRaw, gainKnown: known, rankIdx, rank };
+  }
+  /** 売却できるか：raising（育成中の個体がいる）/ not_found / last（最後の1体） */
+  function canSell(S, uid) {
+    const mons = ownedMonsters(S);
+    if (mons.some((x) => { const s = raiseStateOf(x); return s !== 'none' && s !== 'done'; })) return { ok: false, reason: 'raising' };
+    const m = uid == null ? null : mons.find((x) => x.uid === uid);
+    if (!m) return { ok: false, reason: 'not_found' };
+    if (mons.length <= 1) return { ok: false, reason: 'last' };
+    const q = sellQuote(m); if (!q.ok) return q;
+    return { ...q, m };
+  }
+  /** 売却の確定：選んだ個体だけを手持ち・牧場から外し、売却額を1回だけ加える（同じ個体はもう見つからないので二重にならない） */
+  function sell(S, uid) {
+    const c = canSell(S, uid); if (!c.ok) return c;
+    const before = S.g || 0, m = c.m;
+    if (S.m === m) S.m = null; else { const j = S.box.indexOf(m); if (j < 0) return { ok: false, reason: 'not_found' }; S.box.splice(j, 1); }
+    S.g = before + c.price;
+    return { ok: true, uid, name: m.name, sp: m.sp, kind: c.kind, price: c.price, before, after: S.g };
+  }
+
+  // ---- ノビトンの入荷条件（正式：育成完了5回後） ----
+  //  育成完了回数は MMP8.raiseDoneCount（育成完了1回につき1回だけ加算。購入・合体・再読込では増えない）。
+  //  条件を満たしても販売（購入）は始めない：販売に必要な正式データ（技・入荷イベントなど）が未確定のため、
+  //  MARKET_CATALOG の status は 'waiting'（購入不可）のまま。ここは条件の判定と表示用の値だけを返す。
+  const NOBITON_STOCK_RAISES = 5;
+  function nobitonStock(S) {
+    const P8 = root.MMP8, done = P8 && typeof P8.raiseDoneCount === 'function' ? P8.raiseDoneCount(S) : 0;
+    return { need: NOBITON_STOCK_RAISES, done, met: done >= NOBITON_STOCK_RAISES,
+      fromStart: !!(P8 && typeof P8.raiseCountFromStart === 'function' && P8.raiseCountFromStart(S)) };
   }
 
   root.MMP10M = fz({ STAT_KEYS, STAT_LABELS, STAT_MAX, SPEED_MIN, SPEED_MAX, isValidSpeed, UNIQUE_SKILLS, SPECIES,
     byId, byKey, keyOf, idOf, imageOf, silhouetteOf, speedOf, baseOf, skillOf, skillText, ensureSpeed, ECONOMY, MARKET_CATALOG,
-    OWN_LIMIT, marketItem, canPurchase, purchase });
+    OWN_LIMIT, marketItem, canPurchase, purchase, FUSION_COST, continueRescueApplies, SELL, sellQuote, canSell, sell, NOBITON_STOCK_RAISES, nobitonStock });
 })(typeof window !== 'undefined' ? window : globalThis);
