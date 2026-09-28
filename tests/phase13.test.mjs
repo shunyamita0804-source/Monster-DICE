@@ -134,3 +134,42 @@ test('A1-5：画面にはノード同士をつなぐ線・番号を出さない�
   assert.match(p13, /function p13Mark\(ph,opts\)\{if\(!P13\|\|ph!="branch"\|\|!opts\)return;/); assert.match(p13, /classList\.add\("optln"\)/);
   assert.doesNotMatch(HTML, /\.p13sg\{|\.p13tr\{/, '線のスタイルも残さない');
 });
+
+// ---------------------------------------------------------
+// 試遊で見つかった4点の修正（開始画面・市場・Chapter 1の目印・ファームのコマンド）
+// ---------------------------------------------------------
+test('P15-1：開始画面は旧画像（TITLEIMG）を使わず、正式名称（ミスティックモンスターズ／Mystic Monsters）と開始ボタンを背景と分けたHTMLで表示', () => {
+  const t = between('function title(){', '\nfunction togh(');
+  assert.doesNotMatch(t, /TITLEIMG|モンスターマスター|MONSTER MASTER/i, '旧画像・旧名称を使わない');
+  assert.match(t, /<div class="p15logo"><b>ミスティックモンスターズ<\/b><span>Mystic Monsters<\/span><\/div>/);
+  assert.match(t, /<button class="p15start" data-nsfx="1" onclick="startGame\(this\)">タップしてはじめる<\/button>/, '開始ボタンは画像ではなくボタン');
+  assert.match(t, /MMP12S\.FARM_INTERVAL\.src/, '背景は文字・UIの描き込みがない正式背景');
+  assert.match(HTML, /const TITLEIMG="data:image/, '旧画像のデータ自体は削除しない（開始画面から外すだけ）');
+  assert.match(rd('js/phase8/raising.js'), /const SAVE_KEY = 'mr4v6';/, 'セーブのキーは変えない');
+});
+
+test('P15-2：市場は背景候補（台座付き）を使い、CSSの台座を重ねない。中央と左右（約70%）の足元を台座に合わせる。価格・購入条件などは変えない', () => {
+  const mk = between('function market(msg,focus){', '\nfunction mkd(');
+  assert.match(mk, /const MB=window\.MMP12S&&MMP12S\.MARKET_BG;/); assert.match(mk, /<div class="p15mkbg" style="background-image:url\(\$\{MB\.src\}\)"><\/div>`:P10_SCENE/, '背景候補が無ければ従来の描画背景');
+  assert.match(mk, /\$\{MB\?"":`<div class="p10sign">/, '背景の看板と描いた看板を二重にしない');
+  assert.match(HTML, /\.p15img \.p10ped\{display:none\}/, '背景の台座とCSSの台座を二重にしない');
+  assert.match(mk, /1-\.3\*k/, '左右は中央の約70%'); assert.match(mk, /P15MK\?-Math\.sign\(ds\)\*\(w-P15MK\.dx\)\*k/, '左右は奥の台座の位置へ');
+  assert.match(mk, /MMP10M\.canPurchase\(S,c\.key,owned\)/, '購入条件は従来の判定のまま');
+  const { SC } = (() => { const w = {}; new Function('window', rd('js/phase12/scenes.js'))(w); return { SC: w.MMP12S }; })();
+  assert.deepEqual(SC.MARKET_BG.pedestals, { center: [482, 1100], left: [200, 960], right: [748, 960] });
+});
+
+test('P15-3：Chapter 1の目印は輪を使わず小さな地面の紋章・魔法石。タップ判定は見た目と別の透明な層。遠景でもモンスターが小さくなりすぎない', () => {
+  const p13 = between('// ---- Chapterボード 新表示方式（試作', '// ---- Phase 12：正式サイコロの演出');
+  const ability = p13.slice(p13.indexOf('if(P13C[t])'), p13.indexOf('if(t=="event")'));
+  assert.doesNotMatch(ability, /<ellipse[^>]*fill="none"/, '能力地点に輪（リング）を描かない');
+  assert.match(p13, /<i class="p13hit"><\/i><\/div>/); assert.match(HTML, /\.p13n svg\{pointer-events:none\}/);
+  const { F } = load(); assert.ok(F.depth(1, 100) >= 0.46 && F.get(1).monSize === 160, '奥でも手前の約半分以上');
+  const { C } = load(); assert.equal(Object.keys(C.byNo(1).track.nodes).length, 40, 'ノード数・構造は変えない');
+});
+
+test('P15-4：育成開始前のファームのタブも枠のあるボタン（ボード・修行・ステータス・技管理）。表示名だけの変更で遷移先は同じ', () => {
+  const h = between('function _hall(tab,msg){', '\nfunction after(');
+  assert.match(h, /\[\["t","🎲","ボード"\],\["s","🥋","修行"\],\["st","📊","ステータス"\],\["w","⚔️","技管理"\]\]/);
+  assert.match(h, /onclick="hall\('\$\{id\}'\)"><span class="p15ic">/);
+});

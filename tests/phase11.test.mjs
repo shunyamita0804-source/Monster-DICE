@@ -156,7 +156,7 @@ test('F2-1：街の「ブリーダー」欄はプレイヤー名を表示（新�
 // Phase 11.5 Step 3：古いバージョン表記の削除
 // ---------------------------------------------------------
 test('F3-1：タイトル画面から「ver p8-raising」を削除（新しい番号は作らない）', () => {
-  const t = line('function title(){');
+  const t = HTML.slice(HTML.indexOf('function title(){'), HTML.indexOf('\nfunction togh('));   // 開始画面の関数全体（複数行）
   assert.doesNotMatch(t, /ver \$\{VER\}|p8-raising/); assert.match(t, /"つづきからはじめます":"はじめてのプレイです"\}<\/small><\/p>/);
   assert.doesNotMatch(HTML.replace(/const VER="p8-raising"/, ''), /ver \$\{VER\}|>ver |バージョン\s*\d/, 'プレイヤー向けの画面に版の表記を出さない');
 });

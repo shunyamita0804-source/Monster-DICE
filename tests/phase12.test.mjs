@@ -22,17 +22,18 @@ test('G1-1：正式背景6点を assets/scenes/ に登録（Chapter間ファー�
     assert.equal(im.src, `./assets/scenes/${key}.jpg`); assert.ok(existsSync(path.join(ROOT, im.src)), key);
     assert.deepEqual(jpg(im.src), { w: im.w, h: im.h }, `${key}：登録の大きさと実ファイルが一致`); assert.ok(im.w >= 1815 && im.h === 866, '縮小していない');
   }
-  assert.deepEqual(readdirSync(path.join(ROOT, 'assets/scenes')).sort(), ['README.md', 'farm_interval.jpg', 'train_de.jpg', 'train_ev.jpg', 'train_hi.jpg', 'train_in.jpg', 'train_po.jpg']);
+  assert.deepEqual(readdirSync(path.join(ROOT, 'assets/scenes')).sort(), ['README.md', 'farm_interval.jpg', 'market.jpg', 'train_de.jpg', 'train_ev.jpg', 'train_hi.jpg', 'train_in.jpg', 'train_po.jpg'], '市場の背景候補（market.jpg）を追加');
   const readme = rd('assets/scenes/README.md');
   for (const f of ['4211BD62', '157603E3', '01777B8B', '302655B8', 'F3539954', '88015E69']) assert.ok(readme.includes(f), f);
 });
 
-test('G1-2：修行場5種は修行の種類（po/in/hi/ev/de）と1対1・正式名と正式カラー。市場背景は素材未着のため未登録', () => {
+test('G1-2：修行場5種は修行の種類（po/in/hi/ev/de）と1対1・正式名と正式カラー。市場は今回提供された背景候補を登録（最終採用は未確定）', () => {
   const { P7, SC } = load();
   assert.deepEqual(Object.keys(SC.TRAINING), [...P7.TRAIN_KINDS]);
   assert.deepEqual(P7.TRAIN_KINDS.map((k) => SC.training(k).name), ['ちから修行場', 'かしこさ修行場', '命中修行場', '回避修行場', '丈夫さ修行場']);
   for (const k of P7.TRAIN_KINDS) assert.match(SC.training(k).accent, /^#[0-9a-f]{6}$/);
-  assert.equal(SC.MARKET_BG, null); assert.equal(SC.training('xx'), null);
+  assert.equal(SC.MARKET_BG.src, './assets/scenes/market.jpg'); assert.equal(SC.MARKET_BG.candidate, true, '候補（最終採用は未確定）');
+  assert.deepEqual(jpg(SC.MARKET_BG.src), { w: SC.MARKET_BG.w, h: SC.MARKET_BG.h }); assert.equal(SC.training('xx'), null);
   assert.ok(Object.isFrozen(SC.TRAINING) && Object.isFrozen(SC.TRAINING.po.image));
   assert.ok(HTML.indexOf('js/phase12/scenes.js') > HTML.indexOf('js/phase11/player.js'));
 });
@@ -188,4 +189,36 @@ test('R1-4：出目を持たない現行の修行中セーブは従来どおり�
   const a = tr.indexOf('if(run&&Number.isInteger(run.roll)){'), b = tr.indexOf('setTimeout(trRoll,400)', a);
   assert.ok(a > 0 && b > a, '未処理の出目があれば同じ出目で自動的に続きから');
   assert.equal(rd('js/phase7/progression.js').includes('run.roll'), false, '修行の進行ロジック（progression.js）は変えていない');
+});
+
+// ---------------------------------------------------------
+// サイコロの結果表示の層（停止面の画像の差し込み口）：未登録なら数字の表示だけ・分岐用は進行に接続しない
+// ---------------------------------------------------------
+function diceWith(src) { const w = {}; new Function('window', src)(w); return w.MMP12D; }
+
+test('V1-1：停止面の画像は通常用（1〜3）・分岐用（1〜6）とも登録欄があり、現在は未登録（どの出目も数字の表示で代用）', () => {
+  const D = diceWith(rd('js/phase12/dice.js'));
+  for (const k of ['std', 'branch']) { assert.deepEqual(D.SETS[k].faces, {}); assert.ok(Object.isFrozen(D.SETS[k].faces)); for (let v = 0; v <= 7; v++) assert.equal(D.face(k, v), null, `${k} ${v}`); }
+  assert.equal(D.face('x', 1), null);
+  const reg = rd('js/phase12/dice.js').replace("frameMs: 70, faces: fz({}) }),\n    branch", "frameMs: 70, faces: fz({ 1: 'A1', 2: 'A2', 3: 'A3', 4: 'A4' }) }),\n    branch")
+    .replace("name: '分岐ルート用サイコロ', min: 1, max: 6, frames: frames('branch'), w: 561, h: 449, frameMs: 70, faces: fz({}) })", "name: '分岐ルート用サイコロ', min: 1, max: 6, frames: frames('branch'), w: 561, h: 449, frameMs: 70, faces: fz({ 1: 'B1', 6: 'B6', 7: 'B7' }) })");
+  const R = diceWith(reg);
+  assert.deepEqual([1, 2, 3, 4].map((v) => R.face('std', v)), ['A1', 'A2', 'A3', null], '登録しても通常用の範囲（1〜3）外は出さない');
+  assert.deepEqual([1, 2, 6, 7, 1.5].map((v) => R.face('branch', v)), ['B1', null, 'B6', null, null], '分岐用は1〜6の範囲内で登録された出目だけ');
+});
+
+test('V1-2：結果表示の層は10コマの演出のあとだけ動き、画像が読み込めた時だけ停止面を出す（補助の数字は常に表示）。出目の決定・保存・移動の順番と分岐用の未接続は変わらない', () => {
+  const h = HTML.slice(HTML.indexOf('const p12Dice=(()=>{'), HTML.indexOf('async function bRoll(){'));
+  assert.match(h, /<img class="p12dzi"[^>]*><div class="p12dface" hidden><\/div><div class="p12dres" hidden>/, '演出の上に独立した結果表示の層');
+  const iFrames = h.indexOf('for(const f of s.frames){img.src=f;await sleep(s.frameMs)}'), iRes = h.indexOf('await showResult(ov,k,value)'), iFade = h.indexOf('ov.classList.add("out")');
+  assert.ok(iFrames > 0 && iFrames < iRes && iRes < iFade, '共通アニメーション → 結果表示 → 消える');
+  const sr = h.slice(h.indexOf('async function showResult('), h.indexOf('async function play('));
+  assert.match(sr, /MMP12D\.face\(k,value\)/); assert.match(sr, /if\(loaded\)\{lay\.appendChild\(im\);lay\.hidden=false;ov\.querySelector\("\.p12dzi"\)\.style\.visibility="hidden";ov\.dataset\.face="img"\}/, '読み込めた時だけ画像に切り替える');
+  assert.match(sr, /if\(!ov\.dataset\.face\)ov\.dataset\.face="number";ov\.querySelector\("\.p12dres"\)\.hidden=false/, '未登録・読み込めない時は数字の表示（補助の数字は常に出す）');
+  assert.doesNotMatch(h, /Math\.random|MMP8\.|MMP7\.|save\(\)/, '結果表示は出目・進行・保存に関わらない');
+  const b = HTML.slice(HTML.indexOf('async function bRoll(){'), HTML.indexOf('\nasync function p8Continue('));
+  assert.ok(b.indexOf('MMP8.roll(S,m);save();') < b.indexOf('p12Dice.play("std",r.value)') && b.indexOf('p12Dice.play') < b.indexOf('p8Continue()'), 'Chapter：出目決定・保存 → 演出（結果表示を含む）→ 移動');
+  const t = HTML.slice(HTML.indexOf('async function trRoll(){'), HTML.indexOf('\n// ---- 出発準備'));
+  assert.ok(t.indexOf('run.roll=n;save()') < t.indexOf('p12Dice.play("std",n)') && t.indexOf('p12Dice.play') < t.indexOf('MMP7.advanceTraining(S,S.m,n)'), '修行：出目決定・保存 → 演出 → 前進');
+  assert.equal((HTML.match(/p12Dice\.play\(/g) || []).length, 2); assert.doesNotMatch(HTML, /p12Dice\.play\("branch"/, '分岐用サイコロは進行に接続しない');
 });

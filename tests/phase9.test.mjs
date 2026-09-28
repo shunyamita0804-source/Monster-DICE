@@ -311,9 +311,9 @@ test('T4-1：Chapter間ファームは専用画面（未育成・育成完了の
   assert.match(hall, /b=p8FarmPanel\(\)/, '未育成・育成完了は従来のファーム');
 });
 
-test('T4-2：ファームのコマンド：次のChapterへ・修行・ステータス・わざ・アイテム屋・中断・育成放棄（街へ戻るコマンドは無い）', () => {
+test('T4-2：ファームのコマンド：主要5項目（ボード＝出発準備／次のChapterへ・修行・ステータス・技管理・アイテム）＋サブ（中断・育成放棄）。遷移先は従来どおり、街へ戻るコマンドは無い', () => {
   const f = between('function p9FarmScr(msg){', '\n// ---- Phase 8：育成中の画面遷移');
-  for (const [label, call] of [['次のChapterへ', 'prepScr()'], ['修行', "hall('s')"], ['ステータス', "hall('st')"], ['わざ', "hall('w')"], ['アイテム屋', 'shopScr()'], ['中断', 'p8Suspend()'], ['育成放棄', 'p8AbandonAsk()']]) {
+  for (const [label, call] of [['ボード', 'prepScr()'], ['修行', "hall('s')"], ['ステータス', "hall('st')"], ['技管理', "hall('w')"], ['アイテム', 'shopScr()'], ['中断', 'p8Suspend()'], ['育成放棄', 'p8AbandonAsk()']]) {   // 試遊修正で表示名を変更（遷移先は同じ）
     assert.ok(f.includes(`"${label}"`) && f.includes(`"${call}"`), label);
   }
   assert.doesNotMatch(f, /街にもどる|lobby\(|market\(|farm\(/);
@@ -322,8 +322,10 @@ test('T4-2：ファームのコマンド：次のChapterへ・修行・ステー
 test('T4-3：モンスターが主役（大きな正式モンスター画像）。コマンド列の方が場所を取らない', () => {
   const f = between('function p9FarmScr(msg){', '\n// ---- Phase 8：育成中の画面遷移');
   assert.match(f, /<div class="p9hero"><div class="mon p9bob">\$\{msv\(m\)\}<\/div>/);
-  const w = (sel) => +HTML.match(new RegExp(sel.replace(/[.]/g, '\\.') + '\\{[^}]*width:(\\d+)px'))[1];
-  assert.ok(w('.p9hero .mon') > w('.p9cmd') * 1.5, 'モンスター画像の幅 > コマンド列の幅×1.5');
+  // 試遊修正：コマンドは舞台の外（下）に移し、舞台はモンスターと背景だけ（コマンドが舞台に重ならない）
+  assert.ok(f.indexOf('<div class="p9hero">') < f.indexOf('<nav class="p9cmd p15cmd"') && f.indexOf('</div>\n <nav class="p9cmd p15cmd"') > 0, 'コマンドは舞台の後ろ（外）');
+  assert.match(HTML, /\.p9farm \.p9cmd\.p15cmd\{position:static;/, 'コマンドは舞台に重ねない');
+  assert.ok(+HTML.match(/\.p9hero \.mon\{[^}]*width:(\d+)px/)[1] >= 180, 'モンスター画像は大きいまま');
   assert.match(f, /\$\{p8Hud\(/, '修行チケットなどのHUD'); assert.match(f, /MMP8\.rankLabel\(m\)/);
   assert.match(f, /c\?c\.desc:""/, '次のChapterの説明'); assert.match(f, /前回の結果/);
 });
