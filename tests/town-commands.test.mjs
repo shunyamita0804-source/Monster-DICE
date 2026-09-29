@@ -17,7 +17,7 @@ import * as H from './e2e/harness.mjs';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const HTML = readFileSync(path.join(ROOT, 'index.html'), 'utf8');
 const line = (p) => HTML.split('\n').find((l) => l.startsWith(p));
-const LABELS = ['市場', '牧場', '研究所', '闘技場', 'ファーム'];
+const LABELS = ['市場', '牧場', '研究所', '闘技場', 'ファームへ'];   // 正式な街画面（2026-09-29）で「ファーム」→「ファームへ」
 const CALLS = ['market()', 'farm()', 'museum()', 'townArena()', 'hall()'];
 
 test('TW-1：街の背景は TOWN_BG の1か所だけで参照し、ファイルが存在する（旧マップの埋め込み画像 MAPIMG は使わない）', () => {
@@ -42,6 +42,7 @@ test('TW-2：施設コマンドは 市場・牧場・研究所・闘技場・フ
 test('TW-6：コマンドは施設名だけ（補足は title に残す）。アイコンは .ti に独立し、画像ファイルのパスを書けば画像で表示できる', () => {
   const f = new Function(`${line('const townIcon=')}\nreturn townIcon;`)();
   assert.equal(f('🛒'), '🛒'); assert.equal(f('assets/town/icons/market.png'), '<img src="assets/town/icons/market.png" alt="">');
+  assert.equal(f('#tic-market'), '<svg viewBox="0 0 32 32" aria-hidden="true"><use href="#tic-market"/></svg>', '正式：金色の線画アイコン（TOWN_SVG の #tic-*）');
   const lobby = HTML.slice(HTML.indexOf('function lobby('), HTML.indexOf('\n}', HTML.indexOf('function lobby(')));
   assert.match(lobby, /<span class="ti">\$\{townIcon\(c\[2\]\)\}<\/span><b>\$\{c\[0\]\}<\/b><\/button>/); assert.match(lobby, /title="\$\{c\[1\]\}"/);
 });
@@ -83,7 +84,7 @@ test('TW-B1：新規開始後の街：背景画像を読み込み、5つのコ�
   const p = await L.open(); const pg = p.page;
   await town(p);
   assert.deepEqual((await cmds(pg)).map((c) => [c.label, c.call, c.disabled, c.lock]),
-    [['市場', 'market()', false, false], ['牧場', 'farm()', false, false], ['研究所', 'museum()', false, false], ['闘技場', 'townArena()', false, true], ['ファーム', 'hall()', true, false]]);
+    [['市場', 'market()', false, false], ['牧場', 'farm()', false, false], ['研究所', 'museum()', false, false], ['闘技場', 'townArena()', false, true], ['ファームへ', 'hall()', true, false]]);
   const bg = await pg.evaluate(() => getComputedStyle(document.querySelector('.map.town')).backgroundImage);
   assert.match(bg, /assets\/town\/town_main\.jpg/);
   await pg.waitForFunction(() => performance.getEntriesByType('resource').some((r) => r.name.endsWith('town_main.jpg')));
@@ -150,7 +151,8 @@ for (const [k, size] of Object.entries(H.SIZES)) {
       assert.ok(b.h >= 44 && b.w >= 100, `押しやすい大きさ（${b.w}×${b.h}）`);
       assert.ok(b.hit, '他の要素に隠れていない');
       assert.ok(!b.clip, '施設名が切れていない');
-      assert.ok(b.w <= 120, `背景を隠しすぎない幅（${b.w}px）`);
+      assert.ok(b.w >= 140 && b.w <= 160, `正式な街画面（A案）：押しやすく、背景を隠しすぎない幅（約152px。実際 ${b.w}px）`);
+      assert.equal(Math.round(b.h), size[1] <= 720 ? 50 : 58, '高さ：通常58px、高さの低い画面は50px（44px以上）');
     }
     assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
   });

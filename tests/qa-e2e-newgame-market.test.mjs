@@ -178,13 +178,13 @@ T('QA-NG2：開始ボタン → 名前登録画面（初期値「アルト」・
   const t = await pg.evaluate(() => ({
     hz: [...document.querySelectorAll('.hz')].map((b) => [b.getAttribute('onclick'), b.disabled]),
     pn: document.querySelector('.p115pn').textContent, prof: document.querySelector('.bprof').innerText.replace(/\s+/g, ' '),
-    msg: document.querySelector('#msg').textContent, top: document.querySelector('.topbar').innerText.replace(/\s+/g, ' '),
+    msg: document.querySelector('#msg').textContent, top: document.querySelector('.tpinfo').innerText.replace(/\s+/g, ' '), bar: document.querySelectorAll('.topbar').length,
     sw: document.documentElement.scrollWidth, iw: innerWidth, fina: document.querySelectorAll('img[src*="npc/fina"]').length,
   }));
   assert.deepEqual(t.hz, [['market()', false], ['farm()', false], ['museum()', false], ['townArena()', false], ['hall()', true]]);
   assert.ok(t.pn.includes('ゆうしゃ'), 'プレイヤー名を表示');
-  assert.match(t.prof, /300G/); assert.match(t.prof, /育成完了 0回/);
-  assert.match(t.top, /300G/);
+  assert.match(t.prof, /育成完了 0回/); assert.doesNotMatch(t.prof, /300G|ゆうしゃ|ランク/, '下の欄に名前・ランク・所持金を重ねない');
+  assert.match(t.top, /ゆうしゃ ランク ー 300 ?G/, '上部のプレイヤー情報（名前・ランク・所持金）'); assert.equal(t.bar, 0, '旧い上部の帯（大会優勝・所持金）は出さない');
   assert.equal(t.msg, 'ようこそ、ゆうしゃさん！ まずは市場でモンスターを選ぼう。');
   assert.equal(t.sw, t.iw, '横スクロールが出ない');
   assert.equal(t.fina, 0, '会話が終われば街にフィナは残らない');
