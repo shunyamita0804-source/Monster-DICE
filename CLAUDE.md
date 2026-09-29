@@ -68,6 +68,17 @@ Claude Code は作業の前に毎回このファイルを読むこと。ここ�
 - MMP8.loadFromStorage は、移行処理が例外を出しても起動を止めない（読めないセーブと同じく原文を退避して新規）。読み込み時は、不正な途中状態（pend／trainRun／battle）と不正な要素（box・bag・vault・log）だけを安全な値へ戻す。正常なセーブは変えない。
 - 新しい画面・ボタンを足したら、tests/qa-static-guards.test.mjs（読み込むJSの一覧・旧名称・CLAUDE.md の数値）と tests/qa-e2e-tech*.test.mjs（タイマー・リスナー・DOM の増加、404、4サイズの横はみ出し）が通ることを確認する。
 
+### 検索・調査のルール（開発負荷の監査で追加。base64 の巨大行で会話の文脈を埋めないため）
+
+- index.html と legacy/index.original.html には、base64 画像の巨大な行がある（index.html は1564〜1975行目付近に集中。1行最大約2.6MB、合計約8.5MB）。そのまま検索・表示すると数MBの出力になる（例：index.html を「hp」で rg すると約8.9MB）。
+- 通常の全文検索では legacy/ を対象にしない。リポジトリ直下の .ignore に `legacy/` を書いてあり、rg（Claude の Grep を含む）は自動で除外する。Git の追跡・GitHub Pages・テスト（sha256 照合）には影響しない。
+- legacy/ が必要な調査では、パスを明示して対象にする（例：`rg -M 500 -n 語 legacy/index.original.html`。ディレクトリ全体を検索するなら `rg --no-ignore`）。
+- index.html はゲーム本体なので検索対象から外さない。ただし rg／grep の結果に巨大な行をそのまま出さない：
+  - rg は最大行長を制限する（例：`rg -M 500`。長すぎる行は `[Omitted long matching line]` と表示される）。grep を使うときは `| cut -c1-300` などで切る。
+  - 画像・base64 の中身を見る必要がないときは、コードの部分だけを対象にする（行長の制限、または base64 の行を避けた行範囲の指定）。
+  - index.html を Read するときは、行範囲（offset／limit）を指定し、base64 の行を含む範囲を丸ごと読まない。
+- git diff／git log -p／git show で大きな変更を確認するときは、先に `--stat`／`--numstat` で規模を確かめる。画像や base64 の行を変えたコミットは diff が数MBになる（例：6ec343d は約9.5MB）ので、全文を表示しない（必要ならファイルを絞り、`| cut -c1-300` などで切る）。
+
 ## 3. 確定済みの正式仕様
 
 ### モンスター（原種4体）
