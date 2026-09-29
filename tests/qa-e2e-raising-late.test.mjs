@@ -265,7 +265,7 @@ T('QA-RL2：Chapter間ファームの「育成放棄」は2段階の確認（最
 T('QA-RL3：修行（Chapter間ファームから）：チケット1枚で開始 → 15マスをサイコロで進み、止まった能力・ライフのマスだけ +2〜3 → 途中で再読み込みしても出目・チケットはそのまま → ゴールで回数を記録 → 修行メニュー → ファーム（視差効果を減らす設定）', async () => {
   const p = await boot(farmSeed(2, [LOG1], { trainTix: 1 }, 0), '.p9farm.p15f', { calm: true }); const pg = p.page;
   const s0 = await H.getS(pg);
-  assert.match(await textOf(pg, 'button.p15b[onclick="hall(\'s\')"]'), /修行 チケット×1/);
+  assert.match(await textOf(pg, 'button.p15b[onclick="hall(\'s\')"]'), /特訓 チケット×1/);
   await pg.waitForTimeout(SETTLE);
   await pg.click('button.p15b[onclick="hall(\'s\')"]');
   await pg.waitForSelector('button.p12tc');
@@ -273,7 +273,7 @@ T('QA-RL3：修行（Chapter間ファームから）：チケット1枚で開始
   let cs = await cards();
   assert.deepEqual(cs.map((c) => [c.k, c.on]), [["trStart('po')", true], ["trStart('in')", true], ["trStart('hi')", true], ["trStart('ev')", true], ["trStart('de')", false]]);
   assert.match(cs[4].t, /Cランク以上の大会をクリアすると解放/, '丈夫さの修行は C 以上のクリアで解放');
-  assert.match(await textOf(pg, '.dnote'), /修行チケット：1枚/);
+  assert.match(await textOf(pg, '.dnote'), /特訓チケット：1枚/);
   // 開始：チケットが1枚減り（保存済み）、16地点（S＋15マス）の修行ボードへ
   await pg.waitForTimeout(SETTLE);
   await pg.click('button.p12tc[onclick="trStart(\'po\')"]');
@@ -282,7 +282,7 @@ T('QA-RL3：修行（Chapter間ファームから）：チケット1枚で開始
   assert.deepEqual([s.trainTix, s.m.raise.trainRun], [0, { kind: 'po', pos: 0 }]);
   assert.equal((await H.storedSave(pg)).trainTix, 0);
   assert.equal(await pg.evaluate(() => document.querySelectorAll('.p7tr .p7c').length), 16);
-  assert.equal(await textOf(pg, '#p7msg'), 'ちからの修行スタート！（修行チケットを1枚使った）サイコロを振って進もう。');
+  assert.equal(await textOf(pg, '#p7msg'), 'ちから特訓スタート！（特訓チケットを1枚使った）サイコロを振って進もう。');
   // 修行中も街へは行けない（修行ボードのまま）
   const rawT = await rawSave(pg);
   await pg.evaluate(() => lobby());
@@ -331,7 +331,7 @@ T('QA-RL3：修行（Chapter間ファームから）：チケット1枚で開始
   cs = await cards();
   assert.deepEqual(cs.map((c) => c.on), [false, false, false, false, false]);
   assert.match(cs[0].t, /クリア 1\/1 .*済/);
-  assert.match(cs[1].t, /修行チケットがありません/);
+  assert.match(cs[1].t, /特訓チケットがありません/);
   await pg.waitForTimeout(SETTLE);
   await pg.click('.dback');
   await pg.waitForSelector('.p9farm.p15f');
@@ -356,8 +356,8 @@ T('QA-RL4：Chapter 2 のゴール → ランク選択（クリア最高ラン�
   const rk = await ranks();
   assert.equal(rk.length, 3, 'E・D・C の3つ');
   assert.match(rk[0], /ランクE大会 6体の総当たり（5試合） クリア済み：優勝でステータスボーナスのみ/);
-  assert.match(rk[1], /ランクD大会 6体の総当たり（5試合） 初回優勝：200G・修行チケット×1・ステータスボーナス/);
-  assert.match(rk[2], /ランクC大会 8体の総当たり（7試合） 初回優勝：350G・修行チケット×2・ステータスボーナス/);
+  assert.match(rk[1], /ランクD大会 6体の総当たり（5試合） 初回優勝：200G・特訓チケット×1・ステータスボーナス/);
+  assert.match(rk[2], /ランクC大会 8体の総当たり（7試合） 初回優勝：350G・特訓チケット×2・ステータスボーナス/);
   assert.equal(await pg.evaluate(() => MMP8.canRoll(S.m)), false, 'ゴールのあとはサイコロを振れない');
   await assertSynced(pg, 'ゴール到達は保存済み（再開してもゴールの画面から）');
   // C：1回目は確認表示だけ、2回目で参加
@@ -434,7 +434,7 @@ T('QA-RL5：大会の決着：全勝で優勝 → 初回優勝の賞金350G・�
   assert.deepEqual(up, Object.fromEntries(reward.bonus.map((b) => [b.key, b.amount])));
   for (const b of reward.bonus) assert.ok(b.amount >= 4 && b.amount <= 7, `${b.key} +${b.amount}`);
   const res0 = await textOf(pg, '.p9tour');
-  for (const w of ['優勝！', '初回優勝の報酬', '賞金 350G', '修行チケット ×2', 'ステータスボーナス', 'Chapterを終えてファームへ']) assert.ok(res0.includes(w), `結果画面に「${w}」`);
+  for (const w of ['優勝！', '初回優勝の報酬', '賞金 350G', '特訓チケット ×2', 'ステータスボーナス', 'Chapterを終えてファームへ']) assert.ok(res0.includes(w), `結果画面に「${w}」`);
   assert.deepEqual(await myTable(pg), { w: '7', l: '0', mx: '○○○○○○○' });
   await assertSynced(pg);
   // 結果画面で再読み込み → 同じ結果画面、報酬は増えない

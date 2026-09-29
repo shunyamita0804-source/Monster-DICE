@@ -291,7 +291,7 @@ test('T3-6：初回優勝＝賞金・修行チケット・ステータスボー�
   const C = tourSave(P7, P8, 2, 3); C.g = 0; for (let i = 0; i < 7; i++) f = playLeague(P8, C, true);
   assert.deepEqual([f.reward.prize, f.reward.tickets], [350, 2], 'C以上は初回チケット2枚');
   const res = between('function p9TourResult(msg){', '\nfunction p8RewardText(');
-  for (const w of ['優勝！', '初回優勝の報酬', '再優勝の報酬', '賞金', '修行チケット', 'ステータスボーナス', '報酬はありません', 'p9Standings(lg,st,true)', 'p8EndChapter()']) assert.ok(res.includes(w), w);
+  for (const w of ['優勝！', '初回優勝の報酬', '再優勝の報酬', '賞金', '特訓チケット', 'ステータスボーナス', '報酬はありません', 'p9Standings(lg,st,true)', 'p8EndChapter()']) assert.ok(res.includes(w), w);
 });
 
 test('T3-7：VS画面：左に自分・右に相手・中央にVS、正式6能力を数値とゲージで比較。対戦開始は2度押し', () => {
@@ -313,7 +313,7 @@ test('T4-1：Chapter間ファームは専用画面（未育成・育成完了の
 
 test('T4-2：ファームのコマンド：主要5項目（ボード＝出発準備／次のChapterへ・修行・ステータス・技管理・アイテム）＋サブ（中断・育成放棄）。遷移先は従来どおり、街へ戻るコマンドは無い', () => {
   const f = between('function p9FarmScr(msg){', '\n// ---- Phase 8：育成中の画面遷移');
-  for (const [label, call] of [['ボード', 'prepScr()'], ['修行', "hall('s')"], ['ステータス', "hall('st')"], ['技管理', "hall('w')"], ['アイテム', 'shopScr()'], ['中断', 'p8Suspend()'], ['育成放棄', 'p8AbandonAsk()']]) {   // 試遊修正で表示名を変更（遷移先は同じ）
+  for (const [label, call] of [['ボード', 'prepScr()'], ['特訓', "hall('s')"], ['ステータス', "hall('st')"], ['技管理', "hall('w')"], ['アイテム', 'shopScr()'], ['中断', 'p8Suspend()'], ['育成放棄', 'p8AbandonAsk()']]) {   // 試遊修正で表示名を変更（遷移先は同じ）
     assert.ok(f.includes(`"${label}"`) && f.includes(`"${call}"`), label);
   }
   assert.doesNotMatch(f, /街にもどる|lobby\(|market\(|farm\(/);

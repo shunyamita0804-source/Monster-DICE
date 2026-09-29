@@ -30,7 +30,7 @@ test('G1-1：正式背景6点を assets/scenes/ に登録（Chapter間ファー�
 test('G1-2：修行場5種は修行の種類（po/in/hi/ev/de）と1対1・正式名と正式カラー。市場は今回提供された背景候補を登録（最終採用は未確定）', () => {
   const { P7, SC } = load();
   assert.deepEqual(Object.keys(SC.TRAINING), [...P7.TRAIN_KINDS]);
-  assert.deepEqual(P7.TRAIN_KINDS.map((k) => SC.training(k).name), ['ちから修行場', 'かしこさ修行場', '命中修行場', '回避修行場', '丈夫さ修行場']);
+  assert.deepEqual(P7.TRAIN_KINDS.map((k) => SC.training(k).name), ['ちから特訓場', 'かしこさ特訓場', '命中特訓場', '回避特訓場', '丈夫さ特訓場']);
   for (const k of P7.TRAIN_KINDS) assert.match(SC.training(k).accent, /^#[0-9a-f]{6}$/);
   assert.equal(SC.MARKET_BG.src, './assets/scenes/market.jpg'); assert.equal(SC.MARKET_BG.candidate, true, '候補（最終採用は未確定）');
   assert.deepEqual(jpg(SC.MARKET_BG.src), { w: SC.MARKET_BG.w, h: SC.MARKET_BG.h }); assert.equal(SC.training('xx'), null);
@@ -63,7 +63,7 @@ test('G3-2：修行ボードは修行の種類ごとの正式背景をはっき�
   assert.match(tr, /<div class="p12stage" role="img" aria-label="\$\{T\.name\}" style="background-image:url\(\$\{T\.image\.src\}\);background-position:\$\{T\.image\.focus\}">/);
   assert.doesNotMatch(tr, /TRIMG2|class="dbg"/, '修行ボードでは旧背景・ぼかし背景を使わない');
   for (const id of ['id="p7msg"', 'id="p7dice"', 'id="p7roll"', 'onclick="trRoll()"', 'class="p7tr"']) assert.ok(tr.includes(id), id);
-  assert.match(tr, /\$\{LAB\[K\]\}の修行/); assert.match(tr, /15マス・ゴールで技を覚える/); assert.match(tr, /💖=ライフ/);
+  assert.match(tr, /\$\{LAB\[K\]\}特訓/); assert.match(tr, /15マス・ゴールで技を覚える/); assert.match(tr, /💖=ライフ/);
   const css = HTML.match(/\n\.p12stage\{[^}]*\}/)[0]; assert.doesNotMatch(css, /filter|blur|brightness/);
   assert.match(HTML, /const TRIMG2="assets\/embedded\/trimg2_farm_bg\.jpg";/, '旧背景のデータは他の画面で使うため残す（外部化：assets/embedded/）'); assert.ok(existsSync(path.join(ROOT, 'assets/embedded/trimg2_farm_bg.jpg')));
 });

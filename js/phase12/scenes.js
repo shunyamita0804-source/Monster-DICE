@@ -14,11 +14,11 @@
   const img = (key, w, h, focus) => fz({ src: `./assets/scenes/${key}.jpg`, w, h, focus });
   const FARM_INTERVAL = img('farm_interval', 1816, 866, '20% 50%');   // 390×844では横の約45%だけが見えるため、牧場の建物・牧草地・大きな木の側を見せる位置
   const TRAINING = fz({
-    po: fz({ kind: 'po', name: 'ちから修行場', theme: '石造りの筋力特訓施設', accent: '#d9531e', image: img('train_po', 1816, 866, '62% 35%') }),
-    in: fz({ kind: 'in', name: 'かしこさ修行場', theme: '書庫・魔導研究施設', accent: '#2f9e57', image: img('train_in', 1816, 866, '30% 40%') }),
-    hi: fz({ kind: 'hi', name: '命中修行場', theme: '精密射撃・標的訓練施設', accent: '#d9668f', image: img('train_hi', 1815, 866, '45% 40%') }),
-    ev: fz({ kind: 'ev', name: '回避修行場', theme: '立体障害物・機動訓練施設', accent: '#2f7fd6', image: img('train_ev', 1816, 866, '55% 35%') }),
-    de: fz({ kind: 'de', name: '丈夫さ修行場', theme: '耐久・防御・重装訓練施設', accent: '#7d4fc9', image: img('train_de', 1816, 866, '70% 35%') }),
+    po: fz({ kind: 'po', name: 'ちから特訓場', theme: '石造りの筋力特訓施設', accent: '#d9531e', image: img('train_po', 1816, 866, '62% 35%') }),
+    in: fz({ kind: 'in', name: 'かしこさ特訓場', theme: '書庫・魔導研究施設', accent: '#2f9e57', image: img('train_in', 1816, 866, '30% 40%') }),
+    hi: fz({ kind: 'hi', name: '命中特訓場', theme: '精密射撃・標的訓練施設', accent: '#d9668f', image: img('train_hi', 1815, 866, '45% 40%') }),
+    ev: fz({ kind: 'ev', name: '回避特訓場', theme: '立体障害物・機動訓練施設', accent: '#2f7fd6', image: img('train_ev', 1816, 866, '55% 35%') }),
+    de: fz({ kind: 'de', name: '丈夫さ特訓場', theme: '耐久・防御・重装訓練施設', accent: '#7d4fc9', image: img('train_de', 1816, 866, '70% 35%') }),
   });
   // 市場の背景候補（3つの台座付き。今回提供された候補で、最終採用かは未確定）。台座は背景に描かれているため、CSSの台座は重ねない。
   //  pedestals：台座の天面の中心（画像の画素）。center＝手前中央（選択中）、left・right＝奥の左右（前後のモンスター）

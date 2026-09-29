@@ -324,7 +324,7 @@
   /** サイコロの出目ぶん進み、止まったマスの効果だけを適用する */
   function advanceTraining(S, m, steps, rng = Math.random) {
     const run = trainRunOf(m);
-    if (!run) throw new Error('修行中ではありません');
+    if (!run) throw new Error('特訓中ではありません');
     if (!Number.isInteger(steps) || steps < DICE_MIN || steps > DICE_MAX) throw new Error(`出目が不正です：${steps}`);
     const from = run.pos;
     const to = Math.min(TRAIN_LEN, from + steps);

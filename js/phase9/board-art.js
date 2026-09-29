@@ -22,7 +22,7 @@
     rare: { label: 'レア', c1: '#fff3b0', c2: '#d19b14', desc: 'めずらしい出来事が起きる' },
     treasure: { label: '宝箱', c1: '#ffe0a0', c2: '#9a5a16', desc: '宝箱を開けてお金を手に入れる' },
     battle: { label: '練習試合', c1: '#ff9a8a', c2: '#a51d1d', desc: '練習試合に挑戦できる（報酬なし）' },
-    ticket: { label: '修行チケット', c1: '#ffeb99', c2: '#c28a12', desc: '修行チケットを1枚手に入れる' },
+    ticket: { label: '特訓チケット', c1: '#ffeb99', c2: '#c28a12', desc: '特訓チケットを1枚手に入れる' },
     normal: { label: '何も起きない', c1: null, c2: null, desc: '何も起きない' },
     start: { label: 'スタート', c1: null, c2: null, desc: 'スタート地点' },
     tournament: { label: '公式大会', c1: null, c2: null, desc: '公式大会の会場（ゴール）' },

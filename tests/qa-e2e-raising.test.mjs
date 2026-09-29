@@ -485,7 +485,7 @@ T('QA-RB9：修行は Chapter 1 を終えるまで（未育成の間は）始め
   await pg.waitForTimeout(SETTLE);   // 画面が変わった直後の押下を無視する作りでも、拒否の処理まで進むように
   await pg.evaluate(() => trStart('po'));
   await pg.waitForSelector('.dmsg');
-  assert.equal(await pg.evaluate(() => document.querySelector('.dmsg').textContent), '修行を始められません。🔒 Chapter 1クリア後に解放');
+  assert.equal(await pg.evaluate(() => document.querySelector('.dmsg').textContent), '特訓を始められません。🔒 Chapter 1クリア後に解放');
   assert.equal(await rawSave(pg), raw0, '直接呼んでもチケットは減らず、修行も始まらない');
   noErrors(p);
   // Chapter間ファーム（Chapter 1 は終えた）でチケット0枚 → すべて押せない（丈夫さは C 以上のクリアで解放）
@@ -495,13 +495,13 @@ T('QA-RB9：修行は Chapter 1 を終えるまで（未育成の間は）始め
   await pg.waitForSelector('button.p12tc');
   cards = await pg.evaluate(() => [...document.querySelectorAll('button.p12tc')].map((b) => [b.disabled, b.innerText.replace(/\s+/g, ' ')]));
   assert.deepEqual(cards.map((c) => c[0]), [true, true, true, true, true]);
-  for (const [, t] of cards.slice(0, 4)) assert.match(t, /修行チケットがありません/);
+  for (const [, t] of cards.slice(0, 4)) assert.match(t, /特訓チケットがありません/);
   assert.match(cards[4][1], /Cランク以上の大会をクリアすると解放/);
   raw0 = await rawSave(pg);
   await pg.waitForTimeout(SETTLE);
   await pg.evaluate(() => trStart('in'));
   await pg.waitForSelector('.dmsg');
-  assert.equal(await pg.evaluate(() => document.querySelector('.dmsg').textContent), '修行を始められません。修行チケットがありません');
+  assert.equal(await pg.evaluate(() => document.querySelector('.dmsg').textContent), '特訓を始められません。特訓チケットがありません');
   assert.equal(await rawSave(pg), raw0);
   assert.equal(await pg.evaluate(() => MMP7.trainRunOf(S.m)), null);
   noErrors(p);

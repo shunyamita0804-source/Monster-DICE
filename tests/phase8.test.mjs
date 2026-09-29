@@ -606,7 +606,7 @@ test('S7-1：修行チケットマスで+1枚（バッグ枠外）。チケッ�
 
 test('S7-2：HUDは複数リソースに対応（今回は🎫修行チケット×数のみ）。ボード・大会・Chapter間ファームの上部に表示', () => {
   const { P8 } = load(); const S = P8.newSave(); S.trainTix = 3;
-  assert.deepEqual(P8.resources(S), [{ id: 'trainTix', icon: '🎫', label: '修行チケット', value: 3 }]);
+  assert.deepEqual(P8.resources(S), [{ id: 'trainTix', icon: '🎫', label: '特訓チケット', value: 3 }]);
   P8.registerResource({ id: 'x', icon: '★', label: '将来のリソース', get: () => 9 });
   assert.equal(P8.resources(S).length, 2, '将来のリソースを追加できる');
   assert.match(fnLine('function p8Hud('), /MMP8\.resources\(S\)\.map/);
@@ -616,7 +616,7 @@ test('S7-2：HUDは複数リソースに対応（今回は🎫修行チケット
   assert.match(between('function p8TourScr(msg){', '\nfunction p9TourResult('), /\$\{p9TourHead\(m,t\)\}/);
   assert.match(between('function p9TourHead(m,t){', '\nfunction p9Standings('), /\$\{p8Hud\(\)\}/);
   assert.match(between('function p8FarmPanel(){', '\n// ---- Phase 8：育成中の画面遷移'), /st=="farm"\?p8Hud\(\)/);
-  assert.match(HTML, /const BTYPE_LABEL=\{ticket:"修行チケット",/); assert.match(HTML, /const BTYPE_ICON=\{ticket:"🎫",/);
+  assert.match(HTML, /const BTYPE_LABEL=\{ticket:"特訓チケット",/); assert.match(HTML, /const BTYPE_ICON=\{ticket:"🎫",/);
 });
 
 test('S7-3：丈夫さ修行はCランク以上の大会クリアで解放（B条件は廃止）・2回制は維持', () => {

@@ -587,7 +587,7 @@
   //  修行チケットはバッグ枠外の育成リソース（セーブ全体で所持、Chapterをまたいで保持、修行1回で1枚消費）。
   //  HUDは複数リソースを並べられる形にしておき、今回は修行チケットだけを表示する。
   // =========================================================
-  const RESOURCES = [{ id: 'trainTix', icon: '🎫', label: '修行チケット', get: (S) => S.trainTix || 0 }];
+  const RESOURCES = [{ id: 'trainTix', icon: '🎫', label: '特訓チケット', get: (S) => S.trainTix || 0 }];
   function registerResource(def) {
     if (!def || typeof def.id !== 'string' || typeof def.get !== 'function') throw new Error('育成リソースの登録が不正です');
     const i = RESOURCES.findIndex((x) => x.id === def.id); if (i >= 0) RESOURCES.splice(i, 1, def); else RESOURCES.push(def);
