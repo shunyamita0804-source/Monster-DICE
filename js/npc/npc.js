@@ -184,5 +184,10 @@
   register('karen', { name: 'カレン', role: '市場担当', board: false, defaultView: 'closeup', defaultExpr: 'normal',
     views: { closeup: Object.fromEntries(KE.map((e) => [e, `${KAREN}${e}.png`])) } });
 
+  // ダン：ファーム担当（旧「コウ」の表示を置き換え。アップ画像のみで運用）。正式素材（透過PNG）を assets/npc/dan/closeup/ に置いている（README.md に元画像との対応）
+  const DAN = 'assets/npc/dan/closeup/', DE = ['normal', 'smile', 'guide', 'serious', 'troubled', 'happy'];
+  register('dan', { name: 'ダン', role: 'ファーム担当', board: false, defaultView: 'closeup', defaultExpr: 'normal',
+    views: { closeup: Object.fromEntries(DE.map((e) => [e, `${DAN}${e}.png`])) } });
+
   root.MMNPC = Object.freeze({ TYPE_MS, MIN_TAP_MS, register, get, list, expressionsOf, animationsOf, imageOf, animOf, preload, splitChars, resolveLines, createTalk, talk, close, state, animState, fromLegacy });
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -162,16 +162,16 @@ T('QA-RB1：市場で購入 → ファーム → 出発準備：1回目の押下
   const depText0 = await pg.evaluate((s) => document.querySelector(s).textContent, dep);
   assert.match(depText0, /CHAPTER 1「はじまりの草原」へ出発（育成開始）/);
 
-  // 1回目：フィナの確認会話（初回は3行。途中で街へ戻れない説明つき）。会話中は育成を始めない
+  // 1回目：フィナの確認会話（初回は3行。途中で街へ戻れない説明つき）→ 同じ会話でフィナ→ダンの掛け合い（2行）。会話中は育成を始めない
   await pg.waitForTimeout(SETTLE);
   await pg.click(dep);
   await pg.waitForSelector('.mmtalk');
   assert.equal(await pg.evaluate(() => S.m.raise.state), 'none', '会話中は育成を始めない');
   assert.deepEqual((await H.storedSave(pg)).npcFlags, { finaIntro: 1, karenIntro: 1, raiseIntro: 1 }, '初回の説明は表示した記録を先に保存する（市場に入ったのでカレンの初回あいさつも表示済み）');
   const t1 = await readTalk(pg);
-  assert.deepEqual(t1.who, ['フィナ']);
-  assert.deepEqual(t1.lines, await pg.evaluate(() => FINA_TALK.raiseFirst.map((x) => x.text)));
-  assert.equal(t1.lines.length, 3);
+  assert.deepEqual(t1.who, ['フィナ', 'ダン'], '確認のあと、同じ会話でフィナ→ダンの掛け合い');
+  assert.deepEqual(t1.lines, await pg.evaluate(() => FINA_TALK.raiseFirst.concat(DAN_TALK.handoff).map((x) => x.text)));
+  assert.equal(t1.lines.length, 5);
   assert.ok(t1.lines.some((x) => /途中で街へ戻ることはできません/.test(x)), '初回は「途中で街へ戻れない」説明がある');
   // 会話のあとは2度押しの確認待ち（まだ育成は始まらない）
   await pg.waitForFunction((s) => document.querySelector(s).dataset.a === '1', dep);
@@ -186,8 +186,8 @@ T('QA-RB1：市場で購入 → ファーム → 出発準備：1回目の押下
   // もう一度：2回目以降の会話は1行だけ → 2度押しで育成開始
   await pg.click(dep);
   const t2 = await readTalk(pg);
-  assert.deepEqual(t2.lines, ['このモンスターで育成を始めますか？']);
-  assert.deepEqual(t2.lines, await pg.evaluate(() => FINA_TALK.raiseAgain.map((x) => x.text)));
+  assert.deepEqual(t2.lines, ['このモンスターで育成を始めますか？', 'ダン、この子のことお願いしてもいい？', 'ああ。こっちは任せてくれ。']);
+  assert.deepEqual(t2.lines, await pg.evaluate(() => FINA_TALK.raiseAgain.concat(DAN_TALK.handoff).map((x) => x.text)));
   await pg.waitForFunction((s) => document.querySelector(s).dataset.a === '1', dep);
   assert.equal(await pg.evaluate(() => S.m.raise.state), 'none');
   await pg.waitForTimeout(ARM_GAP);

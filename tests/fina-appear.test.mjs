@@ -35,11 +35,12 @@ test('FA-2：名前登録の直後に1度だけあいさつ。表示前に「表
   assert.equal((HTML.match(/finaIntro\(\)/g) || []).length, 2, '呼び出しは名前登録の確定（p11NameGo）だけ（＋定義）');
 });
 
+const HANDOFF = [{ npc: 'fina', text: 'x' }, { npc: 'dan', text: 'y' }];
 test('FA-3：育成開始：1回目の押下でフィナの会話（初回は説明つき・2回目以降は簡潔）→ 終わると従来の2度押し確認 → もう一度押すと出発。押さなければ取り消し', async () => {
   const mk = () => { const S = { m: { raise: { state: 'none' } } }, log = [], timers = [], clk = { t: 1000 };
-    let res; const run = new Function('S', 'window', 'document', 'setTimeout', 'performance', 'save', 'finaTalk', 'MMP7', 'MMP8', 'board', 'prepScr', 'lobby', 'P7_ERR', 'p8ChLabel', `${fnSrc('finaFlags')}\n${fnSrc('tapAt')}\n${fnSrc('tapSoon')}\n${fnSrc('arm')}\n${fnSrc('p7Depart')}\nreturn p7Depart;`)(
-      S, { MMNPC: {} }, { body: { contains: () => true } }, (fn) => timers.push(fn), { now: () => clk.t }, () => log.push('save'), (k) => { log.push('talk:' + k); return new Promise((r) => { res = r; }); },
-      { raiseState: (m) => m.raise.state }, { depart: () => { log.push('depart'); S.m.raise.state = 'board'; return { ok: true, key: 1 }; } }, (m) => log.push('board'), () => log.push('prep'), () => log.push('lobby'), {}, () => 'CHAPTER 1');
+    let res; const run = new Function('S', 'window', 'document', 'setTimeout', 'performance', 'save', 'finaTalk', 'MMP7', 'MMP8', 'board', 'prepScr', 'lobby', 'P7_ERR', 'p8ChLabel', 'DAN_TALK', `${fnSrc('finaFlags')}\n${fnSrc('tapAt')}\n${fnSrc('tapSoon')}\n${fnSrc('arm')}\n${fnSrc('p7Depart')}\nreturn p7Depart;`)(
+      S, { MMNPC: {} }, { body: { contains: () => true } }, (fn) => timers.push(fn), { now: () => clk.t }, () => log.push('save'), (k, more) => { log.push('talk:' + k); assert.equal(more, HANDOFF, '確認会話に続けて、フィナ→ダンの掛け合い'); return new Promise((r) => { res = r; }); },
+      { raiseState: (m) => m.raise.state }, { depart: () => { log.push('depart'); S.m.raise.state = 'board'; return { ok: true, key: 1 }; } }, (m) => log.push('board'), () => log.push('prep'), () => log.push('lobby'), {}, () => 'CHAPTER 1', { handoff: HANDOFF });
     return { S, log, timers, run, clk, done: () => res() }; };
   const t = mk(), b = { dataset: {}, textContent: 'CHAPTER 1へ出発（育成開始）' };
   t.run(b); assert.deepEqual(t.log, ['save', 'talk:raiseFirst'], '初回：説明つきの会話。まだ出発しない'); assert.equal(t.S.npcFlags.raiseIntro, 1);

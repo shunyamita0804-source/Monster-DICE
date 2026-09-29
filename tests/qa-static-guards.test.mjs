@@ -493,14 +493,16 @@ test('QA-C13：市場カルーセル：切り替えは約0.3秒（P10_MS＝300�
 
 test('QA-C14：フィナの登場は指定の3か所だけ（名前登録の直後・育成開始・育成完了）で、Chapterボードには置かない', () => {
   const calls = callSites(CODE, 'finaTalk').map((c) => `${c.fn}:${c.arg}`).sort();
-  assert.deepEqual(calls, ['finaIntro:"intro"', 'p7Depart:first?"raiseFirst":"raiseAgain"', 'p8DoneScr:"done"']);
+  assert.deepEqual(calls, ['finaIntro:"intro"', 'p7Depart:first?"raiseFirst":"raiseAgain",DAN_TALK.handoff', 'p8DoneScr:"done"']);
   assert.deepEqual(callSites(CODE, 'finaIntro').map((c) => c.fn), ['p11NameGo'], 'あいさつは名前登録の確定からだけ');
   assert.deepEqual(callSites(CODE, 'MMNPC\\.talk').map((c) => c.fn).sort(), ['finaTalk', 'karenSay'], '共通会話を開くのは finaTalk と市場のカレン（karenSay）だけ');
   assert.deepEqual(callSites(CODE, 'karenTalk').map((c) => c.fn).sort(), ['adopt', 'karenIntro'], 'カレンの会話ウィンドウは市場の入店と購入成功だけ（切り替え・ボタンは案内欄の一言）');
   const ft = cut(CODE, 'const FINA_TALK={', '};');
   assert.deepEqual(Object.keys(new Function(`return ${ft.slice('const FINA_TALK='.length)}}`)()), ['intro', 'raiseFirst', 'raiseAgain', 'done']);
   const finaAt = [...CODE.matchAll(/npc:\s*"fina"/g)].map((m) => m.index), s0 = CODE.indexOf('const FINA_TALK={');
-  assert.ok(finaAt.length === 4 && finaAt.every((i) => i > s0 && i < s0 + ft.length), 'フィナのセリフは FINA_TALK の中だけ');
+  const d0 = CODE.indexOf('const DAN_TALK={'), dh = cut(CODE, 'const DAN_TALK={', '\n farm:');
+  assert.ok(finaAt.length === 5 && finaAt.filter((i) => i > s0 && i < s0 + ft.length).length === 4 && finaAt.filter((i) => i > d0 && i < d0 + dh.length).length === 1,
+    'フィナのセリフは FINA_TALK と、フィナ ↔ ダンの掛け合い（DAN_TALK.handoff）の中だけ');
   // Chapterボードの描画（board・分岐・HUD・フィールド・地図）と、ボード用モジュールにNPCを置かない
   for (const fn of ['board', 'p9BranchHtml', 'p9BoardHud', 'p13Html', 'p9Art']) {
     assert.doesNotMatch(fnBody(CODE, fn), /MMNPC|finaTalk|finaIntro|FINA_TALK|npc:\s*"|フィナ|assets\/npc\//, fn);
