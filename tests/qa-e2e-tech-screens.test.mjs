@@ -262,7 +262,7 @@ describe('QA-TS：390×844 の通し（JS エラー・読み込み・壊れた�
     await waitSel(pg, '.svb');
   });
 
-  T('QA-TS6：ファーム（未育成）→ 出発準備 → フィナの会話 → 2度押しで出発 → Chapter 1（サイコロのボタンはスクロールなしで見える）', async () => {
+  T('QA-TS6：ファーム（未育成）→ 出発準備 → フィナの確認（選択肢）→「始める」→ フィナ→ダン → Chapter 1（サイコロのボタンはスクロールなしで見える）', async () => {
     await pg.click('.hz[onclick="hall()"]');
     await waitSel(pg, '[onclick="prepScr()"]');
     await check(pg, 'ファーム（未育成）', SEL.hall);
@@ -271,9 +271,14 @@ describe('QA-TS：390×844 の通し（JS エラー・読み込み・壊れた�
     await check(pg, '出発準備', SEL.prep);
     await pg.click('[onclick*="p7Depart"]');
     await checkTalk(pg, 'フィナの育成開始の会話');
+    for (let i = 0; i < 20 && !(await pg.evaluate(() => !!(MMNPC.state() && MMNPC.state().choices))); i++) { await pg.click('.mmtalk', { force: true }); await pg.waitForTimeout(80); }
+    await checkTalk(pg, '育成開始の選択肢（始める／まだやめておく）');
+    const cb = await pg.evaluate(() => [...document.querySelectorAll('.mmtalk-choice')].map((b) => { const r = b.getBoundingClientRect(); return [b.textContent, r.top >= 0 && r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth, Math.round(r.height)]; }));
+    assert.deepEqual(cb.map((x) => x[0]), ['始める', 'まだやめておく']);
+    for (const [t, inView, h] of cb) { assert.ok(inView, `選択肢「${t}」が画面に収まっている`); assert.ok(h >= 44, `選択肢「${t}」は押しやすい高さ（${h}px）`); }
+    assert.equal(await H.chooseTalk(pg, 'start'), true);
+    await checkTalk(pg, 'フィナ→ダンの掛け合い');
     await H.finishTalk(pg);
-    await pg.waitForTimeout(700);
-    await pg.click('[onclick*="p7Depart"]');
     await waitSel(pg, '#brollbtn');
     await check(pg, 'Chapter 1 ボード', SEL.board, { fixed: ['#brollbtn'] });
     assert.equal(await pg.evaluate(() => document.querySelectorAll('img[src*="npc/fina"]').length), 0, 'ボードにフィナはいない');

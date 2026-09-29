@@ -111,10 +111,41 @@ export async function finishTalk(page, max = 60) {
   for (let i = 0; i < max; i++) {
     const open = await page.evaluate(() => !!document.querySelector('.mmtalk'));
     if (!open) return i;
+    if (await page.evaluate(() => !!(window.MMNPC && MMNPC.state() && MMNPC.state().choices))) throw new Error('会話に選択肢がある（chooseTalk で選ぶ）');
     await page.click('.mmtalk', { force: true });
     await page.waitForTimeout(20);
   }
   throw new Error('会話が終わらない');
+}
+/** 共通会話を送り、選択肢が出たら指定の選択肢（id）を押す（選択肢は、出てから0.35秒・直前のタップから0.4秒あけないと受け付けないので、手を止めてから押す）。選択肢が出る前に会話が終われば false */
+export async function chooseTalk(page, id, max = 60) {
+  for (let i = 0; i < max; i++) {
+    const s = await page.evaluate(() => (document.querySelector('.mmtalk') && window.MMNPC ? MMNPC.state() : null));
+    if (!s) return false;
+    if (s.choices) {
+      for (let k = 0; k < 3; k++) {
+        await page.waitForFunction((s) => !!document.querySelector(s), `.mmtalk-choice[data-choice="${id}"]`);   // ElementHandle を持たない（持つと、閉じた会話のDOMが残って見える）
+        await page.waitForTimeout(450);
+        await page.click(`.mmtalk-choice[data-choice="${id}"]`);
+        await page.waitForTimeout(60);
+        const r = await page.evaluate(() => { const x = window.MMNPC && MMNPC.state(); return x ? x.choice : 'closed'; });
+        if (r === id || r === 'closed') return true;
+      }
+      throw new Error('選択肢を選べない');
+    }
+    await page.click('.mmtalk', { force: true });
+    await page.waitForTimeout(20);
+  }
+  throw new Error('選択肢が出ない');
+}
+/** 出発準備の出発ボタンから育成を始める：フィナの確認 →「始める」→ 同じ会話でフィナ→ダンの掛け合い → ボードへ */
+export async function startRaising(page, dep = '#app button[onclick="p7Depart(this)"]') {
+  await page.waitForSelector(dep);
+  await page.click(dep);
+  await page.waitForSelector('.mmtalk');
+  if (!(await chooseTalk(page, 'start'))) throw new Error('育成開始の選択肢が出ない');
+  await finishTalk(page);
+  await page.waitForSelector('#brollbtn');
 }
 /** 開始画面から新しいゲームを始め、名前を登録して街まで進む（フィナの初回あいさつも送る） */
 export async function newGame(page, name = 'テスト') {

@@ -444,7 +444,7 @@ B('QA-TN2：文字送り中のタップで全文・▼表示・タイマー0、�
   noErrors(p);
 });
 
-B('QA-TN3：フィナの会話を5回（タップで最後まで・Enter キーで最後まで・途中で閉じる・アニメ付き）開いて終えるたびに、何も残らず DOM も増えない', async () => {
+B('QA-TN3：フィナの会話を5回（タップで送って選択肢で終える・Enter キーで最後まで・途中で閉じる・アニメ付き）開いて終えるたびに、何も残らず DOM も増えない', async () => {
   const p = await openTown({ size: H.SIZES.base });
   const pg = p.page;
   await quiet(pg);
@@ -454,9 +454,9 @@ B('QA-TN3：フィナの会話を5回（タップで最後まで・Enter キー�
   const keydown0 = (await talkSnap(pg)).keydown;
   const c0 = await cdp(pg);
   const open = async (code) => { await pg.evaluate(code); await pg.waitForFunction(() => !!document.querySelector('.mmtalk') && !!MMNPC.state()); };
-  // 1) 育成開始（初回の説明つき）をタップで最後まで
+  // 1) 育成開始（初回の説明つき）をタップで送り、選択肢「まだやめておく」で終える（選択肢のボタンも残らない）
   await open(() => { window.__r = []; finaTalk('raiseFirst').then(() => window.__r.push('raiseFirst')); });
-  await H.finishTalk(pg);
+  assert.equal(await H.chooseTalk(pg, 'cancel'), true);
   await assertTalkGone(pg, keydown0, '1回目');
   // 2) 育成完了を Enter キーで最後まで
   await open(() => { finaTalk('done').then(() => window.__r.push('done')); });
@@ -468,9 +468,9 @@ B('QA-TN3：フィナの会話を5回（タップで最後まで・Enter キー�
   await pg.waitForTimeout(100);
   await pg.evaluate(() => MMNPC.close());
   await assertTalkGone(pg, keydown0, '3回目（途中で閉じる）');
-  // 4) 2回目以降の育成開始（1行）
+  // 4) 2回目以降の育成開始（1行）：選択肢「始める」で終える（続きの行を渡していないので、そこで会話を終える）
   await open(() => { finaTalk('raiseAgain').then(() => window.__r.push('raiseAgain')); });
-  await H.finishTalk(pg);
+  assert.equal(await H.chooseTalk(pg, 'start'), true);
   await assertTalkGone(pg, keydown0, '4回目');
   // 5) 立ち絵アニメ付きの行を最後まで
   await open(() => { MMNPC.talk([{ npc: 'fina', anim: 'wave', text: 'アニメーションのテストです。' }, { anim: 'wave_blink', text: 'もう一つです。' }]).then(() => window.__r.push('anim')); });

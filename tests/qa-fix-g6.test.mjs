@@ -264,21 +264,13 @@ test('QA-G6-B2：実ブラウザ（375×667）：新規開始 → 市場で購�
   await pg.click('#app button[onclick="pfSellUid=null;lobby()"]');
   await pg.waitForSelector('#app .map');
   assert.equal(await pg.evaluate(() => scrollY), 0, '牧場から戻った街も一番上から');
-  // ファーム → 出発準備 → 出発（1回目：フィナの確認会話 → もう一度押すと出発）
+  // ファーム → 出発準備 → 出発（フィナの確認 →「始める」→ フィナ→ダン → 出発）
   await pg.click('#app .map .hz[onclick="hall()"]');
   await pg.waitForSelector('#app button[onclick="prepScr()"]');
   await pg.click('#app button[onclick="prepScr()"]');
   const dep = '#app button[onclick="p7Depart(this)"]';
   await pg.waitForSelector(dep);
-  await pg.click(dep);
-  await pg.waitForSelector('.mmtalk');
-  await H.finishTalk(pg);
-  await pg.waitForFunction((s) => { const b = document.querySelector(s); return !!b && b.dataset.a === '1'; }, dep);
-  // 確認のあと、ゆっくりもう一度押す：0.4秒未満の連打は受け付けず、3秒で確認が取り消されるため、
-  // ページの中で「確認から0.45秒たった」ときに押す（実行環境が重くても3秒を過ぎて取り消されないように）
-  const pressed = await pg.evaluate((s) => new Promise((ok) => { const go = () => { const b = document.querySelector(s); if (!b || b.dataset.a !== '1') return ok(false); if (performance.now() - Number(b.dataset.tapt) >= 450) { b.click(); return ok(true); } setTimeout(go, 20); }; go(); }), dep);
-  assert.equal(pressed, true, '確認の表示のあいだに押せた');
-  await pg.waitForSelector('#brollbtn');
+  await H.startRaising(pg, dep);   // フィナの確認 →「始める」→ フィナ→ダン → 出発
   assert.equal((await H.getS(pg)).m.raise.state, 'board', '出発した');
   assert.equal((await H.storedSave(pg)).v, 6, 'セーブは v6 のまま');
   assert.deepEqual(p.errors, []); assert.deepEqual(p.badNow(), []);

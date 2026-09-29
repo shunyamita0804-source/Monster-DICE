@@ -116,6 +116,21 @@ const traceSaves = (pg) => pg.evaluate(() => {
 });
 const readTrace = (pg) => pg.evaluate(() => window.__trace.filter((x, i, a) => x !== a[i - 1]).map((x) => JSON.parse(x)));
 /** 共通会話を最後まで送り、各行（全文）と話し手を返す（開いた直後の入力を無視する作りでも進むよう、少し待ってから一定間隔でタップ） */
+/** 選択肢が出るまで会話を送る（選択肢は押さない） */
+async function readUntilChoice(pg) {
+  await pg.waitForSelector('.mmtalk');
+  await pg.waitForTimeout(300);
+  const lines = [], who = new Set();
+  for (let i = 0; i < 60; i++) {
+    const s = await pg.evaluate(() => (document.querySelector('.mmtalk') && window.MMNPC ? MMNPC.state() : null));
+    if (!s) throw new Error('選択肢の前に会話が終わった');
+    lines[s.idx] = s.full; if (s.name) who.add(s.name);
+    if (s.choices) return { lines, who: [...who], choices: s.choices.map((c) => [c.id, c.label]) };
+    await pg.click('.mmtalk', { force: true });
+    await pg.waitForTimeout(150);
+  }
+  throw new Error('選択肢が出ない');
+}
 async function readTalk(pg) {
   await pg.waitForSelector('.mmtalk');
   await pg.waitForTimeout(300);
@@ -162,36 +177,34 @@ T('QA-RB1：市場で購入 → ファーム → 出発準備：1回目の押下
   const depText0 = await pg.evaluate((s) => document.querySelector(s).textContent, dep);
   assert.match(depText0, /CHAPTER 1「はじまりの草原」へ出発（育成開始）/);
 
-  // 1回目：フィナの確認会話（初回は3行。途中で街へ戻れない説明つき）→ 同じ会話でフィナ→ダンの掛け合い（2行）。会話中は育成を始めない
+  // 1回目：フィナがプレイヤーへ確認（初回は「途中で街へ戻れない」説明つき）→ 選択肢。会話中は育成を始めない
   await pg.waitForTimeout(SETTLE);
   await pg.click(dep);
   await pg.waitForSelector('.mmtalk');
   assert.equal(await pg.evaluate(() => S.m.raise.state), 'none', '会話中は育成を始めない');
   assert.deepEqual((await H.storedSave(pg)).npcFlags, { finaIntro: 1, karenIntro: 1, raiseIntro: 1 }, '初回の説明は表示した記録を先に保存する（市場に入ったのでカレンの初回あいさつも表示済み）');
-  const t1 = await readTalk(pg);
-  assert.deepEqual(t1.who, ['フィナ', 'ダン'], '確認のあと、同じ会話でフィナ→ダンの掛け合い');
-  assert.deepEqual(t1.lines, await pg.evaluate(() => FINA_TALK.raiseFirst.concat(DAN_TALK.handoff).map((x) => x.text)));
-  assert.equal(t1.lines.length, 5);
-  assert.ok(t1.lines.some((x) => /途中で街へ戻ることはできません/.test(x)), '初回は「途中で街へ戻れない」説明がある');
-  // 会話のあとは2度押しの確認待ち（まだ育成は始まらない）
-  await pg.waitForFunction((s) => document.querySelector(s).dataset.a === '1', dep);
-  assert.equal(await pg.evaluate((s) => document.querySelector(s).textContent, dep), 'もう一度押すと育成開始（完了か放棄まで街へ戻れません）');
-  assert.equal((await storedRaise(pg)).state, 'none');
-  // 押さなければ約3秒で取り消し（ボタンの表示が元に戻り、育成は始まらない）
-  await pg.waitForFunction((s) => document.querySelector(s).dataset.a !== '1', dep, { timeout: 8000 });
-  assert.equal(await pg.evaluate((s) => document.querySelector(s).textContent, dep), depText0);
+  const t1 = await readUntilChoice(pg);
+  assert.deepEqual(t1.who, ['フィナ']);
+  assert.deepEqual(t1.lines, await pg.evaluate(() => FINA_TALK.raiseFirst.map((x) => x.text)));
+  assert.deepEqual(t1.lines, ['育成を始めると、途中で街へ戻ることはできません。', 'この子の育成を始める？']);
+  assert.deepEqual(t1.choices, [['start', '始める'], ['cancel', 'まだやめておく']], '選択肢：始める／まだやめておく');
+  // 「まだやめておく」：会話を終えるだけ。フィナ→ダンの掛け合いは出さず、何も始めない（2度押しの確認も出さない）
+  assert.equal(await H.chooseTalk(pg, 'cancel'), true);
+  await pg.waitForFunction(() => !document.querySelector('.mmtalk'));
+  assert.equal(await pg.evaluate((s) => document.querySelector(s).textContent, dep), depText0, 'ボタンは元のまま（確認状態にしない）');
   assert.equal((await H.getS(pg)).m.raise.state, 'none');
   assert.equal((await storedRaise(pg)).state, 'none');
 
-  // もう一度：2回目以降の会話は1行だけ → 2度押しで育成開始
+  // もう一度：2回目以降は確認の1行だけ →「始める」→ 同じ会話でフィナ→ダンの掛け合い → 出発（2度押しは求めない）
+  await pg.waitForTimeout(SETTLE);
   await pg.click(dep);
-  const t2 = await readTalk(pg);
-  assert.deepEqual(t2.lines, ['このモンスターで育成を始めますか？', 'ダン、この子のことお願いしてもいい？', 'ああ。こっちは任せてくれ。']);
-  assert.deepEqual(t2.lines, await pg.evaluate(() => FINA_TALK.raiseAgain.concat(DAN_TALK.handoff).map((x) => x.text)));
-  await pg.waitForFunction((s) => document.querySelector(s).dataset.a === '1', dep);
-  assert.equal(await pg.evaluate(() => S.m.raise.state), 'none');
-  await pg.waitForTimeout(ARM_GAP);
-  await pg.click(dep);
+  const t2 = await readUntilChoice(pg);
+  assert.deepEqual(t2.lines, ['この子の育成を始める？']);
+  assert.deepEqual(t2.lines, await pg.evaluate(() => FINA_TALK.raiseAgain.map((x) => x.text)));
+  assert.equal(await H.chooseTalk(pg, 'start'), true);
+  const t3 = await readTalk(pg);
+  assert.deepEqual(t3.who, ['フィナ', 'ダン'], '「始める」のあと、フィナ→ダンの掛け合い');
+  assert.deepEqual(t3.lines.slice(-2), await pg.evaluate(() => DAN_TALK.handoff.map((x) => x.text)));
   await pg.waitForSelector('.p9board #brollbtn');
   const r = await raiseOf(pg);
   const { startStats, ...rest } = r;

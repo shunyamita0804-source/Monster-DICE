@@ -205,14 +205,11 @@ test('QA-G4-B1：実ブラウザ：新規開始→市場で「<!--」「<b>X</b>
   const labels = await txt(pg, '#app .card.slot small');
   assert.ok(labels[0].startsWith(`${CM}（ランク`), 'スロット1'); assert.ok(labels[3].startsWith(`${CM}（ランク`), 'オートセーブ');
   assert.equal(await count(pg, '#app button[onclick="imp()"]'), 1); assert.equal(await count(pg, '#app .ghost'), 1, '「最初からやり直す」も残る');
-  // 出発（フィナの会話 → 2度押し）
+  // 出発（フィナの確認 →「始める」→ フィナ→ダン）
   await pg.click('#app button.back'); await pg.waitForSelector('#app .map');
   await pg.click('.hz[onclick="hall()"]'); await pg.click('#app button[onclick="prepScr()"]');
   const dep = '#app button[onclick="p7Depart(this)"]';
-  await pg.waitForSelector(dep); await pg.click(dep); await H.finishTalk(pg);
-  await pg.waitForFunction((s) => document.querySelector(s).dataset.a === '1', dep);
-  await armed(pg, dep); await pg.click(dep);
-  await pg.waitForSelector('#brollbtn');
+  await H.startRaising(pg, dep);
   S = await H.getS(pg); assert.equal(S.m.raise.state, 'board'); assert.equal(S.m.name, CM);
   await noInjected(p);
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);

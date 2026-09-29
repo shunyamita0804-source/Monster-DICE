@@ -792,6 +792,7 @@ button.mkc b{font-size:.9rem}button.mkc small{font-size:.66rem;color:#ffe9b0}
 .ipose{width:100%;height:100%;object-fit:contain;object-position:center 30%}
 .fbi{position:absolute;inset:0;transform-origin:50% 100%}
 .tsc2 .kbub{left:4%;right:15%;top:auto;bottom:3%;width:auto;min-height:0;padding:4px 10px;font-size:.66rem;line-height:1.35;border-width:2px;border-radius:10px;opacity:0;pointer-events:none;background:rgba(255,253,247,.94)}
+.kbub.ksys{background:rgba(12,31,86,.92);border-color:#c9a24d;color:#fff} /* システム通知（NPCの発言ではない）：名前・顔なし */
 .tsc2 .kbub br{display:none}.tsc2 .kbub b{margin-right:6px}
 .tsc2 .kbub::after{display:none}
 .tsc2 .kbub.kt{animation:ktoast 4.2s ease-out forwards}
@@ -1042,6 +1043,8 @@ button.mkc b{font-size:.9rem}button.mkc small{font-size:.66rem;color:#ffe9b0}
 .p9say{position:absolute;left:10px;top:10px;right:150px;display:flex;align-items:flex-start;gap:6px;z-index:3}
 .p9say img{flex:none;width:38px;height:38px;border-radius:50%;border:2px solid #c9a24d;background:#fff}
 .p9say span{background:rgba(255,250,238,.96);color:#3a2410;border:2px solid #8a5a2b;border-radius:12px;padding:6px 9px;font-size:.8rem;line-height:1.45;box-shadow:0 3px 8px rgba(0,0,0,.25)}
+.p9say.sys{right:10px} /* システム通知（NPCの発言ではない）：顔なし・紺地に白文字 */
+.p9say.sys span{background:rgba(12,31,86,.92);color:#fff;border-color:#c9a24d}
 .p9hero{position:absolute;left:0;right:142px;bottom:16px;display:flex;flex-direction:column;align-items:center;z-index:2}
 .p9hero .mon{width:204px;height:204px;filter:drop-shadow(0 10px 6px rgba(0,0,0,.35))}
 .p9bob{animation:p9bob 2.4s ease-in-out infinite}
@@ -1328,6 +1331,11 @@ button.p10karen img{display:block;width:100%;height:auto;margin-top:2px;transfor
 .mmtalk-text{margin:0;min-height:5.25em;color:#fff;font-family:"Noto Sans JP",var(--mm-font-body,sans-serif);font-size:16px;font-weight:500;line-height:1.75;letter-spacing:.02em;white-space:pre-wrap;word-break:break-word;text-shadow:0 1px 2px rgba(0,0,0,.6)}
 .mmtalk-next{position:absolute;right:16px;bottom:10px;color:#f6dc92;font-size:.8rem;animation:mmtalkNx 1s ease-in-out infinite}
 .mmtalk-next[hidden]{display:none}
+.mmtalk-choices{display:flex;flex-direction:column;gap:8px;margin:10px 0 0}
+.mmtalk-choices[hidden]{display:none}
+.mmtalk-choice{display:block;width:100%;min-height:44px;padding:9px 14px;border-radius:10px;border:2px solid #e8c86a;background:linear-gradient(#2a4fa6,#13306f);color:#fff;font-family:"Noto Sans JP",var(--mm-font-body,sans-serif);font-size:15px;font-weight:700;letter-spacing:.04em;cursor:pointer;box-shadow:0 2px 0 #07163f;-webkit-tap-highlight-color:transparent}
+.mmtalk-choice:active{transform:translateY(1px);box-shadow:none}
+.mmtalk-choice:focus-visible{outline:3px solid #f6dc92;outline-offset:2px}
 @keyframes mmtalkNx{0%,100%{transform:translateY(0);opacity:1}50%{transform:translateY(3px);opacity:.6}}
 @media (prefers-reduced-motion:reduce){.mmtalk,.mmtalk-next{animation:none}}
 </style></head><body><main>
@@ -1892,7 +1900,7 @@ function dscr(id,msg){if(id=="b")return hall("t"); // Phase 8：旧「腕試し�
   const n=m.eq.filter(x=>x>=0&&SK[x]).length;
   c=`<div class="dcard"><div class="dh">バトルのルーレット <small>${n} / 6 セット中</small></div><div class="dhint">枠をタップして選び、下の技をタップしてセット</div><div class="drl">${rows}</div></div>
   <div class="dcard"><div class="dh">技の一覧 <small>${own.length} / ${skl(m).length} 習得</small></div><div class="dflt">${[["a","すべて"],["p","✊ ちから"],["i","📖 かしこさ"]].map(([v,l])=>`<button class="${wflt==v?"on":""}" onclick="wflt='${v}';hall('w')">${l}</button>`).join("")}</div><div class="dskg">${cards}</div></div>`}
- $("#app").innerHTML=`<div class="ds ds-${id}" style="--dc:${D[3]}"><div class="dbg" style="background-image:url(${TRIMG2})"></div><div class="dtop"><button class="dback" onclick="lastSk=-1;hall('t')">${S.m&&MMP7.inChapter(S.m)?"◀ ボードへ":"◀ ファーム"}</button><div class="dmoney">🪙 ${S.g}G</div></div><div class="dtitle"><img src="${TABS[D[2]]}" alt=""><div><b>${D[0]}</b><small>${D[1]}</small></div></div>${msg?`<div class="dmsg"><img src="${DAN_FACE}" alt=""><span>${msg}</span></div>`:""}<div class="dbody">${c}</div></div>`;
+ $("#app").innerHTML=`<div class="ds ds-${id}" style="--dc:${D[3]}"><div class="dbg" style="background-image:url(${TRIMG2})"></div><div class="dtop"><button class="dback" onclick="lastSk=-1;hall('t')">${S.m&&MMP7.inChapter(S.m)?"◀ ボードへ":"◀ ファーム"}</button><div class="dmoney">🪙 ${S.g}G</div></div><div class="dtitle"><img src="${TABS[D[2]]}" alt=""><div><b>${D[0]}</b><small>${D[1]}</small></div></div>${msg?`<div class="dmsg"><span>${msg}</span></div>`:""}<div class="dbody">${c}</div></div>`;
  if(id=="s")tapHold($("#app .dbody"),350); // 修行メニューを出したタップの2打目で、修行（チケット1枚）を始めない
  if(id=="w"&&lastSk>=0&&document.body.insertAdjacentHTML)document.body.insertAdjacentHTML("beforeend",`<div id="dsh">${skSheet(lastSk,m)}</div>`);try{window.scrollTo(0,0)}catch(e){}}
 function skd(k){lastSk=k;hall("w")}
@@ -1928,7 +1936,7 @@ function _hall(tab,msg){p9Immersive(false);
  else if(ht=="s")b="<p><small>師匠に勝つと、そのタイプの新しい技を覚えます（1週間かかります）。</small></p>"+Object.keys(DJ).map(k=>{const n=dl(k,m).length;return `<button class="t" ${n?"":"disabled"} onclick="fight(0,'${k}')">${LAB[k]}の修行<small>${DS[k]}（未習得 ${n}/${pool(k,m).length}）</small></button>`}).join("");
  else if(ht=="st")b=`<div class="stw"><div class="stl"><div class="mon big">${msv(m)}</div><b>${p11Esc(m.name)}</b><small>ランク${MMP8.rankLabel(m)}</small></div><div class="str">${KS.map(k=>`<div class="sg"><div class="sh"><span>${LAB[k]}</span><b>${m[k]}/999</b></div><div class="eg"><i style="width:${m[k]/9.99}%"></i></div></div>`).join("")}</div></div>`;
  else b=wset(m);
- $("#app").innerHTML=`${MMP8.canVisitTown(S)?'<button class="back" onclick="lobby()">◀ 街にもどる</button>':""}<div class="tsc2" style="background-image:url(${TRIMG2})"><div class="tsign">🌾 ファーム</div><div class="kbub kt"><b>ダン</b><br>${msg||bcomm()}</div><div class="kav" onclick="const b=this.parentNode.querySelector('.kbub');if(b){b.classList.remove('kt');void b.offsetWidth;b.classList.add('kt')}" aria-label="ダンのコメントを見る"><img src="${DAN_FACE}" alt=""></div><div class="mw big xl" id="m0"><div class="mon">${msv(m)}</div><div class="fx" id="f0"></div></div></div><div class="fhud"><span>🐾 ${p8StateLabel(S.m)}</span><span>🪙 ${S.g}G</span></div>${bprof()}<div class="ttabs p15tabs">${[["t","🎲","ボード"],["s","🥋","修行"],["st","📊","ステータス"],["w","⚔️","技管理"]].map(([id,ic,lb])=>`<button class="ttab p15tab${ht==id?" on":""}" onclick="hall('${id}')"><span class="p15ic">${ic}</span><b>${lb}</b></button>`).join("")}</div><div class="wpanel">${b}</div>`;
+ $("#app").innerHTML=`${MMP8.canVisitTown(S)?'<button class="back" onclick="lobby()">◀ 街にもどる</button>':""}<div class="tsc2" style="background-image:url(${TRIMG2})"><div class="tsign">🌾 ファーム</div>${msg?`<div class="kbub kt ksys">${msg}</div>`:""}<div class="kbub kdan${msg?"":" kt"}"><b>ダン</b><br>${bcomm()}</div><div class="kav" onclick="const p=this.parentNode,s=p.querySelector('.ksys'),b=p.querySelector('.kdan');if(s)s.remove();if(b){b.classList.remove('kt');void b.offsetWidth;b.classList.add('kt')}" aria-label="ダンのコメントを見る"><img src="${DAN_FACE}" alt=""></div><div class="mw big xl" id="m0"><div class="mon">${msv(m)}</div><div class="fx" id="f0"></div></div></div><div class="fhud"><span>🐾 ${p8StateLabel(S.m)}</span><span>🪙 ${S.g}G</span></div>${bprof()}<div class="ttabs p15tabs">${[["t","🎲","ボード"],["s","🥋","修行"],["st","📊","ステータス"],["w","⚔️","技管理"]].map(([id,ic,lb])=>`<button class="ttab p15tab${ht==id?" on":""}" onclick="hall('${id}')"><span class="p15ic">${ic}</span><b>${lb}</b></button>`).join("")}</div><div class="wpanel">${b}</div>`;
 }
 function after(t){hall(null,t)} // Phase 8：寿命は廃止（寿命による旅立ちは起きない）
 const TE={li:"💖💪",po:"💥🔥",in:"📘✨",hi:"🎯💫",ev:"💨⚡",de:"🧱🔩"},TC={li:"#ff5c8a",po:"#ff8f3a",in:"#7c5cff",hi:"#ffd23f",ev:"#3fd0ff",de:"#8a94a6"};
@@ -2369,7 +2377,7 @@ function p9FarmScr(msg){const m=S.m,r=m.raise,k=MMP8.nextChapterKey(m),fin=k==MM
  $("#app").innerHTML=`<div class="p9farm p15f"><header class="p9hud"><div class="r1"><div class="p9plq"><div class="no">Chapter間ファーム</div><div class="nm">${fin?"次：最終ルート":`次：Chapter ${k}　${MMP8.chapterName(k)}`}</div></div>
  <div class="p9rk" title="その個体がクリアした最高ランク"><span>ランク</span><b>${MMP8.rankLabel(m)}</b></div></div>
  <div class="r2"><div class="p9pips" aria-label="Chapterの進み具合">${pips}</div>${p8Hud(`<span class="p9chip">🪙<b>${S.g}</b><small>G</small></span>`)}</div></header>
- <div class="p9stage" style="background-image:url(${MMP12S.FARM_INTERVAL.src});background-position:${MMP12S.FARM_INTERVAL.focus}"><div class="p9say"><img src="${DAN_FACE}" alt=""><span>${msg||bcomm()}</span></div>
+ <div class="p9stage" style="background-image:url(${MMP12S.FARM_INTERVAL.src});background-position:${MMP12S.FARM_INTERVAL.focus}">${msg?`<div class="p9say sys"><span>${msg}</span></div>`:`<div class="p9say"><img src="${DAN_FACE}" alt=""><span>${bcomm()}</span></div>`}
  <div class="p9hero"><div class="mon p9bob">${msv(m)}</div><div class="p9plate"><b>${p11Esc(m.name)}</b><span>ランク ${MMP8.rankLabel(m)}</span></div></div>
  </div>
  <nav class="p9cmd p15cmd" aria-label="コマンド">${cmd.map(([cl,on,ic,t,sub],i)=>(i==5?`<div class="p15subs">`:"")+`<button class="p15b ${cl}" onclick="${on}"><span class="p15ic">${ic}</span><span class="p15lb"><b>${t}</b>${sub?`<small>${sub}</small>`:""}</span></button>`+(i==6?`</div>`:"")).join("")}</nav>
@@ -2429,7 +2437,7 @@ async function trRoll(){if(p7Busy||!S.m||!MMP7.trainRunOf(S.m))return;p7Busy=tru
 
 // ---- 出発準備（バッグ⇄保管庫・Chapter選択） ----
 const p7ItemName=it=>{const d=MMP7.getItemDef(it.id);return d?d.name:it.id};
-function p7Shell(ic,title,sub,body,msg,back){return `<div class="ds" style="--dc:#e8b23a"><div class="dbg" style="background-image:url(${TRIMG2})"></div><div class="dtop"><button class="dback" onclick="${back||"hall('t')"}">◀ ファーム</button><div class="dmoney">🪙 ${S.g}G</div></div><div class="dtitle"><div class="mico">${ic}</div><div><b>${title}</b><small>${sub}</small></div></div>${msg?`<div class="dmsg"><img src="${DAN_FACE}" alt=""><span>${msg}</span></div>`:""}<div class="dbody">${body}</div></div>`}
+function p7Shell(ic,title,sub,body,msg,back){return `<div class="ds" style="--dc:#e8b23a"><div class="dbg" style="background-image:url(${TRIMG2})"></div><div class="dtop"><button class="dback" onclick="${back||"hall('t')"}">◀ ファーム</button><div class="dmoney">🪙 ${S.g}G</div></div><div class="dtitle"><div class="mico">${ic}</div><div><b>${title}</b><small>${sub}</small></div></div>${msg?`<div class="dmsg"><span>${msg}</span></div>`:""}<div class="dbody">${body}</div></div>`}
 function prepScr(msg){if(!S.m)return lobby();if(!MMP7.canAccessVault(S))return hall("t","Chapter中はバッグの準備ができません。");bgm("train");
  const cap=MMP7.bagCap(S),bag=S.inv.bag,vt=S.inv.vault,c=MMP8.canDepart(S,S.m),nx=MMP8.nextChapterKey(S.m);
  const bagRows=[...Array(cap)].map((_,i)=>bag[i]?`<div class="p7it"><span>${i+1}. ${p7ItemName(bag[i])}</span><button onclick="p7ToVault(${i})">保管庫へ</button></div>`:`<div class="p7it emp"><span>${i+1}. （空き）</span></div>`).join("");
@@ -2470,17 +2478,18 @@ function p10KarenHint(tip){const t=$("#p10kt"),bar=$("#p10kbar");if(!t||!bar)ret
 function p10KarenTalk(){if(P10_ANIM||$("#p10ov"))return;p10KarenHint(true)}
 const FINA_TALK={
  intro:[{npc:"fina",expression:"smile",text:"はじめまして。私はフィナです！"},{expression:"normal",text:"これからあなたのモンスター育成をお手伝いしますね。"},{expression:"guide",text:"まずは市場へ行って、一緒に育てるモンスターを迎えてみましょう！"}],
- raiseFirst:[{npc:"fina",expression:"normal",text:"このモンスターで育成を始めますか？"},{expression:"serious",text:"育成を始めると、途中で街へ戻ることはできません。"},{expression:"smile",text:"準備ができたら、出発しましょう！"}],
- raiseAgain:[{npc:"fina",expression:"normal",text:"このモンスターで育成を始めますか？"}],
+ raiseFirst:[{npc:"fina",expression:"serious",text:"育成を始めると、途中で街へ戻ることはできません。"},{expression:"normal",text:"この子の育成を始める？",choices:[{id:"start",label:"始める"},{id:"cancel",label:"まだやめておく"}]}],
+ raiseAgain:[{npc:"fina",expression:"normal",text:"この子の育成を始める？",choices:[{id:"start",label:"始める"},{id:"cancel",label:"まだやめておく"}]}],
  done:[{npc:"fina",expression:"happy",text:"お疲れさまでした！　育成完了です！"},{expression:"smile",text:"ここまで育ててきた時間が、この子の力になっていますね。"},{expression:"guide",text:"育て終わったモンスターは、牧場でいつでも確認できますよ。"}]};
 function finaFlags(){if(!S.npcFlags||typeof S.npcFlags!="object"||Array.isArray(S.npcFlags))S.npcFlags={};return S.npcFlags}
-function finaTalk(key,more){return window.MMNPC&&FINA_TALK[key]?MMNPC.talk(more?FINA_TALK[key].concat(more):FINA_TALK[key]):Promise.resolve()} // more：同じ会話ウィンドウで続ける行（育成開始のフィナ→ダンの掛け合い）
+function finaTalk(key,branches){return window.MMNPC&&FINA_TALK[key]?MMNPC.talk(FINA_TALK[key],branches?{branches}:undefined):Promise.resolve(null)} // branches：選択肢ごとの続きの行（同じ会話ウィンドウで続ける）。選んだ id で解決
 /** 名前登録の直後に1度だけ：先に「表示済み」を保存してから会話を出す（再読込しても二度出ない） */
 function finaIntro(){const f=finaFlags();if(f.finaIntro)return;f.finaIntro=1;save();finaTalk("intro")}
 function p7Depart(b){const m=S.m;if(!m)return lobby();
- // 育成開始（未育成→Chapter 1）の1回目の押下：フィナの確認会話（初回だけ説明つき）→ 終わったら従来の2度押し確認へ（押さなければ従来どおり取り消し）
- if(MMP7.raiseState(m)=="none"&&b&&b.dataset.a!="1"&&window.MMNPC){if(b.dataset.fina)return;b.dataset.fina="1";const f=finaFlags(),first=!f.raiseIntro;if(first){f.raiseIntro=1;save()}
-  finaTalk(first?"raiseFirst":"raiseAgain",DAN_TALK.handoff).then(()=>{delete b.dataset.fina;if(document.body.contains(b)&&MMP7.raiseState(S.m)=="none")arm(b,"もう一度押すと育成開始（完了か放棄まで街へ戻れません）")});return}
+ // 育成開始（未育成→Chapter 1）：フィナがプレイヤーへ確認（選択肢「始める／まだやめておく」。初回だけ「途中で街へ戻れない」説明つき）。選択肢が確認を兼ねるので2度押しは求めない
+ //  「始める」を選んだときだけ、同じ会話でフィナ→ダンの掛け合い → 会話のあと従来の出発処理（引数なしの p7Depart() ＝ 下の出発処理そのもの）。「まだやめておく」・選ばずに閉じたときは何もしない
+ if(MMP7.raiseState(m)=="none"&&b&&window.MMNPC){if(b.dataset.fina)return;b.dataset.fina="1";const f=finaFlags(),first=!f.raiseIntro;if(first){f.raiseIntro=1;save()}
+  finaTalk(first?"raiseFirst":"raiseAgain",{start:DAN_TALK.handoff}).then(r=>{delete b.dataset.fina;if(r==="start"&&S.m===m&&MMP7.raiseState(m)=="none")p7Depart()});return}
  if(MMP7.raiseState(m)=="none"&&b&&!arm(b,"もう一度押すと育成開始（完了か放棄まで街へ戻れません）"))return;const r=MMP8.depart(S,m);if(!r.ok)return prepScr(P7_ERR[r.reason]||"出発できません。");save();board(`${p8ChLabel(r.key)}に出発！サイコロを振って進もう！`)}
 
 // ---- アイテム屋（購入品は保管庫へ。バッグは直接操作しない） ----

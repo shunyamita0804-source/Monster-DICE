@@ -231,6 +231,8 @@ async function clock(page) {
 const center = (page, sel) => page.evaluate((s) => { const e = document.querySelector(s); if (!e) return null; const r = e.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; }, sel);
 /** 押す（タッチ端末ならタップ、そうでなければマウスのクリック） */
 async function press(page, pt, touch) { if (touch) await page.touchscreen.tap(pt.x, pt.y); else await page.mouse.click(pt.x, pt.y); }
+/** 会話（MMNPC）の時計 Date.now を止められるようにする（qa-fix-g5 と同じ） */
+const dnClock = (pg) => pg.evaluate(() => { if (window.__dn) return; const real = Date.now.bind(Date), q = window.__dn = { f: null }; Date.now = () => (q.f != null ? q.f : real()); q.freeze = () => { q.f = real(); }; q.add = (ms) => { q.f += ms; }; q.thaw = () => { q.f = null; }; });
 const DELIBERATE = 600;   // 「ゆっくりもう一度押す」間隔（0.4秒より十分長い）
 
 test('QA-G3-B1：実ブラウザ（タッチ）：市場の「購入する」→ 開いたシートの「連れて帰る」を0〜50msで連打しても購入されない。0.6秒後に押すと1回だけ購入', { skip: H.skipReason() }, async () => {
@@ -412,8 +414,8 @@ test('QA-G3-B8：実ブラウザ（マウス）：市場のカルーセルの外
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
 });
 
-test('QA-G3-B9：実ブラウザ：新規開始→市場で購入→牧場→出発。フィナの会話の直後の押下では出発せず、3秒後は <small> 付きの表示に戻り、ゆっくり押すと出発（エラーなし）', { skip: H.skipReason() }, async () => {
-  // 守ること：以前はフィナの会話をタップで送った次のタップで、確認（2度押し）を読む間もなく出発していた。取り消し後は小見出しが本文に混ざっていた
+test('QA-G3-B9：実ブラウザ：新規開始→市場で購入→牧場→出発。フィナの確認の選択肢は、会話を送ったタップの続き（連打）では確定しない。「まだやめておく」ではボタンも元のまま（確認状態にしない）。手を止めて「始める」を押すと、フィナ→ダンのあと出発（エラーなし）', { skip: H.skipReason() }, async () => {
+  // 守ること：以前はフィナの会話をタップで送った次のタップで、確認を読む間もなく出発していた。今は確認が選択肢（始める／まだやめておく）で、連打のリズムでは確定しない
   const p = await L.open(); const pg = p.page;
   await H.newGame(pg, 'スモーク');
   await pg.waitForSelector('#app .map');
@@ -431,72 +433,59 @@ test('QA-G3-B9：実ブラウザ：新規開始→市場で購入→牧場→出
   await pg.waitForSelector(dep);
   const html0 = await pg.evaluate((s) => document.querySelector(s).innerHTML, dep);
   assert.match(html0, /<small>準備ができたら出発しよう<\/small>/);
-  const ck = await clock(pg);
-  // 会話が終わって確認状態になった瞬間に時計を止める（直後の押下＝会話を送っていたタップの続き）
-  const freezeOnArm = () => pg.evaluate((s) => { const b = document.querySelector(s); const o = new MutationObserver(() => { if (b.dataset.a === '1') { window.__qa.freeze(); o.disconnect(); } }); o.observe(b, { attributes: true, attributeFilter: ['data-a'] }); }, dep);
-  await pg.click(dep); await freezeOnArm(); await H.finishTalk(pg);
-  await pg.waitForFunction((s) => document.querySelector(s).dataset.a === '1', dep);
-  const d = await center(pg, dep);
-  await pg.mouse.click(d.x, d.y); await pg.mouse.click(d.x, d.y);
+  await dnClock(pg);
+  // 会話を送り、選択肢が出た瞬間から時計（Date.now：会話の時計）を止める＝そこからの押下は、実行環境の遅れがあっても「選択肢が出た直後・連打」として扱われる
+  await pg.click(dep); await pg.waitForSelector('.mmtalk');
+  for (let i = 0; i < 40; i++) { if (await pg.evaluate(() => { const s = MMNPC.state(); if (s && s.choices) { window.__dn.freeze(); return true; } return false; })) break; await pg.click('.mmtalk', { force: true }); await pg.waitForTimeout(40); }
+  const c = await center(pg, '.mmtalk-choice[data-choice="start"]');
+  assert.ok(c, '選択肢「始める」が出た');
+  await pg.mouse.click(c.x, c.y); await pg.mouse.click(c.x, c.y);
   assert.equal((await H.getS(pg)).m.raise.state, 'none', '会話の直後の連打では出発しない');
-  assert.match(await pg.evaluate((s) => document.querySelector(s).textContent, dep), /もう一度押すと育成開始/, '確認の表示が見える');
-  await ck.thaw();
-  await pg.waitForFunction((s) => document.querySelector(s).dataset.a === '', dep, { timeout: 15000 });
-  assert.equal(await pg.evaluate((s) => document.querySelector(s).innerHTML, dep), html0, '3秒で取り消したあとは元の表示（<small> 付き）');
-  // もう一度（2回目以降は短い確認）。負荷で3秒の取り消しが先に働いたときは確認状態に戻してから押す
-  for (let k = 0; k < 3 && (await H.getS(pg)).m.raise.state === 'none'; k++) {
-    if (!(await pg.evaluate((s) => document.querySelector(s).dataset.a === '1', dep))) {
-      await pg.click(dep); await H.finishTalk(pg);
-      await pg.waitForFunction((s) => document.querySelector(s).dataset.a === '1', dep);
-    }
-    await pg.waitForTimeout(DELIBERATE);
-    await pg.click(dep);
-    await pg.waitForTimeout(300);
-  }
-  await pg.waitForSelector('#brollbtn');
-  S = await H.getS(pg);
-  assert.equal(S.m.raise.state, 'board'); assert.equal(S.m.raise.ch, 1);
+  assert.equal(await pg.evaluate(() => MMNPC.state() && MMNPC.state().choice), null, '連打では選択肢を確定しない');
+  await pg.evaluate(() => window.__dn.thaw());
+  assert.equal(await H.chooseTalk(pg, 'cancel'), true);
+  await pg.waitForFunction(() => !document.querySelector('.mmtalk'));
+  assert.equal(await pg.evaluate((s) => document.querySelector(s).innerHTML, dep), html0, '「まだやめておく」のあとも元の表示（<small> 付き。確認状態にしない）');
+  assert.equal((await H.getS(pg)).m.raise.state, 'none');
+  // もう一度（2回目以降は確認の1行だけ）：手を止めて「始める」→ フィナ→ダン → 出発
+  await pg.waitForTimeout(DELIBERATE);
+  await H.startRaising(pg, dep);
+  const S2 = await H.getS(pg);
+  assert.equal(S2.m.raise.state, 'board'); assert.equal(S2.m.raise.ch, 1);
   assert.equal(await pg.evaluate(() => document.querySelectorAll('.mmtalk').length), 0);
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
 });
 
-test('QA-G3-B10：実ブラウザ（タッチ）：出発ボタンの位置をタップし続けてフィナの会話を送り、そのまま連打を続けても出発しない。手を止めてから押すと出発', { skip: H.skipReason() }, async () => {
-  // 守ること：以前は会話を送るタップのリズムのまま次のタップで出発していた（確認の「もう一度押すと…」がほとんど見えない）
+test('QA-G3-B10：実ブラウザ（タッチ）：出発ボタンの位置をタップし続けてフィナの会話を送り、選択肢が出てもそのまま連打を続けても出発しない。手を止めて「始める」を押すと出発', { skip: H.skipReason() }, async () => {
+  // 守ること：以前は会話を送るタップのリズムのまま次のタップで出発していた。今は確認が選択肢で、連打（0.4秒未満の間隔）では確定しない
   const M = load(); const p = await L.open({ save: j(town(M)), touch: true }); const pg = p.page;
   await start(p, '#app .map');
   await pg.evaluate(() => prepScr());
   const dep = '#app button[onclick="p7Depart(this)"]';
   await pg.waitForSelector(dep);
   await pg.evaluate((s) => document.querySelector(s).scrollIntoView({ block: 'nearest' }), dep);
-  await clock(pg);
-  // 確認状態になった瞬間から時計を止める＝そこからの連打は、実行環境の遅れがあっても「0.4秒未満の連打」として扱われる
-  await pg.evaluate((s) => { const b = document.querySelector(s); const o = new MutationObserver(() => { if (b.dataset.a === '1') { window.__qa.freeze(); o.disconnect(); } }); o.observe(b, { attributes: true, attributeFilter: ['data-a'] }); }, dep);
+  await dnClock(pg);
   const pt = await center(pg, dep);
-  let armedAt = -1, onBtn = 0, talked = false;
+  let choiceAt = -1, talked = false, onChoice = 0;
   for (let i = 0; i < 80; i++) {
     await pg.touchscreen.tap(pt.x, pt.y);
     await pg.waitForTimeout(60);
-    const st = await pg.evaluate(([s, x, y]) => { const b = document.querySelector(s); return { a: b && b.dataset.a, raise: S.m.raise.state, talk: !!document.querySelector('.mmtalk'), hit: !!b && b.contains(document.elementFromPoint(x, y)) }; }, [dep, pt.x, pt.y]);
+    const st = await pg.evaluate(([x, y]) => { const s = window.MMNPC && MMNPC.state(); if (s && s.choices && !window.__dn.f) window.__dn.freeze();   // 選択肢が出た瞬間から会話の時計を止める
+      const hit = document.elementFromPoint(x, y); return { raise: S.m.raise.state, talk: !!document.querySelector('.mmtalk'), choices: !!(s && s.choices), onChoice: !!(hit && hit.closest && hit.closest('.mmtalk-choice')) }; }, [pt.x, pt.y]);
     assert.equal(st.raise, 'none', `${i + 1}回目のタップで出発してしまった`);
     if (st.talk) talked = true;
-    if (st.a === '1' && armedAt < 0) armedAt = i;
-    if (armedAt >= 0 && st.hit && !st.talk) onBtn++;
-    if (armedAt >= 0 && i - armedAt >= 8) break;
+    if (st.choices && choiceAt < 0) choiceAt = i;
+    if (st.onChoice) onChoice++;
+    if (choiceAt >= 0 && i - choiceAt >= 8) break;
   }
-  assert.ok(talked, 'フィナの会話が出た'); assert.ok(armedAt >= 0, '会話のあと確認状態になった'); assert.ok(onBtn >= 8, `確認状態のボタンを連打した（${onBtn}回）`);
-  assert.match(await pg.evaluate((s) => document.querySelector(s).textContent, dep), /もう一度押すと育成開始/, '確認の表示が出たまま');
-  await pg.evaluate(() => window.__qa.thaw());
-  // 負荷が高い環境では、時計を戻した時点で3秒の自動取り消しが先に働くことがある。そのときは確認状態に戻してから押す
-  for (let k = 0; k < 3 && (await H.getS(pg)).m.raise.state === 'none'; k++) {
-    if (!(await pg.evaluate((s) => document.querySelector(s).dataset.a === '1', dep))) {
-      await pg.touchscreen.tap(pt.x, pt.y); await H.finishTalk(pg);
-      await pg.waitForFunction((s) => document.querySelector(s).dataset.a === '1', dep);
-    }
-    await pg.waitForTimeout(DELIBERATE);
-    await pg.touchscreen.tap(pt.x, pt.y);
-    await pg.waitForTimeout(300);
-  }
+  assert.ok(talked, 'フィナの会話が出た'); assert.ok(choiceAt >= 0, '確認の選択肢が出た');
+  assert.equal(await pg.evaluate(() => MMNPC.state() && MMNPC.state().choice), null, '連打では選択肢を確定しない');
+  await pg.evaluate(() => window.__dn.thaw());
+  // 手を止めてから「始める」→ フィナ→ダン → 出発
+  assert.equal(await H.chooseTalk(pg, 'start'), true);
+  await H.finishTalk(pg);
   await pg.waitForSelector('#brollbtn');
-  assert.equal((await H.getS(pg)).m.raise.state, 'board', '手を止めてから押せば従来どおり出発');
+  assert.equal((await H.getS(pg)).m.raise.state, 'board', '手を止めてから選べば従来どおり出発');
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
 });
+

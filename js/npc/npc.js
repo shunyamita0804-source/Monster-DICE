@@ -6,6 +6,9 @@
 //  画像とセリフは分けて持つ（同じ表情で別のセリフを使える）。行ごとに npc・view・expression・name・side を指定でき、省略すると前の行を引き継ぐ。
 //  NPC同士の会話：行ごとに npc を切り替えると、名前・立ち絵・表情がその話者に切り替わる。side（'left'／'right'）で立ち絵と名前の左右を指定できる
 //  （省略時はその話者が前に使った側、はじめてなら left）。2人の同時表示は今後の拡張（今は話している1人だけを出す）。
+//  選択肢：行に choices（[{ id, label }]）を書くと、全文表示のあとに選択肢を出し、選ぶまで次へ進まない（本文のタップでは進まない）。
+//  選んだ id の続き（talk の opts.branches[id] の行）があれば同じ会話ウィンドウで続け、無ければ会話を終える。talk の Promise は選んだ id で解決する（選ばずに終われば null）。
+//  重要な意思決定は「フィナがプレイヤーへ確認 → プレイヤーが選択肢で回答 → フィナが NPC との会話を続ける」の形で使う。
 //  この仕組みは画面に何も常設しない。呼ばれたときだけ会話ウィンドウを出し、終わったら消す（セーブにも保存しない）。
 // =========================================================
 (function (root) {
@@ -17,6 +20,10 @@
   const MIN_TAP_MS = 80;
   /** 会話を開いた直後、タップ・キーを受け付けない時間（ミリ秒）。会話を開いた入力（名前欄の Enter／完了、ダブルタップの2打目）を1回目のタップとして扱わない（画面の会話 talk で使う） */
   const OPEN_GUARD_MS = 200;
+  /** 選択肢を出してから、押下を受け付けない時間（ミリ秒）。全文表示のタップ・ダブルタップの2打目で選択肢を確定させない（取り返しのつかない選択のため） */
+  const CHOICE_GUARD_MS = 350;
+  /** 選択肢の押下は、直前のタップ（本文のタップ・無視した押下も含む）から、この時間あいていないと受け付けない（ミリ秒）。会話を送る連打のリズムのまま選択肢を確定させない（2度押しの確認と同じ0.4秒） */
+  const CHOICE_GAP_MS = 400;
 
   // ---------------------------------------------------------
   // NPCの登録
@@ -79,45 +86,61 @@
       view = l.view || view || (n ? n.defaultView : null); expr = l.expression || l.expr || expr || (n ? n.defaultExpr : null);
       const img = npc ? imageOf(npc, view, expr) : null, anim = l.anim && npc ? animOf(npc, view, l.anim) : null;   // アニメーションは行ごとの指定（引き継がない）
       const side = l.side === 'right' || l.side === 'left' ? l.side : sideOf[npc] || 'left'; sideOf[npc] = side;   // 話者ごとに左右を覚える
-      return { npc, view, expr, side, name: l.name != null ? String(l.name) : (n ? n.name : ''), text: String(l.text == null ? '' : l.text), img, anim };
+      const choices = Array.isArray(l.choices) ? l.choices.filter((c) => c && typeof c.id === 'string' && c.id && typeof c.label === 'string').map((c) => ({ id: c.id, label: c.label })) : [];
+      return { npc, view, expr, side, name: l.name != null ? String(l.name) : (n ? n.name : ''), text: String(l.text == null ? '' : l.text), img, anim, choices: choices.length ? choices : null };
     });
   }
   /**
-   * 会話の進行役を作る。opts = { schedule(fn, ms), cancel(id), now(), onUpdate(snapshot), onEnd(), openGuardMs }
+   * 会話の進行役を作る。opts = { schedule(fn, ms), cancel(id), now(), onUpdate(snapshot), onEnd(choice), openGuardMs, branches: { 選択肢のid: [続きの行…] } }
    *  文字送りのタイマーは常に1つだけ。新しい行へ移る・全文表示・終了のときは必ず前のタイマーを止め、番号（token）の古いタイマーは何もしない。
    *  openGuardMs：start() からこの時間（now() で測る）のタップは無視する（省略時は0＝無視しない）。
    */
   function createTalk(lines, opts = {}) {
-    const L = resolveLines(lines);
+    let L = resolveLines(lines); const branches = opts.branches && typeof opts.branches === 'object' ? opts.branches : {};
     const schedule = opts.schedule || ((fn, ms) => setTimeout(fn, ms)), cancel = opts.cancel || ((id) => clearTimeout(id));
     const now = opts.now || (() => Date.now()), typeMs = Number.isFinite(opts.typeMs) ? opts.typeMs : TYPE_MS, guardMs = opts.openGuardMs > 0 ? opts.openGuardMs : 0;
-    const st = { idx: -1, chars: [], shown: 0, typing: false, ended: false, timer: null, token: 0, lastTap: -1e9, openedAt: -1e9 };
+    const st = { idx: -1, chars: [], shown: 0, typing: false, ended: false, timer: null, token: 0, lastTap: -1e9, openedAt: -1e9, fullAt: -1e9, choice: null, lastInput: -1e9 };
+    const waiting = () => !st.ended && !st.typing && !!(L[st.idx] && L[st.idx].choices);   // 全文表示のあと、選択肢を選ぶのを待っている
     const stop = () => { if (st.timer != null) { cancel(st.timer); st.timer = null; } };
     const snap = () => { const l = L[st.idx] || {}; return { idx: st.idx, total: L.length, npc: l.npc || null, side: l.side || 'left', name: l.name || '', view: l.img ? l.img.view : l.view || null, expr: l.img ? l.img.expr : l.expr || null,
-      img: l.img ? l.img.src : null, fallback: !!(l.img && l.img.fallback), anim: l.anim ? l.anim.name : null, frames: l.anim ? l.anim.frames : null, fps: l.anim ? l.anim.fps : 0, loop: l.anim ? l.anim.loop : false, text: st.chars.slice(0, st.shown).join(''), full: l.text || '', typing: st.typing, ended: st.ended, timer: st.timer != null }; };
+      img: l.img ? l.img.src : null, fallback: !!(l.img && l.img.fallback), anim: l.anim ? l.anim.name : null, frames: l.anim ? l.anim.frames : null, fps: l.anim ? l.anim.fps : 0, loop: l.anim ? l.anim.loop : false, text: st.chars.slice(0, st.shown).join(''), full: l.text || '', typing: st.typing, ended: st.ended, timer: st.timer != null,
+      choices: waiting() ? l.choices.map((c) => ({ ...c })) : null, choice: st.choice }; };
     const emit = () => { if (opts.onUpdate) opts.onUpdate(snap()); };
     function tick(tok) {
       if (tok !== st.token || st.ended) return;   // 前の行・終了後のタイマーは何もしない
       st.timer = null; st.shown = Math.min(st.chars.length, st.shown + 1);
-      if (st.shown >= st.chars.length) st.typing = false; else st.timer = schedule(() => tick(tok), typeMs);
+      if (st.shown >= st.chars.length) { st.typing = false; st.fullAt = now(); } else st.timer = schedule(() => tick(tok), typeMs);
       emit();
     }
     function show(i) {
-      stop(); st.token++; st.idx = i; st.chars = splitChars(L[i].text); st.shown = 0; st.typing = st.chars.length > 0;
+      stop(); st.token++; st.idx = i; st.chars = splitChars(L[i].text); st.shown = 0; st.typing = st.chars.length > 0; if (!st.typing) st.fullAt = now();
       const tok = st.token; if (st.typing) st.timer = schedule(() => tick(tok), typeMs);
       emit();
     }
-    function end() { if (st.ended) return; stop(); st.token++; st.ended = true; st.typing = false; emit(); if (opts.onEnd) opts.onEnd(); }
+    function end() { if (st.ended) return; stop(); st.token++; st.ended = true; st.typing = false; emit(); if (opts.onEnd) opts.onEnd(st.choice); }
     function tap() {
       if (st.ended) return 'ended';
-      const t = now(); if (t >= st.openedAt && t - st.openedAt < guardMs) return 'ignored';   // 開いた直後：会話を開いた入力の続き（連打の間隔の記録にも入れない。時計が戻っても止まらない）
+      const t = now(); st.lastInput = t; if (t >= st.openedAt && t - st.openedAt < guardMs) return 'ignored';   // 開いた直後：会話を開いた入力の続き（連打の間隔の記録にも入れない。時計が戻っても止まらない）
       if (t - st.lastTap < MIN_TAP_MS) return 'ignored'; st.lastTap = t;
-      if (st.typing) { stop(); st.token++; st.shown = st.chars.length; st.typing = false; emit(); return 'full'; }   // 表示中：全文表示
+      if (st.typing) { stop(); st.token++; st.shown = st.chars.length; st.typing = false; st.fullAt = t; emit(); return 'full'; }   // 表示中：全文表示
+      if (waiting()) return 'choice';   // 選択肢を待っている：本文のタップでは進まない
       if (st.idx < L.length - 1) { show(st.idx + 1); return 'next'; }   // 全文表示後：次のセリフ
       end(); return 'end';   // 最後のセリフ：会話終了
     }
+    /** 選択肢を選ぶ。続き（branches[id]）があれば同じ会話で続け、無ければ会話を終える */
+    function choose(id) {
+      if (st.ended) return 'ended';
+      if (!waiting()) return 'ignored';
+      const t = now(), gap = t - st.lastInput; st.lastInput = t;
+      if (t - st.fullAt < CHOICE_GUARD_MS || gap < CHOICE_GAP_MS) return 'ignored';   // 選択肢が出た直後・連打のリズムの押下は確定させない（手を止めてから押す）
+      if (!L[st.idx].choices.some((c) => c.id === id)) return 'ignored';
+      st.choice = id; const more = resolveLines(branches[id] || []);
+      L = L.slice(0, st.idx + 1).concat(more); api.lines = L;
+      if (more.length) { show(st.idx + 1); return 'next'; }
+      end(); return 'end';
+    }
     function start() { st.openedAt = now(); if (!L.length) { end(); return api; } show(0); return api; }
-    const api = { start, tap, end, state: snap, lines: L };
+    const api = { start, tap, choose, end, state: snap, lines: L };
     return api;
   }
 
@@ -130,16 +153,18 @@
   function h(tag, cls) { const e = document.createElement(tag); if (cls) e.className = cls; return e; }
   /**
    * 会話を表示する。lines = [{ npc:'fina', view:'closeup', expression:'smile', text:'…' }, …]（name で名前を上書き可）。
-   *  会話が終わると解決する Promise を返す。すでに会話中なら、前の会話をきちんと終わらせてから始める。
+   *  会話が終わると解決する Promise を返す（選択肢があれば選んだ id、無ければ null）。opts.branches＝選択肢ごとの続きの行。すでに会話中なら、前の会話をきちんと終わらせてから始める。
    */
   function talk(lines, opts = {}) {
     if (typeof document === 'undefined') return Promise.resolve();
     close();
     return new Promise((resolve) => {
-      const ov = h('div', 'mmtalk'), stage = h('div', 'mmtalk-stage'), fig = h('div', 'mmtalk-fig'), img = h('img'), win = h('div', 'mmtalk-win'), nm = h('div', 'mmtalk-name'), tx = h('p', 'mmtalk-text'), nx = h('span', 'mmtalk-next');
+      const ov = h('div', 'mmtalk'), stage = h('div', 'mmtalk-stage'), fig = h('div', 'mmtalk-fig'), img = h('img'), win = h('div', 'mmtalk-win'), nm = h('div', 'mmtalk-name'), tx = h('p', 'mmtalk-text'), nx = h('span', 'mmtalk-next'), ch = h('div', 'mmtalk-choices');
       ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); img.alt = ''; img.draggable = false; nx.textContent = '▼'; nx.setAttribute('aria-hidden', 'true');
-      fig.appendChild(img); win.append(nm, tx, nx); stage.append(fig, win); ov.appendChild(stage); document.body.appendChild(ov);
-      const onKey = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); c.tap(); } };
+      ch.hidden = true; ch.setAttribute('role', 'group'); let chKey = '';
+      fig.appendChild(img); win.append(nm, tx, ch, nx); stage.append(fig, win); ov.appendChild(stage); document.body.appendChild(ov);
+      const onKey = (e) => { if (e.key === 'Enter' || e.key === ' ') { if (e.target && e.target.closest && e.target.closest('.mmtalk-choices')) return;   // 選択肢のボタン上ではボタンの操作に任せる
+        e.preventDefault(); c.tap(); } };
       let keyT = null;   // keydown を受け付け始めるタイマー（会話を開いたキー操作そのものは会話に届けない）
       const c = createTalk(lines, {
         openGuardMs: OPEN_GUARD_MS,   // ダブルタップの2打目（会話を開いたタップの続き）などで、1行目の文字送りを飛ばさない
@@ -152,9 +177,14 @@
             ANIM.timer = setInterval(() => { if (ANIM.key !== key) return; if (ANIM.frame >= fr.length - 1 && !loop) { clearInterval(ANIM.timer); ANIM.timer = null; return; } ANIM.frame = (ANIM.frame + 1) % fr.length; img.src = fr[ANIM.frame]; }, Math.round(1000 / s.fps)); } }
           if (!s.frames && s.img && img.getAttribute('src') !== s.img) img.src = s.img;
           img.alt = s.name ? `${s.name}（${s.expr || ''}）` : '';
-          nm.textContent = s.name; nm.hidden = !s.name; tx.textContent = s.text; win.setAttribute('aria-label', (s.name ? s.name + '：' : '') + s.full); nx.hidden = s.typing;
+          nm.textContent = s.name; nm.hidden = !s.name; tx.textContent = s.text; win.setAttribute('aria-label', (s.name ? s.name + '：' : '') + s.full); nx.hidden = s.typing || !!s.choices;
+          const k = s.choices ? s.idx + ':' + s.choices.map((x) => x.id).join(',') : '';   // 選択肢は全文表示のあとだけ（▼の代わり）
+          if (k !== chKey) { chKey = k; ch.textContent = ''; ch.hidden = !s.choices;
+            if (s.choices) for (const x of s.choices) { const bt = h('button', 'mmtalk-choice'); bt.type = 'button'; bt.textContent = x.label; bt.dataset.choice = x.id;
+              bt.addEventListener('click', (e) => { e.stopPropagation(); c.choose(x.id); }); ch.appendChild(bt); } }
         },
-        onEnd() { stopAnim(); clearTimeout(keyT); document.removeEventListener('keydown', onKey); ov.remove(); if (CUR && CUR.c === c) CUR = null; resolve(); },
+        onEnd(choice) { stopAnim(); clearTimeout(keyT); document.removeEventListener('keydown', onKey); ov.remove(); if (CUR && CUR.c === c) CUR = null; resolve(choice == null ? null : choice); },
+        branches: opts.branches,
       });
       ov.addEventListener('click', (e) => { e.stopPropagation(); c.tap(); });
       keyT = setTimeout(() => { keyT = null; document.addEventListener('keydown', onKey); }, 0);   // 名前欄の Enter で開いたとき、その同じ keydown が document へ伝わって1行目を飛ばさないよう、次のタスクから受け付ける

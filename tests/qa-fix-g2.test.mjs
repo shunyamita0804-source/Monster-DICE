@@ -479,13 +479,7 @@ test('QA-G2-B5：実ブラウザ：新規開始→市場で購入→牧場→出
   await p.page.waitForSelector('#app .map');
   await p.page.click('.hz[onclick="hall()"]');
   await p.page.click('#app button[onclick="prepScr()"]');
-  await p.page.waitForSelector('#app button[onclick="p7Depart(this)"]');
-  await p.page.click('#app button[onclick="p7Depart(this)"]');
-  await H.finishTalk(p.page);
-  await p.page.waitForFunction(() => /もう一度押すと育成開始/.test((document.querySelector('#app button[onclick="p7Depart(this)"]') || {}).textContent || ''));
-  await p.page.waitForTimeout(450);   // QA G3：2度押しの確定は確認状態から0.4秒以上たってから
-  await p.page.click('#app button[onclick="p7Depart(this)"]');
-  await p.page.waitForSelector('#brollbtn');
+  await H.startRaising(p.page);   // フィナの確認 →「始める」→ フィナ→ダン → 出発
   S = await H.getS(p.page);
   assert.equal(S.m.raise.state, 'board'); assert.equal(S.m.raise.ch, 1);
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);

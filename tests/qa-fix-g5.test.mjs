@@ -238,7 +238,7 @@ test('QA-G5-B3：実ブラウザ：静止画の無いNPCのアニメーション
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad.filter((x) => !x.startsWith('failed ')), []);
 });
 
-test('QA-G5-B4：実ブラウザ：育成開始の出発ボタンをダブルタップしても、2打目（0.12秒後）はフィナの確認会話を送らない。会話のあとは従来どおり2度押しの確認（まだ出発しない）', { skip: H.skipReason() }, async (t) => {
+test('QA-G5-B4：実ブラウザ：育成開始の出発ボタンをダブルタップしても、2打目（0.12秒後）はフィナの確認会話を送らない。確認は選択肢で、「まだやめておく」では出発しない', { skip: H.skipReason() }, async (t) => {
   // 守ること：以前は2打目が開いた会話に届き、1行目「このモンスターで育成を始めますか？」がすぐ全文表示になっていた
   const p = await open(t, { save: townSave() }); const pg = p.page;
   await pg.waitForSelector('[onclick*="startGame"]'); await pg.click('[onclick*="startGame"]'); await pg.waitForSelector('#app .map');
@@ -253,11 +253,12 @@ test('QA-G5-B4：実ブラウザ：育成開始の出発ボタンをダブルタ
   await pg.click('.mmtalk', { force: true });   // 2打目（同じ場所＝会話ウィンドウの上）
   await pg.waitForFunction(() => window.__taps.length >= 1);
   const t1 = await pg.evaluate(() => window.__taps[0]);
-  assert.equal(t1.before.full, 'このモンスターで育成を始めますか？'); assert.deepEqual(pick(t1.after), pick(t1.before), '2打目では会話は進まない');
+  assert.equal(t1.before.full, '育成を始めると、途中で街へ戻ることはできません。'); assert.deepEqual(pick(t1.after), pick(t1.before), '2打目では会話は進まない');
   await pg.evaluate(() => window.__dn.thaw());
-  await H.finishTalk(pg);
-  await pg.waitForFunction(() => window.__armed === 1);
+  assert.equal(await H.chooseTalk(pg, 'cancel'), true, '確認の選択肢まで進む');
+  await pg.waitForFunction(() => !document.querySelector('.mmtalk'));
   const S = await H.getS(pg);
-  assert.equal(S.m.raise.state, 'none', '会話のあとは従来どおり確認（2度押し）。まだ出発しない'); assert.equal(S.npcFlags.raiseIntro, 1);
+  assert.equal(S.m.raise.state, 'none', '「まだやめておく」では出発しない'); assert.equal(S.npcFlags.raiseIntro, 1);
+  assert.equal(await pg.evaluate(() => window.__armed || 0), 0, '選択肢が確認を兼ねるので、2度押しの確認状態にはしない');
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
 });
