@@ -22,9 +22,9 @@ test('MS-1：中央のモンスターのタップで詳細を開き、左右は�
 });
 
 test('MS-2：会話中（.p10mk.talk）は操作UIを隠す。カレンのボタンは初回のあいさつの後だけ出す', () => {
-  assert.match(HTML, /\.p10mk\.talk \.p10arw,\.p10mk\.talk \.p10dots,\.p10mk\.talk \.p10plate,\.p10mk\.talk \.p10det,\.p10mk\.talk \.p10karen,\.p10mk\.talk \.p10msg\{visibility:hidden\}/);
+  assert.match(HTML, /\.p10mk\.talk \.p10arw,\.p10mk\.talk \.p10dots,\.p10mk\.talk \.p10plate,\.p10mk\.talk \.p10det,\.p10mk\.talk \.p10karen,\.p10mk\.talk \.p10kbar,\.p10mk\.talk \.p10msg\{visibility:hidden\}/);
   assert.match(HTML, /function karenSay\(lines\)\{if\(!window\.MMNPC\|\|!lines\)return Promise\.resolve\(\);const mk=\$\("\.p10mk"\);if\(mk\)mk\.classList\.add\("talk"\);return MMNPC\.talk\(lines\)\.then\(\(\)=>\{if\(mk\)mk\.classList\.remove\("talk"\)\}\)\}/);
-  assert.match(HTML, /aria-label="この子についてカレンに聞く" \$\{finaFlags\(\)\.karenIntro\?"":"hidden"\}>/);
+  assert.match(HTML, /<div class="p10kbar" id="p10kbar" \$\{finaFlags\(\)\.karenIntro\?"":"hidden"\}><button class="p10karen" onclick="p10KarenTalk\(\)"/, '案内欄（顔のボタン＋一言）は初回のあいさつの後だけ');
 });
 
 // ---------------- 実ブラウザ ----------------
@@ -33,7 +33,7 @@ let L;
 test.before(async () => { if (!SKIP) L = await H.launch(); });
 test.after(async () => { if (L) await L.close(); });
 const vis = (pg, sel) => pg.evaluate((s) => [...document.querySelectorAll(s)].some((e) => { const c = getComputedStyle(e), r = e.getBoundingClientRect(); return c.visibility !== 'hidden' && c.display !== 'none' && r.width > 0 && r.height > 0 && r.bottom > 0 && r.top < innerHeight; }), sel);
-const UI = ['#p10car .p10arw', '.p10dots', '#p10car .p10plate', '.p10karen'];
+const UI = ['#p10car .p10arw', '.p10dots', '#p10car .p10plate', '.p10karen', '#p10kbar'];
 
 test('MS-B1：初回来店：会話中は矢印・ドット・名札・カレンのボタン・詳細が見えない。会話が終わると閲覧状態に戻り、カレンのボタンが出る', { skip: SKIP }, async () => {
   const p = await L.open({ karen: true }); const pg = p.page;
@@ -77,11 +77,11 @@ test('MS-B3：左右の矢印・左右の個体のタップ・スワイプで切
   assert.deepEqual(p.errors, []);
 });
 
-test('MS-B4：詳細から購入 → 確認シート（カレンの1行）→ 購入成功（カレン）→ 街。購入は1回分', { skip: SKIP }, async () => {
+test('MS-B4：詳細から購入 → 確認シート（カレンのアップ画像と一言）→ 購入成功（カレン）→ 街。購入は1回分', { skip: SKIP }, async () => {
   const p = await L.open({ karen: true }); const pg = p.page;
   await H.newGame(pg, 'アルト'); await pg.evaluate(() => { S.g = 1000; save(); market(); }); await H.finishTalk(pg); await pg.waitForFunction(() => !P10_ANIM); await pg.waitForTimeout(300);
   await pg.click('#p10car .p10sl.on .p10mon'); await pg.waitForFunction(() => document.querySelector('.p10mk').classList.contains('det')); await pg.waitForTimeout(300);
-  await pg.click('#p10info .p10buy'); await pg.waitForSelector('#p10ov .kline'); await pg.waitForTimeout(500);
+  await pg.click('#p10info .p10buy'); await pg.waitForSelector('#p10ov .kup'); await pg.waitForTimeout(500);
   await pg.click('#p10ov .p10ok'); await pg.waitForSelector('.mmtalk');
   assert.equal(await vis(pg, '#p10info .p10buy'), false, '購入成功の会話中も詳細は隠す');
   await H.finishTalk(pg); await pg.waitForSelector('.map.town');
@@ -89,15 +89,12 @@ test('MS-B4：詳細から購入 → 確認シート（カレンの1行）→ �
   assert.deepEqual(p.errors, []);
 });
 
-test('MS-B5：カレンのボタン：選択中のモンスターについて案内（販売中＝名前と紹介、未解放、所持金不足）', { skip: SKIP }, async () => {
-  const p = await L.open({ karen: true }); const pg = p.page;
-  await H.newGame(pg, 'アルト'); await pg.evaluate(() => market()); await H.finishTalk(pg); await pg.waitForFunction(() => !P10_ANIM);
-  const ask = async () => { await pg.waitForTimeout(150); await pg.click('.p10karen'); await pg.waitForSelector('.mmtalk'); const out = []; for (let i = 0; i < 6 && await pg.evaluate(() => !!document.querySelector('.mmtalk')); i++) { await pg.waitForTimeout(240); await pg.click('.mmtalk'); const t = await pg.evaluate(() => document.querySelector('.mmtalk') && document.querySelector('.mmtalk-next').hidden === false ? document.querySelector('.mmtalk-text').textContent : null); if (t && out[out.length - 1] !== t) out.push(t); } await H.finishTalk(pg); return out; };
-  assert.deepEqual(await ask(), ['この子はソラモ。「バランス型」よ。', '気になったら、この子をタップして詳しく見てみてね。']);
-  await pg.evaluate(() => p10Go(MMP10M.MARKET_CATALOG.findIndex((c) => c.key === 'nobiton'))); await pg.waitForFunction(() => !P10_ANIM);
-  assert.deepEqual(await ask(), ['この子は、まだ市場には来ていないの。']);
-  await pg.evaluate(() => { S.m = mk(0); S.g = 100; save(); market(null, 'gauru'); }); await pg.waitForFunction(() => !P10_ANIM);
-  assert.deepEqual(await ask(), ['ごめんなさい。今の所持金では、この子を迎えられないみたい。']);
+test('MS-B5：モンスターは以前より上（画面の高さの約8%）。タイトル・プレイヤー情報と重ならず、名札・ドットは案内欄より上', { skip: SKIP }, async () => {
+  const p = await L.open(); const pg = p.page;
+  await H.newGame(pg, 'アルト'); await pg.evaluate(() => market()); await pg.waitForFunction(() => !P10_ANIM); await pg.waitForTimeout(300);
+  const r = await pg.evaluate(() => { const b = (s) => document.querySelector(s).getBoundingClientRect(); return { lift: P15_LIFT, bgTop: parseFloat(document.querySelector('.p15mkbg').style.top), mon: b('#p10car .p10sl.on .p10mon').top, top: b('.p10top').bottom, dots: b('.p10dots').bottom, bar: b('#p10kbar').top, ih: innerHeight }; });
+  assert.equal(r.lift, 0.08); assert.equal(r.bgTop, -Math.round(r.ih * 0.08), '背景も同じだけ上げる（台座の位置がずれない）');
+  assert.ok(r.mon > r.top, 'タイトル・プレイヤー情報と重ならない'); assert.ok(r.dots < r.bar, 'ドットは案内欄より上');
   assert.deepEqual(p.errors, []);
 });
 

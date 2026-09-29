@@ -1282,15 +1282,27 @@ button.hz.tcmd.dis{cursor:default}
 .p10det .p10buy{margin-top:8px}
 button.p10detx{position:absolute;right:16px;top:-12px;z-index:3;width:34px;height:34px;padding:0;border-radius:50%;border:2px solid #d9a441;background:linear-gradient(#3e2616,#21130a);color:#fff1cf;font-size:1.1rem;line-height:1;box-shadow:0 3px 6px rgba(0,0,0,.45)}
 .p10sl.on .p10plate::after{content:"タップでくわしく";display:block;margin-top:2px;font-size:.62rem;font-weight:700;color:#f3dca0;opacity:.9;letter-spacing:.04em}
-.p10mk.talk .p10arw,.p10mk.talk .p10dots,.p10mk.talk .p10plate,.p10mk.talk .p10det,.p10mk.talk .p10karen,.p10mk.talk .p10msg{visibility:hidden}
+.p10mk.talk .p10arw,.p10mk.talk .p10dots,.p10mk.talk .p10plate,.p10mk.talk .p10det,.p10mk.talk .p10karen,.p10mk.talk .p10kbar,.p10mk.talk .p10msg{visibility:hidden}
 button.p10karen[hidden]{display:none}
 .p10mk{box-sizing:border-box;margin-bottom:-16px} /* 市場は画面の高さちょうど（縦スクロールしない） */
 /* 上部：名前・ランク・所持Gを折り返さない */
 .p10ttl b{letter-spacing:.14em}
 .p10wt small{white-space:nowrap}
 .p10who{flex:0 1 auto}
-/* 市場：カレン（上部の小さな呼び出しボタン・購入確認の1行） */
-button.p10karen{flex:none;width:40px;height:40px;padding:0;margin:0 0 0 6px;border-radius:50%;overflow:hidden;border:2px solid #e8c86a;background:linear-gradient(#1e3f8f,#0c1f56);box-shadow:0 2px 4px rgba(0,0,0,.4)}
+/* 市場：カレンの案内欄（画面下・小さい顔＋一言）と購入確認のアップ画像 */
+.p10kbar{position:absolute;left:10px;right:10px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:3;display:flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;border-radius:14px;border:2px solid #e8c86a;background:linear-gradient(rgba(30,63,143,.9),rgba(12,31,86,.92));box-shadow:0 4px 10px rgba(0,0,0,.45);max-width:540px;margin:0 auto}
+.p10kbar[hidden]{display:none}
+.p10kt{margin:0;flex:1;min-width:0;color:#fff;font-size:.9rem;font-weight:500;line-height:1.45;text-shadow:0 1px 2px rgba(0,0,0,.5)}
+.p10kbar.kpop .p10kt{animation:p10kpop .25s ease-out}
+@keyframes p10kpop{from{opacity:.3;transform:translateY(3px)}to{opacity:1;transform:none}}
+.p10mk.talk .p10kbar,.p10mk.det .p10kbar{visibility:hidden}
+.kup{position:relative;margin:0 0 10px;padding-left:min(34%,130px);min-height:62px}
+.kupf{position:absolute;left:-6px;bottom:-8px;height:min(30vh,220px);width:auto;pointer-events:none}
+.kupw{position:relative;padding:8px 12px;border-radius:10px;border:2px solid #e8c86a;background:linear-gradient(#1e3f8f,#0c1f56);color:#fff;text-align:left}
+.kupw b{display:block;color:#f6dc92;font-family:"Shippori Mincho",var(--mm-font-head,serif);font-size:.85rem;letter-spacing:.08em}
+.kupw p{margin:2px 0 0;font-size:.98rem;font-weight:500;line-height:1.5}
+/* 市場：カレン（小さな呼び出しボタン） */
+button.p10karen{flex:none;width:44px;height:44px;padding:0;margin:0;border-radius:50%;overflow:hidden;border:2px solid #e8c86a;background:linear-gradient(#1e3f8f,#0c1f56);box-shadow:0 2px 4px rgba(0,0,0,.4)}
 button.p10karen img{display:block;width:100%;height:auto;margin-top:2px;transform:scale(2.1);transform-origin:50% 12%}
 .kline{display:flex;align-items:center;gap:10px;margin:0 0 10px;padding:8px 10px;border-radius:10px;border:2px solid #e8c86a;background:linear-gradient(#1e3f8f,#0c1f56);color:#fff;text-align:left}
 .kline .kf{flex:none;width:52px;height:52px;border-radius:50%;overflow:hidden;border:2px solid #e8c86a;background:#0a1a4a}
@@ -1643,21 +1655,21 @@ function market(msg,focus){if(p8Blocked())return;bgm("market");p9Immersive(true)
  P10_MK=Math.max(0,Math.min(cat.length-1,P10_MK));
  const MB=window.MMP12S&&MMP12S.MARKET_BG; // 市場の背景候補（台座付き）。無ければ従来の描画背景
  $("#app").innerHTML=`<div class="p10mk${MB?" p15img":""}"><div class="p10bg" aria-hidden="true">${MB?`<div class="p15mkbg" style="background-image:url(${MB.src})"></div>`:P10_SCENE}</div>
- <header class="p10top"><div class="p10ttl"><button class="p10back" onclick="lobby()" aria-label="街にもどる">◀</button><b>市場</b><button class="p10karen" onclick="p10KarenTalk()" aria-label="この子についてカレンに聞く" ${finaFlags().karenIntro?"":"hidden"}><img src="${KAREN_FACE}" alt=""></button></div>${p10Who()}</header>
+ <header class="p10top"><div class="p10ttl"><button class="p10back" onclick="lobby()" aria-label="街にもどる">◀</button><b>市場</b></div>${p10Who()}</header>
  ${MB?"":`<div class="p10sign">${P10_SIGN}</div>`}
  <div class="p10car" id="p10car" aria-label="モンスターを選ぶ（左右の矢印・スワイプ）">${cat.map((c,i)=>p10Slide(c,i)).join("")}<button class="p10arw prev" aria-label="前のモンスター" onclick="p10Step(-1)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="p10arw next" aria-label="次のモンスター" onclick="p10Step(1)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
  <div class="p10dots" role="tablist">${cat.map((c,i)=>`<button class="p10dot" data-i="${i}" role="tab" aria-label="${MMP10M.byKey(c.key).name}" onclick="p10Go(${i})"></button>`).join("")}</div>
- <div class="p10det" id="p10det" aria-hidden="true"><div class="p10detbg" onclick="p10Detail(false)"></div><div class="p10detp"><button class="p10detx" onclick="p10Detail(false)" aria-label="詳細を閉じる">×</button><section class="p10info" id="p10info" aria-live="polite"></section></div></div>${msg?`<div class="p10msg">${msg}</div>`:""}</div>`;
+ <div class="p10kbar" id="p10kbar" ${finaFlags().karenIntro?"":"hidden"}><button class="p10karen" onclick="p10KarenTalk()" aria-label="この子についてカレンに聞く"><img alt=""></button><p class="p10kt" id="p10kt" aria-live="polite"></p></div><div class="p10det" id="p10det" aria-hidden="true"><div class="p10detbg" onclick="p10Detail(false)"></div><div class="p10detp"><button class="p10detx" onclick="p10Detail(false)" aria-label="詳細を閉じる">×</button><section class="p10info" id="p10info" aria-live="polite"></section></div></div>${msg?`<div class="p10msg">${msg}</div>`:""}</div>`;
  P10_ANIM=false;P10_TGT=null;P10_SW=null;p15MkFit();p10Swipe($("#p10car"));
  p10Go(P10_MK,true);p10Info();try{window.scrollTo(0,0)}catch(e){}karenIntro()}
 function p10Slide(c,i){const s=MMP10M.byKey(c.key),w=c.status=="waiting";
  return `<div class="p10sl${w?" wait":""}" data-i="${i}" data-key="${c.key}" onclick="p10Tap(${i})"><div class="p10stg"><div class="p10mon">${w?`<img class="p10im" src="${MMP10M.silhouetteOf(c.key).src}" alt="${s.name}（入荷待ち）" draggable="false">`:p10Img(c.key)}</div><div class="p10ped" aria-hidden="true"></div>
  <div class="p10plate"><b>${s.name}</b><span>${w?`<i class="p10wait">入荷待ち</i>`:`${P10_COIN}${c.price}G`}</span></div></div></div>`}
 // 背景の台座に合わせる：選択中（中央）は手前中央の台座、前後のモンスターは奥の左右の台座に足元をそろえる
-let P15MK=null;
+let P15MK=null;const P15_LIFT=.08; // 背景とモンスターを画面の高さの8%だけ上へ（下の案内欄・詳細シートの分の余裕）
 function p15MkFit(){P15MK=null;const MB=window.MMP12S&&MMP12S.MARKET_BG,mk=$(".p10mk"),car=$("#p10car");if(!MB||!mk||!car||!mk.classList.contains("p15img"))return;
- const bg=mk.querySelector(".p15mkbg"),s=Math.max(mk.clientWidth/MB.w,bg?bg.clientHeight/MB.h:0),P=MB.pedestals,st=car.querySelector(".p10stg");if(!st)return;car.style.marginTop="0px";
- const feet=st.offsetHeight-88,top=car.getBoundingClientRect().top-mk.getBoundingClientRect().top;car.style.marginTop=(P.center[1]*s-feet-top).toFixed(1)+"px";
+ const bg=mk.querySelector(".p15mkbg"),lift=Math.round(mk.clientHeight*P15_LIFT);if(bg)bg.style.top=-lift+"px";const s=Math.max(mk.clientWidth/MB.w,bg?bg.clientHeight/MB.h:0),P=MB.pedestals,st=car.querySelector(".p10stg");if(!st)return;car.style.marginTop="0px";
+ const feet=st.offsetHeight-88,top=car.getBoundingClientRect().top-mk.getBoundingClientRect().top;car.style.marginTop=(P.center[1]*s-lift-feet-top).toFixed(1)+"px";
  P15MK={dx:((P.right[0]-P.center[0])+(P.center[0]-P.left[0]))/2*s,dy:(P.center[1]-(P.left[1]+P.right[1])/2)*s}}
 window.addEventListener("resize",()=>{if($("#p10car")&&!P10_ANIM){p15MkFit();p10Place()}});
 // ---- 市場のカルーセル（左右の矢印・横スワイプ・ドット・キー操作。端から端へ循環するループ型）----
@@ -1703,7 +1715,7 @@ function p10Swipe(car){if(!car)return;let x0=null,y0=0;
  car.addEventListener("pointercancel",()=>{x0=null})}
 /** 購入の直前確認：演出中でなく、中央に表示中の候補・情報欄の候補・P10_MK がすべて同じ種族のときだけ購入に進む */
 function p10CenterIs(key){const on=$("#p10car .p10sl.on"),bb=$("#p10info .p10buy");return !P10_ANIM&&!!on&&on.dataset.key===key&&!!bb&&bb.dataset.key===key}
-function p10Info(){const box=$("#p10info");if(!box)return;const c=MMP10M.MARKET_CATALOG[P10_MK],s=MMP10M.byKey(c.key),owned=S.box.length+(S.m?1:0),chk=MMP10M.canPurchase(S,c.key,owned);
+function p10Info(){const box=$("#p10info");if(!box)return;p10KarenHint();const c=MMP10M.MARKET_CATALOG[P10_MK],s=MMP10M.byKey(c.key),owned=S.box.length+(S.m?1:0),chk=MMP10M.canPurchase(S,c.key,owned);
  document.querySelectorAll(".p10dot").forEach((d,i)=>d.classList.toggle("on",i==P10_MK));
  if(c.status=="waiting"){const nb=c.key=="nobiton"?MMP10M.nobitonStock(S):null;box.innerHTML=`<div class="p10nm"><b>${s.name}</b><span class="p10tag">${s.kind}</span><span class="p10st wait">${nb&&nb.met?"入荷条件達成":"入荷待ち"}</span></div><p class="p10tx">${nb&&nb.met?`育成完了${nb.need}回を達成しました！ 入荷の準備が整うまで、もう少しお待ちください。`:"ただいま入荷を待っています。入荷まで、もう少しお待ちください。"}</p>${nb?`<p class="p10note">入荷条件：育成完了 ${nb.need}回（いま ${nb.done}回）${nb.fromStart?"":"<br>※この版より前の育成完了は記録がないため、回数に含まれません"}</p>`:""}<button class="p10buy" disabled>入荷待ち</button>`;return}
  const bars=MMP10M.STAT_KEYS.map(k=>`<div class="p10bar"><span>${MMP10M.STAT_LABELS[k]}</span><i><em style="width:${Math.min(100,s.base[k]/1.5)}%"></em></i><b>${s.base[k]}</b></div>`).join("");
@@ -2420,9 +2432,8 @@ function p7ToVault(i){const r=MMP7.moveBagToVault(S,i);if(r.ok)save();prepScr(r.
 // ---- フィナの登場（正式に指定された3か所だけ）：名前登録後の初回あいさつ／育成開始の確認（初回だけ説明つき）／育成完了。会話は共通会話 MMNPC ----
 //  表示済みの記録は S.npcFlags（任意項目。セーブversionは6のまま）：finaIntro＝初回あいさつ済み、raiseIntro＝育成開始の説明済み。
 // ---- 市場のカレン：初回来店（1度だけ・S.npcFlags.karenIntro）／購入確認（シートの中の1行）／購入成功／上部のボタンで話しかける（中央の個体に合わせて案内）
-const KAREN_FACE="assets/npc/karen/closeup/normal.png";
 const KAREN_TALK={
- intro:[{npc:"karen",expression:"smile",text:"いらっしゃいませ。ここはモンスター市場よ。"},{expression:"guide",text:"気になる子がいたら、左右に動かして見てみてね。"},{expression:"normal",text:"一緒に育てたい子が決まったら、「購入する」を押してちょうだい。"}],
+ intro:[{npc:"karen",expression:"smile",text:"いらっしゃい。気になる子を見ていってね。"},{expression:"guide",text:"気になる子をタップすると、詳しく見られるわよ。"}],
  greet:[{npc:"karen",expression:"smile",text:"今日はどの子を見ていく？"}],
  ask:[{npc:"karen",expression:"normal",text:"この子を迎えるのね？"}],
  bought:[{npc:"karen",expression:"happy",text:"ありがとう。大切に育ててあげてね。"}],
@@ -2432,14 +2443,18 @@ function karenTalk(key){if(window.MM_QA_NO_KAREN)return Promise.resolve(); // �
  return karenSay(KAREN_TALK[key])}
 /** カレンの会話を出す。市場では会話の間、操作UI（詳細・矢印・ドット・名札・カレンのボタン）を隠す */
 function karenSay(lines){if(!window.MMNPC||!lines)return Promise.resolve();const mk=$(".p10mk");if(mk)mk.classList.add("talk");return MMNPC.talk(lines).then(()=>{if(mk)mk.classList.remove("talk")})}
-/** 購入確認シートの中のカレンの1行（会話ウィンドウは出さない＝押す回数を増やさない） */
-function karenLine(key){const l=KAREN_TALK[key][0],im=window.MMNPC&&MMNPC.imageOf("karen","closeup",l.expression);return `<div class="kline"><div class="kf">${im?`<img src="${im.src}" alt="">`:""}</div><div><b>カレン</b><p>${l.text}</p></div></div>`}
+/** 購入確認：シートの上にカレンのアップ画像、シートの中に名前と一言（会話ウィンドウは出さない＝押す回数を増やさない） */
+function karenLine(key){const l=KAREN_TALK[key][0],im=window.MMNPC&&MMNPC.imageOf("karen","closeup",l.expression);return `<div class="kup">${im?`<img class="kupf" src="${im.src}" alt="カレン">`:""}<div class="kupw"><b>カレン</b><p>${l.text}</p></div></div>`}
 /** 市場に入ったとき：初回だけカレンのあいさつ（先に「表示済み」を保存してから出す＝再読込しても二度出ない） */
-function karenIntro(){const f=finaFlags();if(f.karenIntro)return;f.karenIntro=1;save();karenTalk("intro").then(()=>{const b=$(".p10karen");if(b)b.hidden=false})} // あいさつが終わってから、カレンのボタンを出す
-/** 上部のカレンのボタン：中央の個体に合わせて案内（購入の判定は変えない） */
-function p10KarenTalk(){if(P10_ANIM||$("#p10ov"))return;const c=MMP10M.MARKET_CATALOG[P10_MK];if(!c)return;if(c.status=="waiting")return karenTalk("waiting");const s=MMP10M.byKey(c.key),chk=MMP10M.canPurchase(S,c.key,S.box.length+(S.m?1:0));
- if(!chk.ok&&chk.reason=="no_money")return karenTalk("nomoney");
- if(window.MM_QA_NO_KAREN)return;karenSay([{npc:"karen",expression:"guide",text:s.tagline?`この子は${s.name}。「${s.tagline}」よ。`:`この子は${s.name}よ。`},{expression:"smile",text:"気になったら、この子をタップして詳しく見てみてね。"}])}
+function karenIntro(){const f=finaFlags();if(f.karenIntro)return;f.karenIntro=1;save();karenTalk("intro").then(()=>{const b=$("#p10kbar");if(b)b.hidden=false;p10KarenHint()})} // あいさつが終わってから、カレンの案内欄を出す
+// 市場の案内欄の一言（種族ごと。無ければ「○○ね。」）。選択を切り替えるたびに出す（会話ウィンドウは開かない＝テンポを止めない）
+const KAREN_PICK={solamo:"ソラモね。バランスのいい子よ。",gauru:"ガウルね。素早さが魅力の子よ。"};
+/** 案内欄の一言と顔の表情を、中央の個体に合わせる。tip＝カレンのボタンを押したときの一言（販売中なら詳しく見る方法） */
+function p10KarenHint(tip){const t=$("#p10kt"),bar=$("#p10kbar");if(!t||!bar)return;const c=MMP10M.MARKET_CATALOG[P10_MK];if(!c)return;const s=MMP10M.byKey(c.key),chk=c.status=="waiting"?null:MMP10M.canPurchase(S,c.key,S.box.length+(S.m?1:0));
+ const [ex,tx]=c.status=="waiting"?["guide",KAREN_TALK.waiting[0].text]:!chk.ok&&chk.reason=="no_money"?["troubled","今の所持金では、まだ迎えられないみたい。"]:!chk.ok&&chk.reason=="full"?["troubled","手持ちと牧場で8体までなの。"]:tip?["smile","気になったら、この子をタップして詳しく見てみてね。"]:["smile",KAREN_PICK[c.key]||`${s.name}ね。`];
+ t.textContent=tx;const im=bar.querySelector("img"),src=`assets/npc/karen/closeup/${ex}.png`;if(im&&im.getAttribute("src")!==src)im.src=src;bar.classList.remove("kpop");void bar.offsetWidth;bar.classList.add("kpop")}
+/** カレンのボタン（案内欄の顔）：選択中のモンスターについて、案内欄に短く一言（大きな会話は開かない。購入の判定は変えない） */
+function p10KarenTalk(){if(P10_ANIM||$("#p10ov"))return;p10KarenHint(true)}
 const FINA_TALK={
  intro:[{npc:"fina",expression:"smile",text:"はじめまして。私はフィナです！"},{expression:"normal",text:"これからあなたのモンスター育成をお手伝いしますね。"},{expression:"guide",text:"まずは市場へ行って、一緒に育てるモンスターを迎えてみましょう！"}],
  raiseFirst:[{npc:"fina",expression:"normal",text:"このモンスターで育成を始めますか？"},{expression:"serious",text:"育成を始めると、途中で街へ戻ることはできません。"},{expression:"smile",text:"準備ができたら、出発しましょう！"}],

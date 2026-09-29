@@ -40,7 +40,7 @@ test('KR-3：セリフは KAREN_TALK にまとめ、使う表情はすべて登�
   const T = karenTalkData(), M = loadNpc();
   assert.deepEqual(Object.keys(T), ['intro', 'greet', 'ask', 'bought', 'nomoney', 'waiting']);
   for (const [k, lines] of Object.entries(T)) { assert.equal(lines[0].npc, 'karen', k); for (const l of lines) assert.ok(M.expressionsOf('karen', 'closeup').includes(l.expression), `${k}：${l.expression}`); }
-  assert.deepEqual(T.intro.map((l) => l.expression), ['smile', 'guide', 'normal']);
+  assert.deepEqual(T.intro.map((l) => [l.expression, l.text]), [['smile', 'いらっしゃい。気になる子を見ていってね。'], ['guide', '気になる子をタップすると、詳しく見られるわよ。']], '入店のあいさつは短く2行');
   assert.deepEqual([T.greet, T.ask, T.bought, T.nomoney, T.waiting].map((x) => x[0].expression), ['smile', 'normal', 'happy', 'troubled', 'guide']);
 });
 
@@ -93,21 +93,20 @@ async function toMarket(p, gold) {
   await p.page.click('.hz[onclick="market()"]');
 }
 
-test('KR-B1：初回来店：カレンが3行（smile→guide→normal）。文字送り・途中タップで全文・▼は全文後だけ・最後で閉じる。再来店・再読み込みでは出ない', { skip: SKIP }, async () => {
+test('KR-B1：入店：カレンのアップ画像で2行（smile→guide）。文字送り・途中タップで全文・▼は全文後だけ・最後で閉じてアップ画像が消える。再来店・再読み込みでは出ない', { skip: SKIP }, async () => {
   const p = await L.open({ karen: true }); const pg = p.page;
   await toMarket(p);
   await pg.waitForSelector('.mmtalk'); await pg.waitForTimeout(260);
   let s = await talkState(pg);
   assert.equal(s.name, 'カレン'); assert.match(s.img, /karen\/closeup\/smile\.png$/); assert.equal(s.n, 1);
-  assert.ok(s.text.length < 'いらっしゃいませ。ここはモンスター市場よ。'.length && !s.next, '1文字ずつ表示中は▼なし');
+  assert.ok(s.text.length < 'いらっしゃい。気になる子を見ていってね。'.length && !s.next, '1文字ずつ表示中は▼なし');
   await pg.click('.mmtalk'); s = await talkState(pg);
-  assert.deepEqual([s.text, s.next], ['いらっしゃいませ。ここはモンスター市場よ。', true], '途中タップで全文・▼');
+  assert.deepEqual([s.text, s.next], ['いらっしゃい。気になる子を見ていってね。', true], '途中タップで全文・▼');
   await pg.waitForTimeout(120); await pg.click('.mmtalk'); await pg.waitForTimeout(30);
   s = await talkState(pg); assert.match(s.img, /guide\.png$/); assert.equal(s.next, false);
   assert.equal(await H.finishTalk(pg) > 0, true);
-  assert.equal(await pg.evaluate(() => document.querySelectorAll('.mmtalk').length), 0);
+  assert.equal(await pg.evaluate(() => document.querySelectorAll('.mmtalk, .mmtalk-fig').length), 0, 'アップ画像は消える');
   assert.equal((await H.storedSave(pg)).npcFlags.karenIntro, 1);
-  // 市場のカルーセルはそのまま動く
   const k0 = await pg.evaluate(() => P10_MK); await pg.click('#p10car .p10arw.next'); await pg.waitForFunction(() => !P10_ANIM);
   assert.equal(await pg.evaluate(() => P10_MK), (k0 + 1) % 3);
   await pg.click('.p10back'); await pg.waitForSelector('.map.town'); await pg.click('.hz[onclick="market()"]'); await pg.waitForSelector('#p10car');
@@ -117,12 +116,13 @@ test('KR-B1：初回来店：カレンが3行（smile→guide→normal）。文�
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
 });
 
-test('KR-B2：購入確認シートにカレンの1行（normal）。購入成功でカレン（happy）のあと街へ。所持金・個体数は従来どおり1回分', { skip: SKIP }, async () => {
+test('KR-B2：購入確認：カレンのアップ画像（normal）と一言。購入成功でカレン（happy）のあと街へ。所持金・個体数は従来どおり1回分', { skip: SKIP }, async () => {
   const p = await L.open({ karen: true }); const pg = p.page;
   await toMarket(p, 1000); await H.finishTalk(pg);
   await pg.waitForFunction(() => !P10_ANIM); await pg.waitForTimeout(400);
-  await H.marketDetail(pg); await pg.click('.p10buy'); await pg.waitForSelector('#p10ov .kline');
-  const kl = await pg.evaluate(() => ({ t: document.querySelector('#p10ov .kline').innerText, img: document.querySelector('#p10ov .kline img').getAttribute('src'), title: document.querySelector('.p10sht').textContent }));
+  await H.marketDetail(pg); await pg.click('.p10buy'); await pg.waitForSelector('#p10ov .kup');
+  const kl = await pg.evaluate(() => ({ t: document.querySelector('#p10ov .kupw').innerText, img: document.querySelector('#p10ov .kupf').getAttribute('src'), h: document.querySelector('#p10ov .kupf').getBoundingClientRect().height, title: document.querySelector('.p10sht').textContent }));
+  assert.ok(kl.h >= 120, `購入確認ではカレンのアップ画像をしっかり見せる（高さ${kl.h}px）`);
   assert.match(kl.t, /カレン\s*この子を迎えるのね？/); assert.match(kl.img, /karen\/closeup\/normal\.png$/); assert.equal(kl.title, 'ソラモを連れて帰りますか？');
   await pg.waitForTimeout(500); await pg.click('#p10ov .p10ok');
   await pg.waitForSelector('.mmtalk'); await pg.waitForTimeout(260); await pg.click('.mmtalk');
@@ -134,31 +134,35 @@ test('KR-B2：購入確認シートにカレンの1行（normal）。購入成�
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
 });
 
-test('KR-B3：上部のカレンのボタン：中央の個体に合わせて、通常（smile）・所持金不足（troubled）・未解放（guide）を案内。購入ボタンの状態は変わらない', { skip: SKIP }, async () => {
+test('KR-B3：通常閲覧：カレンは画面下の案内欄（小さい顔＋一言）。切り替えのたびに一言が変わり、会話ウィンドウは開かない。顔のボタンで一言案内', { skip: SKIP }, async () => {
   const p = await L.open({ karen: true }); const pg = p.page;
   await toMarket(p, 1000); await H.finishTalk(pg); await pg.waitForFunction(() => !P10_ANIM);
-  const ask = async () => { await pg.waitForTimeout(150); await pg.click('.p10karen'); await pg.waitForSelector('.mmtalk'); await pg.waitForTimeout(260); await pg.click('.mmtalk'); const s = await talkState(pg); await H.finishTalk(pg); return [s.text, s.img.split('/').pop()]; };
-  assert.deepEqual(await ask(), ['この子はソラモ。「バランス型」よ。', 'guide.png'], '選択中のモンスターについて案内（通常のあいさつだけにしない）');
-  // 未解放（ノビトン）
-  await pg.evaluate(() => p10Go(MMP10M.MARKET_CATALOG.findIndex((c) => c.key === 'nobiton'))); await pg.waitForFunction(() => !P10_ANIM);
-  assert.deepEqual(await ask(), ['この子は、まだ市場には来ていないの。', 'guide.png']);
-  assert.equal(await pg.evaluate(() => document.querySelector('.p10buy').disabled), true);
+  const hint = () => pg.evaluate(() => [document.getElementById('p10kt').textContent, document.querySelector('#p10kbar img').getAttribute('src').split('/').pop(), document.querySelectorAll('.mmtalk').length]);
+  assert.deepEqual(await hint(), ['ソラモね。バランスのいい子よ。', 'smile.png', 0]);
+  await pg.click('#p10car .p10arw.next'); await pg.waitForFunction(() => !P10_ANIM);
+  assert.deepEqual(await hint(), ['ガウルね。素早さが魅力の子よ。', 'smile.png', 0], '切り替えても会話ウィンドウは開かない');
+  await pg.click('#p10car .p10arw.next'); await pg.waitForFunction(() => !P10_ANIM);
+  assert.deepEqual(await hint(), ['この子は、まだ市場には来ていないの。', 'guide.png', 0]);
+  await pg.click('#p10car .p10arw.next'); await pg.waitForFunction(() => !P10_ANIM);
+  await pg.click('.p10karen');
+  assert.deepEqual(await hint(), ['気になったら、この子をタップして詳しく見てみてね。', 'smile.png', 0], '顔のボタン：選択中の子を詳しく見る方法を一言');
   // 所持金不足（救済の条件に当たらない：未育成の個体を連れている）
   await pg.evaluate(() => { S.m = mk(0); S.g = 100; save(); market(null, 'solamo'); }); await pg.waitForFunction(() => !P10_ANIM);
   const dis = await pg.evaluate(() => document.querySelector('.p10buy').disabled);
-  assert.deepEqual(await ask(), ['ごめんなさい。今の所持金では、この子を迎えられないみたい。', 'troubled.png']);
+  assert.deepEqual(await hint(), ['今の所持金では、まだ迎えられないみたい。', 'troubled.png', 0]);
+  await pg.click('.p10karen'); assert.deepEqual((await hint())[0], '今の所持金では、まだ迎えられないみたい。');
   assert.equal(await pg.evaluate(() => document.querySelector('.p10buy').disabled), dis, '購入ボタンの状態は変えない');
   assert.equal((await H.getS(pg)).g, 100);
   assert.deepEqual(p.errors, []);
 });
 
-test('KR-B4：会話が終わると .mmtalk もタイマーも残らない（話しかけを5回くり返す）', { skip: SKIP }, async () => {
+test('KR-B4：案内欄とボタンを何度使っても、会話DOM・画像要素・タイマーが増えない', { skip: SKIP }, async () => {
   const p = await L.open({ karen: true }); const pg = p.page;
-  await pg.addInitScript(() => {});
   await toMarket(p, 1000); await H.finishTalk(pg); await pg.waitForFunction(() => !P10_ANIM);
-  const live = () => pg.evaluate(() => MMNPC.state());
-  for (let i = 0; i < 5; i++) { await pg.waitForTimeout(150); await pg.click('.p10karen'); await pg.waitForSelector('.mmtalk'); await H.finishTalk(pg); }
-  assert.equal(await live(), null);
+  const n0 = await pg.evaluate(() => [document.getElementsByTagName('*').length, document.images.length]);
+  for (let i = 0; i < 10; i++) { await pg.click('.p10karen'); await pg.click('#p10car .p10arw.next'); await pg.waitForFunction(() => !P10_ANIM); }
+  assert.deepEqual(await pg.evaluate(() => [document.getElementsByTagName('*').length, document.images.length]), n0);
+  assert.equal(await pg.evaluate(() => MMNPC.state()), null);
   assert.deepEqual(await pg.evaluate(() => [document.querySelectorAll('.mmtalk').length, MMNPC.animState().running]), [0, false]);
   assert.deepEqual(p.errors, []);
 });
