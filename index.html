@@ -1062,6 +1062,13 @@ button.mkc b{font-size:.9rem}button.mkc small{font-size:.66rem;color:#ffe9b0}
 .vgsay img{flex:none;width:44px;height:44px;border-radius:50%;border:2px solid #c9a24d;background:#fff}
 .vgsay .tx{flex:1;min-width:0;background:rgba(255,250,238,.96);color:#3a2410;border:2px solid #8a5a2b;border-radius:12px;padding:5px 10px 7px;font-size:.84rem;line-height:1.5;box-shadow:0 3px 8px rgba(0,0,0,.25);text-align:left}
 .vgsay .tx b{display:block;font-size:.72rem;color:#8a5a2b;letter-spacing:.05em}
+/* ===== 特訓NPC：ゲンシン（5種類すべての特訓の指導役）。特訓メニューの一言（.gssay）と、特訓ボードの開始・ゴールの一言（.gssay.over＝特訓場の背景の上に重ねる。ボードの位置は動かさない） ===== */
+.gssay{display:flex;align-items:flex-start;gap:8px;margin:0 0 10px;min-width:0}
+.gssay img{flex:none;width:44px;height:44px;border-radius:50%;border:2px solid #c9a24d;background:#fff}
+.gssay .tx{flex:1;min-width:0;background:rgba(255,250,238,.96);color:#3a2410;border:2px solid #8a5a2b;border-radius:12px;padding:5px 10px 7px;font-size:.84rem;line-height:1.5;box-shadow:0 3px 8px rgba(0,0,0,.25);text-align:left}
+.gssay .tx b{display:block;font-size:.72rem;color:#8a5a2b;letter-spacing:.05em}
+.gssay.over{position:absolute;z-index:2;left:10px;right:10px;top:calc(env(safe-area-inset-top,0px) + 52px);margin:0}
+.gssay.over .tx{flex:0 1 auto}
 .p9hero{position:absolute;left:0;right:142px;bottom:16px;display:flex;flex-direction:column;align-items:center;z-index:2}
 .p9hero .mon{width:204px;height:204px;filter:drop-shadow(0 10px 6px rgba(0,0,0,.35))}
 .p9bob{animation:p9bob 2.4s ease-in-out infinite}
@@ -2045,6 +2052,14 @@ const VARGAS_TALK={
  locked:["ここは闘技場だ。今はまだ、その時ではない。","準備が整ってから来い。","挑む覚悟ができたら、また来い。"]};
 /** ロック中の闘技場を押したとき：街の案内欄（#msg＝システム表示）はそのままに、その下へヴァルガスの一言（押すたびに1つだけ。増えない） */
 function vgSay(){const d=document.querySelector("#app .dlg");if(!d)return;const o=document.getElementById("vgsay");if(o)o.remove();d.insertAdjacentHTML("afterend",`<div class="vgsay" id="vgsay"><img src="${VARGAS_FACE}" alt=""><div class="tx"><b>ヴァルガス</b>${VARGAS_TALK.locked[R(VARGAS_TALK.locked.length)]}</div></div>`);try{document.getElementById("vgsay").scrollIntoView({block:"nearest"})}catch(e){}}
+// 特訓NPC：ゲンシン（5種類すべての特訓を1人で担当する指導役。闘技場の管理者ヴァルガスとは別人物）。会話は「フィナ ↔ ゲンシン」が基本だが、特訓の短い励まし・評価は直接一言で出す
+// 立ち絵は js/npc/npc.js の register('genshin')。小さい顔は立ち絵 normal から切り出した face.png。チケット・能力の上昇・技・回数・条件・ゴールの処理などのシステム表示はゲンシンの発言にしない
+const GENSHIN_FACE="assets/npc/genshin/face.png";
+const GENSHIN_TALK={
+ menu:["準備はいいか。","焦るな。ひとつずつだ。","今のお前たちなら、まだ伸びる。"],
+ start:{po:"力だけを追うな。動きを見ろ。",in:"焦るな。よく見て、考えてから動け。",hi:"狙いを定めろ。急ぐ必要はない。",ev:"無理に急ぐ必要はない。動きを見ろ。",de:"今の力を、確かめてこい。"},
+ done:["悪くない。その調子だ。","今の感覚を忘れるな。","今日はここまでだ。よくやった。"]};
+function gsSay(t,over){return `<div class="gssay${over?" over":""}"><img src="${GENSHIN_FACE}" alt=""><div class="tx"><b>ゲンシン</b>${t}</div></div>`}
 const mixc=(c,t,a)=>{const p=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16)),x=p(c),y=p(t);return"#"+x.map((v,i)=>Math.round(v+(y[i]-v)*a).toString(16).padStart(2,"0")).join("")};
 let pid=0;
 const PP={m:{s:"#f2c6a5",h:"#5a2f1a",c:"#b8322a"},f:{s:"#e2b28c",h:"#a8a8a8",c:"#4f8a3a"},b:{s:"#f1c7a3",h:"#2f2118",c:"#2f6fbf"}};
@@ -2503,7 +2518,7 @@ function p8ModalClose(){clearInterval(p8AbT);const d=$("#p8m");if(d)d.remove()}
 // ---- 特訓 ----
 const P7_WHY={finished:"育成完了後は特訓できません",not_at_farm:"Chapter中は特訓できません",no_ticket:"特訓チケットがありません",locked:"🔒 Cランク以上の大会をクリアすると解放",before_ch1:"🔒 Chapter 1クリア後に解放",max:"クリア済み（再挑戦できません）",in_progress:"特訓中"};
 function p7TrainMenu(){const m=S.m,atFarm=MMP7.raiseState(m)=="farm",ch1=MMP7.hasEndedChapter(m,1),ms=MMP7.getMoveset(m.sp);MMP7.ensureProg(m);
- let h=`<div class="dnote">特訓は15マスの一本道。ゴールで技を覚えます。<br>特訓チケット：<b>${S.trainTix}</b>枚（1回につき1枚）<br><small>ちから・かしこさ・命中・回避は各1回、丈夫さは2回まで</small>${!ch1?"<br><small>🔒 特訓はChapter 1クリア後に解放されます</small>":atFarm?"":"<br><small>※Chapter中は特訓できません。Chapterクリア後、ファームで挑戦しよう</small>"}</div>`;
+ let h=gsSay(GENSHIN_TALK.menu[R(GENSHIN_TALK.menu.length)])+`<div class="dnote">特訓は15マスの一本道。ゴールで技を覚えます。<br>特訓チケット：<b>${S.trainTix}</b>枚（1回につき1枚）<br><small>ちから・かしこさ・命中・回避は各1回、丈夫さは2回まで</small>${!ch1?"<br><small>🔒 特訓はChapter 1クリア後に解放されます</small>":atFarm?"":"<br><small>※Chapter中は特訓できません。Chapterクリア後、ファームで挑戦しよう</small>"}</div>`;
  return h+MMP7.TRAIN_KINDS.map(k=>{const c=MMP7.canStartTraining(S,m,k),cl=m.prog.train[k],tag=`クリア ${cl}/${MMP7.TRAIN_MAX[k]}`;
   const mv=ms?ms[k].map(id=>`<i class="${m.sk.includes(id)?"got":""}">${m.sk.includes(id)&&SK[id]?SK[id][0]:"？？？"}</i>`).join(""):`<i>技データ未登録</i>`;
   const T=MMP12S.training(k);return `<button class="dcardb djc p12tc" style="--ac:${T.accent}" ${c.ok?"":"disabled"} onclick="trStart('${k}')"><img src="${T.image.src}" alt="${T.name}" style="object-position:${T.image.focus}"><div class="rkt"><b>${LAB[k]}特訓</b><span>専用マスに止まると、${LAB[k]}とライフが少し伸びる${k=="de"?"（必殺技・最大2回）":""}</span><div class="djs">${mv}</div><small>${tag}${c.ok?"":"　"+(P7_WHY[c.reason]||"")}</small></div>${c.ok?'<div class="rkgo">挑戦 ▶</div>':(cl>=MMP7.TRAIN_MAX[k]?'<div class="rkgo done">済</div>':"")}</button>`}).join("")}
@@ -2514,7 +2529,7 @@ function trScr(msg,done){const m=S.m,run=MMP7.trainRunOf(S.m);if(!m)return lobby
  const cells=[...Array(MMP7.TRAIN_LEN+1)].map((_,i)=>{const t=i==0?"st":MMP7.trainSquare(i),ic=t=="st"?"🚩":t=="g"?"🏁":t=="s"?P7_SQ_ICON[K]:"・";
   return `<div class="p7c p7-${t} ${i==pos?"cur":""}"><small>${i||"S"}</small><span>${ic}</span>${i==pos?`<div class="p7mon"><div class="mon">${msv(m)}</div></div>`:""}</div>`}).join("");
  const T=MMP12S.training(K); // Phase 12：各特訓場の正式背景をはっきり見せる（ぼかさない）。文字やUIは背景に描かずに重ねる
- $("#app").innerHTML=`<div class="ds p12tr" style="--dc:${T.accent};--ac:${T.accent}"><div class="p12stage" role="img" aria-label="${T.name}" style="background-image:url(${T.image.src});background-position:${T.image.focus}"><div class="dtop"><span></span><div class="dmoney">🎫 特訓チケット ${S.trainTix}</div></div><div class="p12plq"><img src="${TABS[2]}" alt=""><div><b>${LAB[K]}特訓</b><small>${T.name}（${T.theme}）・15マス・ゴールで技を覚える</small></div></div></div><div class="dbody"><div class="dcard"><small class="p12lg">${P7_SQ_ICON[K]}=${LAB[K]}＋ライフ　・=何も起きない</small><div class="p7tr">${cells}</div></div><div class="bmsg" id="p7msg">${msg||"サイコロを振って進もう！"}</div>${run?`<div class="bdicewrap"><div class="bdice" id="p7dice"><img class="p12dicon" src="${MMP12D.icon("std")}" alt=""></div><button class="go bdicebtn" id="p7roll" onclick="trRoll()">サイコロを振る</button></div>`:`<button class="go" onclick="hall('s')">◀ ファームへ戻る</button>`}</div></div>`;try{window.scrollTo(0,0)}catch(e){}
+ $("#app").innerHTML=`<div class="ds p12tr" style="--dc:${T.accent};--ac:${T.accent}"><div class="p12stage" role="img" aria-label="${T.name}" style="background-image:url(${T.image.src});background-position:${T.image.focus}"><div class="dtop"><span></span><div class="dmoney">🎫 特訓チケット ${S.trainTix}</div></div>${done?gsSay(GENSHIN_TALK.done[R(GENSHIN_TALK.done.length)],1):run&&run.pos==0&&!Number.isInteger(run.roll)?gsSay(GENSHIN_TALK.start[K],1):""}<div class="p12plq"><img src="${TABS[2]}" alt=""><div><b>${LAB[K]}特訓</b><small>${T.name}（${T.theme}）・15マス・ゴールで技を覚える</small></div></div></div><div class="dbody"><div class="dcard"><small class="p12lg">${P7_SQ_ICON[K]}=${LAB[K]}＋ライフ　・=何も起きない</small><div class="p7tr">${cells}</div></div><div class="bmsg" id="p7msg">${msg||"サイコロを振って進もう！"}</div>${run?`<div class="bdicewrap"><div class="bdice" id="p7dice"><img class="p12dicon" src="${MMP12D.icon("std")}" alt=""></div><button class="go bdicebtn" id="p7roll" onclick="trRoll()">サイコロを振る</button></div>`:`<button class="go" onclick="hall('s')">◀ ファームへ戻る</button>`}</div></div>`;try{window.scrollTo(0,0)}catch(e){}
  if(run&&Number.isInteger(run.roll)){const b=$("#p7msg");if(b&&!msg)b.textContent=`前回振ったサイコロの出目（${run.roll}）で進みます。`;setTimeout(trRoll,400)}} // 未処理の出目が保存されていたら、その出目で続きから
 let p7Busy=false;
 async function trRoll(){if(p7Busy||!S.m||!MMP7.trainRunOf(S.m))return;p7Busy=true;const btn=$("#p7roll"),dice=$("#p7dice");if(btn)btn.disabled=true;
