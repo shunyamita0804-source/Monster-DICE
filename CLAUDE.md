@@ -38,6 +38,7 @@ Claude Code は作業の前に毎回このファイルを読むこと。ここ�
 | assets/scenes/、assets/fields/、assets/dice/ | 背景・フィールド・サイコロの素材 |
 | assets/embedded/ | index.html の base64 から安全に外部化した既存画像の置き場（元データとバイト単位で同一。無加工）。ファイル名は「定数名_番号またはキー_用途」。第1段階：FT（ft_*）・TABS（tabs_*）、第2段階：FARMIMG・TRIMG2・NPI.b。Phase 6 の画像（SFR・BTB・SFXL・STOPART・SKART・AS.spr）は外部化しない |
 | tests/*.test.mjs | 自動テスト |
+| tools/public-check.mjs | push 後の公開URLの確認（§7） |
 | KNOWN_ISSUES.md | 既知課題と判断事項の記録 |
 | INTEGRATION_STATUS.md | 統合当初の記録（古い内容を含む） |
 
@@ -330,5 +331,5 @@ Claude Code は作業の前に毎回このファイルを読むこと。ここ�
 - 既存ファイルを勝手に消さない。
 - index.html のホーム画面アイコン設定を消さない（引き継ぎZIPの index.html には含まれていないため、上書きするときは main 側の設定を残す）。
 - `node --test tests/*.test.mjs` を実行し、1件でも失敗があれば反映しない（既知の失敗は現在なし）。
-- 反映後、公開URLで動作を確認する（390×844 相当のスマートフォン表示を基準に）。
+- 反映後、公開URLで動作を確認する（390×844 相当のスマートフォン表示を基準に）。main へ push したら、同じ作業の中で続けて `node tools/public-check.mjs` を実行し、結果（OK／NG・404やエラーの有無）を報告する。公開の反映（最大15分）を待ってから、通しの流れ・牧場・ファーム・育成開始の選択肢・4サイズの横はみ出しを確認する。NG が出たらすぐ直して再 push する。クラウド環境では `NODE_USE_ENV_PROXY=1 NODE_EXTRA_CA_CERTS=/root/.ccr/ca-bundle.crt` を付けて実行する。スクリーンショットはリポジトリの外に保存される。
 - 引き継ぎZIPを初めて反映するとき：ZIPのコミット番号は GitHub の履歴と一致しないため、ファイルの中身で差分を確認する。main にだけあるファイル（アイコン・設定ファイルなど）は残す。
