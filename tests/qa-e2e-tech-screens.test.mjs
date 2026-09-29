@@ -146,7 +146,7 @@ async function press2(pg, sel) {
 const SEL = {
   title: ['.p15start'],
   name: ['#p11nm', '.p11go'],
-  town: ['.hz:not(.dis)', '.mupin', '.svb'],
+  town: ['.hz:not(.dis)', '.hz[onclick="museum()"]', '.svb'],
   market: ['.p10back', '.p10arw.prev', '.p10arw.next', '.p10dot', '#p10info .p10buy'],
   sheet: ['#p10ov #mnm', '#p10ov .p10no', '#p10ov .p10ok'],
   ranch: ['button.back', '.ftile', '.fsell', '.wpanel button'],
@@ -240,7 +240,7 @@ describe('QA-TS：390×844 の通し（JS エラー・読み込み・壊れた�
   });
 
   T('QA-TS5：博物館（一覧・詳細）とセーブ（セーブコードの欄も開く）', async () => {
-    await pg.click('.mupin', { force: true });   // 博物館のピンは揺れる演出があるため、位置の安定を待たずに押す
+    await pg.click('.hz[onclick="museum()"]', { force: true });   // 博物館のピンは揺れる演出があるため、位置の安定を待たずに押す
     await waitSel(pg, '.mgc');
     await check(pg, '博物館', SEL.museum);
     await pg.click('.mgc');

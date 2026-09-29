@@ -181,7 +181,7 @@ T('QA-NG2：開始ボタン → 名前登録画面（初期値「アルト」・
     msg: document.querySelector('#msg').textContent, top: document.querySelector('.topbar').innerText.replace(/\s+/g, ' '),
     sw: document.documentElement.scrollWidth, iw: innerWidth, fina: document.querySelectorAll('img[src*="npc/fina"]').length,
   }));
-  assert.deepEqual(t.hz, [['market()', false], ['farm()', false], ['hall()', true]]);
+  assert.deepEqual(t.hz, [['market()', false], ['farm()', false], ['museum()', false], ['townArena()', false], ['hall()', true]]);
   assert.ok(t.pn.includes('ゆうしゃ'), 'プレイヤー名を表示');
   assert.match(t.prof, /300G/); assert.match(t.prof, /育成完了 0回/);
   assert.match(t.top, /300G/);

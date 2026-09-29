@@ -101,7 +101,7 @@ T('QA-BY1：新規ゲーム（300G・0体）の初回購入：案内と確認画
   assert.match(st.m.uid, /^m-/); assert.deepEqual(st.box, []); assert.equal(st.cnt, 1);
   assert.deepEqual(st.raiseRec, { done: 0, fromStart: true }, '購入では育成完了回数は増えない');
   const town = await pg.evaluate(() => ({ hz: [...document.querySelectorAll('.hz')].map((b) => b.disabled), prof: document.querySelector('.bprof').innerText.replace(/\s+/g, ' ') }));
-  assert.deepEqual(town.hz, [false, false, false], 'モンスターがいるのでファームも押せる');
+  assert.deepEqual(town.hz, [false, false, false, false, false], 'モンスターがいるのでファームも押せる（市場・牧場・研究所・闘技場（未開放の案内）・ファーム）');
   assert.match(town.prof, /0G/);
   // 確認画面が閉じた後の押下（二度押し）は無視
   await pg.evaluate(() => mkgo(0));

@@ -260,8 +260,8 @@ B('QA-TL1：街→市場（次へ・購入確認・やめる）→街→牧場�
     await tap('.hz[onclick="farm()"]');
     await waitSel(pg, '.fsell');
     await tap('button.back');
-    await waitSel(pg, '.mupin');
-    await tap('.mupin');
+    await waitSel(pg, '.hz[onclick="museum()"]');
+    await tap('.hz[onclick="museum()"]');
     await waitSel(pg, '.mgc');
     await tap('.dtop .dback');
     await waitSel(pg, '.svb');

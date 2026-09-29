@@ -39,7 +39,7 @@ const T = (name, a, b) => (typeof a === 'function' ? test(name, { skip: SKIP }, 
 
 const ARM_GAP = 700;   // 2度押しの間隔（1回目から0.4秒以内の2回目は無視される作りでも通るように。3秒で取り消しになるので長すぎない）
 const SETTLE = 550;    // 画面が変わった直後の押下を無視する作りでも通るよう、画面が変わってから押すまで待つ時間
-const BLOCK_MSG = '育成中は、街・牧場・市場・博物館へは行けません。';
+const BLOCK_MSG = '育成中は、街・牧場・市場・研究所へは行けません。';
 const KS = ['li', 'po', 'in', 'hi', 'ev', 'de'];
 // 終えたChapterの記録（セーブに入れる m.raise.log の項目）
 const LOG1 = { ch: 1, reachedGoal: true, turnsUsed: 14, turnLimit: 20, declined: false, tour: { rank: 0, place: 1, won: true, firstClear: true } };
