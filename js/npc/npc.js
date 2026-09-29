@@ -3,7 +3,9 @@
 //  ・NPCの登録（名前・表示の種類 view ごとの表情 expression 画像）と、画像の取り出し（無い表情でも止まらない）
 //  ・会話：NPC画像・名前・本文を表示し、本文は1文字ずつ表示（タイプライター）。
 //    表示中にタップ＝全文表示／全文表示後にタップ＝次のセリフ／最後のセリフ＝会話終了。
-//  画像とセリフは分けて持つ（同じ表情で別のセリフを使える）。行ごとに npc・view・expression・name を指定でき、省略すると前の行を引き継ぐ。
+//  画像とセリフは分けて持つ（同じ表情で別のセリフを使える）。行ごとに npc・view・expression・name・side を指定でき、省略すると前の行を引き継ぐ。
+//  NPC同士の会話：行ごとに npc を切り替えると、名前・立ち絵・表情がその話者に切り替わる。side（'left'／'right'）で立ち絵と名前の左右を指定できる
+//  （省略時はその話者が前に使った側、はじめてなら left）。2人の同時表示は今後の拡張（今は話している1人だけを出す）。
 //  この仕組みは画面に何も常設しない。呼ばれたときだけ会話ウィンドウを出し、終わったら消す（セーブにも保存しない）。
 // =========================================================
 (function (root) {
@@ -69,14 +71,15 @@
   }
   /** 行の指定を解決する（省略した npc・view・expression は前の行を引き継ぐ） */
   function resolveLines(lines) {
-    let npc = null, view = null, expr = null;
+    let npc = null, view = null, expr = null; const sideOf = {};
     return (Array.isArray(lines) ? lines : [lines]).filter(Boolean).map((l) => {
       if (typeof l === 'string') l = { text: l };
       if (l.npc !== undefined) { if (l.npc !== npc) { view = null; expr = null; } npc = l.npc; }
       const n = get(npc);
       view = l.view || view || (n ? n.defaultView : null); expr = l.expression || l.expr || expr || (n ? n.defaultExpr : null);
       const img = npc ? imageOf(npc, view, expr) : null, anim = l.anim && npc ? animOf(npc, view, l.anim) : null;   // アニメーションは行ごとの指定（引き継がない）
-      return { npc, view, expr, name: l.name != null ? String(l.name) : (n ? n.name : ''), text: String(l.text == null ? '' : l.text), img, anim };
+      const side = l.side === 'right' || l.side === 'left' ? l.side : sideOf[npc] || 'left'; sideOf[npc] = side;   // 話者ごとに左右を覚える
+      return { npc, view, expr, side, name: l.name != null ? String(l.name) : (n ? n.name : ''), text: String(l.text == null ? '' : l.text), img, anim };
     });
   }
   /**
@@ -90,7 +93,7 @@
     const now = opts.now || (() => Date.now()), typeMs = Number.isFinite(opts.typeMs) ? opts.typeMs : TYPE_MS, guardMs = opts.openGuardMs > 0 ? opts.openGuardMs : 0;
     const st = { idx: -1, chars: [], shown: 0, typing: false, ended: false, timer: null, token: 0, lastTap: -1e9, openedAt: -1e9 };
     const stop = () => { if (st.timer != null) { cancel(st.timer); st.timer = null; } };
-    const snap = () => { const l = L[st.idx] || {}; return { idx: st.idx, total: L.length, npc: l.npc || null, name: l.name || '', view: l.img ? l.img.view : l.view || null, expr: l.img ? l.img.expr : l.expr || null,
+    const snap = () => { const l = L[st.idx] || {}; return { idx: st.idx, total: L.length, npc: l.npc || null, side: l.side || 'left', name: l.name || '', view: l.img ? l.img.view : l.view || null, expr: l.img ? l.img.expr : l.expr || null,
       img: l.img ? l.img.src : null, fallback: !!(l.img && l.img.fallback), anim: l.anim ? l.anim.name : null, frames: l.anim ? l.anim.frames : null, fps: l.anim ? l.anim.fps : 0, loop: l.anim ? l.anim.loop : false, text: st.chars.slice(0, st.shown).join(''), full: l.text || '', typing: st.typing, ended: st.ended, timer: st.timer != null }; };
     const emit = () => { if (opts.onUpdate) opts.onUpdate(snap()); };
     function tick(tok) {
@@ -142,7 +145,7 @@
         openGuardMs: OPEN_GUARD_MS,   // ダブルタップの2打目（会話を開いたタップの続き）などで、1行目の文字送りを飛ばさない
         onUpdate(s) {
           if (s.ended) return;
-          ov.dataset.npc = s.npc || ''; fig.className = 'mmtalk-fig ' + (s.view || 'closeup'); fig.hidden = !(s.img || s.frames);   // アニメーションだけのNPCでも立ち絵を隠さない
+          ov.dataset.npc = s.npc || ''; stage.dataset.side = s.side || 'left'; fig.className = 'mmtalk-fig ' + (s.view || 'closeup'); fig.hidden = !(s.img || s.frames);   // アニメーションだけのNPCでも立ち絵を隠さない
           const key = s.frames ? `${s.idx}:${s.anim}` : '';
           if (key !== ANIM.key) { stopAnim(); if (s.frames) { ANIM.key = key; ANIM.name = s.anim; s.frames.forEach((f) => { const p = new Image(); p.src = f; });
             img.src = s.frames[0]; fig.hidden = false; const fr = s.frames, loop = s.loop;
@@ -175,6 +178,11 @@
   register('fina', { name: 'フィナ', role: '案内役', board: false, defaultView: 'closeup', defaultExpr: 'normal',
     views: { closeup: Object.fromEntries(FE.map((e) => [e, `${FINA}closeup/${e}.png`])), fullbody: {} },
     anims: { closeup: { wave: { frames: fr('wave'), fps: 8, loop: true }, wave_blink: { frames: fr('wave_blink'), fps: 6, loop: true } } } });
+
+  // カレン：市場担当（アップ画像のみで運用。全身は使わない）。正式素材（背景を透明にした透過PNG）を assets/npc/karen/closeup/ に置いている（README.md に元画像との対応）
+  const KAREN = 'assets/npc/karen/closeup/', KE = ['normal', 'smile', 'guide', 'troubled', 'happy', 'serious'];
+  register('karen', { name: 'カレン', role: '市場担当', board: false, defaultView: 'closeup', defaultExpr: 'normal',
+    views: { closeup: Object.fromEntries(KE.map((e) => [e, `${KAREN}${e}.png`])) } });
 
   root.MMNPC = Object.freeze({ TYPE_MS, MIN_TAP_MS, register, get, list, expressionsOf, animationsOf, imageOf, animOf, preload, splitChars, resolveLines, createTalk, talk, close, state, animState, fromLegacy });
 })(typeof window !== 'undefined' ? window : globalThis);

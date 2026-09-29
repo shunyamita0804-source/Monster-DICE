@@ -1271,20 +1271,31 @@ button.hz.tcmd b{display:block;min-width:0}
 button.hz.tcmd:active{background:linear-gradient(rgba(46,92,188,.92),rgba(21,48,122,.94))}
 button.hz.tcmd.dis,button.hz.tcmd.lock{background:linear-gradient(rgba(58,72,104,.86),rgba(30,38,60,.9));color:#e2e7f0;border-color:#c2a560;opacity:1}
 button.hz.tcmd.dis{cursor:default}
+/* 市場：カレン（上部の小さな呼び出しボタン・購入確認の1行） */
+button.p10karen{flex:none;width:40px;height:40px;padding:0;margin:0 0 0 6px;border-radius:50%;overflow:hidden;border:2px solid #e8c86a;background:linear-gradient(#1e3f8f,#0c1f56);box-shadow:0 2px 4px rgba(0,0,0,.4)}
+button.p10karen img{display:block;width:100%;height:auto;margin-top:2px;transform:scale(2.1);transform-origin:50% 12%}
+.kline{display:flex;align-items:center;gap:10px;margin:0 0 10px;padding:8px 10px;border-radius:10px;border:2px solid #e8c86a;background:linear-gradient(#1e3f8f,#0c1f56);color:#fff;text-align:left}
+.kline .kf{flex:none;width:52px;height:52px;border-radius:50%;overflow:hidden;border:2px solid #e8c86a;background:#0a1a4a}
+.kline .kf img{display:block;width:100%;height:auto;transform:scale(2.1);transform-origin:50% 12%}
+.kline b{display:block;color:#f6dc92;font-family:"Shippori Mincho",var(--mm-font-head,serif);font-size:.85rem;letter-spacing:.08em}
+.kline p{margin:2px 0 0;font-size:.95rem;font-weight:500;line-height:1.5}
 /* ===== 共通NPC会話（MMNPC・js/npc/npc.js）：JRPG風の会話ウィンドウ。正式な枠デザインを後で差し替えられるよう、見た目はこのブロックだけにまとめる ===== */
-.mmtalk{position:fixed;inset:0;z-index:900;display:flex;align-items:flex-end;justify-content:center;background:linear-gradient(rgba(12,7,3,0) 35%,rgba(12,7,3,.5));cursor:pointer;-webkit-tap-highlight-color:transparent;animation:mmtalkIn .18s ease-out}
+.mmtalk{position:fixed;inset:0;z-index:900;display:flex;align-items:flex-end;justify-content:center;background:linear-gradient(rgba(4,10,32,0) 35%,rgba(4,10,32,.55));cursor:pointer;-webkit-tap-highlight-color:transparent;animation:mmtalkIn .18s ease-out}
 @keyframes mmtalkIn{from{opacity:0}to{opacity:1}}
 .mmtalk-stage{position:relative;display:flex;flex-direction:column;align-items:flex-start;width:min(100% - 16px,560px);margin:0 auto calc(env(safe-area-inset-bottom,0px) + 10px)}
 .mmtalk-fig{position:relative;z-index:1;margin:0 0 -18px 2%;pointer-events:none}
+.mmtalk-stage[data-side=right]{align-items:flex-end}
+.mmtalk-stage[data-side=right] .mmtalk-fig{margin:0 2% -18px 0}
+.mmtalk-stage[data-side=right] .mmtalk-name{left:auto;right:14px}
 .mmtalk-fig[hidden]{display:none}
 .mmtalk-fig img{display:block;height:100%;width:auto;max-width:92vw;object-fit:contain}
 .mmtalk-fig.closeup{height:min(44vh,380px)}
 .mmtalk-fig.fullbody{height:min(66vh,600px)}
-.mmtalk-win{position:relative;z-index:2;box-sizing:border-box;width:100%;min-height:7.6em;padding:24px 18px 20px;border-radius:14px;border:2px solid #d9a441;background:linear-gradient(#28180c,#160d06);box-shadow:inset 0 0 0 1px rgba(255,220,150,.25),inset 0 0 18px rgba(0,0,0,.45),0 8px 22px rgba(0,0,0,.5)}
-.mmtalk-name{position:absolute;top:-17px;left:14px;padding:4px 16px 5px;border-radius:9px;border:2px solid #d9a441;background:linear-gradient(#5a3418,#2e1a0b);color:#ffe9b0;font-family:"Shippori Mincho",var(--mm-font-head,serif);font-weight:700;font-size:1rem;letter-spacing:.08em;line-height:1.2;box-shadow:0 3px 6px rgba(0,0,0,.45)}
+.mmtalk-win{position:relative;z-index:2;box-sizing:border-box;width:100%;min-height:7.6em;padding:24px 18px 20px;border-radius:12px;border:2px solid #e8c86a;background:linear-gradient(#1e3f8f,#0c1f56 70%,#0a1a4a);box-shadow:inset 0 0 0 1px rgba(255,232,170,.35),inset 0 0 0 4px rgba(8,20,58,.6),inset 0 0 0 5px rgba(232,200,106,.22),inset 0 0 20px rgba(0,0,0,.35),0 8px 22px rgba(0,0,0,.5)}
+.mmtalk-name{position:absolute;top:-17px;left:14px;padding:4px 16px 5px;border-radius:8px;border:2px solid #e8c86a;background:linear-gradient(#13306f,#07163f);color:#f6dc92;font-family:"Shippori Mincho",var(--mm-font-head,serif);font-weight:700;font-size:1rem;letter-spacing:.08em;line-height:1.2;box-shadow:0 3px 6px rgba(0,0,0,.45)}
 .mmtalk-name[hidden]{display:none}
-.mmtalk-text{margin:0;min-height:5.25em;color:#fff5e1;font-family:"Noto Sans JP",var(--mm-font-body,sans-serif);font-size:16px;font-weight:500;line-height:1.75;letter-spacing:.02em;white-space:pre-wrap;word-break:break-word;text-shadow:0 1px 2px rgba(0,0,0,.6)}
-.mmtalk-next{position:absolute;right:16px;bottom:10px;color:#ffd970;font-size:.8rem;animation:mmtalkNx 1s ease-in-out infinite}
+.mmtalk-text{margin:0;min-height:5.25em;color:#fff;font-family:"Noto Sans JP",var(--mm-font-body,sans-serif);font-size:16px;font-weight:500;line-height:1.75;letter-spacing:.02em;white-space:pre-wrap;word-break:break-word;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+.mmtalk-next{position:absolute;right:16px;bottom:10px;color:#f6dc92;font-size:.8rem;animation:mmtalkNx 1s ease-in-out infinite}
 .mmtalk-next[hidden]{display:none}
 @keyframes mmtalkNx{0%,100%{transform:translateY(0);opacity:1}50%{transform:translateY(3px);opacity:.6}}
 @media (prefers-reduced-motion:reduce){.mmtalk,.mmtalk-next{animation:none}}
@@ -1614,13 +1625,13 @@ function market(msg,focus){if(p8Blocked())return;bgm("market");p9Immersive(true)
  P10_MK=Math.max(0,Math.min(cat.length-1,P10_MK));
  const MB=window.MMP12S&&MMP12S.MARKET_BG; // 市場の背景候補（台座付き）。無ければ従来の描画背景
  $("#app").innerHTML=`<div class="p10mk${MB?" p15img":""}"><div class="p10bg" aria-hidden="true">${MB?`<div class="p15mkbg" style="background-image:url(${MB.src})"></div>`:P10_SCENE}</div>
- <header class="p10top"><div class="p10ttl"><button class="p10back" onclick="lobby()" aria-label="街にもどる">◀</button><b>市場</b></div>${p10Who()}</header>
+ <header class="p10top"><div class="p10ttl"><button class="p10back" onclick="lobby()" aria-label="街にもどる">◀</button><b>市場</b><button class="p10karen" onclick="p10KarenTalk()" aria-label="カレンに話しかける"><img src="${KAREN_FACE}" alt=""></button></div>${p10Who()}</header>
  ${MB?"":`<div class="p10sign">${P10_SIGN}</div>`}
  <div class="p10car" id="p10car" aria-label="モンスターを選ぶ（左右の矢印・スワイプ）">${cat.map((c,i)=>p10Slide(c,i)).join("")}<button class="p10arw prev" aria-label="前のモンスター" onclick="p10Step(-1)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="p10arw next" aria-label="次のモンスター" onclick="p10Step(1)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
  <div class="p10dots" role="tablist">${cat.map((c,i)=>`<button class="p10dot" data-i="${i}" role="tab" aria-label="${MMP10M.byKey(c.key).name}" onclick="p10Go(${i})"></button>`).join("")}</div>
  <section class="p10info" id="p10info" aria-live="polite"></section>${msg?`<div class="p10msg">${msg}</div>`:""}</div>`;
  P10_ANIM=false;P10_TGT=null;P10_SW=null;p15MkFit();p10Swipe($("#p10car"));
- p10Go(P10_MK,true);p10Info();try{window.scrollTo(0,0)}catch(e){}}
+ p10Go(P10_MK,true);p10Info();try{window.scrollTo(0,0)}catch(e){}karenIntro()}
 function p10Slide(c,i){const s=MMP10M.byKey(c.key),w=c.status=="waiting";
  return `<div class="p10sl${w?" wait":""}" data-i="${i}" data-key="${c.key}" onclick="p10Go(${i})"><div class="p10stg"><div class="p10mon">${w?`<img class="p10im" src="${MMP10M.silhouetteOf(c.key).src}" alt="${s.name}（入荷待ち）" draggable="false">`:p10Img(c.key)}</div><div class="p10ped" aria-hidden="true"></div>
  <div class="p10plate"><b>${s.name}</b><span>${w?`<i class="p10wait">入荷待ち</i>`:`${P10_COIN}${c.price}G`}</span></div></div></div>`}
@@ -1679,7 +1690,7 @@ function p10Info(){const box=$("#p10info");if(!box)return;const c=MMP10M.MARKET_
  <button class="p10buy" data-key="${c.key}" ${chk.ok?"":"disabled"} onclick="p10BuyAsk()">${chk.ok?`購入する　${P10_COIN}${c.price}G`:P10_WHY[chk.reason]}</button>${chk.ok&&chk.rescue?`<p class="p10note">はじめての1体は、所持金が${MMP10M.ECONOMY.marketPrice}Gに満たなくても購入できます（所持金を${MMP10M.ECONOMY.marketPrice}Gまで補填）。</p>`:""}${chk.ok&&chk.continueRescue?`<p class="p10note">育成を続けられるモンスターがいないため、所持金が${MMP10M.ECONOMY.marketPrice}Gに満たなくても購入できます（購入を確定したときだけ不足分を補填し、購入後の所持金は0Gになります）。</p>`:""}`}
 function p10BuyAsk(){if(P10_ANIM)return;const c=MMP10M.MARKET_CATALOG[P10_MK];if(!c||!p10CenterIs(c.key))return p10Info();const s=MMP10M.byKey(c.key),chk=MMP10M.canPurchase(S,c.key,S.box.length+(S.m?1:0));if(!chk.ok)return p10Info();p10Close();
  const d=document.createElement("div");d.className="p10ov";d.id="p10ov";d.onclick=e=>{if(e.target===d)p10Close()};
- d.innerHTML=`<div class="p10sheet" role="dialog" aria-modal="true"><div class="p10shm">${p10Img(c.key)}</div><b class="p10sht">${s.name}を連れて帰りますか？</b>
+ d.innerHTML=`<div class="p10sheet" role="dialog" aria-modal="true">${karenLine("ask")}<div class="p10shm">${p10Img(c.key)}</div><b class="p10sht">${s.name}を連れて帰りますか？</b>
  <label class="p10lb">名前（8文字まで）<input id="mnm" maxlength="8" value="${s.name}" autocomplete="off"></label>
  ${chk.rescue?`<p class="p10note">はじめての1体のため、所持金を${MMP10M.ECONOMY.marketPrice}Gまで補填してから支払います。</p>`:""}${chk.continueRescue?`<p class="p10note">育成を続けられるモンスターがいないため、所持金を${MMP10M.ECONOMY.marketPrice}Gまで補填してから支払います（購入後の所持金は0Gになります）。</p>`:""}
  <div class="p10shb"><button class="p10no" onclick="p10Close()">やめる</button><button class="p10ok" onclick="mkgo(${s.id});p10Close()">連れて帰る（${c.price}G）</button></div></div>`;document.body.appendChild(d);tapHold(d.querySelector(".p10shb"),350)}
@@ -1691,7 +1702,7 @@ function mkgo(i){if(p8Blocked())return;if(!document.getElementById("p10ov"))retu
 function museum(){if(p8Blocked())return;bgm("market");
  $("#app").innerHTML=`<div class="ds" style="--dc:#c9a24d"><div class="dbg" style="background-image:url(${AS.mkt})"></div><div class="dtop"><button class="dback" onclick="lobby()">◀ 街にもどる</button></div><div class="dtitle"><div class="mico">🔬</div><div><b>モンスター研究所</b><small>出会えるモンスターの記録</small></div></div><div class="dbody"><div class="mgrid">${SP.map((x,i)=>`<button class="mgc" onclick="musd(${i})"><div class="mgi"><div class="spa">${sprH(i,"idle",0,false,0)||svg(i,0)}</div></div><b>No.${String(i+1).padStart(3,"0")}</b><span>${x[0]}</span></button>`).join("")}<div class="mgc lk"><div class="mgi"><span class="q">？</span></div><b>No.003</b><span>ノビトン</span><small>近日公開</small></div></div></div></div>`;try{window.scrollTo(0,0)}catch(e){}}
 function musd(i){if(p8Blocked())return;$("#app").innerHTML=`<div class="mk2"><div class="dtop"><button class="dback" onclick="museum()">◀ 研究所</button></div><div class="mush">No.${String(i+1).padStart(3,"0")}　${SP[i][0]}</div><img class="pcard" src="${AS[AK[i]+"L"]}" alt="${SP[i][0]}のプロフィール"><img class="pcard" src="${AS[AK[i]+"R"]}" alt="${SP[i][0]}の技一覧"><button class="dback wide" onclick="museum()">◀ 研究所にもどる</button></div>`;try{window.scrollTo(0,0)}catch(e){}}
-function adopt(i,nm){if(p8Blocked())return;const r=MMP10M.purchase(S,MMP10M.keyOf(i),S.box.length+(S.m?1:0));if(!r.ok)return market(P10_WHY[r.reason]||"購入できません。",MMP10M.keyOf(i));S.cnt=(S.cnt||0)+1;const x=mk(i);if(nm)x.name=nm;if(S.m)S.box.push(x);else S.m=x;sel=[];save();lobby(`${p11Esc(x.name)}をつれて帰った！`+(S.m==x?"":"（牧場に預けました）")+(r.rescued?`（はじめての1体のため、所持金を${MMP10M.ECONOMY.marketPrice}Gまで補填しました）`:"")+(r.continueRescued?`（育成を続けるため、不足分${r.topUp}Gを補填して購入しました）`:""))}
+function adopt(i,nm){if(p8Blocked())return;const r=MMP10M.purchase(S,MMP10M.keyOf(i),S.box.length+(S.m?1:0));if(!r.ok)return market(P10_WHY[r.reason]||"購入できません。",MMP10M.keyOf(i));S.cnt=(S.cnt||0)+1;const x=mk(i);if(nm)x.name=nm;if(S.m)S.box.push(x);else S.m=x;sel=[];save();const go=()=>lobby(`${p11Esc(x.name)}をつれて帰った！`+(S.m==x?"":"（牧場に預けました）")+(r.rescued?`（はじめての1体のため、所持金を${MMP10M.ECONOMY.marketPrice}Gまで補填しました）`:"")+(r.continueRescued?`（育成を続けるため、不足分${r.topUp}Gを補填して購入しました）`:""));const kt=typeof karenTalk=="function"?karenTalk("bought"):null;if(kt)kt.then(go);else go()}
 function msave(){let ok=false;try{localStorage.setItem(MMP8.SAVE_KEY,JSON.stringify(S));ok=localStorage.getItem(MMP8.SAVE_KEY)==JSON.stringify(S)}catch(e){}msg0(ok?`セーブしました（${new Date().toLocaleTimeString("ja-JP")}）`:"このブラウザではセーブできません。セーブコードを使ってください。")}
 const nv=typeof navigator!="undefined"?navigator:{};
 const sl=n=>{try{return JSON.parse(localStorage.getItem("mr4s"+n))}catch(e){return null}};
@@ -2386,6 +2397,22 @@ function p7ToBag(i){const r=MMP7.moveVaultToBag(S,i);if(r.ok)save();prepScr(r.ok
 function p7ToVault(i){const r=MMP7.moveBagToVault(S,i);if(r.ok)save();prepScr(r.ok?"":P7_ERR[r.reason])}
 // ---- フィナの登場（正式に指定された3か所だけ）：名前登録後の初回あいさつ／育成開始の確認（初回だけ説明つき）／育成完了。会話は共通会話 MMNPC ----
 //  表示済みの記録は S.npcFlags（任意項目。セーブversionは6のまま）：finaIntro＝初回あいさつ済み、raiseIntro＝育成開始の説明済み。
+// ---- 市場のカレン：初回来店（1度だけ・S.npcFlags.karenIntro）／購入確認（シートの中の1行）／購入成功／上部のボタンで話しかける（中央の個体に合わせて案内）
+const KAREN_FACE="assets/npc/karen/closeup/normal.png";
+const KAREN_TALK={
+ intro:[{npc:"karen",expression:"smile",text:"いらっしゃいませ。ここはモンスター市場よ。"},{expression:"guide",text:"気になる子がいたら、左右に動かして見てみてね。"},{expression:"normal",text:"一緒に育てたい子が決まったら、「購入する」を押してちょうだい。"}],
+ greet:[{npc:"karen",expression:"smile",text:"今日はどの子を見ていく？"}],
+ ask:[{npc:"karen",expression:"normal",text:"この子を迎えるのね？"}],
+ bought:[{npc:"karen",expression:"happy",text:"ありがとう。大切に育ててあげてね。"}],
+ nomoney:[{npc:"karen",expression:"troubled",text:"ごめんなさい。今の所持金では、この子を迎えられないみたい。"}],
+ waiting:[{npc:"karen",expression:"guide",text:"この子は、まだ市場には来ていないの。"}]};
+function karenTalk(key){return window.MMNPC&&KAREN_TALK[key]?MMNPC.talk(KAREN_TALK[key]):Promise.resolve()}
+/** 購入確認シートの中のカレンの1行（会話ウィンドウは出さない＝押す回数を増やさない） */
+function karenLine(key){const l=KAREN_TALK[key][0],im=window.MMNPC&&MMNPC.imageOf("karen","closeup",l.expression);return `<div class="kline"><div class="kf">${im?`<img src="${im.src}" alt="">`:""}</div><div><b>カレン</b><p>${l.text}</p></div></div>`}
+/** 市場に入ったとき：初回だけカレンのあいさつ（先に「表示済み」を保存してから出す＝再読込しても二度出ない） */
+function karenIntro(){const f=finaFlags();if(f.karenIntro)return;f.karenIntro=1;save();karenTalk("intro")}
+/** 上部のカレンのボタン：中央の個体に合わせて案内（購入の判定は変えない） */
+function p10KarenTalk(){if(P10_ANIM)return;const c=MMP10M.MARKET_CATALOG[P10_MK];if(!c)return karenTalk("greet");if(c.status=="waiting")return karenTalk("waiting");const chk=MMP10M.canPurchase(S,c.key,S.box.length+(S.m?1:0));karenTalk(!chk.ok&&chk.reason=="no_money"?"nomoney":"greet")}
 const FINA_TALK={
  intro:[{npc:"fina",expression:"smile",text:"はじめまして。私はフィナです！"},{expression:"normal",text:"これからあなたのモンスター育成をお手伝いしますね。"},{expression:"guide",text:"まずは市場へ行って、一緒に育てるモンスターを迎えてみましょう！"}],
  raiseFirst:[{npc:"fina",expression:"normal",text:"このモンスターで育成を始めますか？"},{expression:"serious",text:"育成を始めると、途中で街へ戻ることはできません。"},{expression:"smile",text:"準備ができたら、出発しましょう！"}],
