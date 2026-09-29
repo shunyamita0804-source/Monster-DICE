@@ -34,6 +34,7 @@ Claude Code は作業の前に毎回このファイルを読むこと。ここ�
 | assets/npc/fina/ | フィナの正式素材（README.md に元画像との対応） |
 | assets/npc/karen/ | カレン（市場担当）の正式素材。アップ画像6表情のみ（README.md に元画像との対応） |
 | assets/scenes/、assets/fields/、assets/dice/ | 背景・フィールド・サイコロの素材 |
+| assets/embedded/ | index.html の base64 から安全に外部化した既存画像の置き場（元データとバイト単位で同一。無加工）。ファイル名は「定数名_番号またはキー_用途」。第1段階：FT（ft_*）・TABS（tabs_*）、第2段階：FARMIMG・TRIMG2・NPI.b。Phase 6 の画像（SFR・BTB・SFXL・STOPART・SKART・AS.spr）は外部化しない |
 | tests/*.test.mjs | 自動テスト |
 | KNOWN_ISSUES.md | 既知課題と判断事項の記録 |
 | INTEGRATION_STATUS.md | 統合当初の記録（古い内容を含む） |

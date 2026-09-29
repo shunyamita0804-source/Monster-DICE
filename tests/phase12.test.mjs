@@ -42,7 +42,7 @@ test('G2-1：Chapter間ファームの背景は正式背景（対応表から取
   const f = HTML.slice(HTML.indexOf('function p9FarmScr('), HTML.indexOf('\n// ---- Phase 8：育成中の画面遷移'));
   assert.match(f, /<div class="p9stage" style="background-image:url\(\$\{MMP12S\.FARM_INTERVAL\.src\}\);background-position:\$\{MMP12S\.FARM_INTERVAL\.focus\}">/);
   assert.doesNotMatch(f, /FARMIMG/, 'Chapter間ファームでは旧画像を使わない');
-  assert.match(HTML, /const FARMIMG="data:image/, '旧ファーム画像のデータは残す'); assert.match(line('function farm(msg,tab){') + HTML.slice(HTML.indexOf('function farm(msg,tab){'), HTML.indexOf('function farm(msg,tab){') + 4000), /FARMIMG/, '街の牧場では従来どおり');
+  assert.match(HTML, /const FARMIMG="assets\/embedded\/farmimg_ranch\.jpg";/, '旧ファーム画像のデータは残す（外部化：assets/embedded/）'); assert.ok(existsSync(path.join(ROOT, 'assets/embedded/farmimg_ranch.jpg'))); assert.match(line('function farm(msg,tab){') + HTML.slice(HTML.indexOf('function farm(msg,tab){'), HTML.indexOf('function farm(msg,tab){') + 4000), /FARMIMG/, '街の牧場では従来どおり');
   for (const t of ['prepScr()', "hall('s')", "hall('st')", "hall('w')", 'shopScr()', 'p8Suspend()', 'p8AbandonAsk()']) assert.ok(f.includes(t), `コマンド（${t}）は変えない`);
   assert.doesNotMatch(f, /次のChapterへ<\/text>|アイテム屋<\/text>/, '背景に文字を焼き込まない（文字はUIとして表示）');
 });
@@ -65,7 +65,7 @@ test('G3-2：修行ボードは修行の種類ごとの正式背景をはっき�
   for (const id of ['id="p7msg"', 'id="p7dice"', 'id="p7roll"', 'onclick="trRoll()"', 'class="p7tr"']) assert.ok(tr.includes(id), id);
   assert.match(tr, /\$\{LAB\[K\]\}の修行/); assert.match(tr, /15マス・ゴールで技を覚える/); assert.match(tr, /💖=ライフ/);
   const css = HTML.match(/\n\.p12stage\{[^}]*\}/)[0]; assert.doesNotMatch(css, /filter|blur|brightness/);
-  assert.match(HTML, /const TRIMG2="data:image/, '旧背景のデータは他の画面で使うため残す');
+  assert.match(HTML, /const TRIMG2="assets\/embedded\/trimg2_farm_bg\.jpg";/, '旧背景のデータは他の画面で使うため残す（外部化：assets/embedded/）'); assert.ok(existsSync(path.join(ROOT, 'assets/embedded/trimg2_farm_bg.jpg')));
 });
 
 // ---------------------------------------------------------
