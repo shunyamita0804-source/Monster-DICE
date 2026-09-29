@@ -234,5 +234,10 @@
   register('elliot', { name: 'エリオット', role: '研究所の研究者', board: false, defaultView: 'closeup', defaultExpr: 'normal',
     views: { closeup: Object.fromEntries(EE.map((e) => [e, `${ELLIOT}${e}.png`])) } });
 
+  // ヴァルガス：闘技場の管理者（アップ画像のみで運用）。正式素材（描き込まれた市松模様の背景を透明にした透過PNG）を assets/npc/vargas/closeup/ に置いている（README.md に元画像との対応）
+  const VARGAS = 'assets/npc/vargas/closeup/', VE = ['normal', 'guide', 'stern', 'approval', 'surprised', 'respect'];
+  register('vargas', { name: 'ヴァルガス', role: '闘技場の管理者', board: false, defaultView: 'closeup', defaultExpr: 'normal',
+    views: { closeup: Object.fromEntries(VE.map((e) => [e, `${VARGAS}${e}.png`])) } });
+
   root.MMNPC = Object.freeze({ TYPE_MS, MIN_TAP_MS, register, get, list, expressionsOf, animationsOf, imageOf, animOf, preload, splitChars, resolveLines, createTalk, talk, close, state, animState, fromLegacy });
 })(typeof window !== 'undefined' ? window : globalThis);

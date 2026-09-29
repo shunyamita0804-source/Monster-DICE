@@ -46,9 +46,10 @@ test('TW-6：コマンドは施設名だけ（補足は title に残す）。ア
   assert.match(lobby, /<span class="ti">\$\{townIcon\(c\[2\]\)\}<\/span><b>\$\{c\[0\]\}<\/b><\/button>/); assert.match(lobby, /title="\$\{c\[1\]\}"/);
 });
 
-test('TW-3：闘技場は開放条件を新設せず、押しても案内を出すだけ（画面遷移・セーブをしない）', () => {
+test('TW-3：闘技場は開放条件を新設せず、押しても案内を出すだけ（画面遷移・セーブをしない）。案内文はシステム表示のまま、ヴァルガスの一言（vgSay）を添える', () => {
   const fn = line('function townArena(');
-  assert.equal(fn, 'function townArena(){const e=$("#msg");if(e)e.textContent="闘技場は、まだ利用できません。"}');
+  assert.equal(fn, 'function townArena(){const e=$("#msg");if(e)e.textContent="闘技場は、まだ利用できません。";vgSay()} // ロック表示のまま（開放条件・内容は未決）。案内文はシステム表示、ヴァルガスは一言だけ');
+  assert.doesNotMatch(line('function vgSay('), /save\(|lobby\(|innerHTML=|fight\(|MMP8\./, 'ヴァルガスの一言は、画面遷移・セーブ・バトルをしない');
 });
 
 test('TW-4：博物館は研究所へ（表示名・戻るボタン・育成中の案内）。中身の図鑑はそのまま', () => {

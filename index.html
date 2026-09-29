@@ -1059,6 +1059,11 @@ button.mkc b{font-size:.9rem}button.mkc small{font-size:.66rem;color:#ffe9b0}
 .elsay .tx{flex:1;min-width:0;background:rgba(255,250,238,.96);color:#3a2410;border:2px solid #8a5a2b;border-radius:12px;padding:5px 10px 7px;font-size:.84rem;line-height:1.5;box-shadow:0 3px 8px rgba(0,0,0,.25);text-align:left}
 .elsay .tx b{display:block;font-size:.72rem;color:#8a5a2b;letter-spacing:.05em}
 .mk2 .elsay{margin:0 12px 8px} /* 図鑑の詳細：見出し（.mush）と同じ左右の余白 */
+/* ===== 闘技場NPC：ヴァルガス（闘技場の管理者）。ロック中の闘技場を押したとき、街の案内欄（システム表示）の下に顔・名前つきの一言 ===== */
+.vgsay{display:flex;align-items:flex-start;gap:8px;margin:-4px 0 10px;min-width:0}
+.vgsay img{flex:none;width:44px;height:44px;border-radius:50%;border:2px solid #c9a24d;background:#fff}
+.vgsay .tx{flex:1;min-width:0;background:rgba(255,250,238,.96);color:#3a2410;border:2px solid #8a5a2b;border-radius:12px;padding:5px 10px 7px;font-size:.84rem;line-height:1.5;box-shadow:0 3px 8px rgba(0,0,0,.25);text-align:left}
+.vgsay .tx b{display:block;font-size:.72rem;color:#8a5a2b;letter-spacing:.05em}
 .p9hero{position:absolute;left:0;right:142px;bottom:16px;display:flex;flex-direction:column;align-items:center;z-index:2}
 .p9hero .mon{width:204px;height:204px;filter:drop-shadow(0 10px 6px rgba(0,0,0,.35))}
 .p9bob{animation:p9bob 2.4s ease-in-out infinite}
@@ -1618,7 +1623,7 @@ const TOWN_BG="assets/town/town_main.jpg";
 const TOWN_CMDS=m=>[["市場","モンスター市場","🛒","market()","ok"],["牧場","ぽかぽか牧場","🐄","farm()","ok"],["研究所","モンスター研究所","🔬","museum()","ok"],["闘技場","未開放","🔒","townArena()","lock"],["ファーム","育成","🌱","hall()",m?"ok":"dis"]];
 // 施設アイコン（今は仮の絵文字）。画像ファイルのパス（.png／.webp／.jpg／.svg）を TOWN_CMDS の3番目に書けば、そのまま画像で表示する
 const townIcon=v=>/\.(png|webp|jpe?g|svg)$/i.test(v)?`<img src="${v}" alt="">`:v;
-function townArena(){const e=$("#msg");if(e)e.textContent="闘技場は、まだ利用できません。"}
+function townArena(){const e=$("#msg");if(e)e.textContent="闘技場は、まだ利用できません。";vgSay()} // ロック表示のまま（開放条件・内容は未決）。案内文はシステム表示、ヴァルガスは一言だけ
 function lobby(msg,open){if(p8Blocked())return;if(S.playerNamePending)return p11NameScr(msg); // Phase 11：新規ゲームは最初にプレイヤー名を決める
  const h1=$("h1");if(h1)h1.style.display="";bgm("town");const m=S.m;
  $("#app").innerHTML=`<div class="topbar"><span>🏆 大会優勝 ${S.wins||0}回</span><span>🪙 ${S.g}G</span></div><div class="map town" style="--town-bg:url(${TOWN_BG})"><nav class="tcmds" aria-label="街の施設">${TOWN_CMDS(m).map(c=>`<button class="hz tcmd ${c[4]=="ok"?"":c[4]}" ${c[4]=="dis"?"disabled":""} onclick="${c[3]}" aria-label="${c[0]}${c[4]=="lock"?"（未開放）":""}" title="${c[1]}"><span class="ti">${townIcon(c[2])}</span><b>${c[0]}</b></button>`).join("")}</nav>${m?`<div class="wk" style="top:84%;--d:14s"><div class="mon">${msv(m)}</div></div>`:""}</div>
@@ -1988,6 +1993,13 @@ const ELLIOT_TALK={
  lab:["こんにちは。何を調べてみましょうか。","図鑑の記録も、少しずつ埋まってきましたね。","気になる子がいたら、記録を見てみましょう。"],
  book:["こちらの記録も確認してみましょう。","興味深い子ですね。記録を見てみましょう。"]};
 function elSay(t){return `<div class="elsay"><img src="${ELLIOT_FACE}" alt=""><div class="tx"><b>エリオット</b>${t}</div></div>`}
+// 闘技場NPC：ヴァルガス（闘技場の管理者。公式ランク大会の進行役セドリックとは別人物）。会話は「フィナ ↔ ヴァルガス」が基本。軽い一言は会話ウィンドウにせず吹き出しで出す
+// 立ち絵は js/npc/npc.js の register('vargas')。小さい顔は立ち絵 normal から切り出した face.png。闘技場は開放条件・内容・報酬が未決のため、条件を断言する言葉は使わない
+const VARGAS_FACE="assets/npc/vargas/face.png";
+const VARGAS_TALK={
+ locked:["ここは闘技場だ。今はまだ、その時ではない。","準備が整ってから来い。","挑む覚悟ができたら、また来い。"]};
+/** ロック中の闘技場を押したとき：街の案内欄（#msg＝システム表示）はそのままに、その下へヴァルガスの一言（押すたびに1つだけ。増えない） */
+function vgSay(){const d=document.querySelector("#app .dlg");if(!d)return;const o=document.getElementById("vgsay");if(o)o.remove();d.insertAdjacentHTML("afterend",`<div class="vgsay" id="vgsay"><img src="${VARGAS_FACE}" alt=""><div class="tx"><b>ヴァルガス</b>${VARGAS_TALK.locked[R(VARGAS_TALK.locked.length)]}</div></div>`);try{document.getElementById("vgsay").scrollIntoView({block:"nearest"})}catch(e){}}
 const mixc=(c,t,a)=>{const p=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16)),x=p(c),y=p(t);return"#"+x.map((v,i)=>Math.round(v+(y[i]-v)*a).toString(16).padStart(2,"0")).join("")};
 let pid=0;
 const PP={m:{s:"#f2c6a5",h:"#5a2f1a",c:"#b8322a"},f:{s:"#e2b28c",h:"#a8a8a8",c:"#4f8a3a"},b:{s:"#f1c7a3",h:"#2f2118",c:"#2f6fbf"}};
