@@ -152,8 +152,8 @@ const armed = (pg, sel) => pg.waitForFunction((s) => { const b = document.queryS
 /** 街から市場へ行き、中央のモンスターを名前を付けて購入する（実物の購入シート） */
 async function buy(pg, name) {
   await pg.click('.hz[onclick="market()"]');
-  await pg.waitForSelector('.p10buy:not([disabled])'); await pg.waitForFunction(() => !P10_ANIM);
-  await pg.click('.p10buy'); await pg.waitForSelector('#p10ov .p10ok');
+  await H.marketDetail(pg); await pg.waitForSelector('.p10buy:not([disabled])'); await pg.waitForFunction(() => !P10_ANIM);
+  await H.marketDetail(pg); await pg.click('.p10buy'); await pg.waitForSelector('#p10ov .p10ok');
   await pg.fill('#mnm', name);
   await armed(pg, '#p10ov .p10shb');
   await pg.click('#p10ov .p10ok');

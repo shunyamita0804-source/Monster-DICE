@@ -142,9 +142,9 @@ T('QA-RB1：市場で購入 → ファーム → 出発準備：1回目の押下
   assert.equal(await pg.evaluate(() => document.querySelector('.hz[onclick="hall()"]').disabled), true, 'モンスターがいない間はファームへ行けない');
   // 市場で購入（確認画面 → 連れて帰る）
   await pg.click('.hz[onclick="market()"]');
-  await pg.waitForSelector('#p10info .p10buy:not([disabled])');
+  await H.marketDetail(pg); await pg.waitForSelector('#p10info .p10buy:not([disabled])');
   await pg.waitForTimeout(SETTLE);
-  await pg.click('#p10info .p10buy');
+  await H.marketDetail(pg); await pg.click('#p10info .p10buy');
   await pg.waitForSelector('#p10ov .p10ok');
   await pg.waitForTimeout(SETTLE);
   await pg.click('#p10ov .p10ok');
@@ -167,7 +167,7 @@ T('QA-RB1：市場で購入 → ファーム → 出発準備：1回目の押下
   await pg.click(dep);
   await pg.waitForSelector('.mmtalk');
   assert.equal(await pg.evaluate(() => S.m.raise.state), 'none', '会話中は育成を始めない');
-  assert.deepEqual((await H.storedSave(pg)).npcFlags, { finaIntro: 1, raiseIntro: 1 }, '初回の説明は表示した記録を先に保存する');
+  assert.deepEqual((await H.storedSave(pg)).npcFlags, { finaIntro: 1, karenIntro: 1, raiseIntro: 1 }, '初回の説明は表示した記録を先に保存する（市場に入ったのでカレンの初回あいさつも表示済み）');
   const t1 = await readTalk(pg);
   assert.deepEqual(t1.who, ['フィナ']);
   assert.deepEqual(t1.lines, await pg.evaluate(() => FINA_TALK.raiseFirst.map((x) => x.text)));

@@ -60,7 +60,7 @@ async function setState(pg, { g = 300, m = null, box = [], focus = 'solamo' } = 
 async function openSheet(pg) {
   await settle(pg);
   await pg.waitForTimeout(500);
-  await pg.click('#p10info .p10buy');
+  await H.marketDetail(pg); await pg.click('#p10info .p10buy');
   await pg.waitForSelector('#p10ov');
   await pg.waitForTimeout(550);   // 購入シートは開いてから0.35秒間、押しても反応しない（二度押しの誤操作防止）
   return pg.evaluate(() => ({ title: document.querySelector('.p10sht').textContent, name: document.getElementById('mnm').value, max: document.getElementById('mnm').getAttribute('maxlength'),

@@ -125,3 +125,10 @@ export async function newGame(page, name = 'テスト') {
   await page.waitForTimeout(100);
   await finishTalk(page);
 }
+/** 市場：中央のモンスターの詳細（能力・購入ボタンのシート）を開く。購入ボタン（.p10buy）はふだん閉じたシートの中にある */
+export async function marketDetail(page) {
+  await page.waitForFunction(() => !!document.querySelector('#p10car .p10sl.on') && typeof P10_ANIM !== 'undefined' && !P10_ANIM);
+  await page.evaluate(() => p10Detail(true));
+  await page.waitForFunction(() => { const p = document.querySelector('.p10detp'); return !!p && document.querySelector('.p10mk').classList.contains('det') && p.getBoundingClientRect().bottom <= innerHeight + 1; });
+  await page.waitForTimeout(260);
+}

@@ -110,8 +110,8 @@ test('TW-B2：各コマンドの遷移と「街にもどる」：市場・牧場
   assert.ok(await pg.evaluate(() => !!document.querySelector('.map.town')));
   assert.deepEqual(await H.storedSave(pg), before);
   // モンスターを連れているとファーム（育成前の出発準備の入口）へ行ける
-  await pg.click('.hz[onclick="market()"]'); await pg.waitForSelector('.p10buy:not([disabled])'); await pg.waitForFunction(() => !P10_ANIM);
-  await pg.waitForTimeout(500); await pg.click('.p10buy'); await pg.waitForSelector('#p10ov .p10ok'); await pg.waitForTimeout(600);
+  await pg.click('.hz[onclick="market()"]'); await H.marketDetail(pg); await pg.waitForSelector('.p10buy:not([disabled])'); await pg.waitForFunction(() => !P10_ANIM);
+  await pg.waitForTimeout(500); await H.marketDetail(pg); await pg.click('.p10buy'); await pg.waitForSelector('#p10ov .p10ok'); await pg.waitForTimeout(600);
   await pg.click('#p10ov .p10ok'); await pg.waitForSelector('.map.town .tcmd');
   assert.equal((await cmds(pg))[4].disabled, false);
   await pg.click('.hz[onclick="hall()"]'); await pg.waitForSelector('#app button[onclick="prepScr()"]');

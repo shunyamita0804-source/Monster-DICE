@@ -250,7 +250,7 @@ B('QA-TL1：街→市場（次へ・購入確認・やめる）→街→牧場�
     const at = await pg.evaluate(() => MMP10M.MARKET_CATALOG[P10_MK].key);
     await tap(at === 'solamo' ? '.p10arw.next' : '.p10arw.prev');
     await pg.waitForFunction((k) => !P10_ANIM && MMP10M.MARKET_CATALOG[P10_MK].key === k && !document.querySelector('#p10info .p10buy').disabled, at === 'solamo' ? 'gauru' : 'solamo');
-    await tap('#p10info .p10buy');
+    await H.marketDetail(pg); await tap('#p10info .p10buy');
     await waitSel(pg, '#p10ov .p10no');
     await pg.waitForTimeout(450);   // 購入シートは開いてから0.35秒間、押しても反応しない
     await tap('#p10ov .p10no');

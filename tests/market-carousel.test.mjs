@@ -47,7 +47,7 @@ test('MC-3：切り替え中は次の操作・購入を受け付けず、中央�
   assert.match(ask, /^function p10BuyAsk\(\)\{if\(P10_ANIM\)return;const c=MMP10M\.MARKET_CATALOG\[P10_MK\];if\(!c\|\|!p10CenterIs\(c\.key\)\)return p10Info\(\);const s=MMP10M\.byKey\(c\.key\)/);
   assert.match(between('function p10BuyAsk(){', '\nfunction p10Close('), /onclick="mkgo\(\$\{s\.id\}\);p10Close\(\)">連れて帰る（\$\{c\.price\}G）/, '確認画面の種族・価格は同じ候補から');
   assert.match(lineOf('function p10CenterIs(key){'), /on\.dataset\.key===key&&!!bb&&bb\.dataset\.key===key/, '中央の個体と情報欄の購入ボタンが同じ種族のときだけ');
-  assert.match(between('function p10Slide(c,i){', '\nlet P15MK'), /<div class="p10sl\$\{w\?" wait":""\}" data-i="\$\{i\}" data-key="\$\{c\.key\}" onclick="p10Go\(\$\{i\}\)">/);
+  assert.match(between('function p10Slide(c,i){', '\nlet P15MK'), /<div class="p10sl\$\{w\?" wait":""\}" data-i="\$\{i\}" data-key="\$\{c\.key\}" onclick="p10Tap\(\$\{i\}\)">/);
   assert.match(between('function p10Info(){', '\nfunction p10BuyAsk('), /<button class="p10buy" data-key="\$\{c\.key\}" \$\{chk\.ok\?"":"disabled"\} onclick="p10BuyAsk\(\)">/);
 });
 

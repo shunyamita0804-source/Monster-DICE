@@ -495,8 +495,8 @@ test('QA-C14：フィナの登場は指定の3か所だけ（名前登録の直�
   const calls = callSites(CODE, 'finaTalk').map((c) => `${c.fn}:${c.arg}`).sort();
   assert.deepEqual(calls, ['finaIntro:"intro"', 'p7Depart:first?"raiseFirst":"raiseAgain"', 'p8DoneScr:"done"']);
   assert.deepEqual(callSites(CODE, 'finaIntro').map((c) => c.fn), ['p11NameGo'], 'あいさつは名前登録の確定からだけ');
-  assert.deepEqual(callSites(CODE, 'MMNPC\\.talk').map((c) => c.fn).sort(), ['finaTalk', 'karenTalk'], '共通会話を開くのは finaTalk と市場のカレン（karenTalk）だけ');
-  assert.deepEqual(callSites(CODE, 'karenTalk').map((c) => c.fn).sort(), ['adopt', 'karenIntro', 'p10KarenTalk', 'p10KarenTalk', 'p10KarenTalk'], 'カレンは市場（初回来店・購入成功・上部のボタン）だけ');
+  assert.deepEqual(callSites(CODE, 'MMNPC\\.talk').map((c) => c.fn).sort(), ['finaTalk', 'karenSay'], '共通会話を開くのは finaTalk と市場のカレン（karenSay）だけ');
+  assert.deepEqual(callSites(CODE, 'karenTalk').map((c) => c.fn).sort(), ['adopt', 'karenIntro', 'p10KarenTalk', 'p10KarenTalk'], 'カレンは市場（初回来店・購入成功・上部のボタン）だけ');
   const ft = cut(CODE, 'const FINA_TALK={', '};');
   assert.deepEqual(Object.keys(new Function(`return ${ft.slice('const FINA_TALK='.length)}}`)()), ['intro', 'raiseFirst', 'raiseAgain', 'done']);
   const finaAt = [...CODE.matchAll(/npc:\s*"fina"/g)].map((m) => m.index), s0 = CODE.indexOf('const FINA_TALK={');

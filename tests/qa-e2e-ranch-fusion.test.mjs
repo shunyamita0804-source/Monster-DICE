@@ -199,7 +199,7 @@ test('QA-RF-B1：市場で買った1体目は手持ち、2体目は牧場へ。�
     await tap(pg, '.hz[onclick="market()"]');
     await pg.waitForSelector('#p10car');
     await pg.waitForFunction(() => !P10_ANIM && $('#p10info .p10buy').dataset.key === 'solamo');
-    await tap(pg, '#p10info .p10buy');
+    await H.marketDetail(pg); await tap(pg, '#p10info .p10buy');
     await pg.waitForSelector('#p10ov');
     await pg.fill('#mnm', 'ソラA');
     await tap(pg, '.p10ok');
@@ -211,7 +211,7 @@ test('QA-RF-B1：市場で買った1体目は手持ち、2体目は牧場へ。�
     // 2体目（お金を用意）：牧場へ入り、連れている個体はそのまま
     await pg.evaluate(() => { S.g = 5000; save(); market(null, 'gauru'); });
     await pg.waitForFunction(() => !P10_ANIM && $('#p10info .p10buy').dataset.key === 'gauru');
-    await tap(pg, '#p10info .p10buy');
+    await H.marketDetail(pg); await tap(pg, '#p10info .p10buy');
     await pg.waitForSelector('#p10ov');
     await pg.fill('#mnm', 'ガウB');
     await tap(pg, '.p10ok');
@@ -320,7 +320,7 @@ test('QA-RF-B4：所持上限：牧場は7体まで（預けられない）／�
     await pg.waitForSelector('#app .map');
     await pg.evaluate(() => market(null, 'solamo'));
     await pg.waitForFunction(() => !P10_ANIM && $('#p10info .p10buy').dataset.key === 'solamo' && !$('#p10info .p10buy').disabled);
-    await tap(pg, '#p10info .p10buy');
+    await H.marketDetail(pg); await tap(pg, '#p10info .p10buy');
     await pg.waitForSelector('#p10ov');
     await pg.fill('#mnm', 'ハチ');
     await tap(pg, '.p10ok');

@@ -129,7 +129,7 @@ async function checkTalk(pg, name) {
 const settled = (pg) => pg.waitForFunction(() => typeof P10_ANIM !== 'undefined' && !P10_ANIM && !!document.querySelector('#p10car .p10sl.on') && !!document.querySelector('#p10info .p10buy'), null, { timeout: 15000 });
 /** 市場で中央の個体を買う（確認シートが出た直後の押下を無視する作りでも押せるよう、少し待ってから「連れて帰る」を押す） */
 async function buyCenter(pg) {
-  await pg.click('#p10info .p10buy');
+  await H.marketDetail(pg); await pg.click('#p10info .p10buy');
   await waitSel(pg, '#p10ov .p10ok');
   await pg.waitForTimeout(550);
   await pg.click('#p10ov .p10ok');
@@ -208,7 +208,7 @@ describe('QA-TS：390×844 の通し（JS エラー・読み込み・壊れた�
       await settled(pg);
       await check(pg, '市場（' + k + '）', SEL.market);
     }
-    await pg.click('#p10info .p10buy');
+    await H.marketDetail(pg); await pg.click('#p10info .p10buy');
     await waitSel(pg, '#p10ov .p10ok');
     await check(pg, '購入確認シート', SEL.sheet, { fixed: ['#p10ov .p10ok', '#p10ov .p10no'], wait: 400 });
     await pg.waitForTimeout(150);   // 確認シートが出てから 0.5 秒以上たってから押す
@@ -379,7 +379,7 @@ for (const [key, label] of [['se', 'iPhone SE 相当'], ['android', 'Android 相
     await pg.click('.hz[onclick="market()"]');
     await settled(pg);
     await check(pg, '市場', SEL.market);
-    await pg.click('#p10info .p10buy');
+    await H.marketDetail(pg); await pg.click('#p10info .p10buy');
     await waitSel(pg, '#p10ov .p10ok');
     await check(pg, '購入確認シート', SEL.sheet, { fixed: ['#p10ov .p10ok', '#p10ov .p10no'], wait: 400 });
     await pg.waitForTimeout(150);   // 確認シートが出てから 0.5 秒以上たってから押す

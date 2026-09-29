@@ -464,9 +464,9 @@ test('QA-G2-B5：実ブラウザ：新規開始→市場で購入→牧場→出
   await p.page.waitForSelector('#app .map');
   assert.equal((await H.storedSave(p.page)).fx1, 1, '新規ゲームは従来どおり fx1 付きで保存');
   await p.page.click('.hz[onclick="market()"]');
-  await p.page.waitForSelector('.p10buy:not([disabled])');
+  await H.marketDetail(p.page); await p.page.waitForSelector('.p10buy:not([disabled])');
   await p.page.waitForFunction(() => !P10_ANIM);
-  await p.page.click('.p10buy');
+  await H.marketDetail(p.page); await p.page.click('.p10buy');
   await p.page.waitForSelector('#p10ov .p10ok');
   await p.page.waitForTimeout(400);   // QA G3：確認シートを開いた直後（0.35秒）のタップは受け付けない
   await p.page.click('#p10ov .p10ok');

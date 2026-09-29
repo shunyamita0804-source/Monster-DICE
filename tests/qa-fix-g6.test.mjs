@@ -240,15 +240,15 @@ test('QA-G6-B1：実ブラウザ（375×667・タッチ）：修行ボードで�
   assert.deepEqual(p.errors, []); assert.deepEqual(p.badNow(), []);
 });
 
-test('QA-G6-B2：実ブラウザ（375×667）：新規開始 → 市場で下までスクロールして購入 → 街は一番上から → 牧場 → 街 → ファーム → 出発準備 → 出発（エラーなし）', { skip: H.skipReason() }, async () => {
+test('QA-G6-B2：実ブラウザ（375×667）：新規開始 → 市場で購入（スクロールなし） → 街は一番上から → 牧場 → 街 → ファーム → 出発準備 → 出発（エラーなし）', { skip: H.skipReason() }, async () => {
   // 守ること：以前は購入後の街がスクロールした位置（scrollY 258・見出しの上端 -242px）で開いていた
   const p = await openPage({ size: H.SIZES.se }); const pg = p.page;
   await H.newGame(pg, 'テスト');
   await pg.evaluate(() => market());
-  await pg.waitForSelector('#p10info .p10buy:not([disabled])');
-  await pg.evaluate(() => document.querySelector('#p10info .p10buy').scrollIntoView({ block: 'nearest' }));
-  assert.ok(await pg.evaluate(() => scrollY) > 0, '購入ボタンまでスクロールした');
-  await pg.click('#p10info .p10buy');
+  await H.marketDetail(pg); await pg.waitForSelector('#p10info .p10buy:not([disabled])');
+  // 市場の整理（詳細は下からのシート）で、購入ボタンまでスクロールせずに届くようになった
+  assert.deepEqual(await pg.evaluate(() => { const b = document.querySelector('#p10info .p10buy').getBoundingClientRect(); return [scrollY, b.bottom <= innerHeight]; }), [0, true], 'スクロールなしで購入ボタンが見える');
+  await H.marketDetail(pg); await pg.click('#p10info .p10buy');
   await pg.waitForSelector('#p10ov .p10ok');
   await pg.waitForTimeout(500);   // 確認シートは開いてから0.35秒の押下を受け付けない（誤タップ防止）
   await pg.click('#p10ov .p10ok');

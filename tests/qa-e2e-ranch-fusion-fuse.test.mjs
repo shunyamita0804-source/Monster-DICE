@@ -377,7 +377,7 @@ test('QA-RF-B15：預ける・受け取る・売却・合体・購入を決ま�
           assert.deepEqual(await pg.evaluate(() => [$('#p10info .p10buy').disabled, $('#p10info .p10buy').innerText.trim()]), [true, '手持ちと牧場で8体までです。']);
           await pg.evaluate(() => lobby()); return 'buy(上限)';
         }
-        await tap(pg, '#p10info .p10buy');
+        await H.marketDetail(pg); await tap(pg, '#p10info .p10buy');
         await pg.waitForSelector('#p10ov');
         await pg.fill('#mnm', 'N' + done.length);
         await tap(pg, '.p10ok');

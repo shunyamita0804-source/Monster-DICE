@@ -238,7 +238,7 @@ test('QA-G3-B1：実ブラウザ（タッチ）：市場の「購入する」→
   const M = load(); const p = await L.open({ save: j(town(M)), touch: true }); const pg = p.page;
   await start(p, '#app .map');
   await pg.evaluate(() => market());
-  await pg.waitForSelector('.p10buy:not([disabled])'); await pg.waitForFunction(() => !P10_ANIM);
+  await H.marketDetail(pg); await pg.waitForSelector('.p10buy:not([disabled])'); await pg.waitForFunction(() => !P10_ANIM);
   const ck = await clock(pg);
   for (const gap of [0, 50]) {
     await pg.evaluate(() => document.querySelector('.p10buy').scrollIntoView({ block: 'nearest' }));   // 「購入する」は画面の下の方（見える位置へ）
@@ -418,8 +418,8 @@ test('QA-G3-B9：実ブラウザ：新規開始→市場で購入→牧場→出
   await H.newGame(pg, 'スモーク');
   await pg.waitForSelector('#app .map');
   await pg.click('.hz[onclick="market()"]');
-  await pg.waitForSelector('.p10buy:not([disabled])'); await pg.waitForFunction(() => !P10_ANIM);
-  await pg.click('.p10buy'); await pg.waitForSelector('#p10ov .p10ok');
+  await H.marketDetail(pg); await pg.waitForSelector('.p10buy:not([disabled])'); await pg.waitForFunction(() => !P10_ANIM);
+  await H.marketDetail(pg); await pg.click('.p10buy'); await pg.waitForSelector('#p10ov .p10ok');
   await pg.waitForTimeout(DELIBERATE);
   await pg.click('#p10ov .p10ok');
   await pg.waitForSelector('#app .map');

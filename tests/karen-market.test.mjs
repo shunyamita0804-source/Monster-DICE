@@ -72,11 +72,11 @@ test('KR-5：会話ウィンドウは深い青・白文字・金枠。名前欄�
 
 test('KR-6：市場の入口で初回あいさつ（karenIntro）。購入確認はシートの中の1行、購入成功は会話のあと街へ（購入処理そのものは同じ）', () => {
   assert.match(HTML, /p10Go\(P10_MK,true\);p10Info\(\);try\{window\.scrollTo\(0,0\)\}catch\(e\)\{\}karenIntro\(\)\}/);
-  assert.match(HTML, /function karenIntro\(\)\{const f=finaFlags\(\);if\(f\.karenIntro\)return;f\.karenIntro=1;save\(\);karenTalk\("intro"\)\}/);
+  assert.match(HTML, /function karenIntro\(\)\{const f=finaFlags\(\);if\(f\.karenIntro\)return;f\.karenIntro=1;save\(\);karenTalk\("intro"\)\.then\(/);
   assert.match(HTML, /<div class="p10sheet" role="dialog" aria-modal="true">\$\{karenLine\("ask"\)\}/);
   assert.match(HTML, /sel=\[\];save\(\);const go=\(\)=>lobby\(/, '保存してから会話');
   assert.match(HTML, /const kt=typeof karenTalk=="function"\?karenTalk\("bought"\):null;if\(kt\)kt\.then\(go\);else go\(\)\}/);
-  assert.match(HTML, /function p10KarenTalk\(\)\{if\(P10_ANIM\)return;/, '切り替え中は話しかけない');
+  assert.match(HTML, /function p10KarenTalk\(\)\{if\(P10_ANIM\|\|\$\("#p10ov"\)\)return;/, '切り替え中・購入確認中は話しかけない');
 });
 
 // ---------------- 実ブラウザ ----------------
@@ -121,7 +121,7 @@ test('KR-B2：購入確認シートにカレンの1行（normal）。購入成�
   const p = await L.open({ karen: true }); const pg = p.page;
   await toMarket(p, 1000); await H.finishTalk(pg);
   await pg.waitForFunction(() => !P10_ANIM); await pg.waitForTimeout(400);
-  await pg.click('.p10buy'); await pg.waitForSelector('#p10ov .kline');
+  await H.marketDetail(pg); await pg.click('.p10buy'); await pg.waitForSelector('#p10ov .kline');
   const kl = await pg.evaluate(() => ({ t: document.querySelector('#p10ov .kline').innerText, img: document.querySelector('#p10ov .kline img').getAttribute('src'), title: document.querySelector('.p10sht').textContent }));
   assert.match(kl.t, /カレン\s*この子を迎えるのね？/); assert.match(kl.img, /karen\/closeup\/normal\.png$/); assert.equal(kl.title, 'ソラモを連れて帰りますか？');
   await pg.waitForTimeout(500); await pg.click('#p10ov .p10ok');
@@ -138,7 +138,7 @@ test('KR-B3：上部のカレンのボタン：中央の個体に合わせて、
   const p = await L.open({ karen: true }); const pg = p.page;
   await toMarket(p, 1000); await H.finishTalk(pg); await pg.waitForFunction(() => !P10_ANIM);
   const ask = async () => { await pg.waitForTimeout(150); await pg.click('.p10karen'); await pg.waitForSelector('.mmtalk'); await pg.waitForTimeout(260); await pg.click('.mmtalk'); const s = await talkState(pg); await H.finishTalk(pg); return [s.text, s.img.split('/').pop()]; };
-  assert.deepEqual(await ask(), ['今日はどの子を見ていく？', 'smile.png']);
+  assert.deepEqual(await ask(), ['この子はソラモ。「バランス型」よ。', 'guide.png'], '選択中のモンスターについて案内（通常のあいさつだけにしない）');
   // 未解放（ノビトン）
   await pg.evaluate(() => p10Go(MMP10M.MARKET_CATALOG.findIndex((c) => c.key === 'nobiton'))); await pg.waitForFunction(() => !P10_ANIM);
   assert.deepEqual(await ask(), ['この子は、まだ市場には来ていないの。', 'guide.png']);
@@ -172,7 +172,7 @@ for (const [k, size] of Object.entries(H.SIZES)) {
     assert.ok(r.sw <= r.iw + 1);
     for (const x of [r.name, r.text, r.next]) assert.ok(x[0] >= 0 && x[1] >= 0 && x[2] <= r.iw && x[3] <= r.ih, JSON.stringify(x));
     await H.finishTalk(pg); await pg.waitForFunction(() => !P10_ANIM); await pg.waitForTimeout(400);
-    await pg.click('.p10buy'); await pg.waitForSelector('#p10ov .p10ok');
+    await H.marketDetail(pg); await pg.click('.p10buy'); await pg.waitForSelector('#p10ov .p10ok');
     const ok = await pg.evaluate(() => { const x = document.querySelector('#p10ov .p10ok').getBoundingClientRect(); return x.bottom <= innerHeight && x.top >= 0; });
     assert.ok(ok, '連れて帰るボタンが画面内');
     assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
