@@ -1053,6 +1053,12 @@ button.mkc b{font-size:.9rem}button.mkc small{font-size:.66rem;color:#ffe9b0}
 .p9ced img{flex:none;width:44px;height:44px;border-radius:50%;border:2px solid #c9a24d;background:#fff}
 .p9ced .tx{flex:1;min-width:0;background:rgba(255,250,238,.96);color:#3a2410;border:2px solid #8a5a2b;border-radius:12px;padding:5px 10px 7px;font-size:.84rem;line-height:1.5;box-shadow:0 3px 8px rgba(0,0,0,.25);text-align:left}
 .p9ced .tx b{display:block;font-size:.72rem;color:#8a5a2b;letter-spacing:.05em}
+/* ===== 研究所NPC：エリオット（研究所の案内・研究・解析）。NPCの発言＝顔・名前つきのクリーム色の吹き出し。図鑑の見出し・「近日公開」などのシステム表示とは分ける ===== */
+.elsay{display:flex;align-items:flex-start;gap:8px;margin:0 0 10px;min-width:0}
+.elsay img{flex:none;width:44px;height:44px;border-radius:50%;border:2px solid #c9a24d;background:#fff}
+.elsay .tx{flex:1;min-width:0;background:rgba(255,250,238,.96);color:#3a2410;border:2px solid #8a5a2b;border-radius:12px;padding:5px 10px 7px;font-size:.84rem;line-height:1.5;box-shadow:0 3px 8px rgba(0,0,0,.25);text-align:left}
+.elsay .tx b{display:block;font-size:.72rem;color:#8a5a2b;letter-spacing:.05em}
+.mk2 .elsay{margin:0 12px 8px} /* 図鑑の詳細：見出し（.mush）と同じ左右の余白 */
 .p9hero{position:absolute;left:0;right:142px;bottom:16px;display:flex;flex-direction:column;align-items:center;z-index:2}
 .p9hero .mon{width:204px;height:204px;filter:drop-shadow(0 10px 6px rgba(0,0,0,.35))}
 .p9bob{animation:p9bob 2.4s ease-in-out infinite}
@@ -1752,8 +1758,8 @@ function mkd(i,step){if(p8Blocked())return;market(null,MMP10M.keyOf(i)||0)} // P
 function mkgo(i){if(p8Blocked())return;if(!document.getElementById("p10ov"))return; // 確認画面が閉じた後の二度押しは無視（購入・補填を二重にしない）
  const e=document.getElementById("mnm");let v=(e&&e.value||"").trim().slice(0,8);if(!v)v=SP[i][0];adopt(i,v)}
 function museum(){if(p8Blocked())return;bgm("market");
- $("#app").innerHTML=`<div class="ds" style="--dc:#c9a24d"><div class="dbg" style="background-image:url(${AS.mkt})"></div><div class="dtop"><button class="dback" onclick="lobby()">◀ 街にもどる</button></div><div class="dtitle"><div class="mico">🔬</div><div><b>モンスター研究所</b><small>出会えるモンスターの記録</small></div></div><div class="dbody"><div class="mgrid">${SP.map((x,i)=>`<button class="mgc" onclick="musd(${i})"><div class="mgi"><div class="spa">${sprH(i,"idle",0,false,0)||svg(i,0)}</div></div><b>No.${String(i+1).padStart(3,"0")}</b><span>${x[0]}</span></button>`).join("")}<div class="mgc lk"><div class="mgi"><span class="q">？</span></div><b>No.003</b><span>ノビトン</span><small>近日公開</small></div></div></div></div>`;try{window.scrollTo(0,0)}catch(e){}}
-function musd(i){if(p8Blocked())return;$("#app").innerHTML=`<div class="mk2"><div class="dtop"><button class="dback" onclick="museum()">◀ 研究所</button></div><div class="mush">No.${String(i+1).padStart(3,"0")}　${SP[i][0]}</div><img class="pcard" src="${AS[AK[i]+"L"]}" alt="${SP[i][0]}のプロフィール"><img class="pcard" src="${AS[AK[i]+"R"]}" alt="${SP[i][0]}の技一覧"><button class="dback wide" onclick="museum()">◀ 研究所にもどる</button></div>`;try{window.scrollTo(0,0)}catch(e){}}
+ $("#app").innerHTML=`<div class="ds" style="--dc:#c9a24d"><div class="dbg" style="background-image:url(${AS.mkt})"></div><div class="dtop"><button class="dback" onclick="lobby()">◀ 街にもどる</button></div><div class="dtitle"><div class="mico">🔬</div><div><b>モンスター研究所</b><small>出会えるモンスターの記録</small></div></div><div class="dbody">${elSay(ELLIOT_TALK.lab[R(ELLIOT_TALK.lab.length)])}<div class="mgrid">${SP.map((x,i)=>`<button class="mgc" onclick="musd(${i})"><div class="mgi"><div class="spa">${sprH(i,"idle",0,false,0)||svg(i,0)}</div></div><b>No.${String(i+1).padStart(3,"0")}</b><span>${x[0]}</span></button>`).join("")}<div class="mgc lk"><div class="mgi"><span class="q">？</span></div><b>No.003</b><span>ノビトン</span><small>近日公開</small></div></div></div></div>`;try{window.scrollTo(0,0)}catch(e){}}
+function musd(i){if(p8Blocked())return;$("#app").innerHTML=`<div class="mk2"><div class="dtop"><button class="dback" onclick="museum()">◀ 研究所</button></div><div class="mush">No.${String(i+1).padStart(3,"0")}　${SP[i][0]}</div>${elSay(ELLIOT_TALK.book[R(ELLIOT_TALK.book.length)])}<img class="pcard" src="${AS[AK[i]+"L"]}" alt="${SP[i][0]}のプロフィール"><img class="pcard" src="${AS[AK[i]+"R"]}" alt="${SP[i][0]}の技一覧"><button class="dback wide" onclick="museum()">◀ 研究所にもどる</button></div>`;try{window.scrollTo(0,0)}catch(e){}}
 function adopt(i,nm){if(p8Blocked())return;const r=MMP10M.purchase(S,MMP10M.keyOf(i),S.box.length+(S.m?1:0));if(!r.ok)return market(P10_WHY[r.reason]||"購入できません。",MMP10M.keyOf(i));S.cnt=(S.cnt||0)+1;const x=mk(i);if(nm)x.name=nm;if(S.m)S.box.push(x);else S.m=x;sel=[];save();const go=()=>lobby(`${p11Esc(x.name)}をつれて帰った！`+(S.m==x?"":"（牧場に預けました）")+(r.rescued?`（はじめての1体のため、所持金を${MMP10M.ECONOMY.marketPrice}Gまで補填しました）`:"")+(r.continueRescued?`（育成を続けるため、不足分${r.topUp}Gを補填して購入しました）`:""));const kt=typeof karenTalk=="function"?karenTalk("bought"):null;if(kt)kt.then(go);else go()}
 function msave(){let ok=false;try{localStorage.setItem(MMP8.SAVE_KEY,JSON.stringify(S));ok=localStorage.getItem(MMP8.SAVE_KEY)==JSON.stringify(S)}catch(e){}msg0(ok?`セーブしました（${new Date().toLocaleTimeString("ja-JP")}）`:"このブラウザではセーブできません。セーブコードを使ってください。")}
 const nv=typeof navigator!="undefined"?navigator:{};
@@ -1975,6 +1981,13 @@ const CEDRIC_TALK={
  won:"勝負あり！ 見事な戦いでした！",
  lost:"大会はここまでです。見事な戦いでした。"};
 function p9Ced(t){return `<div class="p9ced"><img src="${CEDRIC_FACE}" alt=""><div class="tx"><b>セドリック</b>${t}</div></div>`}
+// 研究所NPC：エリオット（研究所の案内・研究・解析を担当する研究者）。会話は「フィナ ↔ エリオット」が基本。研究所画面の軽い一言は会話ウィンドウにせず、顔・名前つきの吹き出しで出す
+// 立ち絵は js/npc/npc.js の register('elliot')。小さい顔は立ち絵 normal から切り出した face.png。図鑑の見出し・「近日公開」などのシステム表示はエリオットの発言にしない
+const ELLIOT_FACE="assets/npc/elliot/face.png";
+const ELLIOT_TALK={
+ lab:["こんにちは。何を調べてみましょうか。","図鑑の記録も、少しずつ埋まってきましたね。","気になる子がいたら、記録を見てみましょう。"],
+ book:["こちらの記録も確認してみましょう。","興味深い子ですね。記録を見てみましょう。"]};
+function elSay(t){return `<div class="elsay"><img src="${ELLIOT_FACE}" alt=""><div class="tx"><b>エリオット</b>${t}</div></div>`}
 const mixc=(c,t,a)=>{const p=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16)),x=p(c),y=p(t);return"#"+x.map((v,i)=>Math.round(v+(y[i]-v)*a).toString(16).padStart(2,"0")).join("")};
 let pid=0;
 const PP={m:{s:"#f2c6a5",h:"#5a2f1a",c:"#b8322a"},f:{s:"#e2b28c",h:"#a8a8a8",c:"#4f8a3a"},b:{s:"#f1c7a3",h:"#2f2118",c:"#2f6fbf"}};

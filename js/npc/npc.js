@@ -229,5 +229,10 @@
   register('cedric', { name: 'セドリック', role: '公式ランク大会の進行役', board: false, defaultView: 'closeup', defaultExpr: 'normal',
     views: { closeup: Object.fromEntries(CE.map((e) => [e, `${CEDRIC}${e}.png`])) } });
 
+  // エリオット：研究所の案内・研究・解析を担当する研究者（アップ画像のみで運用）。正式素材（背景の無地の灰色を透明にした透過PNG）を assets/npc/elliot/closeup/ に置いている（README.md に元画像との対応）
+  const ELLIOT = 'assets/npc/elliot/closeup/', EE = ['normal', 'smile', 'guide', 'thinking', 'curious', 'serious'];
+  register('elliot', { name: 'エリオット', role: '研究所の研究者', board: false, defaultView: 'closeup', defaultExpr: 'normal',
+    views: { closeup: Object.fromEntries(EE.map((e) => [e, `${ELLIOT}${e}.png`])) } });
+
   root.MMNPC = Object.freeze({ TYPE_MS, MIN_TAP_MS, register, get, list, expressionsOf, animationsOf, imageOf, animOf, preload, splitChars, resolveLines, createTalk, talk, close, state, animState, fromLegacy });
 })(typeof window !== 'undefined' ? window : globalThis);
