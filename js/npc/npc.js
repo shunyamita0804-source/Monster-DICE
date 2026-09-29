@@ -224,5 +224,10 @@
   register('nick', { name: 'ニック', role: '牧場の管理者', board: false, defaultView: 'closeup', defaultExpr: 'normal',
     views: { closeup: Object.fromEntries(NE.map((e) => [e, `${NICK}${e}.png`])) } });
 
+  // セドリック：公式ランク大会の進行役（アップ画像のみで運用）。正式素材（描き込まれた市松模様の背景を透明にした透過PNG）を assets/npc/cedric/closeup/ に置いている（README.md に元画像との対応）
+  const CEDRIC = 'assets/npc/cedric/closeup/', CE = ['normal', 'smile', 'guide', 'happy', 'surprised', 'serious'];
+  register('cedric', { name: 'セドリック', role: '公式ランク大会の進行役', board: false, defaultView: 'closeup', defaultExpr: 'normal',
+    views: { closeup: Object.fromEntries(CE.map((e) => [e, `${CEDRIC}${e}.png`])) } });
+
   root.MMNPC = Object.freeze({ TYPE_MS, MIN_TAP_MS, register, get, list, expressionsOf, animationsOf, imageOf, animOf, preload, splitChars, resolveLines, createTalk, talk, close, state, animState, fromLegacy });
 })(typeof window !== 'undefined' ? window : globalThis);

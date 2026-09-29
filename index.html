@@ -1048,6 +1048,11 @@ button.mkc b{font-size:.9rem}button.mkc small{font-size:.66rem;color:#ffe9b0}
 .p9say span{background:rgba(255,250,238,.96);color:#3a2410;border:2px solid #8a5a2b;border-radius:12px;padding:6px 9px;font-size:.8rem;line-height:1.45;box-shadow:0 3px 8px rgba(0,0,0,.25)}
 .p9say.sys{right:10px} /* システム通知（NPCの発言ではない）：顔なし・紺地に白文字 */
 .p9say.sys span{background:rgba(12,31,86,.92);color:#fff;border-color:#c9a24d}
+/* ===== 大会NPC：セドリック（公式ランク大会の進行役）。NPCの発言＝顔・名前つきのクリーム色の吹き出し。システム表示（.p9msg）とは分ける ===== */
+.p9ced{display:flex;align-items:flex-start;gap:8px;margin:8px 0;min-width:0}
+.p9ced img{flex:none;width:44px;height:44px;border-radius:50%;border:2px solid #c9a24d;background:#fff}
+.p9ced .tx{flex:1;min-width:0;background:rgba(255,250,238,.96);color:#3a2410;border:2px solid #8a5a2b;border-radius:12px;padding:5px 10px 7px;font-size:.84rem;line-height:1.5;box-shadow:0 3px 8px rgba(0,0,0,.25);text-align:left}
+.p9ced .tx b{display:block;font-size:.72rem;color:#8a5a2b;letter-spacing:.05em}
 .p9hero{position:absolute;left:0;right:142px;bottom:16px;display:flex;flex-direction:column;align-items:center;z-index:2}
 .p9hero .mon{width:204px;height:204px;filter:drop-shadow(0 10px 6px rgba(0,0,0,.35))}
 .p9bob{animation:p9bob 2.4s ease-in-out infinite}
@@ -1959,6 +1964,17 @@ const DAN_TALK={
 const NICK_FACE="assets/npc/nick/face.png";
 const NICK_TALK={
  ranch:["やぁ。今日も元気そうだな。","いい顔つきになってきたな。","この子なら、もう少し伸びそうだ。","心配するな。こっちで見ておく。","さて、今日はどうする？"]};
+// 大会NPC：セドリック（公式ランク大会の進行・実況・案内。闘技場の管理者ヴァルガスとは別人物）。会話は「フィナ ↔ NPC」が基本だが、大会進行の短いアナウンスは直接画面に出してよい
+// 立ち絵は js/npc/npc.js の register('cedric')。小さい顔（大会画面の吹き出し）は立ち絵 normal から切り出した face.png。参加条件・報酬・中断などのシステム表示はセドリックの発言にしない
+const CEDRIC_FACE="assets/npc/cedric/face.png";
+const CEDRIC_TALK={
+ entry:"公式ランク大会へようこそ。準備はよろしいですか？",
+ first:"それでは、始めましょう。最初の対戦はこちらです。",
+ next:["次の対戦はこちらです。","いい試合になりそうですね。"],
+ vs:"両者、準備はよろしいですね！",
+ won:"勝負あり！ 見事な戦いでした！",
+ lost:"大会はここまでです。見事な戦いでした。"};
+function p9Ced(t){return `<div class="p9ced"><img src="${CEDRIC_FACE}" alt=""><div class="tx"><b>セドリック</b>${t}</div></div>`}
 const mixc=(c,t,a)=>{const p=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16)),x=p(c),y=p(t);return"#"+x.map((v,i)=>Math.round(v+(y[i]-v)*a).toString(16).padStart(2,"0")).join("")};
 let pid=0;
 const PP={m:{s:"#f2c6a5",h:"#5a2f1a",c:"#b8322a"},f:{s:"#e2b28c",h:"#a8a8a8",c:"#4f8a3a"},b:{s:"#f1c7a3",h:"#2f2118",c:"#2f6fbf"}};
@@ -2286,7 +2302,7 @@ function bBattleSkip(){const m=S.m;if(bBusy||!m)return;const r=MMP8.skipBattleSq
 function p8GoalHtml(m){const r=m.raise,rule=MMP8.chapterRule(r.ch);
  if(!rule||!rule.tournament)return `<h3>🏁 ゴール</h3><button class="p9btn" onclick="p8EndChapter()">${r.ch==MMP8.FINAL?"最終Chapterを終える":"Chapterを終える"}</button>`;
  const rs=MMP8.eligibleRanks(m,r.ch).map(k=>{const sz=MMP8L.LEAGUE_SIZE[k],cl=m.prog.rankClr[k];return `<button class="p9rank" onclick="p8TourStart(${k},this)"><span class="p9em">${RN[k]}</span><span class="p9tx"><b>ランク${RN[k]}大会</b><small>${sz}体の総当たり（${sz-1}試合）</small><small>${cl?"クリア済み：優勝でステータスボーナスのみ":`初回優勝：${MMP8.PRIZE[k]}G・特訓チケット×${MMP8.FIRST_CLEAR_TICKETS[k]}・ステータスボーナス`}</small></span></button>`}).join("");
- return `<h3>🏟 公式ランク大会</h3><p class="p9s">このChapterで挑戦できるのは1回だけ。総当たりで<b>最終1位</b>になった時だけ報酬があります。</p><div class="p9ranks">${rs}</div><button class="p9btn2" onclick="p8TourDecline(this)">大会に参加しない（辞退）</button>`}
+ return `<h3>🏟 公式ランク大会</h3>${p9Ced(CEDRIC_TALK.entry)}<p class="p9s">このChapterで挑戦できるのは1回だけ。総当たりで<b>最終1位</b>になった時だけ報酬があります。</p><div class="p9ranks">${rs}</div><button class="p9btn2" onclick="p8TourDecline(this)">大会に参加しない（辞退）</button>`}
 // 2度押しの確認（中の見た目を保ったまま戻す版。既存の arm() は文字だけのボタン用）
 function p9arm(b,t){if(b.dataset.a!="1"){const o=b.innerHTML;b.dataset.a="1";tapAt(b);b.classList.add("arm");b.innerHTML=`<span class="p9tx"><b>${t}</b></span>`;setTimeout(()=>{b.dataset.a="";b.classList.remove("arm");b.innerHTML=o},3000);return false}return !tapSoon(b,400)}
 function p8TourStart(k,b){if(bBusy||!p9arm(b,`もう一度押すとランク${RN[k]}大会に参加`))return;const r=MMP8.startTournament(S,S.m,k);if(!r.ok)return board();save();board()}
@@ -2314,7 +2330,7 @@ function p8TourScr(msg){const m=S.m,t=m.raise.tour,lg=t.league;bgm("train");p9Im
  if(t.status=="settled")return p9TourResult(msg);
  const st=MMP8L.standings(lg),pm=MMP8.tourNext(m),o=p9Npc(lg,pm.opp);
  $("#app").innerHTML=`<div class="p9tour">${p9TourHead(m,t)}
- <div class="p9next"><div class="lb">第${pm.round+1}試合 / 全${lg.rounds.length}試合　次の相手</div><div class="vsrow">${p9Pt(m,"me")}<span class="p9vsl">VS</span>${p9Pt(o)}</div><div class="nm"><b>${p11Esc(m.name)}</b><span>vs</span><b>${p11Esc(o.name)}</b></div><button class="p9btn" onclick="p9VsScr()">⚔️ 対戦へ（能力をくらべる）</button></div>
+ ${p9Ced(lg.round==0?CEDRIC_TALK.first:CEDRIC_TALK.next[lg.round%CEDRIC_TALK.next.length])}<div class="p9next"><div class="lb">第${pm.round+1}試合 / 全${lg.rounds.length}試合　次の相手</div><div class="vsrow">${p9Pt(m,"me")}<span class="p9vsl">VS</span>${p9Pt(o)}</div><div class="nm"><b>${p11Esc(m.name)}</b><span>vs</span><b>${p11Esc(o.name)}</b></div><button class="p9btn" onclick="p9VsScr()">⚔️ 対戦へ（能力をくらべる）</button></div>
  ${msg?`<div class="p9msg p9tmsg">${msg}</div>`:""}${p9Standings(lg,st,false)}${p9Matrix(lg)}
  <p class="p9prov">【暫定】大会参加者の名前・種族は仮のデータです。実際の試合では、ランク${RN[t.rank]}相当の相手と戦います。</p></div>`;try{window.scrollTo(0,0)}catch(e){}}
 function p9TourResult(msg){const m=S.m,t=m.raise.tour,lg=t.league,rs=t.result,w=rs.reward,st=MMP8L.standings(lg);
@@ -2322,6 +2338,7 @@ function p9TourResult(msg){const m=S.m,t=m.raise.tour,lg=t.league,rs=t.result,w=
  $("#app").innerHTML=`<div class="p9tour ${rs.won?"p9won":""}">${p9TourHead(m,t)}
  ${rs.won?`<div class="p9win"><div class="cf">${cf}</div>${P9_TROPHY}<b class="big">優勝！</b><div class="sub">ランク${RN[t.rank]}大会を制した！（${st[0].w}勝${st[0].l}敗）</div></div>`
   :`<div class="p9lose"><div class="plc">${rs.place}<small>位</small></div><div class="sub">大会終了。優勝（1位）できなかったため、報酬はありません。</div></div>`}
+ ${p9Ced(rs.won?CEDRIC_TALK.won:CEDRIC_TALK.lost)}
  ${w?`<section class="p9board2 p9rw"><h3>${w.firstClear?"初回優勝の報酬":"再優勝の報酬"}</h3>${w.firstClear?`<div class="it">🪙 賞金 <b>${w.prize}G</b></div><div class="it">${MMP9ART.ticketIcon(24)} 特訓チケット <b>×${w.tickets}</b></div>`:`<div class="it dim">クリア済みランクのため、賞金・特訓チケットはありません</div>`}<div class="it">⬆ ステータスボーナス <b>${w.bonus.map(b=>`${LAB[b.key]}+${b.amount}`).join("　")}</b></div>${w.bagUnlocked?`<div class="it">🎒 バッグが6枠に拡張された！</div>`:""}</section>`:""}
  ${msg?`<div class="p9msg p9tmsg">${msg}</div>`:""}${p9Standings(lg,st,true)}${p9Matrix(lg)}
  <button class="p9btn" onclick="p8EndChapter()">Chapterを終えてファームへ</button></div>`;try{window.scrollTo(0,0)}catch(e){}}
@@ -2331,7 +2348,7 @@ function p8TourFight(){const m=S.m,t=m&&m.raise.tour;if(bBusy||!t||t.status!="le
 function p9VsScr(){const m=S.m,t=m&&m.raise&&m.raise.tour;if(!t||t.status!="league")return board();const lg=t.league,pm=MMP8.tourNext(m),o=p9Npc(lg,pm.opp);bgm("battle");p9Immersive(true);p9MenuClose();
  const rows=P9_STAT.map(([k,lb,col])=>{const a=m[k]|0,b=o[k]|0,mx=Math.max(a,b,1);return `<div class="vr"><span class="v ${a>b?"hi":""}">${a}</span><span class="p9bar l"><i style="width:${(a/mx*100).toFixed(1)}%;background:${col}"></i></span><span class="lb">${lb}</span><span class="p9bar r"><i style="width:${(b/mx*100).toFixed(1)}%;background:${col}"></i></span><span class="v ${b>a?"hi":""}">${b}</span></div>`}).join("");
  $("#app").innerHTML=`<div class="p9vs"><div class="p9vs-top"><small>公式ランク${RN[t.rank]}大会　CHAPTER ${m.raise.ch}</small><b>第${pm.round+1}試合 / 全${lg.rounds.length}試合</b></div>
- <div class="p9vs-fr"><div class="fr me">${p9Pt(m,"l me")}<div class="np">${p11Esc(m.name)}</div></div><div class="vsx">VS</div><div class="fr">${p9Pt(o,"l")}<div class="np">${p11Esc(o.name)}</div></div></div>
+ ${p9Ced(CEDRIC_TALK.vs)}<div class="p9vs-fr"><div class="fr me">${p9Pt(m,"l me")}<div class="np">${p11Esc(m.name)}</div></div><div class="vsx">VS</div><div class="fr">${p9Pt(o,"l")}<div class="np">${p11Esc(o.name)}</div></div></div>
  <div class="p9vs-tb">${rows}</div>
  <p class="p9prov">【暫定】対戦相手の名前・種族は仮の表示です。能力値は、実際の試合でのランク${RN[t.rank]}相当の相手と同じ値です。</p>
  <button class="p9btn p9go" onclick="p9VsGo(this)">⚔️ 対戦開始</button><button class="p9btn2" onclick="board()">順位表にもどる</button></div>`;try{window.scrollTo(0,0)}catch(e){}}
