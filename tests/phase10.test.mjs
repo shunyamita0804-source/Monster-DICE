@@ -170,11 +170,16 @@ test('M3-2：4原種の正式画像は assets/monsters/<文字ID>.png（透過PN
   for (const f of ['04AF002A', 'B5CDD0D8', 'BD621188', '983DE6AE']) assert.ok(readme.includes(f), `出どころの記録：${f}`);
 });
 
-test('M3-3：旧画像（前肢が余分な旧ノビトンなど）はどこからも参照しない', () => {
+test('M3-3：旧画像（前肢が余分な旧ノビトンなど）はどこからも参照しない。assets/monsters/ 直下は正式画像だけ（旧土台の soramo/・gauru/ フォルダは残すが、ゲームは使わない）', () => {
   const imgDef = HTML.match(/const IMG=[^\n]*/)[0];
   assert.doesNotMatch(imgDef, /data:image/, '画像の埋め込みデータを使わない');
   for (const fp of OLD_IMG_FINGERPRINTS) assert.ok(!HTML.includes(fp), '旧画像のデータが残っていない');
-  assert.deepEqual(FS.readdirSync(path.join(ROOT, 'assets/monsters')).sort(), ['README.md', 'gauru.png', 'jiol.png', 'nobiton.png', 'nobiton_silhouette.png', 'solamo.png']);
+  // assets/monsters/ 直下のファイルは正式画像と README だけ。soramo/・gauru/ のフォルダ（旧PHASE 1 土台の素材台帳 data/assets.json が登録している
+  // プロフィールカード画像）は main にだけある既存ファイルなので残す（ユーザー判断：消さない）。ゲームのコードからは参照しないことを確かめる。
+  const dir = path.join(ROOT, 'assets/monsters'), files = FS.readdirSync(dir).filter((f) => FS.statSync(path.join(dir, f)).isFile()).sort();
+  assert.deepEqual(files, ['README.md', 'gauru.png', 'jiol.png', 'nobiton.png', 'nobiton_silhouette.png', 'solamo.png']);
+  const live = [HTML, ...[...HTML.matchAll(/<script src="\.\/([^"]+)"/g)].map((m) => rd(m[1]))].join('\n');
+  assert.doesNotMatch(live, /assets\/monsters\/(soramo|gauru)\//, 'ゲーム（index.html と読み込むJS）は旧フォルダの画像を使わない');
 });
 
 test('M3-4：市場データ（正式値）：ソラモ・ガウルは500Gで販売、ノビトンは入荷待ち（ロックではない）、ジオルは市場に存在しない／初期所持金300G', () => {
