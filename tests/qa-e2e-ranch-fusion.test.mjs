@@ -344,6 +344,7 @@ test('QA-RF-B4：所持上限：牧場は7体まで（預けられない）／�
     // 8体：市場の購入ボタンは押せない。直接の購入処理も断られる
     await pg.evaluate(() => market(null, 'gauru'));
     await pg.waitForFunction(() => !P10_ANIM && $('#p10info .p10buy').dataset.key === 'gauru');
+    await H.marketDetail(pg);                                                // 詳細を開いてから、見えている購入ボタンの文言を確かめる
     assert.deepEqual(await pg.evaluate(() => { const b = $('#p10info .p10buy'); return [b.disabled, b.innerText.trim()]; }), [true, '手持ちと牧場で8体までです。']);
     const r = await pg.evaluate(() => { const g = S.g, n = [S.m, ...S.box].length; adopt(1, 'X'); return [S.g - g, [S.m, ...S.box].length - n]; });
     assert.deepEqual(r, [0, 0]);

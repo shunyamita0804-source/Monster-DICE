@@ -374,6 +374,7 @@ test('QA-RF-B15：預ける・受け取る・売却・合体・購入を決ま�
         await pg.evaluate((k) => market(null, k), key);
         await pg.waitForFunction((k) => !P10_ANIM && $('#p10info .p10buy').dataset.key === k, key);
         if (all().length >= 8) {                                                // 8体：押せない
+          await H.marketDetail(pg);                                             // 詳細を開いてから、見えている購入ボタンの文言を確かめる
           assert.deepEqual(await pg.evaluate(() => [$('#p10info .p10buy').disabled, $('#p10info .p10buy').innerText.trim()]), [true, '手持ちと牧場で8体までです。']);
           await pg.evaluate(() => lobby()); return 'buy(上限)';
         }
