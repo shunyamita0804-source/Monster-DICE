@@ -481,6 +481,7 @@
     const out = { kind: b.kind, won };
     if (b.kind === 'practice') { if (r.pend && r.pend.stage === 'battle') Object.assign(out, finishTurn(S, m)); }
     else if (BATTLE_KINDS[b.kind]) Object.assign(out, BATTLE_KINDS[b.kind].finish(S, m, b, won, rnd));
+    out.matchWon = won;   // この試合そのものの勝敗（大会の決着時は out.won が大会全体の結果＝1位かどうかに置き換わるため、別に返す）
     return out;
   }
   /** 【暫定】練習試合の相手の強さ＝個体の表示ランク（未クリアはE）。旧仕様の「現在ランク」に相当 */
