@@ -253,7 +253,7 @@ test('QA-G5-B4：実ブラウザ：育成開始の出発ボタンをダブルタ
   await pg.click('.mmtalk', { force: true });   // 2打目（同じ場所＝会話ウィンドウの上）
   await pg.waitForFunction(() => window.__taps.length >= 1);
   const t1 = await pg.evaluate(() => window.__taps[0]);
-  assert.equal(t1.before.full, '育成を始めると、途中で街へ戻ることはできません。'); assert.deepEqual(pick(t1.after), pick(t1.before), '2打目では会話は進まない');
+  assert.equal(t1.before.full, '育成を始めると、途中で街には戻れないから気をつけてね。'); assert.deepEqual(pick(t1.after), pick(t1.before), '2打目では会話は進まない');
   await pg.evaluate(() => window.__dn.thaw());
   assert.equal(await H.chooseTalk(pg, 'cancel'), true, '確認の選択肢まで進む');
   await pg.waitForFunction(() => !document.querySelector('.mmtalk'));

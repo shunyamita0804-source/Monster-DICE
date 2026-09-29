@@ -186,7 +186,7 @@ T('QA-RB1：市場で購入 → ファーム → 出発準備：1回目の押下
   const t1 = await readUntilChoice(pg);
   assert.deepEqual(t1.who, ['フィナ']);
   assert.deepEqual(t1.lines, await pg.evaluate(() => FINA_TALK.raiseFirst.map((x) => x.text)));
-  assert.deepEqual(t1.lines, ['育成を始めると、途中で街へ戻ることはできません。', 'この子の育成を始める？']);
+  assert.deepEqual(t1.lines, ['育成を始めると、途中で街には戻れないから気をつけてね。', 'この子の育成を始める？']);
   assert.deepEqual(t1.choices, [['start', '始める'], ['cancel', 'まだやめておく']], '選択肢：始める／まだやめておく');
   // 「まだやめておく」：会話を終えるだけ。フィナ→ダンの掛け合いは出さず、何も始めない（2度押しの確認も出さない）
   assert.equal(await H.chooseTalk(pg, 'cancel'), true);

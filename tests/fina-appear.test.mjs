@@ -18,7 +18,7 @@ const L = (k) => FT[k].map((x) => [x.expression, x.text]);
 
 test('FA-1：会話の文章と表情は指定どおり（あいさつ・育成開始〔初回／2回目以降〕・育成完了）', () => {
   assert.deepEqual(L('intro'), [['smile', 'はじめまして。私はフィナです！'], ['normal', 'これからあなたのモンスター育成をお手伝いしますね。'], ['guide', 'まずは市場へ行って、一緒に育てるモンスターを迎えてみましょう！']]);
-  assert.deepEqual(L('raiseFirst'), [['serious', '育成を始めると、途中で街へ戻ることはできません。'], ['normal', 'この子の育成を始める？']], '初回は説明のあと確認');
+  assert.deepEqual(L('raiseFirst'), [['serious', '育成を始めると、途中で街には戻れないから気をつけてね。'], ['normal', 'この子の育成を始める？']], '初回は説明のあと確認');
   assert.deepEqual(L('raiseAgain'), [['normal', 'この子の育成を始める？']], '2回目以降は確認だけ');
   const CH = [{ id: 'start', label: '始める' }, { id: 'cancel', label: 'まだやめておく' }];
   for (const k of ['raiseFirst', 'raiseAgain']) { const a = FT[k]; assert.deepEqual(a[a.length - 1].choices, CH, `${k}：最後の行（確認）に選択肢「始める／まだやめておく」`); assert.ok(a.slice(0, -1).every((l) => !l.choices)); }

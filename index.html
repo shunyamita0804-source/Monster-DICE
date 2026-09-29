@@ -2478,7 +2478,7 @@ function p10KarenHint(tip){const t=$("#p10kt"),bar=$("#p10kbar");if(!t||!bar)ret
 function p10KarenTalk(){if(P10_ANIM||$("#p10ov"))return;p10KarenHint(true)}
 const FINA_TALK={
  intro:[{npc:"fina",expression:"smile",text:"はじめまして。私はフィナです！"},{expression:"normal",text:"これからあなたのモンスター育成をお手伝いしますね。"},{expression:"guide",text:"まずは市場へ行って、一緒に育てるモンスターを迎えてみましょう！"}],
- raiseFirst:[{npc:"fina",expression:"serious",text:"育成を始めると、途中で街へ戻ることはできません。"},{expression:"normal",text:"この子の育成を始める？",choices:[{id:"start",label:"始める"},{id:"cancel",label:"まだやめておく"}]}],
+ raiseFirst:[{npc:"fina",expression:"serious",text:"育成を始めると、途中で街には戻れないから気をつけてね。"},{expression:"normal",text:"この子の育成を始める？",choices:[{id:"start",label:"始める"},{id:"cancel",label:"まだやめておく"}]}],
  raiseAgain:[{npc:"fina",expression:"normal",text:"この子の育成を始める？",choices:[{id:"start",label:"始める"},{id:"cancel",label:"まだやめておく"}]}],
  done:[{npc:"fina",expression:"happy",text:"お疲れさまでした！　育成完了です！"},{expression:"smile",text:"ここまで育ててきた時間が、この子の力になっていますね。"},{expression:"guide",text:"育て終わったモンスターは、牧場でいつでも確認できますよ。"}]};
 function finaFlags(){if(!S.npcFlags||typeof S.npcFlags!="object"||Array.isArray(S.npcFlags))S.npcFlags={};return S.npcFlags}
