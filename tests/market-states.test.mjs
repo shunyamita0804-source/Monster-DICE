@@ -21,10 +21,29 @@ test('MS-1：中央のモンスターのタップで詳細を開き、左右は�
   assert.match(HTML, /<div class="p10det" id="p10det" aria-hidden="true"><div class="p10detbg" onclick="p10Detail\(false\)"><\/div><div class="p10detp"><button class="p10detx" onclick="p10Detail\(false\)" aria-label="詳細を閉じる">×<\/button><section class="p10info" id="p10info"/);
 });
 
+test('MS-3：画面下が切れない作り：市場の高さは実際に見えている高さ（dvh）、案内欄は市場の枠の下端から safe-area 分だけ上げる、詳細シートの最大の高さも dvh と safe-area で計算', () => {
+  assert.match(HTML, /\.p10mk\{box-sizing:border-box;margin-bottom:-16px;min-height:100vh;min-height:100dvh;overflow:clip\}/);
+  assert.match(HTML, /\.p10kbar\{position:absolute;left:10px;right:10px;bottom:calc\(10px \+ env\(safe-area-inset-bottom,0px\)\);/, '案内欄は市場の枠（高さ＝見えている画面）の下端から safe-area 分だけ上');
+  assert.match(HTML, /max-height:calc\(100dvh - 150px - env\(safe-area-inset-bottom,0px\)\);/);
+});
+
+test('MS-3b：市場の枠の中身はスクロールしない（overflow:clip＋切り替えのたびに0へ）。閉じた詳細シートは見えずフォーカスも入らない', () => {
+  assert.match(HTML, /min-height:100dvh;overflow:clip\}/);
+  assert.match(HTML, /if\(mk&&\(mk\.scrollTop\|\|mk\.scrollLeft\)\)\{mk\.scrollTop=0;mk\.scrollLeft=0\}/, '古いブラウザでも切り替えのたびに戻す');
+  assert.match(HTML, /\.p10detp\{[^}]*transform:translateY\(105%\);transition:transform \.22s ease-out,visibility 0s \.22s;visibility:hidden\}/);
+});
+
+test('MS-4：カレンのセリフに「〜わよ」「〜だわ」を使わない（口調は「〜よ／〜ね／〜の／〜てね」が基本）', () => {
+  const i = HTML.indexOf('const KAREN_TALK={'), talk = HTML.slice(i, HTML.indexOf('\nfunction p10KarenTalk(', i));
+  const pick = HTML.split('\n').find((l) => l.startsWith('const KAREN_PICK='));
+  for (const src of [talk, pick]) assert.doesNotMatch(src, /わよ|だわ/);
+});
+
 test('MS-2：会話中（.p10mk.talk）は操作UIを隠す。カレンのボタンは初回のあいさつの後だけ出す', () => {
   assert.match(HTML, /\.p10mk\.talk \.p10arw,\.p10mk\.talk \.p10dots,\.p10mk\.talk \.p10plate,\.p10mk\.talk \.p10det,\.p10mk\.talk \.p10karen,\.p10mk\.talk \.p10kbar,\.p10mk\.talk \.p10msg\{visibility:hidden\}/);
   assert.match(HTML, /function karenSay\(lines\)\{if\(!window\.MMNPC\|\|!lines\)return Promise\.resolve\(\);const mk=\$\("\.p10mk"\);if\(mk\)mk\.classList\.add\("talk"\);return MMNPC\.talk\(lines\)\.then\(\(\)=>\{if\(mk\)mk\.classList\.remove\("talk"\)\}\)\}/);
-  assert.match(HTML, /<div class="p10kbar" id="p10kbar" \$\{finaFlags\(\)\.karenIntro\?"":"hidden"\}><button class="p10karen" onclick="p10KarenTalk\(\)"/, '案内欄（顔のボタン＋一言）は初回のあいさつの後だけ');
+  assert.match(HTML, /<div class="p10kbar\$\{finaFlags\(\)\.karenIntro\?"":" wait"\}" id="p10kbar"><button class="p10karen" onclick="p10KarenTalk\(\)"/, '案内欄（顔のボタン＋一言）は初回のあいさつの後だけ');
+  assert.match(HTML, /\.p10mk\.det\.talk \.p10detp\{visibility:hidden\}/, '詳細を開いたままでも会話中は隠す');
 });
 
 // ---------------- 実ブラウザ ----------------
@@ -98,6 +117,20 @@ test('MS-B5：モンスターは以前より上（画面の高さの約8%）。�
   assert.deepEqual(p.errors, []);
 });
 
+test('MS-B7：矢印・左右のタップ・キー操作を素早く混ぜても、市場の枠の中身がずれず、案内欄は画面下・左の矢印は押せる（以前は中身が386pxずれて案内欄が矢印に重なることがあった）', { skip: SKIP }, async () => {
+  const p = await L.open(); const pg = p.page;
+  await H.newGame(pg, 'アルト'); await pg.evaluate(() => market()); await pg.waitForFunction(() => !P10_ANIM); await pg.waitForTimeout(300);
+  const pv = await pg.evaluate(() => { const b = document.querySelector('.p10arw.prev').getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; });
+  for (let i = 0; i < 6; i++) {
+    await pg.click('.p10arw.next'); await pg.mouse.click(pv.x, pv.y); await pg.keyboard.press('ArrowRight'); await pg.keyboard.press('Tab');
+    await pg.waitForFunction(() => !P10_ANIM);
+    const r = await pg.evaluate(([x, y]) => { const mk = document.querySelector('.p10mk'), kb = document.getElementById('p10kbar').getBoundingClientRect(), e = document.elementFromPoint(x, y);
+      return { sc: mk.scrollTop, kbBottom: kb.bottom, ih: innerHeight, hitPrev: !!(e && e.closest('.p10arw.prev')) }; }, [pv.x, pv.y]);
+    assert.equal(r.sc, 0, `${i}回目：枠の中身がずれていない`); assert.ok(r.kbBottom <= r.ih && r.kbBottom > r.ih - 80, `${i}回目：案内欄は画面下`); assert.ok(r.hitPrev, `${i}回目：左の矢印が押せる`);
+  }
+  assert.deepEqual(p.errors, []);
+});
+
 for (const [k, size] of Object.entries(H.SIZES)) {
   test(`MS-B6（${size.join('×')}）：縦スクロールなし・横はみ出しなし。詳細を開くと購入ボタンまで画面内。上部のプレイヤー情報は折り返さない`, { skip: SKIP }, async () => {
     const p = await L.open({ size }); const pg = p.page;
@@ -106,10 +139,20 @@ for (const [k, size] of Object.entries(H.SIZES)) {
       who: [...document.querySelectorAll('.p10who small, .p10who b, .p10gold')].map((e) => { const r = e.getBoundingClientRect(), lh = parseFloat(getComputedStyle(e).lineHeight) || parseFloat(getComputedStyle(e).fontSize) * 1.4; return r.height <= lh * 1.25 + 1; }) }));
     assert.ok(pg0.sh <= pg0.ih + 1, `縦スクロールなし ${pg0.sh} > ${pg0.ih}`); assert.ok(pg0.sw <= pg0.iw + 1);
     assert.ok(pg0.who.every(Boolean), 'プレイヤー名・ランク・所持Gがそれぞれ1行');
+    const kb = await pg.evaluate(() => { const r = document.getElementById('p10kbar').getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom, ih: innerHeight, iw: innerWidth, hidden: document.getElementById('p10kbar').classList.contains('wait') }; });
+    assert.equal(kb.hidden, false);
+    assert.ok(kb.t >= 0 && kb.l >= 0 && kb.r <= kb.iw && kb.b <= kb.ih - 4, `カレンの案内欄の枠全体が画面内（下端 ${kb.b} / ${kb.ih}）`);
     await pg.click('#p10car .p10sl.on .p10plate'); await pg.waitForFunction(() => document.querySelector('.p10mk').classList.contains('det')); await pg.waitForTimeout(350);
     const r = await pg.evaluate(() => { const b = document.querySelector('#p10info .p10buy').getBoundingClientRect(), bars = [...document.querySelectorAll('#p10info .p10bar')].map((x) => x.getBoundingClientRect());
       return { top: b.top, bottom: b.bottom, ih: innerHeight, sy: scrollY, bars: bars.every((x) => x.top >= 0 && x.bottom <= innerHeight) }; });
     assert.ok(r.top >= 0 && r.bottom <= r.ih, `購入ボタンが画面内（${r.top}〜${r.bottom} / ${r.ih}）`); assert.equal(r.sy, 0); assert.ok(r.bars, '能力7項目も画面内');
+    // 詳細シートの一番下（購入ボタン下の説明文・シートの枠）まで、スクロールなしで完全に画面内
+    const sh = await pg.evaluate(() => { const i = document.getElementById('p10info'), pp = document.querySelector('.p10detp'), notes = [...i.querySelectorAll('.p10note')].map((n) => n.getBoundingClientRect().bottom);
+      return { panel: pp.getBoundingClientRect().bottom, info: i.getBoundingClientRect().bottom, top: i.getBoundingClientRect().top, notes, clipped: i.scrollHeight > i.clientHeight + 1, ih: innerHeight }; });
+    assert.ok(sh.notes.length >= 1, '新規ゲーム（300G）なので購入ボタンの下に補填の説明がある＝一番長い状態で確かめる');
+    assert.ok(sh.notes.every((b) => b <= sh.ih), '購入ボタン下の説明文まで画面内');
+    assert.ok(sh.info <= sh.ih && sh.panel <= sh.ih + 1 && sh.top >= 0, `詳細シートの最下端まで画面内（${sh.info} / ${sh.ih}）`);
+    assert.equal(sh.clipped, false, '詳細の中身がシートの中でスクロールしていない（全部見えている）');
     assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
   });
 }

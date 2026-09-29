@@ -40,7 +40,7 @@ test('KR-3：セリフは KAREN_TALK にまとめ、使う表情はすべて登�
   const T = karenTalkData(), M = loadNpc();
   assert.deepEqual(Object.keys(T), ['intro', 'greet', 'ask', 'bought', 'nomoney', 'waiting']);
   for (const [k, lines] of Object.entries(T)) { assert.equal(lines[0].npc, 'karen', k); for (const l of lines) assert.ok(M.expressionsOf('karen', 'closeup').includes(l.expression), `${k}：${l.expression}`); }
-  assert.deepEqual(T.intro.map((l) => [l.expression, l.text]), [['smile', 'いらっしゃい。気になる子を見ていってね。'], ['guide', '気になる子をタップすると、詳しく見られるわよ。']], '入店のあいさつは短く2行');
+  assert.deepEqual(T.intro.map((l) => [l.expression, l.text]), [['smile', 'いらっしゃい。気になる子を見ていってね。'], ['guide', '気になる子をタップすると、詳しく見られるよ。']], '入店のあいさつは短く2行');
   assert.deepEqual([T.greet, T.ask, T.bought, T.nomoney, T.waiting].map((x) => x[0].expression), ['smile', 'normal', 'happy', 'troubled', 'guide']);
 });
 

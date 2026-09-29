@@ -90,7 +90,7 @@ const car = (pg) => pg.evaluate(() => {
     mk: P10_MK, key: MMP10M.MARKET_CATALOG[P10_MK].key, anim: P10_ANIM, on: on[0] ? on[0].dataset.key : null, onCount: on.length,
     infoName: nm ? nm.textContent : null, buyKey: bb ? (bb.dataset.key || null) : null, buyDis: bb ? bb.disabled : null, buyTxt: bb ? bb.textContent.trim() : null,
     dot: [...document.querySelectorAll('.p10dot')].findIndex((d) => d.classList.contains('on')), dotsOn: document.querySelectorAll('.p10dot.on').length,
-    info: (document.querySelector('#p10info') || {}).innerText || '', ov: !!document.getElementById('p10ov'),
+    info: (() => { const i = document.querySelector('#p10info'), mk = document.querySelector('.p10mk'); if (!i || !mk) return ''; const was = mk.classList.contains('det'); if (!was) mk.classList.add('det'); const x = i.innerText; if (!was) mk.classList.remove('det'); return x; })(),   /* 詳細シートは閉じていると見えないため、読むあいだだけ開いた扱い */ ov: !!document.getElementById('p10ov'),
   };
 });
 /** 中央・情報欄・購入ボタン・ドットがすべて同じ候補を指していること */
