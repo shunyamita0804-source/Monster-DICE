@@ -39,6 +39,13 @@ test('TW-2：施設コマンドは 市場・牧場・研究所・闘技場・フ
   assert.match(lobby, /TOWN_CMDS\(m\)\.map/); assert.doesNotMatch(lobby, /mupin|博物館|style="left:/, '旧マップのタップ領域・博物館ピンは使わない');
 });
 
+test('TW-6：コマンドは施設名だけ（補足は title に残す）。アイコンは .ti に独立し、画像ファイルのパスを書けば画像で表示できる', () => {
+  const f = new Function(`${line('const townIcon=')}\nreturn townIcon;`)();
+  assert.equal(f('🛒'), '🛒'); assert.equal(f('assets/town/icons/market.png'), '<img src="assets/town/icons/market.png" alt="">');
+  const lobby = HTML.slice(HTML.indexOf('function lobby('), HTML.indexOf('\n}', HTML.indexOf('function lobby(')));
+  assert.match(lobby, /<span class="ti">\$\{townIcon\(c\[2\]\)\}<\/span><b>\$\{c\[0\]\}<\/b><\/button>/); assert.match(lobby, /title="\$\{c\[1\]\}"/);
+});
+
 test('TW-3：闘技場は開放条件を新設せず、押しても案内を出すだけ（画面遷移・セーブをしない）', () => {
   const fn = line('function townArena(');
   assert.equal(fn, 'function townArena(){const e=$("#msg");if(e)e.textContent="闘技場は、まだ利用できません。"}');
@@ -133,7 +140,7 @@ for (const [k, size] of Object.entries(H.SIZES)) {
       const map = document.querySelector('.map.town').getBoundingClientRect();
       return { sw: document.documentElement.scrollWidth, iw: innerWidth, map: [map.left, map.top, map.right, map.bottom],
         b: [...document.querySelectorAll('.map.town .tcmd')].map((b) => { const x = b.getBoundingClientRect(); const hit = document.elementFromPoint(x.left + x.width / 2, x.top + x.height / 2);
-          return { l: x.left, t: x.top, r: x.right, b: x.bottom, w: x.width, h: x.height, hit: b.contains(hit) }; }) };
+          return { l: x.left, t: x.top, r: x.right, b: x.bottom, w: x.width, h: x.height, hit: b.contains(hit), clip: b.scrollWidth > b.clientWidth }; }) };
     });
     assert.ok(r.sw <= r.iw + 1, `横はみ出し ${r.sw} > ${r.iw}`);
     for (const b of r.b) {
@@ -141,6 +148,8 @@ for (const [k, size] of Object.entries(H.SIZES)) {
       assert.ok(b.r <= r.iw && b.b <= size[1], '最初の画面の中');
       assert.ok(b.h >= 44 && b.w >= 100, `押しやすい大きさ（${b.w}×${b.h}）`);
       assert.ok(b.hit, '他の要素に隠れていない');
+      assert.ok(!b.clip, '施設名が切れていない');
+      assert.ok(b.w <= 120, `背景を隠しすぎない幅（${b.w}px）`);
     }
     assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
   });

@@ -1263,13 +1263,13 @@ h1,h2,h3,.dh,.dtitle b,.p9th .p9ttl b,.p9th .p9ttl small,.p9plq .nm,.p9win .big,
 .p11go{display:block;width:100%;margin-top:16px;min-height:52px;border-radius:14px;font-size:1.05rem;font-weight:900;color:#3a2410;background:linear-gradient(#ffe7a0,#e0a526);border:2px solid #7a4d0c;box-shadow:0 4px 0 #7a4d0c}
 /* 街：背景＋施設コマンド（深い青・白文字・金の縁）。背景は --town-bg、位置は --town-pos で差し替え可能 */
 .map.town{aspect-ratio:3/4;background:#6fb7e8 var(--town-bg) var(--town-pos,center top)/cover no-repeat}
-.map.town .tcmds{position:absolute;right:8px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:8px;width:min(38%,150px);z-index:2}
-button.hz.tcmd{position:relative;left:auto;top:auto;width:100%;height:auto;min-height:50px;margin:0;display:flex;align-items:center;gap:8px;padding:6px 10px;background:linear-gradient(#244a9a,#0f2258);color:#fff;border:2px solid #e8c86a;border-radius:12px;box-shadow:0 0 0 1px rgba(0,0,0,.4),0 3px 0 rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.25);font-weight:800;font-size:1rem;line-height:1.15;text-shadow:0 1px 2px rgba(0,0,0,.6);text-align:left;animation:none;cursor:pointer}
-button.hz.tcmd .ti{flex:none;font-size:1.25rem;width:1.5em;text-align:center}
-button.hz.tcmd b{display:block}
-button.hz.tcmd small{display:block;font-size:.62rem;font-weight:700;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-button.hz.tcmd:active{background:linear-gradient(#2e5cbc,#15307a)}
-button.hz.tcmd.dis,button.hz.tcmd.lock{background:linear-gradient(#3d4a68,#252d43);color:#c9d0de;border-color:#a8915a;opacity:1}
+.map.town .tcmds{position:absolute;right:4px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:5px;width:clamp(100px,29%,116px);z-index:2}
+button.hz.tcmd{position:relative;left:auto;top:auto;width:100%;height:auto;min-height:46px;margin:0;display:flex;align-items:center;gap:4px;padding:5px 6px 5px 5px;background:linear-gradient(rgba(36,74,154,.84),rgba(12,28,74,.88));color:#fff;border:2px solid #e8c86a;border-radius:11px;box-shadow:0 0 0 1px rgba(0,0,0,.45),0 3px 0 rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.22),inset 0 0 0 1px rgba(255,226,150,.18);font-weight:800;font-size:.94rem;line-height:1.15;letter-spacing:0;text-shadow:0 1px 2px rgba(0,0,0,.75);text-align:left;white-space:nowrap;animation:none;cursor:pointer}
+button.hz.tcmd .ti{flex:none;display:flex;align-items:center;justify-content:center;width:var(--tcmd-icon,1.5em);height:var(--tcmd-icon,1.5em);font-size:1.05rem;line-height:1}
+button.hz.tcmd .ti img{display:block;width:100%;height:100%;object-fit:contain}
+button.hz.tcmd b{display:block;min-width:0}
+button.hz.tcmd:active{background:linear-gradient(rgba(46,92,188,.92),rgba(21,48,122,.94))}
+button.hz.tcmd.dis,button.hz.tcmd.lock{background:linear-gradient(rgba(58,72,104,.86),rgba(30,38,60,.9));color:#e2e7f0;border-color:#c2a560;opacity:1}
 button.hz.tcmd.dis{cursor:default}
 /* ===== 共通NPC会話（MMNPC・js/npc/npc.js）：JRPG風の会話ウィンドウ。正式な枠デザインを後で差し替えられるよう、見た目はこのブロックだけにまとめる ===== */
 .mmtalk{position:fixed;inset:0;z-index:900;display:flex;align-items:flex-end;justify-content:center;background:linear-gradient(rgba(12,7,3,0) 35%,rgba(12,7,3,.5));cursor:pointer;-webkit-tap-highlight-color:transparent;animation:mmtalkIn .18s ease-out}
@@ -1552,10 +1552,12 @@ function wd(j){if(p8Blocked())return;if(MMP7.trainRunOf(S.m))return farm("修行
 const TOWN_BG="assets/town/town_main.jpg";
 // 街の施設コマンド［表示名, 補足, アイコン, 押したとき, 状態］。状態：ok＝行ける／dis＝今は行けない（ボタンを無効）／lock＝未開放（押すと案内だけ）
 const TOWN_CMDS=m=>[["市場","モンスター市場","🛒","market()","ok"],["牧場","ぽかぽか牧場","🐄","farm()","ok"],["研究所","モンスター研究所","🔬","museum()","ok"],["闘技場","未開放","🔒","townArena()","lock"],["ファーム","育成","🌱","hall()",m?"ok":"dis"]];
+// 施設アイコン（今は仮の絵文字）。画像ファイルのパス（.png／.webp／.jpg／.svg）を TOWN_CMDS の3番目に書けば、そのまま画像で表示する
+const townIcon=v=>/\.(png|webp|jpe?g|svg)$/i.test(v)?`<img src="${v}" alt="">`:v;
 function townArena(){const e=$("#msg");if(e)e.textContent="闘技場は、まだ利用できません。"}
 function lobby(msg,open){if(p8Blocked())return;if(S.playerNamePending)return p11NameScr(msg); // Phase 11：新規ゲームは最初にプレイヤー名を決める
  const h1=$("h1");if(h1)h1.style.display="";bgm("town");const m=S.m;
- $("#app").innerHTML=`<div class="topbar"><span>🏆 大会優勝 ${S.wins||0}回</span><span>🪙 ${S.g}G</span></div><div class="map town" style="--town-bg:url(${TOWN_BG})"><nav class="tcmds" aria-label="街の施設">${TOWN_CMDS(m).map(c=>`<button class="hz tcmd ${c[4]=="ok"?"":c[4]}" ${c[4]=="dis"?"disabled":""} onclick="${c[3]}" aria-label="${c[0]}${c[4]=="lock"?"（未開放）":""}"><span class="ti">${c[2]}</span><span><b>${c[0]}</b><small>${c[1]}</small></span></button>`).join("")}</nav>${m?`<div class="wk" style="top:84%;--d:14s"><div class="mon">${msv(m)}</div></div>`:""}</div>
+ $("#app").innerHTML=`<div class="topbar"><span>🏆 大会優勝 ${S.wins||0}回</span><span>🪙 ${S.g}G</span></div><div class="map town" style="--town-bg:url(${TOWN_BG})"><nav class="tcmds" aria-label="街の施設">${TOWN_CMDS(m).map(c=>`<button class="hz tcmd ${c[4]=="ok"?"":c[4]}" ${c[4]=="dis"?"disabled":""} onclick="${c[3]}" aria-label="${c[0]}${c[4]=="lock"?"（未開放）":""}" title="${c[1]}"><span class="ti">${townIcon(c[2])}</span><b>${c[0]}</b></button>`).join("")}</nav>${m?`<div class="wk" style="top:84%;--d:14s"><div class="mon">${msv(m)}</div></div>`:""}</div>
  ${bprof()}<div class="dlg"><div class="mon dm">${svg(0,0)}</div><div class="dbub" id="msg">${msg||(m?"行きたい場所をタップしよう！":"モンスターがいません。まずは市場で選ぼう。")}</div></div>${m?mcard(m):""}
  <button class="svb" onclick="savescr()">▶ セーブ・ロード</button>`;try{window.scrollTo(0,0)}catch(e){}
 }
