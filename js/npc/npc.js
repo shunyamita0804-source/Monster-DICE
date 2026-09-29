@@ -219,5 +219,10 @@
   register('dan', { name: 'ダン', role: 'ファーム担当', board: false, defaultView: 'closeup', defaultExpr: 'normal',
     views: { closeup: Object.fromEntries(DE.map((e) => [e, `${DAN}${e}.png`])) } });
 
+  // ニック：牧場の管理者（アップ画像のみで運用）。正式素材（描き込まれた市松模様の背景を透明にした透過PNG）を assets/npc/nick/closeup/ に置いている（README.md に元画像との対応）
+  const NICK = 'assets/npc/nick/closeup/', NE = ['normal', 'smile', 'guide', 'troubled', 'happy', 'serious'];
+  register('nick', { name: 'ニック', role: '牧場の管理者', board: false, defaultView: 'closeup', defaultExpr: 'normal',
+    views: { closeup: Object.fromEntries(NE.map((e) => [e, `${NICK}${e}.png`])) } });
+
   root.MMNPC = Object.freeze({ TYPE_MS, MIN_TAP_MS, register, get, list, expressionsOf, animationsOf, imageOf, animOf, preload, splitChars, resolveLines, createTalk, talk, close, state, animState, fromLegacy });
 })(typeof window !== 'undefined' ? window : globalThis);
