@@ -529,7 +529,7 @@ T('QA-RL7：Chapter 4 で B ランクまでのまま大会を辞退 → 育成�
   await pg.click('button.back');
   await pg.waitForSelector('.map');
   assert.match(await textOf(pg, '.bprof'), /育成完了 1回/);
-  assert.deepEqual(await pg.evaluate(() => [...document.querySelectorAll('.hz')].map((b) => b.disabled)), [false, false, false]);
+  assert.deepEqual(await pg.evaluate(() => [...document.querySelectorAll('.hz')].map((b) => b.disabled)), [false, false, false, false, false], '街の5コマンド（市場・牧場・研究所・闘技場の案内・ファーム）');
   await pg.evaluate(() => market());   // 育成完了のあとは市場へ行ける
   await pg.waitForSelector('#p10car');
   await pg.evaluate(() => lobby());
