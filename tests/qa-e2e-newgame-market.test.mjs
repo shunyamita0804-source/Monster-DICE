@@ -208,7 +208,7 @@ T('QA-NG3：名前は Enter キーでも決定できる（決定は1回だけ・
   noErrors(p);
 });
 
-T('QA-NG4：Enter キーで名前を決定しても、フィナの1行目の文字送りが飛ばされない', { todo: '既知の不具合：名前入力欄の Enter が、開いたばかりの会話の1回目のタップとしても処理され、1行目がいきなり全文表示になる（会話を開いた直後の入力を無視する修正で直る予定）' }, async () => {
+T('QA-NG4：Enter キーで名前を決定しても、フィナの1行目の文字送りが飛ばされない', async () => {
   const p = await openPage({ size: H.SIZES.base }); const pg = p.page;
   await startFromTitle(pg, '#p11nm');
   // 同じキー入力の中で会話が開き、その入力が会話にも届くかを、時間に左右されないよう同期で確かめる
@@ -485,7 +485,7 @@ T('QA-MK9：切り替え中の実際のクリック・キー入力は無視さ�
   noErrors(p);
 });
 
-T('QA-MK10：マウスのドラッグを市場の外で離した後でも、「前へ」の矢印は前へ進む', { todo: '既知の不具合：市場の外でボタンを離すとスワイプの開始位置が残り、次の矢印クリックがスワイプとして扱われて逆へ進む（PC のマウス操作のみ）' }, async () => {
+T('QA-MK10：マウスのドラッグを市場の外で離した後でも、「前へ」の矢印は前へ進む', async () => {
   const p = await openMarket(); const pg = p.page;
   const r = await pg.evaluate(() => { const c = document.getElementById('p10car').getBoundingClientRect(), a = document.querySelector('.p10arw.prev').getBoundingClientRect();
     return { cx: c.left + c.width * 0.8, cy: c.top + c.height / 2, below: c.bottom + 60, ax: a.left + a.width / 2, ay: a.top + a.height / 2 }; });

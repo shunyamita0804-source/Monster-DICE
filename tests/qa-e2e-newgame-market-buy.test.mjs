@@ -62,6 +62,7 @@ async function openSheet(pg) {
   await pg.waitForTimeout(500);
   await pg.click('#p10info .p10buy');
   await pg.waitForSelector('#p10ov');
+  await pg.waitForTimeout(550);   // 購入シートは開いてから0.35秒間、押しても反応しない（二度押しの誤操作防止）
   return pg.evaluate(() => ({ title: document.querySelector('.p10sht').textContent, name: document.getElementById('mnm').value, max: document.getElementById('mnm').getAttribute('maxlength'),
     ok: document.querySelector('.p10ok').textContent, onclick: document.querySelector('.p10ok').getAttribute('onclick'), img: document.querySelector('.p10shm img').getAttribute('src'),
     notes: [...document.querySelectorAll('#p10ov .p10note')].map((x) => x.textContent) }));
@@ -380,7 +381,7 @@ T('QA-BY12：4つの画面サイズで、市場に横スクロールが出ず、
   }
 });
 
-T('QA-BY13：購入確認で入れたモンスター名に HTML が含まれていても、画面では文字として表示する', { todo: '既知の不具合：モンスター名がエスケープされずに innerHTML へ入る（例：名前「<!--」で街のセーブ・ロードボタンなどが消える）。表示時のエスケープで直る予定' }, async () => {
+T('QA-BY13：購入確認で入れたモンスター名に HTML が含まれていても、画面では文字として表示する', async () => {
   const p = await openMarket({ g: 300 }); const pg = p.page;
   await openSheet(pg);
   await confirmBuy(pg, '<b>x</b>');

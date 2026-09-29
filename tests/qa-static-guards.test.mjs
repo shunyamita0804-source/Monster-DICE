@@ -267,10 +267,10 @@ test('QA-N2：読み込む13本のJS（コメントを除く）に旧名称が�
   assert.match(b, /return 'モンスターマスターのバトルチェックポイントではありません';/);
 });
 
-test('QA-N3：「ハヤテ」はガウルの旧名の互換処理・正式データの旧名記録・大会の暫定NPC名の3か所だけ', () => {
-  const htmlLines = NODATA.split('\n').filter((l) => l.includes('ハヤテ'));
-  assert.ok(htmlLines.length >= 1, 'index.html に旧名の互換処理がある');
-  for (const l of htmlLines) { assert.match(l, /\.name\s*=[^=]/, '互換処理（名前の書き換え）の行だけ'); assert.match(l, /ガウル|MMP10M/); }
+test('QA-N3：「ハヤテ」はガウルの旧名の互換処理（legacyFix）・正式データの旧名記録・大会の暫定NPC名の3か所だけ', () => {
+  const htmlLines = NODATA.split('\n').filter((l) => l.includes('ハヤテ') && !/^\s*\/\//.test(l));
+  assert.equal(htmlLines.length, 1, 'index.html の旧名はセーブ互換の legacyFix の1行だけ');
+  assert.match(htmlLines[0], /^function legacyFix\(d\)\{/); assert.match(htmlLines[0], /if\(x\.sp!=1\)return;if\(x\.name=="ハヤテ"\)x\.name="ガウル"/, 'ガウル（sp 1）だけを改名する');
   for (const f of SCRIPTS) {
     const ls = rd(f).split('\n').filter((l) => l.includes('ハヤテ'));
     if (f === 'js/phase10/monsters.js') { assert.equal(ls.length, 1); assert.match(ls[0], /key: 'gauru', name: 'ガウル'.*formerNames: fz\(\['ハヤテ'\]\)/); }
@@ -279,24 +279,22 @@ test('QA-N3：「ハヤテ」はガウルの旧名の互換処理・正式デー
   }
 });
 
-test('QA-N4：互換処理：ガウルの「ハヤテ」は「ガウル」に直し、ほかの名前・空きは変えない。正式データの旧名はガウルだけ', () => {
-  const { M } = load();
-  const src = NODATA.split('\n').find((l) => l.includes('ハヤテ'));
-  const run = new Function('S', 'MMP10M', 'SP', src);
+const legacyFixFn = () => new Function(NODATA.split('\n').find((l) => l.startsWith('function legacyFix(d){')) + ';return legacyFix;')();
+
+test('QA-N4：互換処理 legacyFix：ガウルの「ハヤテ」は「ガウル」に直し、ほかの名前・空きは変えない。正式データの旧名はガウルだけ', () => {
+  const { M } = load(); const fix = legacyFixFn();
   const S = { m: { sp: 1, name: 'ハヤテ' }, box: [{ sp: 1, name: 'ハヤテ２' }, { sp: 0, name: 'ソラモ' }, null, { sp: 1, name: 'ガウル' }] };
-  run(S, M, []);
+  fix(S);
   assert.equal(S.m.name, 'ガウル');
   assert.deepEqual(S.box.map((x) => x && x.name), ['ハヤテ２', 'ソラモ', null, 'ガウル']);
-  run({ m: null }, M, []);   // 手持ち無し・box 無しでも落ちない
+  fix({ m: null });   // 手持ち無し・box 無しでも落ちない
   assert.deepEqual([M.byId(1).name, M.byId(1).key, [...M.byId(1).formerNames]], ['ガウル', 'gauru', ['ハヤテ']]);
   for (const sp of [0, 2, 3]) assert.deepEqual([...M.byId(sp).formerNames], [], `sp ${sp}`);
 });
 
-test('QA-N4b：（既知の不具合）ソラモに「ハヤテ」と名付けても、起動時にガウルへ改名しない', { todo: '互換処理が種族を見ずに名前だけで改名している（修正予定 d）' }, () => {
-  const { M } = load();
-  const src = NODATA.split('\n').find((l) => l.includes('ハヤテ'));
+test('QA-N4b：ソラモに「ハヤテ」と名付けても、起動時にガウルへ改名しない（以前は種族を見ずに改名していた）', () => {
   const S = { m: { sp: 0, name: 'ハヤテ' }, box: [] };
-  new Function('S', 'MMP10M', 'SP', src)(S, M, []);
+  legacyFixFn()(S);
   assert.equal(S.m.name, 'ハヤテ');
 });
 

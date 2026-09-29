@@ -118,7 +118,7 @@ test('QA-RF-3：uid：新しい個体の uid は一意の文字列。欠けた�
 // 実ブラウザ：牧場・売却（index.html 全体）
 // ---------------------------------------------------------
 let L = null;
-before(async () => { if (H.available()) L = await H.launch(); });
+before(async () => { if (!H.skipReason()) L = await H.launch(); });
 after(async () => { if (L) await L.close(); });
 
 /** 名前登録済み・モンスター0体のセーブ（新規ゲームの名前登録直後と同じ形） */

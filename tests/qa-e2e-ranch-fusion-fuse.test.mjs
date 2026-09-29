@@ -33,7 +33,7 @@ const owned = (S) => [S.m, ...S.box].filter(Boolean);
 // 実ブラウザ：合体（index.html 全体）
 // ---------------------------------------------------------
 let L = null;
-before(async () => { if (H.available()) L = await H.launch(); });
+before(async () => { if (!H.skipReason()) L = await H.launch(); });
 after(async () => { if (L) await L.close(); });
 
 /** 名前登録済み・モンスター0体のセーブ（新規ゲームの名前登録直後と同じ形） */
@@ -417,8 +417,6 @@ test('QA-RF-B15：預ける・受け取る・売却・合体・購入を決ま�
 
 test('QA-RF-B16：育成放棄のあと、放棄前の合体の選択が残らず、残った2体をそのまま選んで合体できる', {
   skip: H.skipReason(),
-  todo: '既知の不具合：育成放棄（p8AbandonGo）が合体の選択 sel（番号）を空にしないため、放棄後の合体タブに古い選択が残り、' +
-    '選び直しても合体ボタンが出ない（預ける・受け取る・購入・売却・再読込でしか直らない）',
 }, async () => {
   const p = await town(); const pg = p.page;
   try {

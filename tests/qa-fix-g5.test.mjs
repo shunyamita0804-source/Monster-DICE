@@ -146,7 +146,7 @@ test('QA-G5-4：画面の会話：静止画の無いNPCのアニメーション�
 // 実ブラウザ
 // ---------------------------------------------------------
 let L = null;
-before(async () => { if (H.available()) L = await H.launch(); });
+before(async () => { if (!H.skipReason()) L = await H.launch(); });
 after(async () => { if (L) await L.close(); });
 /** ページを開く。テストが終わったらすぐ閉じる（開いたままのページで、ほかのテストのCPUを使わない） */
 async function open(t, opt) { const p = await L.open(opt); t.after(() => p.ctx.close().catch(() => {})); return p; }

@@ -130,7 +130,7 @@ test('QA-G4-4：購入（実物の adopt()）：街のメッセージの名前�
 // 実ブラウザ（index.html 全体）
 // ---------------------------------------------------------
 let L = null;
-before(async () => { if (H.available()) L = await H.launch(); });
+before(async () => { if (!H.skipReason()) L = await H.launch(); });
 after(async () => { if (L) await L.close(); });
 /** ページを開き、alert などのダイアログを記録する（スクリプトが動いたかの確認） */
 async function open(opt) { const p = await L.open(opt); p.dialogs = []; p.page.on('dialog', (d) => { p.dialogs.push(d.message()); d.dismiss().catch(() => {}); }); return p; }

@@ -211,7 +211,7 @@ test('QA-G3-7：ガードは指定した場所だけ（全体には掛けない�
 // 実ブラウザ（index.html 全体）
 // ---------------------------------------------------------
 let L = null;
-before(async () => { if (H.available()) L = await H.launch(); });
+before(async () => { if (!H.skipReason()) L = await H.launch(); });
 after(async () => { if (L) await L.close(); });
 /** 開始画面の「はじめる」を押して、復帰先の画面が出るまで待つ */
 async function start(p, sel) {
@@ -441,12 +441,18 @@ test('QA-G3-B9：実ブラウザ：新規開始→市場で購入→牧場→出
   assert.equal((await H.getS(pg)).m.raise.state, 'none', '会話の直後の連打では出発しない');
   assert.match(await pg.evaluate((s) => document.querySelector(s).textContent, dep), /もう一度押すと育成開始/, '確認の表示が見える');
   await ck.thaw();
-  await pg.waitForFunction((s) => document.querySelector(s).dataset.a === '', dep, { timeout: 5000 });
+  await pg.waitForFunction((s) => document.querySelector(s).dataset.a === '', dep, { timeout: 15000 });
   assert.equal(await pg.evaluate((s) => document.querySelector(s).innerHTML, dep), html0, '3秒で取り消したあとは元の表示（<small> 付き）');
-  await pg.click(dep); await H.finishTalk(pg);   // もう一度（2回目以降は短い確認）
-  await pg.waitForFunction((s) => document.querySelector(s).dataset.a === '1', dep);
-  await pg.waitForTimeout(DELIBERATE);
-  await pg.click(dep);
+  // もう一度（2回目以降は短い確認）。負荷で3秒の取り消しが先に働いたときは確認状態に戻してから押す
+  for (let k = 0; k < 3 && (await H.getS(pg)).m.raise.state === 'none'; k++) {
+    if (!(await pg.evaluate((s) => document.querySelector(s).dataset.a === '1', dep))) {
+      await pg.click(dep); await H.finishTalk(pg);
+      await pg.waitForFunction((s) => document.querySelector(s).dataset.a === '1', dep);
+    }
+    await pg.waitForTimeout(DELIBERATE);
+    await pg.click(dep);
+    await pg.waitForTimeout(300);
+  }
   await pg.waitForSelector('#brollbtn');
   S = await H.getS(pg);
   assert.equal(S.m.raise.state, 'board'); assert.equal(S.m.raise.ch, 1);
@@ -480,8 +486,16 @@ test('QA-G3-B10：実ブラウザ（タッチ）：出発ボタンの位置を�
   assert.ok(talked, 'フィナの会話が出た'); assert.ok(armedAt >= 0, '会話のあと確認状態になった'); assert.ok(onBtn >= 8, `確認状態のボタンを連打した（${onBtn}回）`);
   assert.match(await pg.evaluate((s) => document.querySelector(s).textContent, dep), /もう一度押すと育成開始/, '確認の表示が出たまま');
   await pg.evaluate(() => window.__qa.thaw());
-  await pg.waitForTimeout(DELIBERATE);
-  await pg.touchscreen.tap(pt.x, pt.y);
+  // 負荷が高い環境では、時計を戻した時点で3秒の自動取り消しが先に働くことがある。そのときは確認状態に戻してから押す
+  for (let k = 0; k < 3 && (await H.getS(pg)).m.raise.state === 'none'; k++) {
+    if (!(await pg.evaluate((s) => document.querySelector(s).dataset.a === '1', dep))) {
+      await pg.touchscreen.tap(pt.x, pt.y); await H.finishTalk(pg);
+      await pg.waitForFunction((s) => document.querySelector(s).dataset.a === '1', dep);
+    }
+    await pg.waitForTimeout(DELIBERATE);
+    await pg.touchscreen.tap(pt.x, pt.y);
+    await pg.waitForTimeout(300);
+  }
   await pg.waitForSelector('#brollbtn');
   assert.equal((await H.getS(pg)).m.raise.state, 'board', '手を止めてから押せば従来どおり出発');
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);

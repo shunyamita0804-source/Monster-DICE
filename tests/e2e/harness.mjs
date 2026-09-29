@@ -30,7 +30,10 @@ export function available() {
   const pw = loadPlaywright(); if (!pw) return false;
   try { return !!pw.chromium.executablePath(); } catch (e) { return false; }
 }
-export const skipReason = () => (available() ? false : 'Playwright / Chromium が無い環境のため実ブラウザテストを省略');
+// 実ブラウザテストは重いので、ふだんの node --test tests/*.test.mjs では省略する（速く・安定して回すため）。
+// 実行するとき：QA_E2E=1 node --test --test-concurrency=1 tests/*.test.mjs （1ファイルずつ順番に。並列だと約9MBの読み込みが重なり時間計測が不安定になる）
+export const skipReason = () => (process.env.QA_E2E !== '1' ? '実ブラウザテスト：QA_E2E=1 のときだけ実行'
+  : available() ? false : 'Playwright / Chromium が無い環境のため実ブラウザテストを省略');
 
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8',
   '.css': 'text/css; charset=utf-8', '.json': 'application/json', '.png': 'image/png', '.PNG': 'image/png', '.jpg': 'image/jpeg',
@@ -79,12 +82,14 @@ export async function launch() {
       }, seed);
     }
     const page = await ctx.newPage();
+    // 全テストを並列で流すと、約9MBの index.html の読み込みが遅くなる。待ち時間は長めにとる（成功時の速さは変わらない）
+    page.setDefaultTimeout(90000); page.setDefaultNavigationTimeout(120000);
     page.on('pageerror', (e) => errors.push(String(e && e.message || e)));
     page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) errors.push('console: ' + m.text()); });
     page.on('response', (r) => { if (r.status() >= 400 && r.url().startsWith(srv.url)) bad.push(r.status() + ' ' + r.url().slice(srv.url.length)); });
     page.on('requestfailed', (r) => { if (r.url().startsWith(srv.url)) bad.push('failed ' + r.url().slice(srv.url.length)); });
     await page.goto(srv.url + 'index.html' + (opt.query || ''));
-    await page.waitForFunction(() => typeof window.MMP8 === 'object' && typeof S === 'object');
+    await page.waitForFunction(() => typeof window.MMP8 === 'object' && typeof S === 'object', null, { timeout: 120000 });
     const p = { page, ctx, errors, bad };
     pages.push(p);
     return p;

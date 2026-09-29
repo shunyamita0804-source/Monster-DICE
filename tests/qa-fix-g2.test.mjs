@@ -300,7 +300,7 @@ test('QA-G2-11：技一覧（skl）は旧技表の無い種族・未知の s2 �
 // 実ブラウザ（index.html 全体）
 // ---------------------------------------------------------
 let L = null;
-before(async () => { if (H.available()) L = await H.launch(); });
+before(async () => { if (!H.skipReason()) L = await H.launch(); });
 after(async () => { if (L) await L.close(); });
 /** 開始画面の「はじめる」を押して、復帰先の画面が出るまで待つ */
 async function start(p, sel) {

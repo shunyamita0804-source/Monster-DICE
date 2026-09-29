@@ -370,7 +370,7 @@ test('QA-RL11：最後のターンに練習試合マスで止まったとき：�
     assert.deepEqual(P8.beginBattle(T, T.m, { kind: 'practice' }), { ok: true });
     T.g += 500; T.wins = (T.wins || 0) + 1; T.m.rk = 3; T.m.fa = 40; T.m.st = 40;   // fight() が付ける旧報酬
     P8.markBattleDone(T);
-    assert.deepEqual(P8.finishBattle(T, T.m), { kind: 'practice', won: true, timeUp: true });
+    assert.deepEqual(P8.finishBattle(T, T.m), { kind: 'practice', won: true, matchWon: true, timeUp: true });
     assert.deepEqual({ g: T.g, wins: T.wins, rk: T.m.rk, fa: T.m.fa, st: T.m.st }, snap0, '練習試合の旧報酬は残らない');
     assert.equal(P8.boardPhase(T.m), 'timeup'); }
 });
@@ -894,7 +894,7 @@ test('QA-RL33：辞退：報酬なしでChapter終了（ゴールした記録は
   assert.equal(V.P8.endChapter(V.S, V.S.m).entry.declined, false);
 });
 
-test('QA-RL34：最後の試合の勝敗（matchWon）が大会全体の結果とは別に返る', { todo: '既知の不具合：大会の最後の試合では finishBattle().won が大会全体の結果（1位かどうか）で上書きされ、index.html の p8AfterBattle が「第N試合：勝ち！／負け…」を逆に表示することがある。matchWon を追加する修正後に通る' }, () => {
+test('QA-RL34：最後の試合の勝敗（matchWon）が大会全体の結果とは別に返る', () => {
   // A：最後の試合に勝ったが2位（NPC 5 に1敗）→ 試合は「勝ち」
   { const { P8, LG, S } = atGoal(2, -1);
     LG.setNpcMatchResolver((a, b) => a.id === 5 || (b.id !== 5 && a.id < b.id));

@@ -489,7 +489,7 @@ T('QA-RL6：最終戦に勝っても2位で終わった大会（相手の1体が
   noErrors(p);
 });
 
-T('QA-RL6b：最終戦の結果の文言は、その試合の勝敗（勝ち！）を表示する', { todo: '既知の不具合：最終戦で大会が決着すると、finishBattle の won が大会全体の結果で上書きされ、勝った最終戦が「第7試合：負け…」と表示される（js/phase8/raising.js settleTournament の won）' }, () => {
+T('QA-RL6b：最終戦の結果の文言は、その試合の勝敗（勝ち！）を表示する', () => {
   assert.equal(LAST_MATCH_MSG, '第7試合：勝ち！ 大会は2位で終わった。');
 });
 

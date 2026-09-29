@@ -307,7 +307,7 @@ test('QA-G1-9：ランダムに壊したセーブ（決まった乱数のファ�
 // 実ブラウザ：起動・再開（index.html 全体）
 // ---------------------------------------------------------
 let L = null;
-before(async () => { if (H.available()) L = await H.launch(); });
+before(async () => { if (!H.skipReason()) L = await H.launch(); });
 after(async () => { if (L) await L.close(); });
 /** 開始画面の「はじめる」を押して、復帰先の画面が出るまで待つ */
 async function start(p, sel) {
