@@ -316,24 +316,39 @@ test('P7-9：修行ボードのサイコロは1〜3', () => {
   assert.throws(() => P.advanceTraining(S, S.m, 4));
 });
 
-test('P7-10：修行での能力上昇は「対応能力＋ライフ」だけ（しかも控えめ）', () => {
+test('P7-10：特訓での能力上昇は「対応能力＋ライフ」だけ。専用能力マスに止まると同時に +2〜3 ずつ、元ライフマス（4・9・14）では何も起きない（5種類とも同じ。丈夫さは2回とも）', () => {
   for (const kind of ['po', 'in', 'hi', 'ev', 'de']) {
     const P = loadP7();
-    const S = trainSave(P, { trainTix: 1 });
+    const S = trainSave(P, { trainTix: 2 });
     S.m.prog.rankClr[3] = true;
-    const before = { ...S.m };
-    P.startTraining(S, S.m, kind);
-    let r; const gains = [];
-    do { r = P.advanceTraining(S, S.m, 1, () => 0.999); if (r.gain) gains.push(r.gain); } while (!r.goal); // 全マスに止まる
-    for (const k of ['li', 'po', 'in', 'hi', 'ev', 'de']) {
-      if (k === kind || k === 'li') continue;
-      assert.equal(S.m[k], before[k], `${kind}修行で${k}が変化しない`);
+    for (let round = 1; round <= (kind === 'de' ? 2 : 1); round++) {
+      const before = { ...S.m };
+      assert.equal(P.startTraining(S, S.m, kind).ok, true, `${kind}：${round}回目を始められる`);
+      let r; const stops = [];
+      do { r = P.advanceTraining(S, S.m, 1, () => 0.999); stops.push(r); } while (!r.goal); // 全マスに止まる
+      for (const x of stops) {
+        if (x.square === 's') {
+          assert.deepEqual(x.gain, { key: kind, amount: 3 }, `${kind}：${x.to}マス目で対応能力 +3`);
+          assert.deepEqual(x.lifeGain, { key: 'li', amount: 3 }, `${kind}：同じ停止でライフ +3`);
+        } else {
+          assert.equal(x.gain, null); assert.equal(x.lifeGain, null, `${kind}：${x.to}マス目（${x.square}）では何も上がらない`);
+        }
+      }
+      for (const p of [4, 9, 14]) assert.equal(stops[p - 1].square, 'n', `元ライフマス ${p} は通常マス`);
+      for (const k of ['li', 'po', 'in', 'hi', 'ev', 'de']) {
+        if (k === kind || k === 'li') continue;
+        assert.equal(S.m[k], before[k], `${kind}特訓で${k}が変化しない`);
+      }
+      assert.equal(S.m[kind] - before[kind], 9, `${kind}：専用能力マス3か所 ×3`);
+      assert.equal(S.m.li - before.li, 9, `${kind}：ライフも専用能力マス3か所 ×3`);
+      P.finishTraining(S, S.m);
     }
-    assert.ok(gains.every((g) => g.key === kind || g.key === 'li'));
-    const statUp = S.m[kind] - before[kind];
-    assert.ok(statUp > 0 && statUp <= 10, `${kind}：全マス停止でも上昇は小さい（${statUp}）`);
-    assert.ok(S.m.li - before.li > 0 && S.m.li - before.li <= 10);
+    assert.equal(S.m.prog.train[kind], kind === 'de' ? 2 : 1);
   }
+  // 乱数0なら両方 +2（上昇量は +2〜3 のまま）
+  const P = loadP7(); const S = trainSave(P, { trainTix: 1 }); P.startTraining(S, S.m, 'in');
+  const r = P.advanceTraining(S, S.m, 2, () => 0);
+  assert.deepEqual([r.gain, r.lifeGain], [{ key: 'in', amount: 2 }, { key: 'li', amount: 2 }]);
 });
 
 test('P7-10b：何も起きないマスでは修行中も何も起きない', () => {
@@ -377,13 +392,15 @@ test('P7-10c2：対応技を既に持っている個体でも挑戦でき、重�
   S.m.sk.push(110); // 合体などで既に持っている
   assert.deepEqual(P.canStartTraining(S, S.m, 'po'), { ok: true });
   const li0 = S.m.li;
-  runToGoal(P, S, 'po');
+  P.startTraining(S, S.m, 'po');
+  P.advanceTraining(S, S.m, 2, () => 0);   // 2マス目（専用能力マス）に止まる
+  let r; do { r = P.advanceTraining(S, S.m, 3, () => 0); } while (!r.goal);
   const f = P.finishTraining(S, S.m);
   assert.equal(f.learned, null);
   assert.equal(f.reason, 'already');
   assert.equal(S.m.sk.filter((x) => x === 110).length, 1);
   assert.equal(S.m.prog.train.po, 1, 'クリア扱い');
-  assert.ok(S.m.li > li0, '道中のライフ上昇は受けている');
+  assert.ok(S.m.li > li0, '道中の専用能力マスでライフも上がっている');
 });
 
 test('P7-10d：技データ未登録の種族では何も覚えない（存在しない技を作らない）', () => {

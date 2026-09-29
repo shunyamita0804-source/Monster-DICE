@@ -47,10 +47,10 @@
   const TRAIN_MAX = Object.freeze({ po: 1, in: 1, hi: 1, ev: 1, de: TOUGH_MAX_CLEARS });
   const DICE_MIN = 1;
   const DICE_MAX = 3;
-  // 1〜14マス目の種類（15マス目はゴール）。n=何も起きない / s=対応能力の小上昇 / l=ライフの小上昇
-  // ※暫定値（通常マス多め）。正式な配置が決まったらここを差し替える。
-  const TRAIN_TEMPLATE = Object.freeze(['n', 's', 'n', 'l', 'n', 'n', 's', 'n', 'l', 'n', 's', 'n', 'n', 'l']);
-  // ※暫定値（通常Chapterの能力マス +5〜7 より控えめ）。
+  // 1〜14マス目の種類（15マス目はゴール）。n=何も起きない / s=専用能力マス（対応能力とライフが同時に小上昇）
+  // 正式仕様：独立したライフマスは廃止（旧 4・9・14マス目の 'l' は通常マス 'n' へ）。ライフは専用能力マスの追加効果で上がる。
+  const TRAIN_TEMPLATE = Object.freeze(['n', 's', 'n', 'n', 'n', 'n', 's', 'n', 'n', 'n', 's', 'n', 'n', 'n']);
+  // 専用能力マス1回あたり：対応能力 +2〜3、ライフ +2〜3（正式仕様。通常Chapterの能力マス +5〜7 より控えめ）。
   const TRAIN_GAIN = Object.freeze({ stat: Object.freeze([2, 3]), life: Object.freeze([2, 3]) });
   const STAT_MAX = 999;
 
@@ -321,7 +321,8 @@
     m.raise.trainRun = { kind, pos: 0 };   // 修行中の状態は個体が持つ
     return { ok: true };
   }
-  /** サイコロの出目ぶん進み、止まったマスの効果だけを適用する */
+  /** サイコロの出目ぶん進み、止まったマスの効果だけを適用する。
+   *  専用能力マス（'s'）：対応能力（gain）とライフ（lifeGain）を同時に上げる。乱数は対応能力→ライフの順に1回ずつ使う */
   function advanceTraining(S, m, steps, rng = Math.random) {
     const run = trainRunOf(m);
     if (!run) throw new Error('特訓中ではありません');
@@ -330,16 +331,18 @@
     const to = Math.min(TRAIN_LEN, from + steps);
     run.pos = to;
     const sq = trainSquare(to);
-    let gain = null;
-    if (sq === 's' || sq === 'l') {
-      const key = sq === 'l' ? 'li' : run.kind;
-      const [lo, hi] = sq === 'l' ? TRAIN_GAIN.life : TRAIN_GAIN.stat;
+    const up = (key, [lo, hi]) => {
       const amount = lo + Math.floor(rng() * (hi - lo + 1));
       const before = m[key];
       m[key] = Math.min(STAT_MAX, m[key] + amount);
-      gain = { key, amount: m[key] - before };
+      return { key, amount: m[key] - before };
+    };
+    let gain = null, lifeGain = null;
+    if (sq === 's') {
+      gain = up(run.kind, TRAIN_GAIN.stat);
+      lifeGain = up('li', TRAIN_GAIN.life);
     }
-    return { from, to, square: sq, gain, goal: to === TRAIN_LEN };
+    return { from, to, square: sq, gain, lifeGain, goal: to === TRAIN_LEN };
   }
   /** ゴール到達時：技習得（固定対応・重複なし）とクリア回数の記録 */
   function finishTraining(S, m, rng = Math.random) {

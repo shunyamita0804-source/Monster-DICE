@@ -531,7 +531,7 @@ test('QA-RL17：修行ボードは15マスの一本道（1〜14マス目は定�
   // CLAUDE.md の「修行ボードは15マス」＝スタート地点（0）を含まない15マス（コードの TRAIN_LEN。15マス目がゴール）
   assert.equal(P7.TRAIN_LEN, 15);
   assert.deepEqual(Array.from({ length: 17 }, (_, i) => P7.trainSquare(i)),
-    [null, 'n', 's', 'n', 'l', 'n', 'n', 's', 'n', 'l', 'n', 's', 'n', 'n', 'l', 'g', null]);
+    [null, 'n', 's', 'n', 'n', 'n', 'n', 's', 'n', 'n', 'n', 's', 'n', 'n', 'n', 'g', null]);
   const S = farmAfter(ctx, 1); S.trainTix = 1;
   assert.throws(() => P7.advanceTraining(S, S.m, 1), '修行中でなければ進めない');
   P7.startTraining(S, S.m, 'ev');
@@ -543,29 +543,34 @@ test('QA-RL17：修行ボードは15マスの一本道（1〜14マス目は定�
   // ゴール手前（14マス目）から出目3でもゴール（15）で止まる
   const ctx2 = load(); const U = farmAfter(ctx2, 1); U.trainTix = 1; ctx2.P7.startTraining(U, U.m, 'po');
   U.m.raise.trainRun.pos = 14;
-  assert.deepEqual(ctx2.P7.advanceTraining(U, U.m, 3, () => 0), { from: 14, to: 15, square: 'g', gain: null, goal: true });
+  assert.deepEqual(ctx2.P7.advanceTraining(U, U.m, 3, () => 0), { from: 14, to: 15, square: 'g', gain: null, lifeGain: null, goal: true });
 });
 
-test('QA-RL18：修行の上昇は止まったマスだけ +2〜3（s＝修行の能力、l＝ライフ、n＝何も起きない。通過したマスは無効）', () => {
+test('QA-RL18：特訓の上昇は止まったマスだけ。専用能力マス（s）で特訓の能力 +2〜3 とライフ +2〜3 を同時に、n＝何も起きない（元ライフマスも n）。通過したマスは無効', () => {
   const ctx = load(); const { P7 } = ctx; const S = farmAfter(ctx, 3); S.trainTix = 1;
   assert.deepEqual(j(P7.TRAIN_GAIN), { stat: [2, 3], life: [2, 3] });
+  assert.ok(!P7.TRAIN_TEMPLATE.includes('l'), '独立したライフマスは無い');
   P7.startTraining(S, S.m, 'po');
   const log = [];
-  for (const n of [2, 2, 3, 2, 2, 3, 1]) { const x = P7.advanceTraining(S, S.m, n, () => 0.99); log.push([x.to, x.square, x.gain && x.gain.key, x.gain && x.gain.amount]); }
-  assert.deepEqual(log, [[2, 's', 'po', 3], [4, 'l', 'li', 3], [7, 's', 'po', 3], [9, 'l', 'li', 3], [11, 's', 'po', 3], [14, 'l', 'li', 3], [15, 'g', null, null]]);
-  assert.deepEqual(stats(S.m), { li: 109, po: 109, in: 100, hi: 100, ev: 100, de: 100 }, '修行の能力とライフ以外は上がらない');
-  // 乱数0なら+2。s/l を通過して n に止まったら何も上がらない
+  const g = (x) => x && [x.key, x.amount];
+  for (const n of [2, 2, 3, 2, 2, 3, 1]) { const x = P7.advanceTraining(S, S.m, n, () => 0.99); log.push([x.to, x.square, g(x.gain), g(x.lifeGain)]); }
+  assert.deepEqual(log, [[2, 's', ['po', 3], ['li', 3]], [4, 'n', null, null], [7, 's', ['po', 3], ['li', 3]], [9, 'n', null, null], [11, 's', ['po', 3], ['li', 3]], [14, 'n', null, null], [15, 'g', null, null]]);
+  assert.deepEqual(stats(S.m), { li: 109, po: 109, in: 100, hi: 100, ev: 100, de: 100 }, '特訓の能力とライフ以外は上がらない');
+  // 乱数0なら+2。s を通過して n に止まったら何も上がらない
   const ctx2 = load(); const U = farmAfter(ctx2, 1); U.trainTix = 1; ctx2.P7.startTraining(U, U.m, 'hi'); const s0 = stats(U.m);
-  assert.deepEqual(ctx2.P7.advanceTraining(U, U.m, 3, () => 0), { from: 0, to: 3, square: 'n', gain: null, goal: false }, '2マス目(s)を通過して3マス目(n)');
+  assert.deepEqual(ctx2.P7.advanceTraining(U, U.m, 3, () => 0), { from: 0, to: 3, square: 'n', gain: null, lifeGain: null, goal: false }, '2マス目(s)を通過して3マス目(n)');
   assert.deepEqual(stats(U.m), s0);
-  assert.deepEqual(ctx2.P7.advanceTraining(U, U.m, 1, () => 0).gain, { key: 'li', amount: 2 });
-  assert.deepEqual(ctx2.P7.advanceTraining(U, U.m, 3, () => 0).gain, { key: 'hi', amount: 2 }, '4→7（s）');
-  assert.equal(ctx2.P7.advanceTraining(U, U.m, 3, () => 0).gain, null, '7→10（9マス目のlを通過してnに止まる）');
+  const x4 = ctx2.P7.advanceTraining(U, U.m, 1, () => 0);
+  assert.deepEqual([x4.square, x4.gain, x4.lifeGain], ['n', null, null], '元ライフマス（4マス目）ではライフが上がらない');
+  const x7 = ctx2.P7.advanceTraining(U, U.m, 3, () => 0);
+  assert.deepEqual([x7.gain, x7.lifeGain], [{ key: 'hi', amount: 2 }, { key: 'li', amount: 2 }], '4→7（s）：命中とライフが同時に');
+  assert.equal(ctx2.P7.advanceTraining(U, U.m, 3, () => 0).gain, null, '7→10（n）');
   assert.deepEqual(stats(U.m), { ...s0, li: s0.li + 2, hi: s0.hi + 2 });
   // 上限999を超えない（実際に増えた分だけを返す）
-  U.m.hi = 998;
-  assert.deepEqual(ctx2.P7.advanceTraining(U, U.m, 1, () => 0.99).gain, { key: 'hi', amount: 1 });
-  assert.equal(U.m.hi, 999);
+  U.m.hi = 998; U.m.li = 999;
+  const xc = ctx2.P7.advanceTraining(U, U.m, 1, () => 0.99);
+  assert.deepEqual([xc.gain, xc.lifeGain], [{ key: 'hi', amount: 1 }, { key: 'li', amount: 0 }]);
+  assert.deepEqual([U.m.hi, U.m.li], [999, 999]);
 });
 
 test('QA-RL19：修行のゴール：回数+1・修行状態を消してChapter間ファームへ（Chapterの進行は変わらない）。途中の状態は出目ごと保存される', () => {

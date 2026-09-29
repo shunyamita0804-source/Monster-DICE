@@ -262,7 +262,7 @@ T('QA-RL2：Chapter間ファームの「育成放棄」は2段階の確認（最
 // ---------------------------------------------------------
 // 修行
 // ---------------------------------------------------------
-T('QA-RL3：修行（Chapter間ファームから）：チケット1枚で開始 → 15マスをサイコロで進み、止まった能力・ライフのマスだけ +2〜3 → 途中で再読み込みしても出目・チケットはそのまま → ゴールで回数を記録 → 修行メニュー → ファーム（視差効果を減らす設定）', async () => {
+T('QA-RL3：修行（Chapter間ファームから）：チケット1枚で開始 → 15マスをサイコロで進み、止まった専用能力マスだけ 特訓の能力とライフが同時に +2〜3 → 途中で再読み込みしても出目・チケットはそのまま → ゴールで回数を記録 → 修行メニュー → ファーム（視差効果を減らす設定）', async () => {
   const p = await boot(farmSeed(2, [LOG1], { trainTix: 1 }, 0), '.p9farm.p15f', { calm: true }); const pg = p.page;
   const s0 = await H.getS(pg);
   assert.match(await textOf(pg, 'button.p15b[onclick="hall(\'s\')"]'), /特訓 チケット×1/);
@@ -273,6 +273,7 @@ T('QA-RL3：修行（Chapter間ファームから）：チケット1枚で開始
   let cs = await cards();
   assert.deepEqual(cs.map((c) => [c.k, c.on]), [["trStart('po')", true], ["trStart('in')", true], ["trStart('hi')", true], ["trStart('ev')", true], ["trStart('de')", false]]);
   assert.match(cs[4].t, /Cランク以上の大会をクリアすると解放/, '丈夫さの修行は C 以上のクリアで解放');
+  for (const [i, lab] of ['ちから', 'かしこさ', '命中', '回避', '丈夫さ'].entries()) assert.match(cs[i].t, new RegExp(`${lab}特訓 ?専用マスに止まると、${lab}とライフが少し伸びる`), `${lab}特訓の説明`);
   assert.match(await textOf(pg, '.dnote'), /特訓チケット：1枚/);
   // 開始：チケットが1枚減り（保存済み）、16地点（S＋15マス）の修行ボードへ
   await pg.waitForTimeout(SETTLE);
@@ -283,14 +284,16 @@ T('QA-RL3：修行（Chapter間ファームから）：チケット1枚で開始
   assert.equal((await H.storedSave(pg)).trainTix, 0);
   assert.equal(await pg.evaluate(() => document.querySelectorAll('.p7tr .p7c').length), 16);
   assert.equal(await textOf(pg, '#p7msg'), 'ちから特訓スタート！（特訓チケットを1枚使った）サイコロを振って進もう。');
+  assert.equal(await textOf(pg, '.p12lg'), '⚔️=ちから＋ライフ ・=何も起きない', '凡例：専用マス＝ちから＋ライフ（独立したライフマスは無い）');
+  assert.equal(await pg.evaluate(() => [...document.querySelectorAll('.p7tr .p7c')].filter((c) => c.textContent.includes('💖')).length), 0, 'ライフマスの印は無い');
   // 修行中も街へは行けない（修行ボードのまま）
   const rawT = await rawSave(pg);
   await pg.evaluate(() => lobby());
   await pg.waitForSelector('#p7roll');
   assert.equal(await textOf(pg, '#p7msg'), BLOCK_MSG);
   assert.equal(await rawSave(pg), rawT);
-  // 出目 2,2,3,2,3,3 → 2(ちから) 4(ライフ) 7(ちから) 9(ライフ) 12(何もない) 15(ゴール)。3投目は保存後に再読み込み
-  const plan = [[2, 2, 'po'], [2, 4, 'li'], [3, 7, 'po'], [2, 9, 'li'], [3, 12, null], [3, 15, null]];
+  // 出目 2,2,3,2,3,3 → 2(専用：ちから＋ライフ) 4(元ライフマス＝何もない) 7(専用) 9(元ライフマス) 12(何もない) 15(ゴール)。3投目は保存後に再読み込み
+  const plan = [[2, 2, true], [2, 4, false], [3, 7, true], [2, 9, false], [3, 12, false], [3, 15, false]];
   for (const [i, [d, to, key]] of plan.entries()) {
     const b = await pg.evaluate(() => ({ ...Object.fromEntries(['li', 'po', 'in', 'hi', 'ev', 'de'].map((k) => [k, S.m[k]])), pos: S.m.raise.trainRun.pos }));
     await setDice(pg, [d]);
@@ -310,9 +313,9 @@ T('QA-RL3：修行（Chapter間ファームから）：チケット1枚で開始
     const diff = Object.fromEntries(KS.map((k) => [k, a[k] - b[k]]).filter(([, v]) => v));
     const msg = await textOf(pg, '#p7msg');
     if (key) {
-      assert.deepEqual(Object.keys(diff), [key], `${to} マス目は ${key} だけ上がる`);
-      assert.ok(diff[key] >= 2 && diff[key] <= 3, `上昇は +2〜3（実際 +${diff[key]}）`);
-      assert.equal(msg, `${d}マス進んだ。 ${key === 'po' ? 'ちから' : 'ライフ'}が${diff[key]}上がった！`);
+      assert.deepEqual(Object.keys(diff).sort(), ['li', 'po'], `${to} マス目はちからとライフが同時に上がる`);
+      for (const k of ['po', 'li']) assert.ok(diff[k] >= 2 && diff[k] <= 3, `${k} の上昇は +2〜3（実際 +${diff[k]}）`);
+      assert.equal(msg, `${d}マス進んだ。 ちからが${diff.po}上がった！ライフが${diff.li}上がった！`, '表示と実際の上昇が一致');
     } else {
       assert.deepEqual(diff, {}, `${to} マス目では能力は変わらない`);
       if (to < 15) assert.equal(msg, `${d}マス進んだ。 何も起きなかった。`);
