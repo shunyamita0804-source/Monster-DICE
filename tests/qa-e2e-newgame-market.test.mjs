@@ -177,17 +177,21 @@ T('QA-NG2：開始ボタン → 名前登録画面（初期値「アルト」・
   await pg.waitForSelector('.map');
   const t = await pg.evaluate(() => ({
     hz: [...document.querySelectorAll('.hz')].map((b) => [b.getAttribute('onclick'), b.disabled]),
-    pn: document.querySelector('.p115pn').textContent, prof: document.querySelector('.bprof').innerText.replace(/\s+/g, ' '),
-    msg: document.querySelector('#msg').textContent, top: document.querySelector('.tpinfo').innerText.replace(/\s+/g, ' '), bar: document.querySelectorAll('.topbar').length,
+    prof: document.querySelector('.bprof').innerText.replace(/\s+/g, ' '), topUi: document.querySelectorAll('.tttl, .tpinfo, .map.town .p115pn').length,
+    msg: document.querySelector('#msg').textContent, bar: document.querySelectorAll('.topbar').length,
     sw: document.documentElement.scrollWidth, iw: innerWidth, fina: document.querySelectorAll('img[src*="npc/fina"]').length,
   }));
-  assert.deepEqual(t.hz, [['market()', false], ['farm()', false], ['museum()', false], ['townArena()', false], ['hall()', true]]);
-  assert.ok(t.pn.includes('ゆうしゃ'), 'プレイヤー名を表示');
+  assert.deepEqual(t.hz, [['market()', false], ['farm()', false], ['museum()', false], ['townArena()', false], ['hall()', true], ['profileScr()', false]]);
+  assert.equal(t.topUi, 0, '街の上部に「街」の札・プレイヤー情報は出さない（プロフィールへまとめた）');
   assert.match(t.prof, /育成完了 0回/); assert.doesNotMatch(t.prof, /300G|ゆうしゃ|ランク/, '下の欄に名前・ランク・所持金を重ねない');
-  assert.match(t.top, /ゆうしゃ ランク ー 300 ?G/, '上部のプレイヤー情報（名前・ランク・所持金）'); assert.equal(t.bar, 0, '旧い上部の帯（大会優勝・所持金）は出さない');
+  assert.equal(t.bar, 0, '旧い上部の帯（大会優勝・所持金）は出さない');
   assert.equal(t.msg, 'ようこそ、ゆうしゃさん！ まずは市場でモンスターを選ぼう。');
   assert.equal(t.sw, t.iw, '横スクロールが出ない');
   assert.equal(t.fina, 0, '会話が終われば街にフィナは残らない');
+  // プレイヤー情報（名前・所持金・最高到達ランク）はプロフィールに出す
+  await pg.click('.hz[onclick="profileScr()"]'); await pg.waitForSelector('.pfds');
+  assert.match(await pg.evaluate(() => document.querySelector('.pfds .tplate').innerText.replace(/\s+/g, ' ')), /プレイヤー ゆうしゃ 所持金 300 ?G 最高到達ランク ー 獲得トロフィー 準備中/);
+  await pg.click('.pfds .dback'); await pg.waitForSelector('.tbar .tcmd');
   noErrors(p);
 });
 
@@ -221,7 +225,7 @@ T('QA-NG4：Enter キーで名前を決定しても、フィナの1行目の文�
   noErrors(p);
 });
 
-T('QA-NG5：名前の整え方：空欄は「アルト」。HTML を含む長い名前は8文字に切り、画面では文字として表示する（街・市場）', async () => {
+T('QA-NG5：名前の整え方：空欄は「アルト」。HTML を含む長い名前は8文字に切り、画面では文字として表示する（街・プロフィール・市場）', async () => {
   const p1 = await openPage({ size: H.SIZES.base });
   await startFromTitle(p1.page, '#p11nm');
   await p1.page.fill('#p11nm', '   ');
@@ -229,7 +233,8 @@ T('QA-NG5：名前の整え方：空欄は「アルト」。HTML を含む長い
   await H.finishTalk(p1.page);
   assert.equal(await p1.page.evaluate(() => S.playerName), 'アルト', '空白だけなら「アルト」');
   assert.equal((await H.storedSave(p1.page)).playerName, 'アルト');
-  assert.ok((await p1.page.evaluate(() => document.querySelector('.p115pn').textContent)).includes('アルト'));
+  await p1.page.evaluate(() => profileScr()); await p1.page.waitForSelector('.pfds');
+  assert.ok((await p1.page.evaluate(() => document.querySelector('.p115pn').textContent)).includes('アルト'), 'プロフィールのプレイヤー名');
   noErrors(p1);
 
   const p2 = await openPage({ size: H.SIZES.base }); const pg = p2.page;
@@ -239,8 +244,10 @@ T('QA-NG5：名前の整え方：空欄は「アルト」。HTML を含む長い
   await H.finishTalk(pg);
   await pg.waitForSelector('.map');
   assert.equal(await pg.evaluate(() => S.playerName), '<b>x</b>', '8文字までに切る');
-  const t = await pg.evaluate(() => ({ pn: document.querySelector('.p115pn').textContent, pnB: document.querySelectorAll('.p115pn b').length,
-    msg: document.querySelector('#msg').textContent, msgB: document.querySelectorAll('#msg b').length }));
+  const t0 = await pg.evaluate(() => ({ msg: document.querySelector('#msg').textContent, msgB: document.querySelectorAll('#msg b').length }));
+  await pg.click('.hz[onclick="profileScr()"]'); await pg.waitForSelector('.pfds');
+  const t = { ...t0, ...(await pg.evaluate(() => ({ pn: document.querySelector('.p115pn').textContent, pnB: document.querySelectorAll('.p115pn b').length }))) };
+  await pg.click('.pfds .dback'); await pg.waitForSelector('.tbar .tcmd');
   assert.ok(t.pn.includes('<b>x</b>'), 'プロフィールでは文字としてそのまま表示'); assert.equal(t.pnB, 0, 'HTML として解釈しない');
   assert.ok(t.msg.includes('ようこそ、<b>x</b>さん！'), '街の案内でも文字として表示'); assert.equal(t.msgB, 0);
   await pg.click('.hz[onclick="market()"]'); await settle(pg);

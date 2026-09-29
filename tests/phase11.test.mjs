@@ -143,16 +143,17 @@ test('F1-3：Phase 6保護対象内（.bt）とバトル開始演出のGeorgia�
 // Phase 11.5 Step 2：街のプレイヤー名（市場と同じ playerName を参照）
 // ---------------------------------------------------------
 test('F2-1：街の「ブリーダー」欄はプレイヤー名を表示（新しい名前管理は作らず playerName を参照・ランク等は維持）', () => {
-  // 正式な街画面（2026-09-29）：プレイヤー名・ランクは街の上部UI（townTop）に出し、下の欄（bprof）とは二重に表示しない
+  // 街の再調整（2026-09-29）：街の上部のプレイヤー情報は撤去し、プレイヤー名・ランク・所持金はプロフィール（profileScr）に出す。下の欄（bprof）には出さない
   const bp = HTML.match(/const bprof=\(\)=>`[^\n]*/)[0].split('`;')[0];   // 画面に出す部分（後ろのコメントは除く）
-  const top = HTML.split('\n').find((l) => l.startsWith('function townTop('));
+  const top = HTML.split('\n').find((l) => l.startsWith('function profileScr(')) + HTML.split('\n').find((l) => l.startsWith('const PROFILE_ROWS='));
   assert.match(top, /<b class="p115pn">\$\{p11Esc\(S\.playerName\|\|MMP11P\.DEFAULT_NAME\)\}<\/b>/);
-  assert.match(top, /ランク　\$\{\(S\.br\?\?-1\)>=0\?RN\[S\.br\]:"ー"/, 'ランク表示は維持');
+  assert.match(top, /\["最高到達ランク",\(\)=>\(S\.br\?\?-1\)>=0\?RN\[S\.br\]:"ー"\]/, 'ランク表示は維持（プロフィール）');
+  assert.doesNotMatch(HTML, /function townTop\(|class="tplate tttl"|class="tplate tpinfo"/, '街の上部の「街」の札・プレイヤー情報は撤去');
   assert.doesNotMatch(bp, /p115pn|playerName|ランク|S\.g\b/, '下の欄に名前・ランク・所持金を重ねて出さない');
   assert.doesNotMatch(top + bp, /🧑‍🌾 ブリーダー/);
   const refs = HTML.split('\n').filter((l) => /S\.playerName(?!Pending)/.test(l));
   assert.equal(refs.length, 3, 'プレイヤー名の参照は3か所だけ（別の名前を持たない）');
-  assert.equal(refs.filter((l) => l.includes('id="p11nm"') || l.includes('for="p11nm"')).length, 1, '名前入力'); assert.equal(refs.filter((l) => l.startsWith('function p10Who(){')).length, 1, '市場'); assert.equal(refs.filter((l) => l.startsWith('function townTop(')).length, 1, '街（上部のプレイヤー情報）');
+  assert.equal(refs.filter((l) => l.includes('id="p11nm"') || l.includes('for="p11nm"')).length, 1, '名前入力'); assert.equal(refs.filter((l) => l.startsWith('function p10Who(){')).length, 1, '市場'); assert.equal(refs.filter((l) => l.startsWith('function profileScr(')).length, 1, 'プロフィール（プレイヤー情報）');
 });
 
 // ---------------------------------------------------------

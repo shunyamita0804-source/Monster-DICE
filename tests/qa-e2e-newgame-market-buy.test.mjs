@@ -100,9 +100,11 @@ T('QA-BY1：新規ゲーム（300G・0体）の初回購入：案内と確認画
   assert.deepEqual([st.m.name, st.m.sp, st.m.speed, st.m.raise.state], ['ソラ太', 0, 5, 'none']);
   assert.match(st.m.uid, /^m-/); assert.deepEqual(st.box, []); assert.equal(st.cnt, 1);
   assert.deepEqual(st.raiseRec, { done: 0, fromStart: true }, '購入では育成完了回数は増えない');
-  const town = await pg.evaluate(() => ({ hz: [...document.querySelectorAll('.hz')].map((b) => b.disabled), prof: document.querySelector('.tgold').innerText.replace(/\s+/g, '') }));
-  assert.deepEqual(town.hz, [false, false, false, false, false], 'モンスターがいるのでファームも押せる（市場・牧場・研究所・闘技場（未開放の案内）・ファーム）');
-  assert.equal(town.prof, '0G', '上部の所持金');
+  const town = await pg.evaluate(() => ({ hz: [...document.querySelectorAll('.hz')].map((b) => b.disabled) }));
+  assert.deepEqual(town.hz, [false, false, false, false, false, false], 'モンスターがいるのでファームも押せる（市場・牧場・研究所・闘技場（未開放の案内）・ファーム・プロフィール）');
+  await pg.evaluate(() => profileScr()); await pg.waitForSelector('.pfds');
+  assert.equal(await pg.evaluate(() => document.querySelector('.pfrow dd').innerText.replace(/\s+/g, '')), '0G', 'プロフィールの所持金');
+  await pg.evaluate(() => lobby()); await pg.waitForSelector('.tbar .tcmd');
   // 確認画面が閉じた後の押下（二度押し）は無視
   await pg.evaluate(() => mkgo(0));
   const s2 = await H.getS(pg);
