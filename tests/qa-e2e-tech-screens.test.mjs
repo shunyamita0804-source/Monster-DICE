@@ -147,7 +147,8 @@ const SEL = {
   title: ['.p15start'],
   name: ['#p11nm', '.p11go'],
   town: ['.hz:not(.dis)', '.hz[onclick="museum()"]', '.svb'],
-  market: ['.p10back', '.p10arw.prev', '.p10arw.next', '.p10dot', '#p10info .p10buy'],
+  market: ['.p10back', '.p10arw.prev', '.p10arw.next', '.p10dot', '#p10car .p10sl.on .p10plate'],   // 購入ボタンは詳細シート（中央のモンスターをタップ）の中
+  detail: ['#p10info .p10buy', '.p10detx'],
   sheet: ['#p10ov #mnm', '#p10ov .p10no', '#p10ov .p10ok'],
   ranch: ['button.back', '.ftile', '.fsell', '.wpanel button'],
   museum: ['.dtop .dback', '.mgc'],
@@ -208,7 +209,8 @@ describe('QA-TS：390×844 の通し（JS エラー・読み込み・壊れた�
       await settled(pg);
       await check(pg, '市場（' + k + '）', SEL.market);
     }
-    await H.marketDetail(pg); await pg.click('#p10info .p10buy');
+    await H.marketDetail(pg); await check(pg, '市場の詳細', SEL.detail);
+    await pg.click('#p10info .p10buy');
     await waitSel(pg, '#p10ov .p10ok');
     await check(pg, '購入確認シート', SEL.sheet, { fixed: ['#p10ov .p10ok', '#p10ov .p10no'], wait: 400 });
     await pg.waitForTimeout(150);   // 確認シートが出てから 0.5 秒以上たってから押す
@@ -379,7 +381,8 @@ for (const [key, label] of [['se', 'iPhone SE 相当'], ['android', 'Android 相
     await pg.click('.hz[onclick="market()"]');
     await settled(pg);
     await check(pg, '市場', SEL.market);
-    await H.marketDetail(pg); await pg.click('#p10info .p10buy');
+    await H.marketDetail(pg); await check(pg, '市場の詳細', SEL.detail);
+    await pg.click('#p10info .p10buy');
     await waitSel(pg, '#p10ov .p10ok');
     await check(pg, '購入確認シート', SEL.sheet, { fixed: ['#p10ov .p10ok', '#p10ov .p10no'], wait: 400 });
     await pg.waitForTimeout(150);   // 確認シートが出てから 0.5 秒以上たってから押す

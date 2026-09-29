@@ -255,6 +255,7 @@ B('QA-TL1：街→市場（次へ・購入確認・やめる）→街→牧場�
     await pg.waitForTimeout(450);   // 購入シートは開いてから0.35秒間、押しても反応しない
     await tap('#p10ov .p10no');
     await pg.waitForFunction(() => !document.getElementById('p10ov'));
+    await tap('.p10detx'); await pg.waitForFunction(() => !document.querySelector('.p10mk').classList.contains('det'));   // 詳細シートを閉じてから戻る（開いている間は背景のタップでシートが閉じる）
     await tap('.p10back');
     await waitSel(pg, '.hz[onclick="farm()"]');
     await tap('.hz[onclick="farm()"]');
