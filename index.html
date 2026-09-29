@@ -2406,7 +2406,8 @@ const KAREN_TALK={
  bought:[{npc:"karen",expression:"happy",text:"ありがとう。大切に育ててあげてね。"}],
  nomoney:[{npc:"karen",expression:"troubled",text:"ごめんなさい。今の所持金では、この子を迎えられないみたい。"}],
  waiting:[{npc:"karen",expression:"guide",text:"この子は、まだ市場には来ていないの。"}]};
-function karenTalk(key){return window.MMNPC&&KAREN_TALK[key]?MMNPC.talk(KAREN_TALK[key]):Promise.resolve()}
+function karenTalk(key){if(window.MM_QA_NO_KAREN)return Promise.resolve(); // 自動テスト専用：カレンの会話を出さない（ゲーム中は設定されない。tests/e2e/harness.mjs）
+ return window.MMNPC&&KAREN_TALK[key]?MMNPC.talk(KAREN_TALK[key]):Promise.resolve()}
 /** 購入確認シートの中のカレンの1行（会話ウィンドウは出さない＝押す回数を増やさない） */
 function karenLine(key){const l=KAREN_TALK[key][0],im=window.MMNPC&&MMNPC.imageOf("karen","closeup",l.expression);return `<div class="kline"><div class="kf">${im?`<img src="${im.src}" alt="">`:""}</div><div><b>カレン</b><p>${l.text}</p></div></div>`}
 /** 市場に入ったとき：初回だけカレンのあいさつ（先に「表示済み」を保存してから出す＝再読込しても二度出ない） */

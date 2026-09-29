@@ -94,7 +94,7 @@ async function toMarket(p, gold) {
 }
 
 test('KR-B1：初回来店：カレンが3行（smile→guide→normal）。文字送り・途中タップで全文・▼は全文後だけ・最後で閉じる。再来店・再読み込みでは出ない', { skip: SKIP }, async () => {
-  const p = await L.open(); const pg = p.page;
+  const p = await L.open({ karen: true }); const pg = p.page;
   await toMarket(p);
   await pg.waitForSelector('.mmtalk'); await pg.waitForTimeout(260);
   let s = await talkState(pg);
@@ -118,7 +118,7 @@ test('KR-B1：初回来店：カレンが3行（smile→guide→normal）。文�
 });
 
 test('KR-B2：購入確認シートにカレンの1行（normal）。購入成功でカレン（happy）のあと街へ。所持金・個体数は従来どおり1回分', { skip: SKIP }, async () => {
-  const p = await L.open(); const pg = p.page;
+  const p = await L.open({ karen: true }); const pg = p.page;
   await toMarket(p, 1000); await H.finishTalk(pg);
   await pg.waitForFunction(() => !P10_ANIM); await pg.waitForTimeout(400);
   await pg.click('.p10buy'); await pg.waitForSelector('#p10ov .kline');
@@ -135,7 +135,7 @@ test('KR-B2：購入確認シートにカレンの1行（normal）。購入成�
 });
 
 test('KR-B3：上部のカレンのボタン：中央の個体に合わせて、通常（smile）・所持金不足（troubled）・未解放（guide）を案内。購入ボタンの状態は変わらない', { skip: SKIP }, async () => {
-  const p = await L.open(); const pg = p.page;
+  const p = await L.open({ karen: true }); const pg = p.page;
   await toMarket(p, 1000); await H.finishTalk(pg); await pg.waitForFunction(() => !P10_ANIM);
   const ask = async () => { await pg.waitForTimeout(150); await pg.click('.p10karen'); await pg.waitForSelector('.mmtalk'); await pg.waitForTimeout(260); await pg.click('.mmtalk'); const s = await talkState(pg); await H.finishTalk(pg); return [s.text, s.img.split('/').pop()]; };
   assert.deepEqual(await ask(), ['今日はどの子を見ていく？', 'smile.png']);
@@ -153,7 +153,7 @@ test('KR-B3：上部のカレンのボタン：中央の個体に合わせて、
 });
 
 test('KR-B4：会話が終わると .mmtalk もタイマーも残らない（話しかけを5回くり返す）', { skip: SKIP }, async () => {
-  const p = await L.open(); const pg = p.page;
+  const p = await L.open({ karen: true }); const pg = p.page;
   await pg.addInitScript(() => {});
   await toMarket(p, 1000); await H.finishTalk(pg); await pg.waitForFunction(() => !P10_ANIM);
   const live = () => pg.evaluate(() => MMNPC.state());
@@ -165,7 +165,7 @@ test('KR-B4：会話が終わると .mmtalk もタイマーも残らない（話
 
 for (const [k, size] of Object.entries(H.SIZES)) {
   test(`KR-B5（${size.join('×')}）：初回の会話中：名前・本文・▼が画面内、横はみ出しなし。購入確認シートのボタンも画面内`, { skip: SKIP }, async () => {
-    const p = await L.open({ size }); const pg = p.page;
+    const p = await L.open({ size, karen: true }); const pg = p.page;
     await toMarket(p, 1000); await pg.waitForSelector('.mmtalk'); await pg.waitForTimeout(260); await pg.click('.mmtalk');
     const r = await pg.evaluate(() => { const b = (s) => { const x = document.querySelector(s).getBoundingClientRect(); return [x.left, x.top, x.right, x.bottom]; };
       return { sw: document.documentElement.scrollWidth, iw: innerWidth, ih: innerHeight, name: b('.mmtalk-name'), text: b('.mmtalk-text'), next: b('.mmtalk-next') }; });

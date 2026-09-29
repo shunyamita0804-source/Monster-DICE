@@ -81,6 +81,8 @@ export async function launch() {
         try { if (!sessionStorage.getItem('__seeded')) { for (const [k, v] of Object.entries(kv)) localStorage.setItem(k, v); sessionStorage.setItem('__seeded', '1'); } } catch (e) {}
       }, seed);
     }
+    // 市場のカレンの会話（初回来店・購入成功）は、ふだんのテストでは出さない（市場・購入の操作を止めないため）。カレンのテストは open({ karen: true })
+    if (!opt.karen) await ctx.addInitScript(() => { window.MM_QA_NO_KAREN = true; });
     const page = await ctx.newPage();
     // 全テストを並列で流すと、約9MBの index.html の読み込みが遅くなる。待ち時間は長めにとる（成功時の速さは変わらない）
     page.setDefaultTimeout(90000); page.setDefaultNavigationTimeout(120000);
