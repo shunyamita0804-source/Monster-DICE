@@ -1288,11 +1288,15 @@ h1,h2,h3,.dh,.dtitle b,.p9th .p9ttl b,.p9th .p9ttl small,.p9plq .nm,.p9win .big,
 .p11card input{display:block;width:100%;box-sizing:border-box;font:inherit;font-size:1.15rem;padding:12px 14px;border-radius:12px;border:2px solid #b98a3a;background:#fff8e8;color:#3a2410;text-align:center}
 .p11hint{margin:6px 0 0;font-size:.78rem;color:#d8c49a}
 .p11go{display:block;width:100%;margin-top:16px;min-height:52px;border-radius:14px;font-size:1.05rem;font-weight:900;color:#3a2410;background:linear-gradient(#ffe7a0,#e0a526);border:2px solid #7a4d0c;box-shadow:0 4px 0 #7a4d0c}
-/* 街（正式ホーム画面）：画面いっぱいの街の背景＋上部UI（「街」・プレイヤー情報）＋背景上の建物ラベル（地図の案内）＋右下の施設コマンド（押す操作UI）。
-   濃紺＋細い金の二重線＋四隅の金の飾り。背景は --town-bg（TOWN_BG、1152×2048）を cover・上寄せで敷く。
-   建物ラベルの位置は背景画像上の座標（--x・--y、画像の画素）から、枠の大きさ（コンテナ単位 cqw・cqh）で計算する（背景の敷き方と同じ比率） */
+/* 街（正式ホーム画面）：画面いっぱいの街の背景＋上部UI（「街」・プレイヤー情報）＋背景上の建物ラベル（地図の案内）＋画面下に固定の施設コマンドバー（押す操作UI）。
+   濃紺＋細い金の二重線＋四隅の金の飾り。街の枠は画面の高さからコマンドバーの分を引いた高さ。背景（.tbg、TOWN_BG、1152×2048）は「下寄せ」：画像の下端を枠の下端（＝コマンドバーの上端）にそろえ、足りない分は上（空）から切る。
+   倍率 --ts（画像1画素あたりの長さ）：基本は幅いっぱい（cover）。ただし闘技場の上部（画像の y=240）が上部UIの下（76px）より上へ切れるときは、
+   その高さに収まるまで縮める（低い画面では左右に濃紺の余白が出る）。見える高さ（バーより上）より画像が低くはしない。
+   建物ラベルの位置は背景画像上の座標（--x・--y、画像の画素）から、同じ --ts で計算する（コンテナ単位 cqw・cqh） */
 main:has(>#app>.map.town) h1{display:none}
-.map.town{container-type:size;aspect-ratio:auto;height:100dvh;min-height:560px;margin:-16px -16px 12px;border:0;border-radius:0;box-shadow:none;background:#6fb7e8 var(--town-bg) var(--town-pos,center top)/cover no-repeat;--ts:max(100cqw / 1152,100cqh / 2048)}
+:root{--tbar:70px}@media (max-height:720px){:root{--tbar:62px}}
+.map.town{container-type:size;aspect-ratio:auto;height:calc(100dvh - var(--tbar) - env(safe-area-inset-bottom,0px));min-height:490px;margin:-16px -16px 12px;border:0;border-radius:0;box-shadow:none;overflow:hidden;background:#0b1636;--tva:100cqh;--ts:max(min(max(100cqw / 1152,var(--tva) / 2048),(var(--tva) - 76px) / 1808),var(--tva) / 2048)}
+.tbg{position:absolute;z-index:0;left:calc(50cqw - 576 * var(--ts));top:calc(var(--tva) - 2048 * var(--ts));width:calc(1152 * var(--ts));height:calc(2048 * var(--ts));background:var(--town-bg) center/100% 100% no-repeat;outline:1.5px solid #d9b465;pointer-events:none}
 .tplate{position:absolute;z-index:3;background:linear-gradient(180deg,rgba(26,46,98,.94),rgba(10,22,54,.94));border:1.5px solid #d9b465;border-radius:12px;color:#fff;box-shadow:0 0 0 1px rgba(20,12,0,.55),0 4px 12px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,236,180,.25)}
 .tplate::before{content:"";position:absolute;inset:3px;border:1px solid rgba(217,180,101,.55);border-radius:9px;pointer-events:none}
 .tplate .cn{position:absolute;width:14px;height:14px;pointer-events:none}.tplate .cn svg{display:block;width:14px;height:14px}
@@ -1309,25 +1313,27 @@ main:has(>#app>.map.town) h1{display:none}
 .tgold{flex:none;display:flex;align-items:center;gap:3px;font-weight:900;font-size:15.5px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .tgold svg{width:20px;height:20px}.tgold small{font-size:12px;margin-left:1px;color:#fff;opacity:1}
 /* 背景上の建物ラベル（地図上の案内。押せない・コマンドより小さく控えめ） */
-.tlbl{position:absolute;z-index:1;left:calc(50cqw + (var(--x) - 576) * var(--ts));top:calc(var(--y) * var(--ts));transform:translate(-50%,-100%);pointer-events:none;display:flex;flex-direction:column;align-items:center}
+.tlbl{position:absolute;z-index:1;left:calc(50cqw + (var(--x) - 576) * var(--ts));top:calc(var(--tva) - (2048 - var(--y)) * var(--ts));transform:translate(-50%,-100%);pointer-events:none;display:flex;flex-direction:column;align-items:center}
 .tlbl span{display:block;padding:2px 10px 3px;font-family:var(--mm-font-head);font-weight:800;font-size:13.5px;letter-spacing:.08em;white-space:nowrap;color:#fff;background:linear-gradient(180deg,rgba(26,46,98,.88),rgba(10,22,54,.88));border:1px solid #d9b465;border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,.35),inset 0 0 0 2px rgba(10,22,54,.88),inset 0 0 0 2.5px rgba(217,180,101,.45)}
 .tlbl i{display:block;width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid #d9b465;margin-top:-1px}
-/* 右下の施設コマンド（実際に押す操作UI。5つとも同じ大きさ。高さの低い画面では少し小さく、押せる高さは44px以上） */
-.map.town .tcmds{position:absolute;right:10px;bottom:calc(env(safe-area-inset-bottom,0px) + 16px);top:auto;transform:none;display:flex;flex-direction:column;gap:8px;width:152px;z-index:2}
-button.hz.tcmd{position:relative;left:auto;top:auto;width:100%;height:58px;min-height:0;margin:0;display:flex;align-items:center;gap:9px;padding:0 18px 0 7px;color:#fff;border:1.5px solid #d9b465;border-radius:30px 12px 12px 30px;background:linear-gradient(180deg,rgba(28,50,104,.95),rgba(10,22,54,.95));box-shadow:0 0 0 1px rgba(20,12,0,.55),0 4px 10px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,236,180,.28);text-align:left;font-weight:800;line-height:1.1;letter-spacing:0;text-shadow:0 1px 0 rgba(0,0,0,.5);animation:none}
-button.hz.tcmd::before{content:"";position:absolute;inset:3px;border:1px solid rgba(217,180,101,.5);border-radius:27px 9px 9px 27px;pointer-events:none}
-button.hz.tcmd::after{content:"";position:absolute;right:7px;top:50%;width:6px;height:6px;border-top:1.5px solid #d9b465;border-right:1.5px solid #d9b465;transform:translateY(-50%) rotate(45deg);opacity:.85}
-button.hz.tcmd .ti{position:relative;flex:none;width:44px;height:44px;border-radius:50%;border:1.5px solid #f6e1a0;box-shadow:0 0 0 1.5px #9c7430,inset 0 0 8px rgba(0,0,0,.45);background:radial-gradient(circle at 45% 35%,#223d7e,#0b1636);display:flex;align-items:center;justify-content:center;font-size:1.3rem;line-height:1}
-button.hz.tcmd .ti svg{width:30px;height:30px}
+/* 画面下に固定の施設コマンドバー（実際に押す操作UI。横一列に5つ、同じ幅。上に金の線。スクロールしても画面下に出たまま）。
+   街の下の案内・カードなどがバーの裏に隠れないよう、街の画面では #app の下にバーの高さ分の余白をとる */
+#app:has(>.map.town){padding-bottom:calc(var(--tbar) + env(safe-area-inset-bottom,0px))}
+#app:has(>.map.town) #msg,#app:has(>.map.town) .vgsay{scroll-margin-bottom:calc(var(--tbar) + env(safe-area-inset-bottom,0px) + 8px)}
+.tbar{position:fixed;z-index:15;left:50%;bottom:0;transform:translateX(-50%);width:min(100%,460px);box-sizing:border-box;height:calc(var(--tbar) + env(safe-area-inset-bottom,0px));padding:5px 5px calc(5px + env(safe-area-inset-bottom,0px));display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;background:linear-gradient(180deg,#1c3268,#0a1636 60%,#070f28);border-top:2px solid #d9b465;box-shadow:0 -1px 0 rgba(20,12,0,.6),0 -6px 14px rgba(0,0,0,.35)}
+.tbar::before{content:"";position:absolute;left:0;right:0;top:3px;border-top:1px solid rgba(217,180,101,.55);pointer-events:none}
+button.hz.tcmd{position:relative;left:auto;top:auto;width:100%;height:100%;min-height:44px;margin:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:3px 0 2px;color:#fff;border:1.5px solid #d9b465;border-radius:10px;background:linear-gradient(180deg,rgba(34,58,118,.97),rgba(12,26,62,.97));box-shadow:0 0 0 1px rgba(20,12,0,.55),inset 0 1px 0 rgba(255,236,180,.28);text-align:center;font-weight:800;line-height:1.1;letter-spacing:0;text-shadow:0 1px 0 rgba(0,0,0,.5);animation:none}
+button.hz.tcmd::before{content:"";position:absolute;inset:2.5px;border:1px solid rgba(217,180,101,.45);border-radius:7px;pointer-events:none}
+button.hz.tcmd .ti{position:relative;flex:none;width:32px;height:32px;border-radius:50%;border:1.5px solid #f6e1a0;box-shadow:0 0 0 1px #9c7430,inset 0 0 6px rgba(0,0,0,.45);background:radial-gradient(circle at 45% 35%,#223d7e,#0b1636);display:flex;align-items:center;justify-content:center;font-size:1rem;line-height:1}
+button.hz.tcmd .ti svg{width:23px;height:23px}
 button.hz.tcmd .ti img{display:block;width:70%;height:70%;object-fit:contain}
-button.hz.tcmd b{display:block;min-width:0;font-family:var(--mm-font-head);font-weight:800;font-size:19px;letter-spacing:.06em;white-space:nowrap}
-button.hz.tcmd.tlong b{font-size:16px;letter-spacing:0}
+button.hz.tcmd b{display:block;max-width:100%;font-family:var(--mm-font-head);font-weight:800;font-size:13.5px;letter-spacing:.04em;white-space:nowrap}
 button.hz.tcmd:active{background:linear-gradient(180deg,rgba(46,80,160,.97),rgba(18,36,86,.97))}
 /* 未開放（闘技場）・今は行けない（ファーム）：少し沈めた色。未開放は小さな錠の印 */
-button.hz.tcmd.dis,button.hz.tcmd.lock{background:linear-gradient(180deg,rgba(44,54,86,.94),rgba(22,28,48,.94));color:#dfe4ee;border-color:#b99a55;opacity:1}
+button.hz.tcmd.dis,button.hz.tcmd.lock{background:linear-gradient(180deg,rgba(44,54,86,.96),rgba(22,28,48,.96));color:#dfe4ee;border-color:#b99a55;opacity:1}
 button.hz.tcmd.dis{cursor:default}button.hz.tcmd.dis .ti svg{opacity:.55}
-button.hz.tcmd.lock .ti::after{content:"";position:absolute;right:-4px;bottom:-3px;width:17px;height:17px;border-radius:50%;background:#0b1636 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M5 7V5.2a3 3 0 0 1 6 0V7' fill='none' stroke='%23e6bf62' stroke-width='1.6'/%3E%3Crect x='3.5' y='7' width='9' height='6.5' rx='1.2' fill='%23e6bf62'/%3E%3C/svg%3E") center/11px no-repeat;border:1px solid #d9b465}
-@media (max-height:720px){.map.town .tcmds{gap:6px;bottom:calc(env(safe-area-inset-bottom,0px) + 12px)}button.hz.tcmd{height:50px}button.hz.tcmd .ti{width:40px;height:40px}button.hz.tcmd .ti svg{width:27px;height:27px}button.hz.tcmd b{font-size:18px}button.hz.tcmd.tlong b{font-size:15.5px}}
+button.hz.tcmd.lock .ti::after{content:"";position:absolute;right:-6px;bottom:-4px;width:15px;height:15px;border-radius:50%;background:#0b1636 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M5 7V5.2a3 3 0 0 1 6 0V7' fill='none' stroke='%23e6bf62' stroke-width='1.6'/%3E%3Crect x='3.5' y='7' width='9' height='6.5' rx='1.2' fill='%23e6bf62'/%3E%3C/svg%3E") center/10px no-repeat;border:1px solid #d9b465}
+@media (max-height:720px){button.hz.tcmd{gap:2px;padding:2px 0 1px}button.hz.tcmd .ti{width:28px;height:28px}button.hz.tcmd .ti svg{width:20px;height:20px}button.hz.tcmd b{font-size:13px}}
 /* 市場：詳細は下からのシート（ふだんは閉じる）。会話中（.talk）は操作UIを隠す */
 .p10det{position:fixed;left:0;right:0;bottom:0;top:0;z-index:40;pointer-events:none}
 .p10detbg{position:absolute;inset:0;background:rgba(10,6,2,0);transition:background .2s}
@@ -1658,7 +1664,7 @@ function wd(j){if(p8Blocked())return;if(MMP7.trainRunOf(S.m))return farm("特訓
 const TOWN_BG="assets/town/town_main.jpg";
 // 街の施設コマンド［表示名, 補足, アイコン, 押したとき, 状態］。状態：ok＝行ける／dis＝今は行けない（ボタンを無効）／lock＝未開放（押すと案内だけ）
 // アイコンは金色の線画（下の TOWN_SVG の #tic-*）。画像ファイルのパス（.png／.webp／.jpg／.svg）を書けば、その画像で表示する
-const TOWN_CMDS=m=>[["市場","モンスター市場","#tic-market","market()","ok"],["牧場","ぽかぽか牧場","#tic-ranch","farm()","ok"],["研究所","モンスター研究所","#tic-lab","museum()","ok"],["闘技場","未開放","#tic-arena","townArena()","lock"],["ファームへ","育成","#tic-farm","hall()",m?"ok":"dis"]];
+const TOWN_CMDS=m=>[["市場","モンスター市場","#tic-market","market()","ok"],["牧場","ぽかぽか牧場","#tic-ranch","farm()","ok"],["研究所","モンスター研究所","#tic-lab","museum()","ok"],["闘技場","未開放","#tic-arena","townArena()","lock"],["ファーム","育成","#tic-farm","hall()",m?"ok":"dis"]];
 const townIcon=v=>v[0]=="#"?`<svg viewBox="0 0 32 32" aria-hidden="true"><use href="${v}"/></svg>`:/\.(png|webp|jpe?g|svg)$/i.test(v)?`<img src="${v}" alt="">`:v;
 // 背景上の建物ラベル（地図上の案内。押せない）［表示名, 背景画像上の x, y（ラベルの下の点が指す場所）］。ファームは街の建物ではないので付けない
 const TOWN_LABELS=[["闘技場",578,540],["研究所",300,1010],["牧場",770,930],["市場",400,1650]];
@@ -1678,7 +1684,7 @@ function townArena(){const e=$("#msg");if(e)e.textContent="闘技場は、まだ
 function townTop(){return `<div class="tplate tttl">${townCorners()}<b>街</b></div><div class="tplate tpinfo">${townCorners()}<div class="tav"><svg viewBox="0 0 34 34" aria-hidden="true"><use href="#tic-player"/></svg></div><div class="tpn"><b class="p115pn">${p11Esc(S.playerName||MMP11P.DEFAULT_NAME)}</b><small>ランク　${(S.br??-1)>=0?RN[S.br]:"ー"}</small></div><div class="tgold"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#tic-coin"/></svg>${S.g}<small>G</small></div></div>`}
 function lobby(msg,open){if(p8Blocked())return;if(S.playerNamePending)return p11NameScr(msg); // Phase 11：新規ゲームは最初にプレイヤー名を決める
  const h1=$("h1");if(h1)h1.style.display="";bgm("town");const m=S.m; // 街では見出し（h1）を CSS で隠す（main:has(>#app>.map.town)）。ほかの画面へ移れば元どおり
- $("#app").innerHTML=`<div class="map town" style="--town-bg:url(${TOWN_BG})">${TOWN_SVG}${townTop()}${TOWN_LABELS.map(l=>`<div class="tlbl" style="--x:${l[1]};--y:${l[2]}"><span>${l[0]}</span><i></i></div>`).join("")}<nav class="tcmds" aria-label="街の施設">${TOWN_CMDS(m).map(c=>`<button class="hz tcmd ${c[4]=="ok"?"":c[4]}${c[0].length>3?" tlong":""}" ${c[4]=="dis"?"disabled":""} onclick="${c[3]}" aria-label="${c[0]}${c[4]=="lock"?"（未開放）":""}" title="${c[1]}"><span class="ti">${townIcon(c[2])}</span><b>${c[0]}</b></button>`).join("")}</nav></div>
+ $("#app").innerHTML=`<div class="map town" style="--town-bg:url(${TOWN_BG})"><div class="tbg" aria-hidden="true"></div>${TOWN_SVG}${townTop()}${TOWN_LABELS.map(l=>`<div class="tlbl" style="--x:${l[1]};--y:${l[2]}"><span>${l[0]}</span><i></i></div>`).join("")}</div><nav class="tcmds tbar" aria-label="街の施設">${TOWN_CMDS(m).map(c=>`<button class="hz tcmd ${c[4]=="ok"?"":c[4]}" ${c[4]=="dis"?"disabled":""} onclick="${c[3]}" aria-label="${c[0]}${c[4]=="lock"?"（未開放）":""}" title="${c[1]}"><span class="ti">${townIcon(c[2])}</span><b>${c[0]}</b></button>`).join("")}</nav>
  ${bprof()}<div class="dlg"><div class="mon dm">${svg(0,0)}</div><div class="dbub" id="msg">${msg||(m?"行きたい場所をタップしよう！":"モンスターがいません。まずは市場で選ぼう。")}</div></div>${m?mcard(m):""}
  <button class="svb" onclick="savescr()">▶ セーブ・ロード</button>`;try{window.scrollTo(0,0)}catch(e){}
 }

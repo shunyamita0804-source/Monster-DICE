@@ -1,7 +1,7 @@
 // =========================================================
 // 街画面：背景＋施設コマンド（市場・牧場・研究所・闘技場・ファーム）
-//  ・自由移動マップではなく、背景の上に施設コマンドを並べる。背景は assets/town/town_main.jpg（仮の正式候補）を
-//    TOWN_BG の1か所から参照し、ファイルを置き換えるだけで差し替えられる（寸法に依存しない：cover・上寄せ）。
+//  ・自由移動マップではなく、背景の上に建物ラベル、画面下に固定の施設コマンドバー（横一列に5つ）。背景は assets/town/town_main.jpg を
+//    TOWN_BG の1か所から参照し、ファイルを置き換えるだけで差し替えられる。敷き方は「下寄せ」（下端をバーの上端にそろえ、上＝空から切る）。
 //  ・博物館は「研究所」に名前を変えた（中身は従来の図鑑のまま。新機能は作らない）。
 //  ・闘技場は開放条件が未実装のため、ロック表示にして押すと「まだ利用できません」とだけ案内する（条件は決めない）。
 //  ・ファームは連れているモンスターがいるときだけ（育成中は街そのものへ来られない＝従来どおり）。
@@ -17,7 +17,7 @@ import * as H from './e2e/harness.mjs';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const HTML = readFileSync(path.join(ROOT, 'index.html'), 'utf8');
 const line = (p) => HTML.split('\n').find((l) => l.startsWith(p));
-const LABELS = ['市場', '牧場', '研究所', '闘技場', 'ファームへ'];   // 正式な街画面（2026-09-29）で「ファーム」→「ファームへ」
+const LABELS = ['市場', '牧場', '研究所', '闘技場', 'ファーム'];   // 下部コマンドバー（2026-09-29）で「ファームへ」→「ファーム」（行き先は同じ hall()）
 const CALLS = ['market()', 'farm()', 'museum()', 'townArena()', 'hall()'];
 
 test('TW-1：街の背景は TOWN_BG の1か所だけで参照し、ファイルが存在する（旧マップの埋め込み画像 MAPIMG は使わない）', () => {
@@ -27,16 +27,20 @@ test('TW-1：街の背景は TOWN_BG の1か所だけで参照し、ファイル
   assert.equal((HTML.match(/town_main\.jpg/g) || []).length, 2, '定義の1行とコメントの1か所だけ');
   assert.equal((HTML.match(/\$\{TOWN_BG\}/g) || []).length, 1, 'lobby() から1回だけ使う');
   assert.doesNotMatch(HTML, /MAPIMG/);
-  assert.match(HTML, /\.map\.town\{[^}]*var\(--town-bg\) var\(--town-pos,center top\)\/cover/, '寸法に依存しない敷き方（cover・位置は変数で差し替え可）');
+  assert.match(HTML, /\.tbg\{[^}]*top:calc\(var\(--tva\) - 2048 \* var\(--ts\)\)[^}]*background:var\(--town-bg\) center\/100% 100% no-repeat/, '下寄せ：画像の下端を街の枠（バーの上端）にそろえる');
+  assert.match(HTML, /--ts:max\(min\(max\(100cqw \/ 1152,var\(--tva\) \/ 2048\),\(var\(--tva\) - 76px\) \/ 1808\),var\(--tva\) \/ 2048\)/, '幅いっぱいが基本。闘技場の上部（y=240）が上部UIの下に切れるときは縮める');
+  assert.match(HTML, /\.tlbl\{[^}]*top:calc\(var\(--tva\) - \(2048 - var\(--y\)\) \* var\(--ts\)\)/, '建物ラベルも同じ下寄せの計算');
 });
 
-test('TW-2：施設コマンドは 市場・牧場・研究所・闘技場・ファーム の5つ（この順番）。行き先は従来の画面', () => {
+test('TW-2：施設コマンドは 市場・牧場・研究所・闘技場・ファーム の5つ（この順番）。行き先は従来の画面。画面下のバー（.tbar）に並べ、右側の縦並び（.map.town の中）は廃止', () => {
   const src = line('const TOWN_CMDS=');
   const f = new Function(`${src}\nreturn TOWN_CMDS;`)();
   assert.deepEqual(f({}).map((c) => [c[0], c[3], c[4]]), LABELS.map((l, i) => [l, CALLS[i], i === 3 ? 'lock' : 'ok']));
   assert.equal(f(null)[4][4], 'dis', 'モンスターがいないときファームは押せない（従来どおり）');
   const lobby = HTML.slice(HTML.indexOf('function lobby('), HTML.indexOf('\n}', HTML.indexOf('function lobby(')));
-  assert.match(lobby, /TOWN_CMDS\(m\)\.map/); assert.doesNotMatch(lobby, /mupin|博物館|style="left:/, '旧マップのタップ領域・博物館ピンは使わない');
+  assert.match(lobby, /<\/div><nav class="tcmds tbar" aria-label="街の施設">\$\{TOWN_CMDS\(m\)\.map/, 'バーは街の枠の外（画面下に固定）');
+  assert.doesNotMatch(HTML, /\.map\.town \.tcmds|tlong/, '右側の縦並びの指定は残さない');
+  assert.match(HTML, /\.tbar\{position:fixed;[^}]*bottom:0;[^}]*grid-template-columns:repeat\(5,minmax\(0,1fr\)\)/); assert.doesNotMatch(lobby, /mupin|博物館|style="left:/, '旧マップのタップ領域・博物館ピンは使わない');
 });
 
 test('TW-6：コマンドは施設名だけ（補足は title に残す）。アイコンは .ti に独立し、画像ファイルのパスを書けば画像で表示できる', () => {
@@ -74,18 +78,18 @@ test.after(async () => { if (L) await L.close(); });
 async function town(p, name = 'テスト', gold) {
   await H.newGame(p.page, name);
   if (gold != null) await p.page.evaluate((g) => { S.g = g; save(); lobby(); }, gold);
-  await p.page.waitForSelector('.map.town .tcmd');
+  await p.page.waitForSelector('.tbar .tcmd');
 }
-const cmds = (pg) => pg.evaluate(() => [...document.querySelectorAll('.map.town .tcmd')].map((b) => ({
+const cmds = (pg) => pg.evaluate(() => [...document.querySelectorAll('.tbar .tcmd')].map((b) => ({
   label: b.querySelector('b').textContent, call: b.getAttribute('onclick'), disabled: b.disabled, lock: b.classList.contains('lock') })));
-const toTown = async (pg) => { await pg.locator('button', { hasText: '街にもどる' }).first().click(); await pg.waitForSelector('.map.town .tcmd'); };
+const toTown = async (pg) => { await pg.locator('button', { hasText: '街にもどる' }).first().click(); await pg.waitForSelector('.tbar .tcmd'); };
 
 test('TW-B1：新規開始後の街：背景画像を読み込み、5つのコマンドが見える。ファームはモンスターがいないので押せない', { skip: SKIP }, async () => {
   const p = await L.open(); const pg = p.page;
   await town(p);
   assert.deepEqual((await cmds(pg)).map((c) => [c.label, c.call, c.disabled, c.lock]),
-    [['市場', 'market()', false, false], ['牧場', 'farm()', false, false], ['研究所', 'museum()', false, false], ['闘技場', 'townArena()', false, true], ['ファームへ', 'hall()', true, false]]);
-  const bg = await pg.evaluate(() => getComputedStyle(document.querySelector('.map.town')).backgroundImage);
+    [['市場', 'market()', false, false], ['牧場', 'farm()', false, false], ['研究所', 'museum()', false, false], ['闘技場', 'townArena()', false, true], ['ファーム', 'hall()', true, false]]);
+  const bg = await pg.evaluate(() => getComputedStyle(document.querySelector('.map.town .tbg')).backgroundImage);
   assert.match(bg, /assets\/town\/town_main\.jpg/);
   await pg.waitForFunction(() => performance.getEntriesByType('resource').some((r) => r.name.endsWith('town_main.jpg')));
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
@@ -96,7 +100,7 @@ test('TW-B2：各コマンドの遷移と「街にもどる」：市場・牧場
   await town(p, 'テスト', 1000);
   // 市場（カルーセル）→ 戻る
   await pg.click('.hz[onclick="market()"]'); await pg.waitForSelector('#p10car');
-  await pg.click('.p10back'); await pg.waitForSelector('.map.town .tcmd');
+  await pg.click('.p10back'); await pg.waitForSelector('.tbar .tcmd');
   // 牧場 → 戻る
   await pg.click('.hz[onclick="farm()"]'); await pg.waitForSelector('#app .ftiles'); await toTown(pg);
   // 研究所 → 詳細 → 研究所 → 街
@@ -114,11 +118,11 @@ test('TW-B2：各コマンドの遷移と「街にもどる」：市場・牧場
   // モンスターを連れているとファーム（育成前の出発準備の入口）へ行ける
   await pg.click('.hz[onclick="market()"]'); await H.marketDetail(pg); await pg.waitForSelector('.p10buy:not([disabled])'); await pg.waitForFunction(() => !P10_ANIM);
   await pg.waitForTimeout(500); await H.marketDetail(pg); await pg.click('.p10buy'); await pg.waitForSelector('#p10ov .p10ok'); await pg.waitForTimeout(600);
-  await pg.click('#p10ov .p10ok'); await pg.waitForSelector('.map.town .tcmd');
+  await pg.click('#p10ov .p10ok'); await pg.waitForSelector('.tbar .tcmd');
   assert.equal((await cmds(pg))[4].disabled, false);
   await pg.click('.hz[onclick="hall()"]'); await pg.waitForSelector('#app button[onclick="prepScr()"]');
   assert.equal((await H.getS(pg)).m.raise.state, 'none', 'ファームへ行っただけでは育成は始まらない');
-  await pg.evaluate(() => lobby()); await pg.waitForSelector('.map.town .tcmd');
+  await pg.evaluate(() => lobby()); await pg.waitForSelector('.tbar .tcmd');
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
 });
 
@@ -127,7 +131,7 @@ test('TW-B3：再読み込み→開始でも街はコマンド式で表示され
   await town(p, 'テスト', 1000);
   const s1 = await H.storedSave(pg);
   await pg.reload(); await pg.waitForFunction(() => typeof S === 'object');
-  await pg.click('[onclick*="startGame"]'); await pg.waitForSelector('.map.town .tcmd');
+  await pg.click('[onclick*="startGame"]'); await pg.waitForSelector('.tbar .tcmd');
   assert.equal((await cmds(pg)).length, 5);
   const s2 = await H.storedSave(pg);
   assert.equal(s2.v, 6); assert.deepEqual(s2, s1);
@@ -135,25 +139,39 @@ test('TW-B3：再読み込み→開始でも街はコマンド式で表示され
 });
 
 for (const [k, size] of Object.entries(H.SIZES)) {
-  test(`TW-B4（${size.join('×')}）：横はみ出しなし。5つのコマンドは街の枠と画面の中にあり、押せる大きさで、他の要素に隠れていない`, { skip: SKIP }, async () => {
+  test(`TW-B4（${size.join('×')}）：横はみ出しなし。5つのコマンドは画面下のバーに横一列・同じ幅（約20%）・押せる大きさで、他の要素に隠れていない。背景は下寄せで、市場はバーの裏に隠れず、闘技場の上部は上部UIの下に切れない`, { skip: SKIP }, async () => {
     const p = await L.open({ size }); const pg = p.page;
     await town(p);
+    await pg.evaluate(async () => { await document.fonts.ready; });
     const r = await pg.evaluate(() => {
-      const map = document.querySelector('.map.town').getBoundingClientRect();
-      return { sw: document.documentElement.scrollWidth, iw: innerWidth, map: [map.left, map.top, map.right, map.bottom],
-        b: [...document.querySelectorAll('.map.town .tcmd')].map((b) => { const x = b.getBoundingClientRect(); const hit = document.elementFromPoint(x.left + x.width / 2, x.top + x.height / 2);
-          return { l: x.left, t: x.top, r: x.right, b: x.bottom, w: x.width, h: x.height, hit: b.contains(hit), clip: b.scrollWidth > b.clientWidth }; }) };
+      const R = (e) => { const x = e.getBoundingClientRect(); return { l: x.left, t: x.top, r: x.right, b: x.bottom, w: x.width, h: x.height }; };
+      const map = R(document.querySelector('.map.town')), bar = R(document.querySelector('.tbar')), bg = R(document.querySelector('.tbg'));
+      const ts = bg.h / 2048, top = Math.max(...[...document.querySelectorAll('.tplate')].map((e) => e.getBoundingClientRect().bottom));
+      return { sw: document.documentElement.scrollWidth, iw: innerWidth, map, bar, bg, arenaTop: bg.t + 240 * ts, plates: top,
+        lbl: [...document.querySelectorAll('.tlbl')].map((e) => [e.textContent, R(e)]),
+        b: [...document.querySelectorAll('.tbar .tcmd')].map((b) => { const x = R(b); const hit = document.elementFromPoint(x.l + x.w / 2, x.t + x.h / 2);
+          return { ...x, hit: b.contains(hit), clip: b.scrollWidth > b.clientWidth || b.querySelector('b').scrollWidth > b.querySelector('b').clientWidth + 1 }; }) };
     });
     assert.ok(r.sw <= r.iw + 1, `横はみ出し ${r.sw} > ${r.iw}`);
+    assert.ok(Math.abs(r.bar.b - size[1]) <= 1 && r.bar.l <= 0.5 && Math.abs(r.bar.r - size[0]) <= 1, 'バーは画面の下端・幅いっぱい');
+    assert.ok(Math.abs(r.map.b - r.bar.t) <= 1, '街の枠の下端＝バーの上端');
+    assert.ok(Math.abs(r.bg.b - r.bar.t) <= 1, `背景は下寄せ：画像の下端（市場）がバーの上端にそろい、裏に隠れない（${r.bg.b}/${r.bar.t}）`);
+    assert.ok(r.bg.t <= 0.5, '背景の上に隙間を作らない（切るのは上側）');
+    assert.ok(r.arenaTop >= r.plates - 12, `闘技場の上部（画像の y=240）が上部UIの下に切れない（${Math.round(r.arenaTop)}/${Math.round(r.plates)}）`);
+    for (const [name, x] of r.lbl) assert.ok(x.l >= 0 && x.r <= r.iw && x.t >= r.plates - 1 && x.b <= r.bar.t, `建物ラベル「${name}」は画面内で、上部UIとバーの間`);
+    const ys = new Set(r.b.map((b) => Math.round(b.t)));
+    assert.equal(ys.size, 1, '横一列');
+    for (let i = 1; i < 5; i++) assert.ok(r.b[i].l > r.b[i - 1].r, '左から 市場・牧場・研究所・闘技場・ファーム');
     for (const b of r.b) {
-      assert.ok(b.l >= r.map[0] && b.r <= r.map[2] && b.t >= r.map[1] && b.b <= r.map[3], '街の枠の中');
-      assert.ok(b.r <= r.iw && b.b <= size[1], '最初の画面の中');
-      assert.ok(b.h >= 44 && b.w >= 100, `押しやすい大きさ（${b.w}×${b.h}）`);
+      assert.ok(b.l >= 0 && b.r <= r.iw && b.t >= r.bar.t && b.b <= size[1], '最初の画面の中（バーの中）');
+      assert.ok(b.w >= size[0] * 0.17 && b.w <= size[0] * 0.2 + 1, `幅は画面の約20%（${b.w}）`);
+      assert.equal(Math.round(b.h), size[1] <= 720 ? 50 : 58, '高さ：通常58px、高さの低い画面は50px（44px以上）');
       assert.ok(b.hit, '他の要素に隠れていない');
       assert.ok(!b.clip, '施設名が切れていない');
-      assert.ok(b.w >= 140 && b.w <= 160, `正式な街画面（A案）：押しやすく、背景を隠しすぎない幅（約152px。実際 ${b.w}px）`);
-      assert.equal(Math.round(b.h), size[1] <= 720 ? 50 : 58, '高さ：通常58px、高さの低い画面は50px（44px以上）');
     }
+    // 下へスクロールしてもバーは画面下に出たまま。いちばん下の要素（セーブ・ロード）はバーの裏に隠れない
+    const s = await pg.evaluate(() => { scrollTo(0, 1e6); const bar = document.querySelector('.tbar').getBoundingClientRect(), sv = document.querySelector('.svb').getBoundingClientRect(); return { bar: [bar.top, bar.bottom], sv: sv.bottom, y: scrollY }; });
+    assert.ok(s.y > 0 && Math.abs(s.bar[1] - size[1]) <= 1 && s.sv <= s.bar[0], `スクロールしてもバーは画面下・セーブ・ロードは隠れない（${JSON.stringify(s)}）`);
     assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
   });
 }

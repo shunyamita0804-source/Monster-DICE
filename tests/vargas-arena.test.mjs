@@ -100,14 +100,14 @@ test('VAR-B1：街：闘技場（ロック中）を押すと、案内文はシ�
   await p.ctx.close();
 });
 
-test('VAR-B2：4つの画面サイズで、ヴァルガスの吹き出しが画面に収まり、横にはみ出さない', { skip: SKIP }, async () => {
+test('VAR-B2：4つの画面サイズで、ヴァルガスの吹き出しが画面に収まり（下のコマンドバーに隠れない）、横にはみ出さない', { skip: SKIP }, async () => {
   for (const size of Object.values(H.SIZES)) {
     const p = await L.open({ size }); const pg = p.page; const tag = size.join('×');
     await H.newGame(pg, 'テスト');
     await pg.click('.hz[onclick="townArena()"]');
     await pg.waitForFunction(() => { const i = document.querySelector('.vgsay img'); return i && i.complete && i.naturalWidth > 0; });
-    const r = await pg.evaluate(() => { const b = document.querySelector('.vgsay').getBoundingClientRect(); return { inside: b.left >= -1 && b.right <= innerWidth + 1, sw: document.documentElement.scrollWidth, W: innerWidth }; });
-    assert.ok(r.inside, `${tag}：吹き出しが画面内`); assert.ok(r.sw <= r.W + 1, `${tag}：横にはみ出さない（${r.sw}/${r.W}）`);
+    const r = await pg.evaluate(() => { const b = document.querySelector('.vgsay').getBoundingClientRect(), bar = document.querySelector('.tbar').getBoundingClientRect(); return { inside: b.left >= -1 && b.right <= innerWidth + 1 && b.top >= 0 && b.bottom <= bar.top, sw: document.documentElement.scrollWidth, W: innerWidth }; });
+    assert.ok(r.inside, `${tag}：吹き出しが画面内（下の施設コマンドバーの裏に隠れない）`); assert.ok(r.sw <= r.W + 1, `${tag}：横にはみ出さない（${r.sw}/${r.W}）`);
     assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
     await p.ctx.close();
   }
