@@ -42,7 +42,7 @@ test('ME-B1：市場の耐久：出入り20・切り替え50・詳細30・案内
     const town1 = await snap();
     assert.deepEqual({ ...town1, iv: 0 }, { ...town0, iv: 0 }, '街→市場→街を20回：DOM・画像・イベントが増えない');
     assert.ok(town1.iv <= Math.max(1, town0.iv), 'くり返しのタイマーはBGMの1つだけ（増えない）');
-    await pg.click('.hz[onclick="market()"]'); await pg.waitForSelector('#p10car'); await idle(); await pg.waitForTimeout(300);
+    await pg.click('.hz[onclick="market()"]'); await pg.waitForSelector('#p10car'); if (await pg.$('.mmtalk')) await H.finishTalk(pg); await idle(); await pg.waitForTimeout(300);
     const m0 = await snap();
     for (let i = 0; i < 50; i++) { await pg.click(i % 3 ? '#p10car .p10arw.next' : '#p10car .p10arw.prev'); await idle(); }
     for (let i = 0; i < 30; i++) { await pg.click('#p10car .p10sl.on .p10plate'); await pg.waitForFunction(() => document.querySelector('.p10mk').classList.contains('det')); await pg.click('.p10detx'); await pg.waitForFunction(() => !document.querySelector('.p10mk').classList.contains('det')); }

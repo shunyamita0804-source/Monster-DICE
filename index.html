@@ -2447,8 +2447,11 @@ function karenTalk(key){if(window.MM_QA_NO_KAREN)return Promise.resolve(); // �
 function karenSay(lines){if(!window.MMNPC||!lines)return Promise.resolve();const mk=$(".p10mk");if(mk)mk.classList.add("talk");return MMNPC.talk(lines).then(()=>{if(mk)mk.classList.remove("talk")})}
 /** 購入確認：シートの上にカレンのアップ画像、シートの中に名前と一言（会話ウィンドウは出さない＝押す回数を増やさない） */
 function karenLine(key){const l=KAREN_TALK[key][0],im=window.MMNPC&&MMNPC.imageOf("karen","closeup",l.expression);return `<div class="kup">${im?`<img class="kupf" src="${im.src}" alt="カレン">`:""}<div class="kupw"><b>カレン</b><p>${l.text}</p></div></div>`}
-/** 市場に入ったとき：初回だけカレンのあいさつ（先に「表示済み」を保存してから出す＝再読込しても二度出ない） */
-function karenIntro(){const f=finaFlags();if(f.karenIntro)return;f.karenIntro=1;save();karenTalk("intro").then(()=>{const b=$("#p10kbar");if(b)b.classList.remove("wait");p10KarenHint()})} // あいさつが終わってから、カレンの案内欄を出す
+// 2回目以降の来店：カレンのアップ画像で1行だけ（説明はくり返さない）。3つから毎回1つを選ぶ
+const KAREN_AGAIN=["いらっしゃい。またモンスターを見に来たの？","新しい子が欲しくなったの？","今日はどの子を見ていく？"];
+function karenAgain(rnd=Math.random){if(window.MM_QA_NO_KAREN)return;karenSay([{npc:"karen",expression:"smile",text:KAREN_AGAIN[Math.floor(rnd()*KAREN_AGAIN.length)%KAREN_AGAIN.length]}])}
+/** 市場に入ったとき：初回はカレンの説明（2行）、2回目以降は1行のあいさつ。初回（先に「表示済み」を保存してから出す＝再読込しても二度出ない） */
+function karenIntro(){const f=finaFlags();if(f.karenIntro)return karenAgain();f.karenIntro=1;save();karenTalk("intro").then(()=>{const b=$("#p10kbar");if(b)b.classList.remove("wait");p10KarenHint()})} // あいさつが終わってから、カレンの案内欄を出す
 // 市場の案内欄の一言（種族ごと。無ければ「○○ね。」）。選択を切り替えるたびに出す（会話ウィンドウは開かない＝テンポを止めない）
 const KAREN_PICK={solamo:"ソラモね。バランスのいい子よ。",gauru:"ガウルね。素早さが魅力の子よ。"};
 /** 案内欄の一言と顔の表情を、中央の個体に合わせる。tip＝カレンのボタンを押したときの一言（販売中なら詳しく見る方法） */
