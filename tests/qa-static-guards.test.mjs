@@ -310,10 +310,12 @@ test('QA-N5：大会の暫定NPC名は、現在の種族名（ソラモ・ガウ
   }
 });
 
-test('QA-N6：旧ロゴ入りの埋め込み画像を新しい画面へ広げない（MKIMG・TRIMG・STL・RESTI・TITLEIMG は未使用、FARMIMG は farm、TRIMG2 は dscr・_hall・p7Shell だけ）', () => {
+test('QA-N6：旧ロゴ入りの埋め込み画像を新しい画面へ広げない（未使用だった MKIMG・TRIMG・STL・RESTI・TITLEIMG は削除済み、FARMIMG は farm、TRIMG2 は dscr・_hall・p7Shell だけ）', () => {
   // CLAUDE.md §5「旧名称が残る背景画像の差し替え：素材待ち」。差し替えまでの間、使う場所を増やさない。
   const uses = (id) => { const re = new RegExp(`(?<![\\w$.])${id}(?![\\w$])(?!\\s*=[^=])`, 'g'); const out = []; let m; while ((m = re.exec(CODE))) out.push(enclosingFn(CODE, m.index)); return out; };
   for (const id of ['MKIMG', 'TRIMG', 'STL', 'RESTI', 'TITLEIMG']) assert.deepEqual(uses(id), [], id);
+  // 未使用だった5件は 2026-09-29 の Stage 3（安全軽量化）で削除した。定義も戻さない（使う場所が無いまま容量だけ増えるため）
+  for (const id of ['MKIMG', 'TRIMG', 'STL', 'RESTI', 'TITLEIMG']) assert.doesNotMatch(CODE, new RegExp(`(?<![\\w$.])${id}\\s*=[^=]`), id + ' の定義は削除済み');
   for (const fn of uses('FARMIMG')) assert.equal(fn, 'farm');
   for (const fn of uses('TRIMG2')) assert.ok(['dscr', '_hall', 'p7Shell'].includes(fn), `TRIMG2 in ${fn}`);
   // 開始画面は正式画像だけ（旧 TITLEIMG は使わない）

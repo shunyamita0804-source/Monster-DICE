@@ -197,7 +197,8 @@ test('QA-TD3：新しい画像を base64 で埋め込んでいない（JS には
   assert.ok(js.length >= 13);
   for (const f of js) assert.equal((readFileSync(path.join(ROOT, f), 'utf8').match(/data:image\//g) || []).length, 0, f + ' に base64 画像が無い');
   const n = (HTML.match(/data:image\//g) || []).length;
-  assert.ok(n <= 197, `index.html の埋め込み画像は 197 件以下（いま ${n} 件）。新しい画像は assets/ にファイルとして置く`);
+  // 2026-09-29 の Stage 3（安全軽量化）で未使用の10件（MKIMG・TITLEIMG・TRIMG・STL×6・RESTI）を削除し、186件→176件
+  assert.ok(n <= 176, `index.html の埋め込み画像は 176 件以下（いま ${n} 件）。新しい画像は assets/ にファイルとして置く`);
 });
 
 // =========================================================

@@ -102,7 +102,7 @@ test('QA-G6-3：修行ボード：サイコロを振った後の再表示（ゴ�
 
 test('QA-G6-4：街（lobby）を開いたら、ほかの画面と同じく一番上から表示する', () => {
   // 守ること：以前は購入・合体の後などに街が途中までスクロールした位置で開き、見出しが画面の外だった
-  const src = between('function lobby(msg,open){', '\nconst MKIMG=');
+  const src = between('function lobby(msg,open){', '\n// ---- Phase 11：プレイヤー名');
   assert.match(src, /<button class="svb" onclick="savescr\(\)">▶ セーブ・ロード<\/button>`;try\{window\.scrollTo\(0,0\)\}catch\(e\)\{\}\n\}$/, '画面を描いた後に一番上へ');
   assert.match(src, /^function lobby\(msg,open\)\{if\(p8Blocked\(\)\)return;if\(S\.playerNamePending\)return p11NameScr\(msg\);/, '育成中・名前登録前の扱いは従来どおり');
 });
@@ -257,7 +257,7 @@ test('QA-G6-B2：実ブラウザ（375×667）：新規開始 → 市場で購�
   assert.equal(await pg.evaluate(() => scrollY), 0, '街は一番上から');
   assert.ok(await pg.evaluate(() => document.querySelector('h1').getBoundingClientRect().top >= 0), '見出しが見える');
   // 牧場（スクロールしてから街へ戻っても一番上から）
-  await pg.click('#app .map .hz[onclick="farm()"]');
+  await pg.click('#app .tbar .hz[onclick="farm()"]');
   await pg.waitForSelector('#app button[onclick="dep()"]');
   await pg.evaluate(() => window.scrollTo(0, 99999));
   assert.ok(await pg.evaluate(() => scrollY) > 0, '牧場の画面をスクロールした');
@@ -265,7 +265,7 @@ test('QA-G6-B2：実ブラウザ（375×667）：新規開始 → 市場で購�
   await pg.waitForSelector('#app .map');
   assert.equal(await pg.evaluate(() => scrollY), 0, '牧場から戻った街も一番上から');
   // ファーム → 出発準備 → 出発（フィナの確認 →「始める」→ フィナ→ダン → 出発）
-  await pg.click('#app .map .hz[onclick="hall()"]');
+  await pg.click('#app .tbar .hz[onclick="hall()"]');
   await pg.waitForSelector('#app button[onclick="prepScr()"]');
   await pg.click('#app button[onclick="prepScr()"]');
   const dep = '#app button[onclick="p7Depart(this)"]';

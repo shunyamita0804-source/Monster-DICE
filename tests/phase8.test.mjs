@@ -743,7 +743,7 @@ test('S10-3：画面に寿命・暦・疲労・ストレスを出さない（街
   const a = HTML.indexOf('async function fight('), b = HTML.indexOf('\n$("#snd").textContent', a);
   const srcs = {
     mcard: fnLine('const mcard='), stat: fnLine('const stat='), slab: fnLine('const slab='), bcomm: fnLine('function bcomm('),
-    lobby: between('function lobby(msg,open){', '\nconst MKIMG='), farm: between('function farm(msg,tab){', '\nfunction dep('),
+    lobby: between('function lobby(msg,open){', '\n// ---- Phase 11：プレイヤー名'), farm: between('function farm(msg,tab){', '\nfunction dep('),
     dscr: between('function dscr(id,msg){', '\nfunction skd(k)'), hall: between('function _hall(tab,msg){', '\nfunction after('),
   };
   for (const [k, v] of Object.entries(srcs)) {

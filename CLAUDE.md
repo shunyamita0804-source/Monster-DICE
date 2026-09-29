@@ -55,9 +55,9 @@ Claude Code は作業の前に毎回このファイルを読むこと。ここ�
 
 ### テスト
 
-- 実行方法：リポジトリ直下で `node --test tests/*.test.mjs`（Node 22 で確認。約6秒。実ブラウザテストは skip になる）
-- 実ブラウザテストも含める場合：`QA_E2E=1 node --test --test-concurrency=1 tests/*.test.mjs`（Playwright＋Chromium を使う。約15〜20分。並列だと約9MBの index.html の読み込みが重なり不安定になるため、必ず1ファイルずつ）。共通部品は tests/e2e/harness.mjs
-- 街のコマンド2段化の後：ふだんの実行は763件（合格589・skip 174・失敗0）。実ブラウザテストも含めた全件も失敗0が基準
+- 実行方法：リポジトリ直下で `node --test tests/*.test.mjs`（Node 22 で確認。約7秒。実ブラウザテストは skip になる）
+- 実ブラウザテストも含める場合：`QA_E2E=1 node --test --test-concurrency=1 tests/*.test.mjs`（Playwright＋Chromium を使う。約20〜30分。並列だと約7.9MBの index.html の読み込みが重なり不安定になるため、必ず1ファイルずつ）。共通部品は tests/e2e/harness.mjs
+- Stage 3（2026-09-29）の後：ふだんの実行は763件（合格589・skip 174・失敗0）。実ブラウザテストも含めた全件（46ファイルを1つずつ）は773件。失敗0が基準（この環境では qa-fix-g3 の QA-G3-B9 が負荷で落ちることがある。変更前の HEAD でも同じ。KNOWN_ISSUES.md の Stage 3）
 - 既知の失敗テスト：なし（M3-3 はテストの古い期待値が原因だったため、テスト側を修正。assets/monsters/soramo/・gauru/ のフォルダは旧PHASE 1 土台の data/assets.json が登録しているプロフィールカード画像で、ユーザー判断により残す。ゲームは使わない）
 - 画面・操作にかかわる変更をしたら：ふだんのテストと、変更に関係する実ブラウザテスト（該当ファイルだけ、QA_E2E=1）が通ったら、すぐ main へ push する。全件の実ブラウザテストは push の後に実行し、問題が出たらすぐ直して再 push する（試遊をすぐできるようにするため）
 
@@ -80,7 +80,7 @@ Claude Code は作業の前に毎回このファイルを読むこと。ここ�
 
 ### 検索・調査のルール（開発負荷の監査で追加。base64 の巨大行で会話の文脈を埋めないため）
 
-- index.html と legacy/index.original.html には、base64 画像の巨大な行がある（index.html は1564〜1975行目付近に集中。1行最大約2.6MB、合計約8.5MB）。そのまま検索・表示すると数MBの出力になる（例：index.html を「hp」で rg すると約8.9MB）。
+- index.html と legacy/index.original.html には、base64 画像の巨大な行がある（index.html は1883〜2129行目付近の7行に集中。1行最大約2.6MB。index.html 全体は約7.9MB（7,874,018バイト）で、そのうち base64 画像が176件・約7.5MB。2026-09-29 の Stage 3 で未使用の10件を削除した後の実測）。そのまま検索・表示すると数MBの出力になる（例：index.html を「hp」で rg すると約7.5MB）。
 - 通常の全文検索では legacy/ を対象にしない。リポジトリ直下の .ignore に `legacy/` を書いてあり、rg（Claude の Grep を含む）は自動で除外する。Git の追跡・GitHub Pages・テスト（sha256 照合）には影響しない。
 - legacy/ が必要な調査では、パスを明示して対象にする（例：`rg -M 500 -n 語 legacy/index.original.html`。ディレクトリ全体を検索するなら `rg --no-ignore`）。
 - index.html はゲーム本体なので検索対象から外さない。ただし rg／grep の結果に巨大な行をそのまま出さない：
@@ -333,6 +333,7 @@ Claude Code は作業の前に毎回このファイルを読むこと。ここ�
 
 - 現在：デザイン改修フェーズ。開始画面・市場カルーセル・共通会話・フィナの導入まで完了。正式市場背景は別AIで制作中。
 - 全体QA（2026-09-29）：QA_AUDIT.md に監査結果・修正内容・保留事項・今後の推奨をまとめた。
+- Stage 3（2026-09-29、安全軽量化・テスト正常化）：古いテスト3件の更新・MS-B6 の安定化・未使用の埋め込み画像10件の削除。QA_AUDIT.md の「14」
 - 次の予定：未指示（要確認）。技術面の推奨は QA_AUDIT.md の「10. 今後の修正の推奨」
 
 ## 5. 未決事項（推測で埋めない）

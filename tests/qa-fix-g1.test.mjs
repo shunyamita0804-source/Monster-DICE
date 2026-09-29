@@ -324,7 +324,10 @@ test('QA-G1-B1：S.m が文字列・牧場に数値や null が入ったセー�
   await start(p, '#app .map');
   const S = await H.getS(p.page);
   assert.equal(S.m, null); assert.equal(S.box.length, 1); assert.equal(S.box[0].uid, base.box[0].uid); assert.equal(S.g, 450);
-  assert.match(await H.text(p.page), /🪙 450G/);
+  // 所持金は街ではなくプロフィールに出す（2026-09-29 の街UI変更）。文字列の '450' が数値 450 として表示されること
+  await p.page.click('.tbar .hz[onclick="profileScr()"]');
+  await p.page.waitForSelector('.pfds .pfrow dd');
+  assert.equal(await p.page.evaluate(() => document.querySelector('.pfds .pfrow dd').innerText.replace(/\s+/g, '')), '450G', 'プロフィールの所持金');
   await p.page.evaluate(() => farm('', 'b'));   // 牧場の「受け取る」タブ（以前は null の個体で止まった）
   await p.page.waitForFunction(() => /受け取る/.test(document.body.innerText));
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);

@@ -144,7 +144,8 @@ test('P15-1：開始画面は旧画像（TITLEIMG）を使わず、正式名称�
   // デザイン改修1で、正式開始画面画像（タイトル・開始ボタンの絵を含む）に置き換え。HTMLのタイトル文字は重ねない（詳細は title-design.test.mjs）
   assert.doesNotMatch(t, /p15logo|FARM_INTERVAL/, 'HTMLのタイトル文字・仮背景は使わない');
   assert.match(t, /<button class="p15start" data-nsfx="1" onclick="startGame\(this\)">タップしてはじめる<\/button>/, '開始ボタンは画像ではなくボタン（画像のボタン位置に重ねる）');
-  assert.match(HTML, /const TITLEIMG="data:image/, '旧画像のデータ自体は削除しない（開始画面から外すだけ）');
+  // 旧画像（TITLEIMG）は未使用のため、2026-09-29 の Stage 3（安全軽量化）で index.html から削除した（元データは legacy/index.original.html に残る）
+  assert.doesNotMatch(HTML, /const TITLEIMG=/, '未使用の旧画像のデータは削除済み');
   assert.match(rd('js/phase8/raising.js'), /const SAVE_KEY = 'mr4v6';/, 'セーブのキーは変えない');
 });
 

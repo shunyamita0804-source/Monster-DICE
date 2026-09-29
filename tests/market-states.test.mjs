@@ -131,10 +131,31 @@ test('MS-B7：矢印・左右のタップ・キー操作を素早く混ぜても
   assert.deepEqual(p.errors, []);
 });
 
+/**
+ * 画面の登場アニメ（#app>* の scr：translateY(12px)→0、0.3秒）や詳細シートの動きがすべて終わり、
+ * 市場の枠の位置と文書の高さが2フレーム続けて同じになるまで待つ（負荷が高いとき、アニメの途中で高さを測って 12px 多く出ていた）。
+ * くり返し続くアニメ（終わりの無いもの）は待たない。
+ */
+async function settled(pg) {
+  const ok = await pg.evaluate(() => new Promise((res) => {
+    const t0 = performance.now(); let last = null, same = 0;
+    const tick = () => {
+      const moving = document.getAnimations().some((a) => a.playState === 'running' && a.effect && Number.isFinite(a.effect.getComputedTiming().endTime));
+      const r = document.querySelector('.p10mk').getBoundingClientRect(), key = `${r.top},${r.height},${document.documentElement.scrollHeight}`;
+      same = !moving && key === last ? same + 1 : 0; last = key;
+      if (same >= 2) return res(true);
+      if (performance.now() - t0 > 10000) return res(false);
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }));
+  assert.ok(ok, '画面のアニメが終わり、位置が落ち着く（10秒以内）');
+}
+
 for (const [k, size] of Object.entries(H.SIZES)) {
   test(`MS-B6（${size.join('×')}）：縦スクロールなし・横はみ出しなし。詳細を開くと購入ボタンまで画面内。上部のプレイヤー情報は折り返さない`, { skip: SKIP }, async () => {
     const p = await L.open({ size }); const pg = p.page;
-    await H.newGame(pg, 'アルトリウス'); await pg.evaluate(() => market()); await pg.waitForFunction(() => !P10_ANIM); await pg.waitForTimeout(300);
+    await H.newGame(pg, 'アルトリウス'); await pg.evaluate(() => market()); await pg.waitForFunction(() => !P10_ANIM); await settled(pg);
     const pg0 = await pg.evaluate(() => ({ sh: document.documentElement.scrollHeight, ih: innerHeight, sw: document.documentElement.scrollWidth, iw: innerWidth,
       who: [...document.querySelectorAll('.p10who small, .p10who b, .p10gold')].map((e) => { const r = e.getBoundingClientRect(), lh = parseFloat(getComputedStyle(e).lineHeight) || parseFloat(getComputedStyle(e).fontSize) * 1.4; return r.height <= lh * 1.25 + 1; }) }));
     assert.ok(pg0.sh <= pg0.ih + 1, `縦スクロールなし ${pg0.sh} > ${pg0.ih}`); assert.ok(pg0.sw <= pg0.iw + 1);
@@ -142,7 +163,7 @@ for (const [k, size] of Object.entries(H.SIZES)) {
     const kb = await pg.evaluate(() => { const r = document.getElementById('p10kbar').getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom, ih: innerHeight, iw: innerWidth, hidden: document.getElementById('p10kbar').classList.contains('wait') }; });
     assert.equal(kb.hidden, false);
     assert.ok(kb.t >= 0 && kb.l >= 0 && kb.r <= kb.iw && kb.b <= kb.ih - 4, `カレンの案内欄の枠全体が画面内（下端 ${kb.b} / ${kb.ih}）`);
-    await pg.click('#p10car .p10sl.on .p10plate'); await pg.waitForFunction(() => document.querySelector('.p10mk').classList.contains('det')); await pg.waitForTimeout(350);
+    await pg.click('#p10car .p10sl.on .p10plate'); await pg.waitForFunction(() => document.querySelector('.p10mk').classList.contains('det')); await settled(pg);
     const r = await pg.evaluate(() => { const b = document.querySelector('#p10info .p10buy').getBoundingClientRect(), bars = [...document.querySelectorAll('#p10info .p10bar')].map((x) => x.getBoundingClientRect());
       return { top: b.top, bottom: b.bottom, ih: innerHeight, sy: scrollY, bars: bars.every((x) => x.top >= 0 && x.bottom <= innerHeight) }; });
     assert.ok(r.top >= 0 && r.bottom <= r.ih, `購入ボタンが画面内（${r.top}〜${r.bottom} / ${r.ih}）`); assert.equal(r.sy, 0); assert.ok(r.bars, '能力7項目も画面内');
