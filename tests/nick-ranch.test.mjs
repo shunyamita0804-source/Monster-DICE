@@ -42,8 +42,9 @@ test('NICK-3：牧場の吹き出し：通知（msg）は名前・顔なし。�
   const f = farmSrc();
   assert.ok(f.includes('${msg?`<div class="fbub sys">${msg}</div>`:`<div class="fbub fnick"><img class="fbface" src="${NICK_FACE}" alt=""><b>ニック</b><br>${NICK_TALK.ranch[R(NICK_TALK.ranch.length)]}</div>`}'));
   assert.doesNotMatch(f, /NP\.f|<b>ダン<\/b>/, '牧場に旧「ダン」を出さない');
-  assert.match(HTML, /\.fbub\.fnick::after,\.fbub\.sys::after\{display:none\}/, '背景の絵の旧人物を指すしっぽは出さない');
-  assert.match(HTML, /\.fbub\.sys\{background:#0c1f56;border-color:#c9a24d;color:#fff\}/, "通知は紺地・白文字（背景の絵の旧い吹き出しを隠す大きさは保つ）");
+  assert.doesNotMatch(HTML, /\.fbub::after|\.fbub\.fnick::after/, '吹き出しのしっぽ（背景の絵の人物を指す）は無い');
+  assert.match(HTML, /\.fbub\{position:absolute;left:3%;top:3%;width:52%;/, '正式背景では左上の空に出す（牧舎を隠さない。旧い吹き出しを隠す位置・最小の高さは不要になった）');
+  assert.match(HTML, /\.fbub\.sys\{background:#0c1f56;border-color:#c9a24d;color:#fff\}/, '通知は紺地・白文字');
   assert.doesNotMatch(f, /MMNPC|finaTalk/, '牧場で会話ウィンドウは開かない');
 });
 

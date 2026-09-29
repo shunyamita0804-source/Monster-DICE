@@ -288,13 +288,11 @@ button.svb{display:inline-block;background:linear-gradient(#5a4a44,#2f2622);colo
 .cw{position:absolute;width:96px;height:96px;margin:-48px 0 0 -48px;fill:none;stroke:#fff;stroke-width:6;stroke-linecap:round;filter:drop-shadow(0 0 6px var(--c)) drop-shadow(0 0 3px var(--c));z-index:8;pointer-events:none}
 .crs{position:absolute;width:110px;height:110px;margin:-55px 0 0 -55px;z-index:8;pointer-events:none;filter:drop-shadow(0 0 10px var(--c))}
 .tpage{position:relative;aspect-ratio:1024/1536;background-size:cover;background-position:center;border:3px solid #8a5a2b;border-radius:18px;overflow:hidden;box-shadow:0 0 0 4px #e8c86a,0 6px 0 4px #8a5a2b}.tcap{text-align:center;margin:8px 0}
-.fscene{position:relative;aspect-ratio:941/1055;background-size:cover;background-position:center;border:3px solid #8a5a2b;border-radius:18px;overflow:hidden}
-.fbub{position:absolute;left:51%;top:47.5%;width:40%;min-height:14%;background:linear-gradient(#fffdf7,#efe4cf);color:#3a2a1a;border:3px solid #5a3a1a;border-radius:14px;padding:6px 10px;font-size:.72rem;line-height:1.4;font-weight:700;z-index:2}
+.fscene{position:relative;aspect-ratio:941/1055;background-size:cover;background-position:center 22%;border:3px solid #8a5a2b;border-radius:18px;overflow:hidden} /* 正式背景（縦長）は、牧舎の屋根から入口の門までが入る位置で切り取る */
+.fbub{position:absolute;left:3%;top:3%;width:52%;background:linear-gradient(#fffdf7,#efe4cf);color:#3a2a1a;border:3px solid #5a3a1a;border-radius:14px;padding:6px 10px;font-size:.72rem;line-height:1.4;font-weight:700;z-index:2}
 .fbub b{display:inline-block;background:#8a5a2b;color:#fff3dc;border-radius:8px;padding:0 8px;font-size:.7rem}
-.fbub::after{content:"";position:absolute;left:14%;bottom:-13px;border:8px solid transparent;border-top:12px solid #5a3a1a;border-bottom:0}
-.fbub.fnick::after,.fbub.sys::after{display:none} /* 牧場NPCはニック（背景の絵の旧人物は指さない） */
 .fbub .fbface{float:left;width:36px;height:36px;margin:0 6px 2px 0;border-radius:50%;border:2px solid #8a5a2b;background:#f3e2c0;object-fit:cover}
-.fbub.sys{background:#0c1f56;border-color:#c9a24d;color:#fff} /* システム通知（NPCの発言ではない）：名前・顔なし。背景の絵に描かれた旧い吹き出しを隠す大きさは保つ */
+.fbub.sys{background:#0c1f56;border-color:#c9a24d;color:#fff} /* システム通知（NPCの発言ではない）：名前・顔なし。ニックの一言と同じ位置（左上の空）に出す */
 .fhud{display:flex;justify-content:space-around;margin:8px 0;background:linear-gradient(#fff8e6,#efe0bc);border:3px solid #8a5a2b;border-radius:14px;padding:6px;color:#b0201a;font-weight:800;font-size:.95rem}
 .ftiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px}
 button.ftile{position:relative;padding:0;border:3px solid #8a5a2b;border-radius:16px;overflow:hidden;background:#2f2622;box-shadow:0 4px 0 #4a2f14}
@@ -1618,7 +1616,9 @@ function start(){
 function pick(i){S.m=mk(i);save();farm("はじめてのモンスターです。ファームで鍛えよう。")}
 const mcard=m=>`<div class="card"><div class="row"><div class="mw" id="m0"><div class="mon">${msv(m)}</div><div class="fx" id="f0"></div></div><div class="info"><b>${p11Esc(m.name)}</b> <small>ランク${MMP8.rankLabel(m)}</small><div class="st">${KS.map(k=>`<span>${LAB[k]} ${m[k]}</span>`).join("")}</div></div></div></div>`;
 const sm=m=>`ライフ${m.li} ちから${m.po} かしこさ${m.in} 命中${m.hi} 回避${m.ev} 丈夫さ${m.de}`;
-const FARMIMG="assets/embedded/farmimg_ranch.jpg";
+const FARMIMG="assets/embedded/farmimg_ranch.jpg"; // 旧牧場背景（旧人物・旧い吹き出し・旧ロゴ入り）。互換のため残す（表示には使わない）
+// 牧場の背景（正式。1152×2048。元データは assets/ranch/original/。旧人物・旧い吹き出し・旧ロゴは描かれていない）
+const RANCH_BG="assets/ranch/ranch_main.jpg";
 const FT=["assets/embedded/ft_0_deposit.jpg", "assets/embedded/ft_1_withdraw.jpg", "assets/embedded/ft_2_fusion.jpg"];
 let ft="a";
 const cname=({name:a},{name:b})=>Array.from(a).slice(0,2).join("")+Array.from(b).slice(-2).join(""); // 親1の名前の前2文字＋親2の名前の後ろ2文字。文字（コードポイント）単位で切る（絵文字を半分にしない）
@@ -1633,7 +1633,7 @@ function farm(msg,tab){if(p8Blocked())return;p9Immersive(false);bgm("farm");
   const [a,c]=sel.map(i=>all[i]);
   b=all.length<2?"<p>合体には2体以上必要です。市場でモンスターを選ぼう。</p>":`<p><small>合体させる2体を選んでください。</small></p><div class="fz"><div class="slot">${slot(a)}</div><span>＋</span><div class="slot">${slot(c)}</div></div>`+all.map((x,i)=>`<button class="t ${sel.includes(i)?"on":""}" onclick="selm(${i})">${sel.includes(i)?["①","②"][sel.indexOf(i)]+" ":""}${p11Esc(x.name)}${x==m?"（連れている）":""}<small>${sm(x)}</small></button>`).join("")+(a&&c?`<div class="card"><b>生まれるモンスター：${p11Esc(cname(a,c))}</b><div class="st">${KS.map(k=>`<span>${LAB[k]} ${Math.min(999,Math.round((a[k]+c[k])*.6))}</span>`).join("")}</div><small>2体は消え、新しい個体（未育成）が生まれます。</small></div><button class="go" ${S.g<200?"disabled":""} onclick="fuse()">合体させる！（200G）</button>`:"");
  }
- $("#app").innerHTML=`<button class="back" onclick="pfSellUid=null;lobby()">◀ 街にもどる</button><div class="fscene" style="background-image:url(${FARMIMG})">${msg?`<div class="fbub sys">${msg}</div>`:`<div class="fbub fnick"><img class="fbface" src="${NICK_FACE}" alt=""><b>ニック</b><br>${NICK_TALK.ranch[R(NICK_TALK.ranch.length)]}</div>`}${[S.m,...S.box].filter(Boolean).map((x,i)=>`<div class="wk" style="top:${80+(i*7)%12}%;--d:${9+(i*5)%8}s;animation-delay:-${(i*3.7)%9}s"><div class="mon">${msv(x)}</div></div>`).join("")}</div><div class="fhud"><span>🏆 大会優勝 ${S.wins||0}回</span><span>🪙 ${S.g}G</span></div><div class="ftiles">${[["a",FT[0],"預ける","fa"],["b",FT[1],`受け取る(${S.box.length})`,"fb"],["c",FT[2],"合体","fc"]].map(x=>`<button class="ftile ${ft==x[0]?"on":""}" onclick="farm('','${x[0]}')"><img src="${x[1]}" alt=""><span class="fl ${x[3]}">${x[2]}</span></button>`).join("")}</div><button class="fsell ${ft=="d"?"on":""}" onclick="farm('','d')">💰 モンスターを売る</button><div class="wpanel">${b}</div>`;
+ $("#app").innerHTML=`<button class="back" onclick="pfSellUid=null;lobby()">◀ 街にもどる</button><div class="fscene" style="background-image:url(${RANCH_BG})">${msg?`<div class="fbub sys">${msg}</div>`:`<div class="fbub fnick"><img class="fbface" src="${NICK_FACE}" alt=""><b>ニック</b><br>${NICK_TALK.ranch[R(NICK_TALK.ranch.length)]}</div>`}${[S.m,...S.box].filter(Boolean).map((x,i)=>`<div class="wk" style="top:${80+(i*7)%12}%;--d:${9+(i*5)%8}s;animation-delay:-${(i*3.7)%9}s"><div class="mon">${msv(x)}</div></div>`).join("")}</div><div class="fhud"><span>🏆 大会優勝 ${S.wins||0}回</span><span>🪙 ${S.g}G</span></div><div class="ftiles">${[["a",FT[0],"預ける","fa"],["b",FT[1],`受け取る(${S.box.length})`,"fb"],["c",FT[2],"合体","fc"]].map(x=>`<button class="ftile ${ft==x[0]?"on":""}" onclick="farm('','${x[0]}')"><img src="${x[1]}" alt=""><span class="fl ${x[3]}">${x[2]}</span></button>`).join("")}</div><button class="fsell ${ft=="d"?"on":""}" onclick="farm('','d')">💰 モンスターを売る</button><div class="wpanel">${b}</div>`;
 }
 // ---- 牧場：モンスター売却（未育成50G／育成完了は能力の上昇と到達ランクに応じて最大400G。育成中は不可・最後の1体は不可。確定は2度押し） ----
 let pfSellUid=null;

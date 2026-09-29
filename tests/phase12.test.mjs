@@ -38,11 +38,11 @@ test('G1-2：修行場5種は修行の種類（po/in/hi/ev/de）と1対1・正�
   assert.ok(HTML.indexOf('js/phase12/scenes.js') > HTML.indexOf('js/phase11/player.js'));
 });
 
-test('G2-1：Chapter間ファームの背景は正式背景（対応表から取得）。旧ファーム画像は街の「ぽかぽか牧場」で引き続き使用（削除しない）', () => {
+test('G2-1：Chapter間ファームの背景は正式背景（対応表から取得）。旧ファーム画像（FARMIMG）は互換のため残し（削除しない）、街の「ぽかぽか牧場」は正式背景 RANCH_BG', () => {
   const f = HTML.slice(HTML.indexOf('function p9FarmScr('), HTML.indexOf('\n// ---- Phase 8：育成中の画面遷移'));
   assert.match(f, /<div class="p9stage" style="background-image:url\(\$\{MMP12S\.FARM_INTERVAL\.src\}\);background-position:\$\{MMP12S\.FARM_INTERVAL\.focus\}">/);
   assert.doesNotMatch(f, /FARMIMG/, 'Chapter間ファームでは旧画像を使わない');
-  assert.match(HTML, /const FARMIMG="assets\/embedded\/farmimg_ranch\.jpg";/, '旧ファーム画像のデータは残す（外部化：assets/embedded/）'); assert.ok(existsSync(path.join(ROOT, 'assets/embedded/farmimg_ranch.jpg'))); assert.match(line('function farm(msg,tab){') + HTML.slice(HTML.indexOf('function farm(msg,tab){'), HTML.indexOf('function farm(msg,tab){') + 4000), /FARMIMG/, '街の牧場では従来どおり');
+  assert.match(HTML, /const FARMIMG="assets\/embedded\/farmimg_ranch\.jpg";/, '旧ファーム画像のデータは残す（外部化：assets/embedded/）'); assert.ok(existsSync(path.join(ROOT, 'assets/embedded/farmimg_ranch.jpg'))); assert.match(line('function farm(msg,tab){') + HTML.slice(HTML.indexOf('function farm(msg,tab){'), HTML.indexOf('function farm(msg,tab){') + 4000), /RANCH_BG/, '街の牧場は正式背景（assets/ranch/ranch_main.jpg）'); assert.match(HTML, /const RANCH_BG="assets\/ranch\/ranch_main\.jpg";/); assert.ok(existsSync(path.join(ROOT, 'assets/ranch/ranch_main.jpg')));
   for (const t of ['prepScr()', "hall('s')", "hall('st')", "hall('w')", 'shopScr()', 'p8Suspend()', 'p8AbandonAsk()']) assert.ok(f.includes(t), `コマンド（${t}）は変えない`);
   assert.doesNotMatch(f, /次のChapterへ<\/text>|アイテム屋<\/text>/, '背景に文字を焼き込まない（文字はUIとして表示）');
 });
