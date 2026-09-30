@@ -59,11 +59,11 @@ await ctx.route('**/*', async (route) => {
     const body = Buffer.from(await r.arrayBuffer());
     const hd = {}; r.headers.forEach((v, k) => { if (!['content-encoding', 'content-length', 'transfer-encoding'].includes(k)) hd[k] = v; });
     await route.fulfill({ status: r.status, headers: hd, body });
-  } catch (e) { errs.push('取得失敗 ' + u + ' ' + e); await route.abort(); }
+  } catch (e) { errs.push('取得失敗 ' + u + ' ' + e + (e && e.cause ? ' cause=' + (e.cause.code || '') + ' ' + String(e.cause.message || e.cause).slice(0, 160) : '') + ' type=' + req.resourceType()); await route.abort(); }   // 原因（通信・プロキシ・コード）を切り分けられるよう、cause とリソースの種類も記録
 });
 const page = await ctx.newPage();
 page.on('response', (r) => { if (r.status() >= 400 && !/fonts\.(googleapis|gstatic)/.test(r.url())) bad.push(`${r.status()} ${r.url().slice(0, 150)}`); });
-page.on('pageerror', (e) => errs.push(String(e).slice(0, 300)));
+page.on('pageerror', (e) => errs.push(('pageerror ' + String(e) + ' | stack: ' + String(e && e.stack || '')).slice(0, 700)));
 
 // 会話（.mmtalk）を送る。選択肢が出たら 'choice'、閉じたら 'none'
 async function drain(max = 40) {
