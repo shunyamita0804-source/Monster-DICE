@@ -147,7 +147,7 @@ test('SL-7：継続用救済と売却を繰り返しても所持金は増え続�
 test('SL-8：画面：牧場に「モンスターを売る」→ 一覧（売却額）→ 確認（名前・種族・売却額）→ 2度押しで確定。育成中は画面に進めない', () => {
   const farm = between('function farm(msg,tab){', '\nfunction dep(');
   assert.match(farm, /^function farm\(msg,tab\)\{if\(p8Blocked\(\)\)return;/, '育成中は牧場（売却画面）へ進めない');
-  assert.match(farm, /else if\(ft=="d"\)b=pfSellPanel\(all\);/); assert.match(farm, /onclick="farm\('','d'\)">💰 モンスターを売る<\/button>/);
+  assert.match(farm, /else if\(ft=="d"\)b=pfSellPanel\(all\);/); assert.match(farm, /<button class="fsell rnsell\$\{ft=="d"\?" on":""\}" onclick="farm\('','d'\)">\$\{rnIc\("sell"\)\}<span class="fl">売る<\/span><\/button>/, '牧場の4コマンドの「売る」（2026-09-30 の正式UI）');
   const panel = lineOf('function pfSellPanel(all){') + between('function pfSellPanel(all){', '\nfunction pfSellPick(');
   assert.match(panel, /売却の確認<\/b>.*\$\{p11Esc\(x\.name\)\}<\/b><br><small>種族：\$\{sp\}/); assert.match(panel, /売却額：<b>\$\{c\.price\}G<\/b>/);
   assert.match(panel, /<button \$\{own>=2&&q\[i\]\.ok\?"":"disabled"\} onclick="pfSellPick\(\$\{i\}\)">売る<\/button>/, '最後の1体・育成中は押せない');

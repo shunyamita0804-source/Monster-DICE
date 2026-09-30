@@ -1476,6 +1476,51 @@ button.p10karen img{display:block;width:100%;height:auto;margin-top:2px;transfor
  .fmcmd{gap:6px 8px;margin-top:7px}.fm button.fmb{height:44px;font-size:16px}
  .fmft{margin-top:7px}.fm button.fmgo{height:56px}.fm .fmgo b{font-size:20px}.fm button.fmrd{width:56px;height:56px}
 }
+/* ===== 牧場（正式UI 2026-09-30。farm()）：正式背景 RANCH_BG（そのまま）＋ニックの一言、下に4コマンド（2×2）。
+   街・ファームと同じ濃紺・金の二重線・金色の線画アイコン。合体は淡い青紫の光と金の飾りで少しだけ特別に、売るは暗い赤茶の差し色で注意を ===== */
+.rn{margin:-16px -16px 0;padding:calc(env(safe-area-inset-top,0px) + 8px) 12px calc(14px + env(safe-area-inset-bottom,0px));min-height:100dvh;box-sizing:border-box;background:linear-gradient(#0c1630,#14234a 40%,#0c1630);color:#fff}
+.rnhd{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;margin-bottom:8px}
+.rn .rnhd button.back{justify-self:start;margin:0;padding:6px 12px;min-height:36px;border-radius:18px;font-size:12.5px;font-weight:700;color:#f6dc98;background:linear-gradient(#223766,#12204a);border:1.5px solid #e0b861;box-shadow:inset 0 0 0 2px #0c1630,0 2px 6px rgba(0,0,0,.4)}
+.rnplq{position:relative;padding:5px 22px 6px;border-radius:8px;background:linear-gradient(#223766,#12204a);border:1.5px solid #e0b861;box-shadow:inset 0 0 0 2px #0c1630,inset 0 0 0 3px rgba(224,184,97,.55);white-space:nowrap}
+.rnplq::before,.rnplq::after{content:"";position:absolute;top:50%;width:7px;height:7px;background:#e0b861;transform:translateY(-50%) rotate(45deg)}
+.rnplq::before{left:-4px}.rnplq::after{right:-4px}
+.rnplq b{font-family:var(--mm-font-head);font-weight:800;font-size:17px;letter-spacing:.3em;margin-right:-.3em;color:#f6dc98}
+.rn .fhud{justify-self:end;display:flex;align-items:center;gap:5px;margin:0;margin-right:44px;padding:4px 10px 4px 5px;border-radius:14px;background:linear-gradient(#223766,#12204a);border:1px solid rgba(224,184,97,.8);color:#fff;font-size:12.5px;box-shadow:none}
+.rncoin{display:grid;place-items:center;width:18px;height:18px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff3c4,#e6b64e 45%,#a57422);color:#6d4912;font:900 10px/1 var(--mm-font-body)}
+.rn .fscene{margin:0 -12px;border:0;border-top:2px solid rgba(224,184,97,.7);border-bottom:2px solid rgba(224,184,97,.7);border-radius:0;box-shadow:0 0 0 1px #0c1630,0 6px 14px rgba(0,0,0,.45)}
+.rn .fbub{top:3%;width:min(58%,220px);min-height:0;box-sizing:border-box;padding:5px 9px 6px;border:1px solid rgba(156,116,48,.75);border-radius:10px;background:rgba(251,241,220,.86);color:#3a2a14;font-weight:500;font-size:11.5px;line-height:1.4;box-shadow:0 3px 8px rgba(0,0,0,.25)}
+.rn .fbub b{margin-right:5px;padding:1px 6px;border:1px solid #e0b861;border-radius:6px;background:#1d2f57;color:#fff;font-size:10px;vertical-align:1px}
+.rn .fbub br{display:none}
+.rn .fbub .fbface{width:28px;height:28px;margin:0 6px 0 0;border:1.5px solid #e0b861}
+.rn .fbub.sys{background:rgba(12,31,86,.92);border-color:#c9a24d;color:#fff}
+.rn .ftiles.rncmd{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;margin:12px 0 0}
+.rn .rncmd button.ftile,.rn .rncmd button.fsell{position:relative;display:flex;align-items:center;justify-content:center;gap:10px;width:auto;height:60px;min-height:0;margin:0;padding:0 8px;border-radius:10px;overflow:visible;color:#fff;background:linear-gradient(#223766,#15254a 55%,#101c3a);border:1.5px solid #e0b861;box-shadow:inset 0 0 0 2px #0c1630,inset 0 0 0 3px rgba(224,184,97,.5),0 3px 8px rgba(0,0,0,.45);font-family:var(--mm-font-head);font-weight:800;font-size:18px;letter-spacing:.1em;text-shadow:0 1px 1px #000}
+.rn .rncmd .fl{display:inline;padding:0;color:inherit;font-size:inherit;text-shadow:inherit;background:none}
+.rn .rncmd .fl small{margin-left:2px;font-size:13px;letter-spacing:0;color:#f6dc98}
+.rn .rncmd svg{width:28px;height:28px;flex:none;fill:none;stroke:#e0b861;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.rn .rncmd svg .f{fill:#f6dc98;stroke:none}
+.rn .rncmd button.on{border-color:#f6dc98;background:linear-gradient(#2c467f,#1a2d58 55%,#12204a);box-shadow:inset 0 0 0 2px #0c1630,inset 0 0 0 3px rgba(246,220,152,.85),0 0 10px rgba(246,220,152,.35),0 3px 8px rgba(0,0,0,.45)}
+.rn .rncmd button.on::after{content:"";position:absolute;left:30%;right:30%;bottom:5px;height:2px;border-radius:2px;background:#f6dc98}
+.rn .rncmd button.rnfuse{background:radial-gradient(ellipse at 50% 115%,rgba(150,120,255,.32),rgba(150,120,255,0) 68%),linear-gradient(#26396b,#17264d 55%,#111c3c)}
+.rn .rncmd button.rnfuse::before{content:"";position:absolute;inset:4px;border-radius:7px;border:1px solid rgba(190,170,255,.35);pointer-events:none}
+.rn .rncmd button.rnfuse svg{stroke:#f0d48a}
+.rn .rncmd button.rnsell{background:linear-gradient(#223766,#15254a 55%,#101c3a);box-shadow:inset 0 0 0 2px #0c1630,inset 0 0 0 3px rgba(224,184,97,.5),inset 0 -4px 0 #5a2a1c,0 3px 8px rgba(0,0,0,.45)}
+.rn .rncmd button.rnsell svg{stroke:#d9a47a}
+.rn .rncmd button.rnsell.on{box-shadow:inset 0 0 0 2px #0c1630,inset 0 0 0 3px rgba(246,220,152,.85),inset 0 -4px 0 #6a3222,0 0 10px rgba(246,220,152,.3),0 3px 8px rgba(0,0,0,.45)}
+.rn .wpanel{margin:12px 0 0;padding:12px;border-radius:12px;background:linear-gradient(#1b2b55,#111d3e);border:1.5px solid rgba(224,184,97,.8);box-shadow:inset 0 0 0 2px #0c1630,inset 0 0 0 3px rgba(224,184,97,.3);color:#f3ead4}
+.rn .wpanel small{color:#d9ccb0}
+.rn .rncmd button.ftile.on,.rn .rncmd button.fsell.on{outline:none}
+.rn .rncmd button.rnfuse{background:radial-gradient(ellipse at 50% 120%,rgba(150,120,255,.45),rgba(150,120,255,0) 70%),linear-gradient(#27396c,#17264d 55%,#111c3c)}
+.rn .rncmd button.rnsell{border-bottom-color:#b0714f;box-shadow:inset 0 0 0 2px #0c1630,inset 0 0 0 3px rgba(224,184,97,.5),inset 0 -5px 0 #6e3322,0 3px 8px rgba(0,0,0,.45)}
+.rn .rncmd button.rnsell.on{box-shadow:inset 0 0 0 2px #0c1630,inset 0 0 0 3px rgba(246,220,152,.85),inset 0 -5px 0 #7a3a26,0 0 10px rgba(246,220,152,.3),0 3px 8px rgba(0,0,0,.45)}
+.rn .wpanel button{border-radius:10px;border:1.5px solid #e0b861;background:linear-gradient(#2c467f,#1a2d58 55%,#12204a);color:#fff;box-shadow:inset 0 0 0 2px #0c1630,0 2px 6px rgba(0,0,0,.35);text-shadow:none;font-weight:700}
+.rn .wpanel button.go{min-height:48px;font-family:var(--mm-font-head);font-weight:800;font-size:16px;letter-spacing:.06em;color:#fff8e8;border-color:#f6dc98;box-shadow:inset 0 0 0 2px #0c1630,inset 0 0 0 3px rgba(246,220,152,.6),0 3px 8px rgba(0,0,0,.4)}
+.rn .wpanel .pfsell~button.go{border-bottom-color:#b0714f;box-shadow:inset 0 0 0 2px #0c1630,inset 0 0 0 3px rgba(246,220,152,.55),inset 0 -4px 0 #6e3322,0 3px 8px rgba(0,0,0,.4)} /* 売却の確定（2度押し）：暗い赤茶の差し色で注意 */
+.rn .wpanel button.t{display:block;width:100%;margin:6px 0 0;padding:8px 12px;text-align:left;background:rgba(12,22,50,.75);border-color:rgba(224,184,97,.6);color:#fff}
+.rn .wpanel button.t small{display:block;color:#d9ccb0}
+.rn .wpanel button.t.on{border-color:#f6dc98;background:linear-gradient(#2c467f,#1a2d58);box-shadow:inset 0 0 0 1px #f6dc98,0 0 8px rgba(246,220,152,.3)}
+.rn .wpanel button:disabled{opacity:.5}
+@media (max-height:700px){.rn .fscene{aspect-ratio:941/860}.rn .rncmd button.ftile,.rn .rncmd button.fsell{height:52px;font-size:17px}}
 </style></head><body><main>
 <h1>ミスティックモンスターズ</h1>
 <div id="app"></div>
@@ -1715,7 +1760,7 @@ let ft="a";
 const cname=({name:a},{name:b})=>Array.from(a).slice(0,2).join("")+Array.from(b).slice(-2).join(""); // 親1の名前の前2文字＋親2の名前の後ろ2文字。文字（コードポイント）単位で切る（絵文字を半分にしない）
 const slot=x=>x?`<div class="mon">${msv(x)}</div><b>${p11Esc(x.name)}</b>`:"<small>えらんでね</small>";
 function pasture(){const l=[S.m,...S.box].filter(Boolean);return `<div class="pasture"><span class="dc" style="left:6%;top:6%">☁️</span><span class="dc" style="right:10%;top:8%">☀️</span><span class="dc" style="left:3%;top:30%">🌳</span><span class="dc" style="right:3%;top:32%">🌳</span>${l.length?"":'<p class="pe">モンスターがいません</p>'}${l.map((x,i)=>`<div class="wk" style="top:${40+(i*23)%42}%;--d:${9+(i*5)%8}s;animation-delay:-${(i*3.7)%9}s"><div class="mon">${msv(x)}</div></div>`).join("")}</div>`}
-function farm(msg,tab){if(p8Blocked())return;p9Immersive(false);bgm("farm");
+function farm(msg,tab){if(p8Blocked())return;p9Immersive(true);bgm("farm"); // 牧場（正式UI 2026-09-30）：上に正式背景＋ニック、下に4コマンド（2×2）、その下に選んだ機能の中身（処理は従来どおり）
  if(tab&&tab!="d")pfSellUid=null;ft=tab||ft;const m=S.m,all=[m,...S.box].filter(Boolean);let b="";
  if(ft=="a")b=m?`${mcard(m)}<button class="go" onclick="dep()">このモンスターを預ける</button>`:"<p>いま連れているモンスターはいません。</p>";
  else if(ft=="b")b=S.box.length?S.box.map((x,j)=>`<div class="row rr"><div class="mon">${msv(x)}</div><div class="info"><b>${p11Esc(x.name)}</b><br><small>${sm(x)}</small></div><button onclick="wd(${j})">受け取る</button></div>`).join("")+(m?"<p><small>受け取ると、いま連れているモンスターは自動で預けられます。</small></p>":""):"<p>預けているモンスターはいません。</p>";
@@ -1724,8 +1769,11 @@ function farm(msg,tab){if(p8Blocked())return;p9Immersive(false);bgm("farm");
   const [a,c]=sel.map(i=>all[i]);
   b=all.length<2?"<p>合体には2体以上必要です。市場でモンスターを選ぼう。</p>":`<p><small>合体させる2体を選んでください。</small></p><div class="fz"><div class="slot">${slot(a)}</div><span>＋</span><div class="slot">${slot(c)}</div></div>`+all.map((x,i)=>`<button class="t ${sel.includes(i)?"on":""}" onclick="selm(${i})">${sel.includes(i)?["①","②"][sel.indexOf(i)]+" ":""}${p11Esc(x.name)}${x==m?"（連れている）":""}<small>${sm(x)}</small></button>`).join("")+(a&&c?`<div class="card"><b>生まれるモンスター：${p11Esc(cname(a,c))}</b><div class="st">${KS.map(k=>`<span>${LAB[k]} ${Math.min(999,Math.round((a[k]+c[k])*.6))}</span>`).join("")}</div><small>2体は消え、新しい個体（未育成）が生まれます。</small></div><button class="go" ${S.g<200?"disabled":""} onclick="fuse()">合体させる！（200G）</button>`:"");
  }
- $("#app").innerHTML=`<button class="back" onclick="pfSellUid=null;lobby()">◀ 街にもどる</button><div class="fscene" style="background-image:url(${RANCH_BG})">${msg?`<div class="fbub sys">${msg}</div>`:`<div class="fbub fnick"><img class="fbface" src="${NICK_FACE}" alt=""><b>ニック</b><br>${NICK_TALK.ranch[R(NICK_TALK.ranch.length)]}</div>`}${[S.m,...S.box].filter(Boolean).map((x,i)=>`<div class="wk" style="top:${80+(i*7)%12}%;--d:${9+(i*5)%8}s;animation-delay:-${(i*3.7)%9}s"><div class="mon">${msv(x)}</div></div>`).join("")}</div><div class="fhud"><span>🏆 大会優勝 ${S.wins||0}回</span><span>🪙 ${S.g}G</span></div><div class="ftiles">${[["a",FT[0],"預ける","fa"],["b",FT[1],`受け取る(${S.box.length})`,"fb"],["c",FT[2],"合体","fc"]].map(x=>`<button class="ftile ${ft==x[0]?"on":""}" onclick="farm('','${x[0]}')"><img src="${x[1]}" alt=""><span class="fl ${x[3]}">${x[2]}</span></button>`).join("")}</div><button class="fsell ${ft=="d"?"on":""}" onclick="farm('','d')">💰 モンスターを売る</button><div class="wpanel">${b}</div>`;
+ $("#app").innerHTML=`<div class="rn"><header class="rnhd"><button class="back" onclick="pfSellUid=null;lobby()">◀ 街にもどる</button><div class="rnplq"><b>牧場</b></div><div class="fhud"><span class="rncoin">G</span><b>${S.g}G</b></div></header><div class="fscene" style="background-image:url(${RANCH_BG})">${msg?`<div class="fbub sys">${msg}</div>`:`<div class="fbub fnick"><img class="fbface" src="${NICK_FACE}" alt=""><b>ニック</b><br>${NICK_TALK.ranch[R(NICK_TALK.ranch.length)]}</div>`}${[S.m,...S.box].filter(Boolean).map((x,i)=>`<div class="wk" style="top:${80+(i*7)%12}%;--d:${9+(i*5)%8}s;animation-delay:-${(i*3.7)%9}s"><div class="mon">${msv(x)}</div></div>`).join("")}</div><nav class="ftiles rncmd" aria-label="牧場のコマンド">${[["a","dep","預ける",""],["b","wd",`受け取る<small>(${S.box.length})</small>`,""],["c","fuse","合体"," rnfuse"]].map(x=>`<button class="ftile${x[3]}${ft==x[0]?" on":""}" onclick="farm('','${x[0]}')">${rnIc(x[1])}<span class="fl">${x[2]}</span></button>`).join("")}<button class="fsell rnsell${ft=="d"?" on":""}" onclick="farm('','d')">${rnIc("sell")}<span class="fl">売る</span></button></nav><div class="wpanel">${b}</div></div>`;
 }
+/** 牧場の4コマンドのアイコン（金色の線画。街・ファームと同じ系統） */
+const RN_IC={dep:'<path d="M5 14h22v13H5z"/><path d="M5 14l3-5h16l3 5"/><path d="M16 3v9M12.5 8.5L16 12l3.5-3.5"/>',wd:'<path d="M5 14h22v13H5z"/><path d="M5 14l3-5h16l3 5"/><path d="M16 12V3M12.5 6.5L16 3l3.5 3.5"/>',fuse:'<circle cx="11.5" cy="17" r="7"/><circle cx="20.5" cy="17" r="7"/><path d="M16 4.5l1 2.4 2.4 1-2.4 1-1 2.4-1-2.4-2.4-1 2.4-1z" class="f"/>',sell:'<path d="M11 8h10l-2 4h-6z"/><path d="M13 12c-5 3-7 7-7 10 0 4 4 6 10 6s10-2 10-6c0-3-2-7-7-10"/><path d="M16 16v8M13.5 18.5c0-1.2 1.2-2 2.5-2s2.5.6 2.5 1.8-1.2 1.7-2.5 1.9-2.5.8-2.5 2 1.2 1.8 2.5 1.8 2.5-.8 2.5-2"/>'};
+const rnIc=k=>`<svg viewBox="0 0 32 32" aria-hidden="true">${RN_IC[k]}</svg>`;
 // ---- 牧場：モンスター売却（未育成50G／育成完了は能力の上昇と到達ランクに応じて最大400G。育成中は不可・最後の1体は不可。確定は2度押し） ----
 let pfSellUid=null;
 const PF_SELL_WHY={raising:"育成中のモンスターがいるため、売却できません。",last:"最後の1体は売却できません。",not_found:"そのモンスターはもういません。"};
