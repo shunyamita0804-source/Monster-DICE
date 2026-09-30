@@ -15,7 +15,7 @@
 //  価格・報酬・文言・見た目・セーブ version 6／キー mr4v6／checkpoint形式、Phase 6 保護対象は変えていない。
 //  index.html の実物のコードを抽出して動かし（時計は差し替え）、実ブラウザ（tests/e2e/harness.mjs）でも確認する。
 // =========================================================
-import test, { before, after } from 'node:test';
+import test, { before, after, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -211,7 +211,15 @@ test('QA-G3-7：ガードは指定した場所だけ（全体には掛けない�
 // 実ブラウザ（index.html 全体）
 // ---------------------------------------------------------
 let L = null;
-before(async () => { if (!H.skipReason()) L = await H.launch(); });
+/** このテストで開いたページ。テストが終わるたびに閉じる（開いたままだと各ページの BGM（Web Audio）が CPU を取り合い、後半のテストほど遅くなって時間の判定がずれる） */
+const opened = [];
+before(async () => {
+  if (H.skipReason()) return;
+  L = await H.launch();
+  const open = L.open;
+  L.open = async (opt) => { const p = await open(opt); opened.push(p); return p; };
+});
+afterEach(async () => { while (opened.length) { const p = opened.pop(); try { await p.ctx.close(); } catch (e) {} } });
 after(async () => { if (L) await L.close(); });
 /** 開始画面の「はじめる」を押して、復帰先の画面が出るまで待つ */
 async function start(p, sel) {
@@ -233,6 +241,13 @@ const center = (page, sel) => page.evaluate((s) => { const e = document.querySel
 async function press(page, pt, touch) { if (touch) await page.touchscreen.tap(pt.x, pt.y); else await page.mouse.click(pt.x, pt.y); }
 /** 会話（MMNPC）の時計 Date.now を止められるようにする（qa-fix-g5 と同じ） */
 const dnClock = (pg) => pg.evaluate(() => { if (window.__dn) return; const real = Date.now.bind(Date), q = window.__dn = { f: null }; Date.now = () => (q.f != null ? q.f : real()); q.freeze = () => { q.f = real(); }; q.add = (ms) => { q.f += ms; }; q.thaw = () => { q.f = null; }; });
+/** 選択肢（.mmtalk-choice）が画面に出た瞬間に会話の時計を止める（ページの中で見張る）。テスト側の確認が負荷で遅れても、止まった時刻は「選択肢が出た直後」のまま */
+const dnFreezeOnChoices = (pg) => pg.evaluate(() => {
+  const q = window.__dn, hit = () => { if (q.f == null && document.querySelector('.mmtalk-choice')) { q.freeze(); return true; } return false; };
+  if (hit()) return;
+  const mo = new MutationObserver(() => { if (hit()) mo.disconnect(); });
+  mo.observe(document.body, { childList: true, subtree: true });
+});
 const DELIBERATE = 600;   // 「ゆっくりもう一度押す」間隔（0.4秒より十分長い）
 
 test('QA-G3-B1：実ブラウザ（タッチ）：市場の「購入する」→ 開いたシートの「連れて帰る」を0〜50msで連打しても購入されない。0.6秒後に押すと1回だけ購入', { skip: H.skipReason() }, async () => {
@@ -433,10 +448,10 @@ test('QA-G3-B9：実ブラウザ：新規開始→市場で購入→牧場→出
   await pg.waitForSelector(dep);
   const html0 = await pg.evaluate((s) => document.querySelector(s).innerHTML, dep);
   assert.match(html0, /<small>準備ができたら出発しよう<\/small>/);
-  await dnClock(pg);
+  await dnClock(pg); await dnFreezeOnChoices(pg);
   // 会話を送り、選択肢が出た瞬間から時計（Date.now：会話の時計）を止める＝そこからの押下は、実行環境の遅れがあっても「選択肢が出た直後・連打」として扱われる
   await pg.click(dep); await pg.waitForSelector('.mmtalk');
-  for (let i = 0; i < 40; i++) { if (await pg.evaluate(() => { const s = MMNPC.state(); if (s && s.choices) { window.__dn.freeze(); return true; } return false; })) break; await pg.click('.mmtalk', { force: true }); await pg.waitForTimeout(40); }
+  for (let i = 0; i < 40; i++) { if (await pg.evaluate(() => { const s = MMNPC.state(); if (s && s.choices) { if (window.__dn.f == null) window.__dn.freeze(); return true; } return false; })) break; await pg.click('.mmtalk', { force: true }); await pg.waitForTimeout(40); }
   const c = await center(pg, '.mmtalk-choice[data-choice="start"]');
   assert.ok(c, '選択肢「始める」が出た');
   await pg.mouse.click(c.x, c.y); await pg.mouse.click(c.x, c.y);
@@ -464,7 +479,7 @@ test('QA-G3-B10：実ブラウザ（タッチ）：出発ボタンの位置を�
   const dep = '#app button[onclick="p7Depart(this)"]';
   await pg.waitForSelector(dep);
   await pg.evaluate((s) => document.querySelector(s).scrollIntoView({ block: 'nearest' }), dep);
-  await dnClock(pg);
+  await dnClock(pg); await dnFreezeOnChoices(pg);
   const pt = await center(pg, dep);
   let choiceAt = -1, talked = false, onChoice = 0;
   for (let i = 0; i < 80; i++) {
