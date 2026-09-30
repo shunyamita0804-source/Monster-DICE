@@ -63,7 +63,7 @@ function seed(raise = {}, top = {}, rankHi = -1) {
 }
 const farmSeed = (ch, log, top, rankHi) => seed({ state: 'farm', ch, node: null, turnLimit: null, log }, top, rankHi);
 /**
- * サイコロの出目（MMP7.rollDice から呼ばれた乱数）と大会の抽選シード（startTournament の既定値）だけを固定する仕掛け。
+ * サイコロの出目（MMP7.rollDie／rollDice から呼ばれた乱数）と大会の抽選シード（startTournament の既定値）だけを固定する仕掛け。
  *  呼び出し元を調べるのは、出目を入れてある間・大会を始める直前だけ（ほかの乱数の呼び出しを遅くしない）
  */
 const DICE_HOOK = () => {
@@ -72,7 +72,7 @@ const DICE_HOOK = () => {
   Math.random = function () {
     if (window.__dice.length || window.__seedTour) {
       const st = new Error().stack || '';
-      if (window.__dice.length && st.includes('rollDice')) { const n = window.__dice.shift(); return (n - 1) / 3 + 0.01; }
+      if (window.__dice.length && /rollDic?e/.test(st)) { const n = window.__dice.shift(); return (n - 1) / 3 + 0.01; }
       if (window.__seedTour && st.includes('startTournament')) { window.__seedTour = false; return 0.25; }
     }
     return R0();

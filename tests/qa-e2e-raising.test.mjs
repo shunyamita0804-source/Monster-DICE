@@ -69,12 +69,12 @@ function seed(raise = {}, top = {}, assign = {}) {
   Object.assign(s.m.raise, { state: 'board', ch: 1, node: 'f1_0', turnsUsed: 0, turnLimit: 30, pend: null, goal: false, tour: null, battle: null, trainRun: null, log: [], startStats: statsOf(s.m), fatigue: 0, field: ch1Field(assign) }, raise);
   return Object.assign(s, top);
 }
-/** サイコロの出目だけを固定する仕掛け（window.__dice に入れた出目を MMP7.rollDice の呼び出しで順に使う） */
+/** サイコロの出目だけを固定する仕掛け（window.__dice に入れた出目を MMP7.rollDie／rollDice の呼び出しで順に使う（面の数 3 のときの乱数）） */
 const DICE_HOOK = () => {
   window.__dice = [];
   const R0 = Math.random;
   Math.random = function () {
-    if (window.__dice.length && (new Error().stack || '').includes('rollDice')) { const n = window.__dice.shift(); return (n - 1) / 3 + 0.01; }
+    if (window.__dice.length && /rollDic?e/.test(new Error().stack || '')) { const n = window.__dice.shift(); return (n - 1) / 3 + 0.01; }
     return R0();
   };
 };
