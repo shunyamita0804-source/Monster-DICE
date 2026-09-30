@@ -109,10 +109,10 @@ export const text = (page) => page.evaluate(() => document.body.innerText);
 /** 共通会話（MMNPC）が開いていれば最後まで送る（1文字表示中は全文→次へ、を繰り返す） */
 export async function finishTalk(page, max = 60) {
   for (let i = 0; i < max; i++) {
-    const open = await page.evaluate(() => !!document.querySelector('.mmtalk'));
-    if (!open) return i;
+    const open = await page.evaluate(() => !!document.querySelector('.mmtalk:not(.mmtalk-out)'));   // 退場中（フェード）のウィンドウは数えない
+    if (!open) { await page.waitForFunction(() => !document.querySelector('.mmtalk'), null, { timeout: 5000 }).catch(() => {}); return i; }   // フェードが終わって DOM が消えるまで待つ
     if (await page.evaluate(() => !!(window.MMNPC && MMNPC.state() && MMNPC.state().choices))) throw new Error('会話に選択肢がある（chooseTalk で選ぶ）');
-    await page.click('.mmtalk', { force: true });
+    await page.click('.mmtalk:not(.mmtalk-out)', { force: true }).catch(() => {});
     await page.waitForTimeout(20);
   }
   throw new Error('会話が終わらない');
@@ -133,7 +133,7 @@ export async function chooseTalk(page, id, max = 60) {
       }
       throw new Error('選択肢を選べない');
     }
-    await page.click('.mmtalk', { force: true });
+    await page.click('.mmtalk:not(.mmtalk-out)', { force: true }).catch(() => {});
     await page.waitForTimeout(20);
   }
   throw new Error('選択肢が出ない');

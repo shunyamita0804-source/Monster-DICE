@@ -1101,7 +1101,7 @@ button.mkc b{font-size:.9rem}button.mkc small{font-size:.66rem;color:#ffe9b0}
 /* ===== Chapterフィールド（Chapterフィールドエンジン：js/chapter/。2026-09-30 改修）：背景の道をモンスターと一緒に旅する正式の育成ボード =====
    画面：上〜中央＝フィールド（.chf。高さは 100% − 操作欄）、下＝操作欄（.chdeck：中央の円形 STOP・左の弧＝アイテム・右の弧＝休む）。
    重ね順（.chf-cam）：遠景の帯（far）→ 背景 → 奥の環境（back）→ 道（停止地点・モンスター：足元の y で前後）→ 手前の環境（front）→ 効果（fx）。ノード・線・番号は出さない */
-#app>.chfw{position:relative;box-sizing:border-box;height:calc(100% + 32px);margin:-16px;overflow:hidden;background:#0b1636;--chdeck:clamp(128px,19vh,166px);--chcmd:98px;--chstop:92px;--chwing:62px}
+#app>.chfw{position:relative;box-sizing:border-box;height:calc(100% + 32px);margin:-16px;overflow:hidden;background:#0b1636;--chdeck:clamp(128px,19vh,166px);--chcmd:118px;--chstop:88px;--chwing:40px}
 @supports (height:1dvh){#app>.chfw{--chdeck:clamp(128px,19dvh,166px)}}
 .chf{position:absolute;left:0;right:0;top:0;bottom:var(--chdeck);overflow:hidden;background:#0b1636;touch-action:none}
 .chf-cam{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform}
@@ -1131,6 +1131,8 @@ button.mkc b{font-size:.9rem}button.mkc small{font-size:.66rem;color:#ffe9b0}
 .chf-obj.used img{opacity:.55;transition:opacity .4s}
 .chf-obj.st.used img{opacity:.8}
 .chf-obj.gone{opacity:0!important;transition:opacity .5s}
+.chf-obj{transition:opacity .35s ease}
+.chf-obj.hid{opacity:0!important}
 /* モンスター：足元の点に置き、向き（flip）→ 前傾（lean）→ 上下動（bob）の順に包む。歩きの見た目はクラス（walk／ready／land／rest）＝monsterAnimator の既定 */
 .chf-mon{position:absolute;width:var(--mh);height:var(--mh);transform:translate(-50%,-94%) scale(var(--d,1));transform-origin:50% 94%;pointer-events:none}
 .chf-mon .chf-msh{--o:.4;left:50%;bottom:4%;width:62%;height:13%}
@@ -1190,6 +1192,17 @@ button.mkc b{font-size:.9rem}button.mkc small{font-size:.66rem;color:#ffe9b0}
 .chh-fat.f-mid i::after{background:linear-gradient(90deg,#e8c25a,#f0a03a)}
 .chh-fat.f-hi i::after{background:linear-gradient(90deg,#f08a3a,#e0442e)}
 .chh-fat.f-hi b{color:#ffb39a}
+.chh-gold{display:flex;align-items:baseline;justify-content:space-between;gap:6px;margin-top:4px;padding-top:4px;border-top:1px solid rgba(217,180,101,.35);font-size:10.5px;color:#e8cf8e}
+.chh-gold b{font:800 14px/1 var(--mm-font-head);color:#fff}
+.chh-gold small{font-size:10px;color:#e8cf8e;margin-left:-3px}
+/* 出目の小さな表示（右上・HUD の下）。サイコロの停止面が主で、文字は補助 */
+.chroll{position:absolute;right:10px;top:calc(env(safe-area-inset-top,0px) + 112px);display:flex;align-items:baseline;gap:5px;padding:5px 12px 6px;border-radius:12px;background:linear-gradient(180deg,rgba(20,36,82,.9),rgba(8,18,46,.9));border:1.5px solid #d9b465;color:#fff;box-shadow:0 3px 10px rgba(0,0,0,.35);animation:chroll .28s cubic-bezier(.2,1.4,.4,1);pointer-events:none;z-index:8}
+.chroll small{font-size:10.5px;color:#e8cf8e}
+.chroll b{font:900 22px/1 var(--mm-font-head);color:#fff6d8;text-shadow:0 0 8px rgba(255,200,80,.6)}
+.chroll span{font-size:11px;color:#dfe6f8}
+.chroll em{font-style:normal;font-size:10px;color:#e8cf8e;margin-left:2px}
+.chroll.out{opacity:0;transform:translateY(-6px);transition:opacity .3s,transform .3s}
+@keyframes chroll{from{opacity:0;transform:translateX(12px)}}
 .chh-menu{flex:none;width:40px;height:40px;margin:0}
 /* 操作欄（command deck）：中央の円形 STOP を左右の弧（アイテム・休む）が包む。サイコロは STOP の上で浮いて回る */
 .chdeck{position:absolute;left:0;right:0;bottom:0;height:var(--chdeck);box-sizing:border-box;padding:0 8px calc(4px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;justify-content:flex-end;gap:2px;background:linear-gradient(180deg,#0e1a44,#08122e 40%,#060c22);border-top:2px solid #d9b465;box-shadow:inset 0 3px 0 #08122e,inset 0 4px 0 rgba(217,180,101,.55),0 -6px 18px rgba(0,0,0,.45)}
@@ -1197,22 +1210,25 @@ button.mkc b{font-size:.9rem}button.mkc small{font-size:.66rem;color:#ffe9b0}
 .chmsg:empty{display:none}
 .chmsg small{color:#e8cf8e}
 .chmsg b{color:#f3d98e}
-.chcmd{position:relative;display:flex;align-items:center;justify-content:center;height:var(--chcmd)}
-.chwing{position:relative;z-index:1;flex:1 1 0;max-width:152px;min-width:0;height:var(--chwing);margin:0;padding:0;border:1.5px solid #d9b465;background:linear-gradient(180deg,rgba(38,64,128,.98),rgba(12,26,62,.98));color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font:800 14px/1.1 var(--mm-font-head);letter-spacing:.04em;box-shadow:0 0 0 1px rgba(20,12,0,.55),0 4px 10px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,236,180,.25)}
-.chwing.chitem{border-radius:34px 8px 8px 34px;margin-right:-26px;padding-right:26px}
-.chwing.chrest{border-radius:8px 34px 34px 8px;margin-left:-26px;padding-left:26px}
-.chwing svg{width:20px;height:20px;fill:none;stroke:#f3d98e;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.chcmd{position:relative;height:var(--chcmd)}
+/* 4コマンド：中央の円形 STOP を中心に、扇状に4つ（左上＝アイテム・右上＝休む・左下＝技設定・右下＝ステータス）。カプセル形で、STOP とはわずかに離す */
+.chwing{position:absolute;z-index:1;width:36%;max-width:150px;height:var(--chwing);margin:0;padding:0 8px;border:1.5px solid #d9b465;border-radius:999px;background:linear-gradient(180deg,rgba(40,66,130,.98),rgba(12,26,62,.98));color:#fff;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:6px;font:800 13px/1.1 var(--mm-font-head);letter-spacing:.03em;box-shadow:0 0 0 1px rgba(20,12,0,.55),0 4px 10px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,236,180,.25);box-sizing:border-box;white-space:nowrap}
+.chwing.chw-tl{left:2%;top:6px;transform:rotate(-7deg);transform-origin:100% 50%}
+.chwing.chw-tr{right:2%;top:6px;transform:rotate(7deg);transform-origin:0 50%}
+.chwing.chw-bl{left:6%;bottom:8px;transform:rotate(7deg);transform-origin:100% 50%}
+.chwing.chw-br{right:6%;bottom:8px;transform:rotate(-7deg);transform-origin:0 50%}
+.chwing svg{flex:none;width:18px;height:18px;fill:none;stroke:#f3d98e;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .chwing b{font:inherit}
-.chwing small{font:600 10px/1 var(--mm-font-body);color:#e8cf8e}
+.chwing small{font:600 9.5px/1 var(--mm-font-body);color:#e8cf8e;margin-left:-2px}
 .chwing:disabled{opacity:.5;filter:saturate(.6)}
 .chwing.must{border-color:#ffd66a;box-shadow:0 0 0 2px rgba(255,214,106,.5),0 0 16px rgba(255,214,106,.45)}
-.chstopw{position:relative;z-index:2;flex:none;width:calc(var(--chstop) + 14px);height:var(--chcmd);display:flex;align-items:center;justify-content:center}
+.chstopw{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:2;width:calc(var(--chstop) + 14px);height:calc(var(--chstop) + 16px);display:flex;align-items:center;justify-content:center}
 .chstop{position:relative;width:var(--chstop);height:var(--chstop);margin:0;padding:0;border:0;border-radius:50%;background:transparent;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:none;filter:drop-shadow(0 6px 10px rgba(0,0,0,.55))}
 .chstop-rim{position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 210deg,#f6e3a0,#a97a25 18%,#f9edb8 38%,#8c6418 58%,#f6e3a0 78%,#a97a25);box-shadow:0 0 0 3px #12102a,0 0 0 4px rgba(255,220,140,.35),0 0 16px rgba(255,190,80,.4)}
 .chstop-dome{position:absolute;inset:7px;border-radius:50%;background:radial-gradient(circle at 50% 30%,#ff9a86 0,#cf2531 36%,#75101c 76%,#3f0510 100%);box-shadow:inset 0 -7px 12px rgba(0,0,0,.5),inset 0 4px 8px rgba(255,255,255,.22),0 0 0 1px rgba(60,10,10,.8)}
 .chstop-dome::after{content:"";position:absolute;left:18%;top:7%;width:64%;height:34%;border-radius:50%;background:linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,0))}
 .chstop b{position:relative;z-index:1;font:900 21px/1 var(--mm-font-head);letter-spacing:.1em;color:#fff6d8;text-shadow:0 2px 0 #5a0a14,0 0 10px rgba(255,120,80,.6)}
-.chstop-cap{position:absolute;left:50%;bottom:-3px;transform:translateX(-50%);white-space:nowrap;font:600 9.5px/1 var(--mm-font-body);color:#e8cf8e;letter-spacing:.04em}
+.chstop-cap{position:absolute;left:50%;bottom:-10px;transform:translateX(-50%);white-space:nowrap;font:600 9px/1 var(--mm-font-body);color:#e8cf8e;letter-spacing:.04em}
 /* 押せるときの光の脈動：opacity だけを動かす（box-shadow を毎フレーム変えると待機中もスタイル計算が走る） */
 .chstop-rim::after{content:"";position:absolute;inset:-5px;border-radius:50%;box-shadow:0 0 26px 6px rgba(255,200,90,.85);opacity:0;pointer-events:none}
 .chstopw.on .chstop-rim::after{animation:chstopglow 1.6s ease-in-out infinite}
@@ -1220,7 +1236,7 @@ button.mkc b{font-size:.9rem}button.mkc small{font-size:.66rem;color:#ffe9b0}
 .chstop:disabled{filter:saturate(.3) brightness(.7) drop-shadow(0 4px 8px rgba(0,0,0,.5))}
 .chstop.wait .chstop-dome{background:radial-gradient(circle at 50% 30%,#8391c4 0,#2f4280 40%,#131c3e 100%)}
 .chstop.wait b{font-size:30px;text-shadow:0 2px 0 #0a1030}
-.chdf{position:absolute;left:50%;top:-120px;width:62px;height:62px;transform:translateX(-50%);pointer-events:none;z-index:3;animation:chdffloat 2.2s ease-in-out infinite}
+.chdf{position:absolute;left:50%;top:-112px;width:62px;height:62px;transform:translateX(-50%);pointer-events:none;z-index:3;animation:chdffloat 2.2s ease-in-out infinite}
 .chdf img{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 8px 8px rgba(0,0,0,.45));animation:chdfspin 3.6s linear infinite}
 .chdf[hidden]{display:none}
 @keyframes chdffloat{50%{transform:translate(-50%,-9px)}}
@@ -1248,15 +1264,131 @@ button.mkc b{font-size:.9rem}button.mkc small{font-size:.66rem;color:#ffe9b0}
 /* サイコロ：1枚の正式画像を translate・rotate・scale で動かす（連番画像は使わない）。STOP の上から飛び、フィールドの手前に落ちて正式の角度で止まる。止まったら金色の光の輪と出目 */
 .chdz{position:absolute;inset:0;z-index:30;pointer-events:none}
 .chdz-mv{position:absolute;width:88px;height:88px;transform:translate(-50%,-50%);will-change:transform}
-.chdz-img{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 6px 8px rgba(0,0,0,.35))}
+.chdz-img{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 6px 8px rgba(0,0,0,.35));transition:opacity .16s}
+.chdz-img.off{opacity:0}
+.chdz-stop{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 6px 8px rgba(0,0,0,.35));opacity:0;transition:opacity .16s}
+.chdz-stop.on{opacity:1}
 .chdz-sh{position:absolute;width:80px;height:16px;margin-top:40px;border-radius:50%;background:radial-gradient(closest-side,rgba(0,0,0,.45),rgba(0,0,0,0));transform:translate(-50%,-50%)}
 .chdz-res{position:absolute;transform:translate(-50%,-50%);display:flex;align-items:baseline;justify-content:center;width:88px;height:88px;animation:chdzres .32s cubic-bezier(.2,1.5,.4,1)}
 .chdz-res b{position:relative;z-index:1;margin-top:12px;font:900 44px/1 var(--mm-font-head);color:#fff5d0;text-shadow:0 0 6px rgba(255,200,80,.9),0 2px 0 #7a4a10,0 3px 8px rgba(0,0,0,.5)}
 .chdz-res i{position:relative;z-index:1;font:900 26px/1 var(--mm-font-head);font-style:normal;color:#fff5d0;text-shadow:0 2px 0 #7a4a10}
 .chdz-ring{position:absolute;inset:0;border-radius:50%;border:3px solid rgba(255,214,106,.95);box-shadow:0 0 14px rgba(255,214,106,.8),inset 0 0 12px rgba(255,214,106,.55);background:radial-gradient(closest-side,rgba(255,226,140,.35),rgba(255,226,140,0))}
+.chdz-res[hidden]{display:none}
 .chdz.out{opacity:0;transition:opacity .16s}
 @keyframes chdzres{from{opacity:0;transform:translate(-50%,-50%) scale(.7)}}
-@media (max-height:720px){#app>.chfw{--chcmd:86px;--chstop:80px;--chwing:54px}.chwing{font-size:13px}.chmsg{font-size:12px;padding:2px 8px}.chh-nm{font-size:14px}.chstop b{font-size:19px}.chdf{width:54px;height:54px;top:-106px}.chsheet{max-height:calc(100% - var(--chdeck) - 70px)}}
+@media (max-height:720px){#app>.chfw{--chcmd:100px;--chstop:80px;--chwing:34px}.chwing{font-size:12px;gap:4px}.chwing svg{width:16px;height:16px}.chmsg{font-size:11.5px;padding:2px 8px}.chh-nm{font-size:14px}.chstop b{font-size:17px}.chdf{width:54px;height:54px;top:-92px}.chwing.chw-tl,.chwing.chw-tr{top:4px}.chwing.chw-bl,.chwing.chw-br{bottom:6px}.chroll{top:calc(env(safe-area-inset-top,0px) + 104px)}.chsheet{max-height:calc(100% - var(--chdeck) - 70px)}}
+/* ===== 2026-09-30 改修：街のフィナの案内・セーブ画面・市場の会話フェーズ・大会の演出・Battle 開始前（濃紺＋金＋アイボリー） ===== */
+/* 街：フィナの台詞（顔・名前つき）。システム通知は従来どおり顔なし */
+.dlg.fina{align-items:flex-end}
+.dlg .dmf{flex:none;width:58px;height:58px;border-radius:50%;object-fit:cover;object-position:50% 12%;border:2px solid #d9b465;background:#0f1a3c;box-shadow:0 3px 8px rgba(0,0,0,.35)}
+.dlg.fina .dbub .dnm{display:block;font-size:.7rem;color:#8a5a2b;letter-spacing:.08em;margin-bottom:2px}
+/* セーブ・ロード：1画面（3スロット＋オートセーブ＋折りたたみのセーブコード＋小さな「最初からやり直す」） */
+#app>.svs{position:relative;box-sizing:border-box;min-height:calc(100% + 20px);margin:-16px;padding:calc(10px + env(safe-area-inset-top,0px)) 12px calc(12px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:8px;background:radial-gradient(ellipse at 50% -10%,#2c3f76 0,#121f48 45%,#0a1330 100%);color:#fff}
+.svs .svhead{display:flex;align-items:center;gap:10px}
+.svs .svhead button.back{margin:0;flex:none}
+.svs h2{margin:0;font:800 18px/1.2 var(--mm-font-head);color:#f3d98e;letter-spacing:.08em}
+.svs .dbub.svmsg{flex:none;margin:0;padding:7px 12px;font-size:12.5px;line-height:1.45;font-weight:600;background:linear-gradient(#fffdf7,#efe4cf);border:2px solid #8a5a2b;border-radius:12px}
+.svs .dbub.svmsg::before{display:none}
+.svs .card.slot{display:grid;flex:none;grid-template-columns:1fr auto;grid-template-rows:auto auto;column-gap:10px;row-gap:2px;align-items:center;min-height:0;padding:8px 10px 8px 12px;border:1.5px solid #d9b465;border-radius:14px;background:linear-gradient(180deg,#1f3268,#111d46);box-shadow:0 0 0 1px rgba(20,12,0,.5),0 4px 10px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,236,180,.2);text-align:left;color:#fff}
+.svs .card.slot b{font:800 14px/1.2 var(--mm-font-head);color:#f3d98e;letter-spacing:.04em}
+.svs .card.slot small{margin:0;font-size:11.5px;color:#dfe6f8;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.svs .card.slot .row2{grid-column:2;grid-row:1/3;display:flex;gap:6px;margin:0}
+.svs .card.slot .row2 button{flex:none;min-width:64px;margin:0;padding:8px 10px;border-radius:999px;border:1.5px solid #d9b465;background:linear-gradient(180deg,#8e1b2a,#5a0f1c);color:#fff6d8;font:800 13px/1 var(--mm-font-head);letter-spacing:.06em;box-shadow:0 2px 0 rgba(0,0,0,.4),inset 0 1px 0 rgba(255,236,180,.3)}
+.svs .card.slot .row2 button+button{background:linear-gradient(180deg,#2a4a90,#14275a)}
+.svs .card.slot .row2 button:disabled{opacity:.45;filter:saturate(.5)}
+.svs .card.slot.svauto{grid-template-columns:1fr;padding:7px 12px;background:rgba(255,255,255,.06);border-style:dashed;border-color:rgba(217,180,101,.6)}
+.svs .card.slot.svauto b{font-size:12.5px;color:#e8cf8e}
+.svs details.svmore{margin:2px 0 0;padding:0}
+.svs details.svmore summary{display:block;text-align:center;font-size:12.5px;font-weight:700;color:#e8cf8e;background:rgba(255,255,255,.06);border:1.5px solid rgba(217,180,101,.55);border-radius:999px;padding:7px 12px;list-style:none}
+.svs details.svmore summary::-webkit-details-marker{display:none}
+.svs details.svmore[open] summary{border-radius:14px 14px 0 0}
+.svs details.svmore p{margin:8px 0 4px;color:#dfe6f8}
+.svs details.svmore .row2{display:flex;gap:6px;margin:6px 0}
+.svs details.svmore .row2 button{flex:1;margin:0;padding:8px 6px;font-size:12px;border-radius:12px;border:1.5px solid #d9b465;background:linear-gradient(180deg,#2a4a90,#14275a);color:#fff;box-shadow:0 2px 0 rgba(0,0,0,.4)}
+.svs textarea{width:100%;box-sizing:border-box;margin:4px 0;padding:6px 8px;border-radius:10px;border:1.5px solid rgba(217,180,101,.6);background:rgba(0,0,0,.35);color:#fff;font-size:12px}
+.svs button.ghost{margin:auto auto 0;padding:6px 16px;border:1px dashed rgba(217,180,101,.6);border-radius:999px;background:rgba(0,0,0,.25);color:#e8cf8e;font-size:12px;box-shadow:none}
+/* 共通会話：退場は短くフェード（立ち絵は少し下へ） */
+.mmtalk.mmtalk-out{animation:mmtalkOut .22s ease-in forwards;pointer-events:none}
+.mmtalk.mmtalk-out .mmtalk-fig{transition:transform .22s ease-in;transform:translate(-10px,12px)}
+@keyframes mmtalkOut{to{opacity:0}}
+/* 大会：ランク選択（未解放は鎖と錠で封印）・フィナの案内・開始演出・参加者の登場・次の対戦相手 */
+.p9fina img{background:#0f1a3c;object-fit:cover;object-position:50% 12%}
+.p9ranks{grid-template-columns:repeat(2,minmax(0,1fr))}.p9rank{gap:7px;padding:7px 8px;border-radius:11px}.p9rank .p9em{width:36px;height:36px;font-size:1.15rem}.p9rank .p9tx b{font-size:.9rem;line-height:1.2}.p9rank .p9tx small{font-size:.66rem;line-height:1.3}
+.p9s.p9lknote{font-size:10.5px;opacity:.8;margin:6px 0 0}.p9fina .tx{font-size:12px}
+.p9rlocks{display:grid;grid-template-columns:repeat(auto-fit,minmax(70px,1fr));gap:6px;margin-top:8px}
+.p9rlock{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;background:linear-gradient(#1b1e33,#0f1124);border:2px solid #4a4f6a;border-radius:11px;padding:7px 4px 5px;color:#8a8ea6;box-shadow:0 3px 0 #06091a;overflow:hidden;filter:saturate(.35);box-sizing:border-box}
+.p9rlock .p9em{position:relative;display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;border:2px solid #5a5f7a;background:#22263d;color:#6f7490;font:900 17px/1 var(--mm-font-head);flex:none}
+.p9rlock .p9pad{position:absolute;right:-7px;bottom:-7px;width:19px;height:19px;border-radius:50%;background:#2a2d44;border:1.5px solid #9a9db5;display:flex;align-items:center;justify-content:center}
+.p9rlock .p9pad svg{width:11px;height:11px;fill:none;stroke:#d9dbea;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.p9rlock .p9tx b{display:block;font:800 12px/1.2 var(--mm-font-head);color:#a9adc4}
+.p9rlock .p9tx small{display:block;font-size:9.5px;color:#7d819a}
+.p9rlock .p9chain{position:absolute;left:-6%;right:-6%;top:50%;height:8px;margin-top:-4px;background:repeating-linear-gradient(90deg,#b9bccd 0 12px,transparent 12px 18px);border-radius:4px;opacity:.55;transform:rotate(-6deg);pointer-events:none;box-shadow:0 1px 0 rgba(0,0,0,.6)}
+.p9rlock .p9chain::after{content:"";position:absolute;left:0;right:0;top:0;height:8px;background:repeating-linear-gradient(90deg,transparent 0 6px,#7c8098 6px 12px,transparent 12px 18px);border-radius:4px}
+.p9intro{position:fixed;inset:0;z-index:70;display:flex;align-items:center;justify-content:center;color:#fff;animation:p9ifade .25s ease-out}
+.p9intro .p9ibg{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 40%,rgba(30,44,90,.92),rgba(4,8,22,.96))}
+.p9intro .p9iem{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;opacity:0;transform:scale(.6)}
+.p9intro.em .p9iem{animation:p9iem .5s cubic-bezier(.2,1.5,.4,1) forwards}
+.p9intro.em-out .p9iem{animation:p9iemout .3s ease-in forwards}
+.p9intro .p9iem-l{width:118px;height:118px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:900 64px/1 var(--mm-font-head);color:#fff6d8;background:radial-gradient(circle at 50% 30%,#3a4f95,#182552 70%);border:4px solid #e8c86a;box-shadow:0 0 0 3px #12102a,0 0 0 5px rgba(255,220,140,.45),0 0 40px rgba(255,200,90,.6);text-shadow:0 3px 0 #0a1030,0 0 16px rgba(255,220,140,.7)}
+.p9intro .p9iem b{font:800 22px/1.3 var(--mm-font-head);letter-spacing:.12em;color:#f3d98e;text-shadow:0 2px 0 #0a1030,0 0 12px rgba(255,200,80,.5)}
+.p9intro .p9iced{position:absolute;left:0;right:0;bottom:12%;display:flex;align-items:flex-end;justify-content:center;gap:0;opacity:0;transform:translateX(60px);pointer-events:none}
+.p9intro.ced .p9iced{animation:p9iced .32s cubic-bezier(.2,.9,.3,1.1) forwards}
+.p9intro.ced-out .p9iced{animation:p9icedout .3s ease-in forwards}
+.p9intro .p9iced img{width:min(44vw,190px);height:auto;filter:drop-shadow(0 6px 12px rgba(0,0,0,.6))}
+.p9intro .p9iced .tx{max-width:52%;margin:0 0 28px -18px;background:rgba(255,250,238,.96);color:#3a2410;border:2px solid #8a5a2b;border-radius:12px;padding:6px 12px 8px;font-size:.86rem;line-height:1.5}
+.p9intro .p9iced .tx b{display:block;font-size:.72rem;color:#8a5a2b;letter-spacing:.05em}
+.p9intro .p9iskip{position:absolute;bottom:3%;left:0;right:0;text-align:center;font-size:.72rem;color:rgba(255,255,255,.6)}
+.p9intro.out{animation:p9iout .24s ease-in forwards}
+@keyframes p9ifade{from{opacity:0}}@keyframes p9iout{to{opacity:0}}
+@keyframes p9iem{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:scale(1)}}
+@keyframes p9iemout{to{opacity:0;transform:scale(1.15)}}
+@keyframes p9iced{from{opacity:0;transform:translateX(60px)}to{opacity:1;transform:none}}
+@keyframes p9icedout{to{opacity:0;transform:translateX(-40px)}}
+.p9st.p9enter .p9r:not(.hd){animation:p9rin .42s cubic-bezier(.2,.9,.3,1.05) both}
+@keyframes p9rin{from{opacity:0;transform:translateX(60px)}to{opacity:1;transform:none}}
+.p9st .p9r.nxt{background:linear-gradient(90deg,rgba(255,255,255,.22),rgba(255,214,102,.12));outline:1.5px solid #ffe7a8;box-shadow:0 0 0 1px rgba(255,231,168,.35),0 0 16px rgba(255,236,190,.55);animation:p9nxt 1.8s ease-in-out infinite}
+.p9st .nm em.nx{background:#fff3c4;color:#5a3a10;margin-left:6px}
+@keyframes p9nxt{50%{box-shadow:0 0 0 1px rgba(255,231,168,.6),0 0 24px rgba(255,236,190,.8)}}
+/* VS：中央に VS → 左から自分・右から相手 → 短いインパクト → 能力の比較 */
+.p9vs.p9vs-anim .vsx{animation:p9vsx .45s cubic-bezier(.2,1.5,.4,1) both,p9vsa 1.4s ease-in-out 1s infinite}
+.p9vs.p9vs-anim .p9vs-fr .fr.me{animation:p9vsL .46s cubic-bezier(.2,.9,.3,1.1) both .3s}
+.p9vs.p9vs-anim .p9vs-fr .fr:not(.me){animation:p9vsR .46s cubic-bezier(.2,.9,.3,1.1) both .48s}
+.p9vs.p9vs-anim .p9vs-tb,.p9vs.p9vs-anim .p9go,.p9vs.p9vs-anim .p9btn2,.p9vs.p9vs-anim .p9prov{animation:p9vsfade .4s ease-out both 1s}
+.p9vs.p9vs-anim{animation:p9vsimp .32s ease-out .9s}
+@keyframes p9vsx{from{opacity:0;transform:scale(2.2)}to{opacity:1;transform:scale(1)}}
+@keyframes p9vsL{from{opacity:0;transform:translateX(-120%)}to{opacity:1;transform:none}}
+@keyframes p9vsR{from{opacity:0;transform:translateX(120%)}to{opacity:1;transform:none}}
+@keyframes p9vsfade{from{opacity:0;transform:translateY(8px)}}
+@keyframes p9vsimp{0%,100%{transform:none}25%{transform:translate(-4px,2px)}50%{transform:translate(4px,-2px)}75%{transform:translate(-2px,1px)}}
+/* Battle 開始前：フィールドの上に両者・個性スキル・主要パラメーター・BATTLE START */
+.pbt{position:fixed;inset:0;z-index:45;display:flex;align-items:center;justify-content:center;color:#fff;opacity:0;transition:opacity .25s ease}
+.pbt.in{opacity:1}.pbt.out{opacity:0;transition:opacity .22s ease-in}
+.pbt .pbtbg{position:absolute;inset:0;background-size:cover;background-position:50% 30%;background-color:#14100a}
+.pbt .pbtbg::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(6,10,26,.55),rgba(6,10,26,.78) 60%,rgba(6,10,26,.92))}
+.pbt .pbtwrap{position:relative;width:min(92vw,420px);max-height:calc(100dvh - 24px);overflow:auto;box-sizing:border-box;padding:12px 14px calc(12px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:10px;border-radius:18px;background:linear-gradient(180deg,rgba(20,36,82,.92),rgba(8,18,46,.94));border:1.5px solid #d9b465;box-shadow:0 10px 30px rgba(0,0,0,.6),inset 0 0 0 1px rgba(255,226,150,.18)}
+.pbt .pbttl{text-align:center}
+.pbt .pbttl small{display:block;font-size:11px;color:#e8cf8e;letter-spacing:.08em}
+.pbt .pbttl b{display:block;font:900 26px/1.1 var(--mm-font-head);letter-spacing:.2em;color:#fff6d8;text-shadow:0 2px 0 #5a0a14,0 0 14px rgba(255,120,80,.5)}
+.pbt .pbtvs{display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:6px}
+.pbt .pbtm{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0}
+.pbt .pbtm .mon{width:112px;height:112px}
+.pbt .pbtm b{font:800 14px/1.2 var(--mm-font-head);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pbt .pbtm small{font-size:10.5px;color:#dfe6f8}
+.pbt .pbtm.me{animation:p9vsL .46s cubic-bezier(.2,.9,.3,1.1) both .15s}
+.pbt .pbtm.op{animation:p9vsR .46s cubic-bezier(.2,.9,.3,1.1) both .3s}
+.pbt .pbtx{font:900 30px/1 var(--mm-font-head);font-style:italic;color:#ffd970;-webkit-text-stroke:1px #7a1d12;text-shadow:0 0 12px rgba(255,120,40,.8);padding-bottom:30px;animation:p9vsx .45s cubic-bezier(.2,1.5,.4,1) both .5s}
+.pbt .pbtq{width:100%;height:100%;border-radius:50%;display:flex;align-items:center;justify-content:center;font:900 54px/1 var(--mm-font-head);color:#c9d2ee;background:radial-gradient(circle at 50% 35%,#2f3f7a,#141c3e 70%);border:2px solid rgba(217,180,101,.6)}
+.pbt .pbtsk{display:grid;grid-template-columns:1fr 1fr;gap:6px;animation:p9vsfade .4s ease-out both .75s}
+.pbt .pbtsk div{padding:5px 8px;border-radius:10px;background:rgba(0,0,0,.3);border:1px solid rgba(217,180,101,.45)}
+.pbt .pbtsk small{display:block;font-size:10px;color:#e8cf8e;letter-spacing:.06em}
+.pbt .pbtsk b{display:block;font-size:12.5px;color:#fff}
+.pbt .pbtst{display:flex;flex-direction:column;gap:3px;animation:p9vsfade .4s ease-out both .9s}
+.pbt .pbtst .vr{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;font-size:13px}
+.pbt .pbtst .v{text-align:center;font:800 15px/1 var(--mm-font-head);color:#dfe6f8}
+.pbt .pbtst .v.hi{color:#ffe07a}
+.pbt .pbtst .lb{min-width:64px;text-align:center;font-size:11px;color:#fff;background:var(--c,#8a5a2b);border-radius:999px;padding:2px 10px}
+.pbt .pbtgo{width:100%;margin:2px 0 0;animation:p9vsfade .4s ease-out both 1.1s}
+@media (max-height:720px){.pbt .pbtm .mon{width:92px;height:92px}.pbt .pbttl b{font-size:22px}.pbt .pbtwrap{gap:7px;padding:10px 12px}.pbt .pbtst .vr{font-size:12px}.p9intro .p9iem-l{width:100px;height:100px;font-size:54px}}
 /* ===== Phase 10：市場（暖色のファンタジー市場・横スワイプのカルーセル） ===== */
 .p10mk{position:relative;margin:-16px -16px 0;min-height:100vh;overflow:hidden;color:#fff4dc;padding-bottom:calc(22px + env(safe-area-inset-bottom,0px));background:#6b4226}
 .p10bg{position:absolute;top:0;left:0;right:0;height:100%;z-index:0;pointer-events:none}
@@ -1521,6 +1653,9 @@ button.tround:active{background:radial-gradient(circle at 45% 35%,#2e5096,#12245
 button.p10detx{position:absolute;right:16px;top:-12px;z-index:3;width:34px;height:34px;padding:0;border-radius:50%;border:2px solid #d9a441;background:linear-gradient(#3e2616,#21130a);color:#fff1cf;font-size:1.1rem;line-height:1;box-shadow:0 3px 6px rgba(0,0,0,.45)}
 .p10sl.on .p10plate::after{content:"タップでくわしく";display:block;margin-top:2px;font-size:.62rem;font-weight:700;color:#f3dca0;opacity:.9;letter-spacing:.04em}
 .p10mk.talk .p10arw,.p10mk.talk .p10dots,.p10mk.talk .p10plate,.p10mk.talk .p10det,.p10mk.talk .p10karen,.p10mk.talk .p10kbar,.p10mk.talk .p10msg{visibility:hidden}
+/* NPC会話フェーズと商品選択フェーズを分ける：会話中はモンスターも出さず、会話が終わる（カレンが退場する）と少し遅れて現れる */
+.p10mk .p10sl{transition:opacity .45s ease .18s}
+.p10mk.talk .p10sl{opacity:0!important;transition:none;pointer-events:none}   /* 位置ごとの opacity はインラインで入るので !important */
 button.p10karen[hidden]{display:none}
 .p10mk{box-sizing:border-box;margin-bottom:-16px;min-height:100vh;min-height:100dvh;overflow:clip} /* 中身をスクロールさせない（閉じた詳細シートが枠の下にあるため、フォーカス移動などで中身がずれて案内欄や矢印の位置が変わるのを防ぐ） */ /* 市場は実際に見えている画面の高さちょうど（縦スクロールしない。iPhone の Safari では 100vh がツールバーの下まで含むため dvh） */
 /* 上部：名前・ランク・所持Gを折り返さない */
@@ -2052,7 +2187,7 @@ function gameScroller(){const a=document.getElementById("app");if(!a)return null
 function lobby(msg,open){if(p8Blocked())return;if(S.playerNamePending)return p11NameScr(msg); // Phase 11：新規ゲームは最初にプレイヤー名を決める
  const h1=$("h1");if(h1)h1.style.display="";bgm("town");const m=S.m; // 街では見出し（h1）を CSS で隠す（main:has(>#app>.map.town)）。ほかの画面へ移れば元どおり
  $("#app").innerHTML=`<div class="map town" style="--town-bg:url(${TOWN_BG})"><div class="tbg" aria-hidden="true"></div>${TOWN_SVG}<button class="tround tnews" onclick="newsScr()" aria-label="お知らせ" title="お知らせ"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="#tic-news"/></svg></button><button class="tround tconf" onclick="confScr()" aria-label="設定" title="設定"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="#tic-conf"/></svg></button>${TOWN_LABELS.map(l=>`<div class="tlbl" style="--x:${l[1]};--y:${l[2]}"><span>${l[0]}</span><i></i></div>`).join("")}</div><nav class="tcmds tbar" aria-label="街の施設">${TOWN_CMDS(m).map((c,i)=>`<button class="hz tcmd ${c[4]=="ok"?"":c[4]}${i==4?" tsub tfarm":i==5?" tsub tprof":i==6?" tsub tsave svb":""}" ${c[4]=="dis"?"disabled":""} onclick="${c[3]}" aria-label="${c[0]}${c[4]=="lock"?"（未開放）":""}" title="${c[1]}"><span class="ti">${townIcon(c[2])}</span><b>${c[5]||c[0]}</b></button>`).join("")}</nav>
- <div class="tlow${msg||!m?" on":""}"><div class="dlg"><div class="mon dm">${svg(0,0)}</div><div class="dbub" id="msg">${msg||(m?"行きたい場所をタップしよう！":"モンスターがいません。まずは市場で選ぼう。")}</div></div></div>`;try{window.scrollTo(0,0)}catch(e){} // 街は1画面で固定（2026-09-30）：案内文は知らせることがあるときだけ背景の上に出す。セーブ・ロードは下のバー、大会・育成完了の回数はプロフィールへ
+ <div class="tlow${msg||!m?" on":""}"><div class="dlg${msg&&/class="fmsg"/.test(msg)?" fina":""}">${msg&&/class="fmsg"/.test(msg)?`<img class="dmf" src="${finaFaceSrc()}" alt="">`:`<div class="mon dm">${svg(0,0)}</div>`}<div class="dbub" id="msg">${msg&&/class="fmsg"/.test(msg)?`<span class="dnm">フィナ</span>`:""}${msg||(m?"行きたい場所をタップしよう！":"モンスターがいません。まずは市場で選ぼう。")}</div></div></div>`;try{window.scrollTo(0,0)}catch(e){} // 街は1画面で固定（2026-09-30）：案内文は知らせることがあるときだけ背景の上に出す。セーブ・ロードは下のバー、大会・育成完了の回数はプロフィールへ
 }
 // ---- Phase 11：プレイヤー名（新規ゲームの最初に決める。空欄なら「アルト」） ----
 function p11Esc(t){return String(t).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
@@ -2061,7 +2196,10 @@ function p11NameScr(msg){bgm("town");p9Immersive(false);const d=MMP11P.DEFAULT_N
  <p class="p11s">ミスティックモンスターズへようこそ！<br>あなたの名前を教えてください。</p>
  <label class="p11lb" for="p11nm">プレイヤー名（${MMP11P.MAX_LEN}文字まで）</label><input id="p11nm" maxlength="${MMP11P.MAX_LEN*2}" value="${p11Esc(S.playerName||d)}" autocomplete="off" enterkeyhint="done" onkeydown="if(event.key==='Enter'&&!event.isComposing)p11NameGo()">
  <p class="p11hint">空欄のままなら「${d}」ではじまります。</p><button class="p11go" onclick="p11NameGo()">この名前ではじめる</button></div></div>`}
-function p11NameGo(){const e=$("#p11nm"),n=MMP11P.confirmName(S,e?e.value:"");save();lobby(`ようこそ、${p11Esc(n)}さん！ まずは市場でモンスターを選ぼう。`);finaIntro()}
+function p11NameGo(){const e=$("#p11nm"),n=MMP11P.confirmName(S,e?e.value:"");save();lobby(finaMsg(`ようこそ、${p11Esc(n)}さん！ まずは市場でモンスターを選ぼう。`));finaIntro()}
+/** 街の案内欄をフィナの台詞として出す（顔・名前つき）。街でのプレイヤーへの案内役はフィナ。システム通知（ロード・購入など）はこれまでどおり顔・名前なし */
+function finaMsg(t){return `<span class="fmsg" data-npc="fina">${t}</span>`}
+function finaFaceSrc(){const im=window.MMNPC&&MMNPC.imageOf("fina","closeup","smile");return im?im.src:""}
 // ---- Phase 11：ステータス画面の正式情報（種族名・英字名・種類・素早さ）。データは正式モンスターマスター（MMP10M）から取る ----
 function p11SpLine(m){const s=MMP10M.byId(m.sp);return s?`<small class="p11spn">${s.name}${s.en?`<span>${s.en}</span>`:""}</small>`:""}
 // 素早さ：1〜10（数値が大きいほど速い）。0〜999の能力ゲージとは別の、10段階の目盛りで表示する
@@ -2194,8 +2332,8 @@ const nv=typeof navigator!="undefined"?navigator:{};
 const sl=n=>{try{return JSON.parse(localStorage.getItem("mr4s"+n))}catch(e){return null}};
 const slab=d=>!d?"（空き）":`${d.m?p11Esc(d.m.name)+"（ランク"+(d.m.prog?MMP8.rankLabel(d.m):RN[d.m.rk||0])+"）":"モンスターなし"}　🪙${d.g}G`;
 function savescr(msg){if(p8Blocked())return;
- bgm("town");
- $("#app").innerHTML=`<button class="back" onclick="lobby()">◀ 街にもどる</button><h2>セーブ・ロード</h2><div class="dbub" id="msg">${msg||"3つのスロットにセーブできます。進行は自動でも保存されています。"}</div>${[1,2,3].map(n=>{const d=sl(n);return `<div class="card slot"><b>スロット${n}</b><small>${slab(d)}</small><div class="row2"><button onclick="slotSave(${n},this)">セーブ</button><button ${d?"":"disabled"} onclick="slotLoad(${n},this)">ロード</button></div></div>`}).join("")}<div class="card slot"><b>いまの進行（オートセーブ）</b><small>${slab(S)}</small></div><details><summary>セーブコードで引っこし・バックアップ</summary><p><small>コードを別の端末に貼り付ければ、続きから遊べます。</small></p><div class="row2"><button onclick="exp()">コードを作る（コピー）</button><button onclick="shareCode()">共有</button></div><textarea id="sc" rows="3" placeholder="ここにコードが出ます／貼り付け"></textarea><div class="row2"><button onclick="pasteCode()">貼り付け</button><button onclick="imp()">このコードで読み込む</button></div></details><button class="ghost" onclick="reset(this)">最初からやり直す</button>`;tapAt($("#app .ghost"))}
+ bgm("town");p9Immersive(true);
+ $("#app").innerHTML=`<div class="svs"><header class="svhead"><button class="back" onclick="lobby()">◀ 街にもどる</button><h2>セーブ・ロード</h2></header><div class="dbub svmsg" id="msg">${msg||"3つのスロットにセーブできます。進行は自動でも保存されています。"}</div>${[1,2,3].map(n=>{const d=sl(n);return `<div class="card slot"><b>スロット${n}</b><small>${slab(d)}</small><div class="row2"><button onclick="slotSave(${n},this)">セーブ</button><button ${d?"":"disabled"} onclick="slotLoad(${n},this)">ロード</button></div></div>`}).join("")}<div class="card slot svauto"><b>いまの進行（オートセーブ）</b><small>${slab(S)}</small></div><details class="sv svmore"><summary>セーブコードで引っこし・バックアップ</summary><p><small>コードを別の端末に貼り付ければ、続きから遊べます。</small></p><div class="row2"><button onclick="exp()">コードを作る（コピー）</button><button onclick="shareCode()">共有</button></div><textarea id="sc" rows="3" placeholder="ここにコードが出ます／貼り付け"></textarea><div class="row2"><button onclick="pasteCode()">貼り付け</button><button onclick="imp()">このコードで読み込む</button></div></details><button class="ghost" onclick="reset(this)">最初からやり直す</button></div>`;tapAt($("#app .ghost"))}
 // 連打・すり抜けタップ対策（1か所で管理）：tapAt(el)＝el が押せるようになった時刻を記録／tapSoon(el,ms)＝その時刻から ms 未満なら true（その押下は受け付けず、そこから数え直す＝連打が続くあいだは確定しない）
 //  ・2度押し確認（arm・p9arm・reset）：確認状態になってから0.4秒未満の押下では確定しない（ダブルタップで確認を飛ばさない）
 //  ・tapHold(box,ms)：画面・シートを出した直後（ms 未満）は box の中のボタンを押せない（前の画面での連打の2打目が、同じ位置に出たボタンに届くのを防ぐ。指定したボタンだけに使う）
@@ -2402,6 +2540,7 @@ const NICK_TALK={
 // 立ち絵は js/npc/npc.js の register('cedric')。小さい顔（大会画面の吹き出し）は立ち絵 normal から切り出した face.webp。参加条件・報酬・中断などのシステム表示はセドリックの発言にしない
 const CEDRIC_FACE="assets/npc/cedric/face.webp";
 const CEDRIC_TALK={
+ open:"公式ランク{R}大会を開始します。参加者を紹介しましょう。",
  entry:"公式ランク大会へようこそ。準備はよろしいですか？",
  first:"それでは、始めましょう。最初の対戦はこちらです。",
  next:["次の対戦はこちらです。","いい試合になりそうですね。"],
@@ -2751,17 +2890,37 @@ function p8FxText(r){const f=r.fx||{},L=k=>LAB[k];let t;
  else if(f.note=="goal")t="";
  else t="何も起きなかった。";
  return (t+(r.goal?" ゴールに到着した！":r.timeUp?" ターンを使い切った…":"")).trim()}
-function bBattleGo(){const m=S.m;if(bBusy||!m)return;const rk=MMP8.practiceRank(m);if(!MMP8.beginBattle(S,m,{kind:"practice",rank:rk}).ok)return board();save();fight(rk)}
+function bBattleGo(){const m=S.m;if(bBusy||!m)return;const rk=MMP8.practiceRank(m);p9PreBattle("practice",rk,()=>{if(!MMP8.beginBattle(S,m,{kind:"practice",rank:rk}).ok)return board();save();fight(rk)})}
 function bBattleSkip(){const m=S.m;if(bBusy||!m)return;const r=MMP8.skipBattleSquare(S,m);if(!r.ok)return board();save();board("練習試合はやめておいた。"+(r.goal?" ゴールに到着した！":r.timeUp?" ターンを使い切った…":""))}
 // ---- ゴール／Chapter終了 ----
 // ---- 公式ランク大会（総当たりリーグ）：ランクの選択・順位表・試合 ----
 function p8GoalHtml(m){const r=m.raise,rule=MMP8.chapterRule(r.ch);
  if(!rule||!rule.tournament)return `<h3>🏁 ゴール</h3><button class="p9btn" onclick="p8EndChapter()">${r.ch==MMP8.FINAL?"最終Chapterを終える":"Chapterを終える"}</button>`;
- const rs=MMP8.eligibleRanks(m,r.ch).map(k=>{const sz=MMP8L.LEAGUE_SIZE[k],cl=m.prog.rankClr[k];return `<button class="p9rank" onclick="p8TourStart(${k},this)"><span class="p9em">${RN[k]}</span><span class="p9tx"><b>ランク${RN[k]}大会</b><small>${sz}体の総当たり（${sz-1}試合）</small><small>${cl?"クリア済み：優勝でステータスボーナスのみ":`初回優勝：${MMP8.PRIZE[k]}G・特訓チケット×${MMP8.FIRST_CLEAR_TICKETS[k]}・ステータスボーナス`}</small></span></button>`}).join("");
- return `<h3>🏟 公式ランク大会</h3>${p9Ced(CEDRIC_TALK.entry)}<p class="p9s">このChapterで挑戦できるのは1回だけ。総当たりで<b>最終1位</b>になった時だけ報酬があります。</p><div class="p9ranks">${rs}</div><button class="p9btn2" onclick="p8TourDecline(this)">大会に参加しない（辞退）</button>`}
+ // ランク選択：挑戦できるランク（MMP8.eligibleRanks＝既存の解放条件）は押せるカード、それ以外は鎖と錠で封印（押せない。class は p9rank ではなく p9rlock）。案内はフィナ（セドリックは大会が始まってから）
+ const el=MMP8.eligibleRanks(m,r.ch),rs=RN.map((L,k)=>{const sz=MMP8L.LEAGUE_SIZE[k],cl=m.prog.rankClr[k];if(!el.includes(k))return "";
+  return `<button class="p9rank" onclick="p8TourStart(${k},this)"><span class="p9em">${L}</span><span class="p9tx"><b>ランク${L}大会</b><small>${sz}体の総当たり（${sz-1}試合）</small><small>${cl?"クリア済み：優勝でステータスボーナスのみ":`初回優勝：${MMP8.PRIZE[k]}G・特訓チケット×${MMP8.FIRST_CLEAR_TICKETS[k]}・ステータスボーナス`}</small></span></button>`}).join(""),
+  lk=RN.map((L,k)=>el.includes(k)?"":`<div class="p9rlock" data-rank="${k}" aria-disabled="true"><span class="p9em">${L}<i class="p9pad">${P9_PADLOCK}</i></span><span class="p9tx"><b>ランク${L}</b><small>封印中</small></span><i class="p9chain"></i></div>`).join("");   // 封印されたランクは小さな札（1画面に収める）
+ return `<h3>🏟 公式ランク大会</h3><div id="p9fsay">${p9Fina(FINA_RANK_TALK.pick)}</div><p class="p9s">このChapterで挑戦できるのは1回だけ。総当たりで<b>最終1位</b>になった時だけ報酬があります。</p><div class="p9ranks">${rs}</div>${lk?`<div class="p9rlocks">${lk}</div><p class="p9s p9lknote">封印されたランクには、まだ挑戦できない（挑戦上限はクリア最高ランク＋2）</p>`:""}<button class="p9btn2" onclick="p8TourDecline(this)">大会に参加しない（辞退）</button>`}
+const P9_PADLOCK='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>';
+// フィナの大会コメント：育成モンスターの6能力の平均と、そのランクの対戦相手の能力（MMP8L.PROVISIONAL_OPPONENT_STAT＝fight() が作る相手と同じ値）を比べて3段階。勝敗は保証しない【暫定：文面は要確認】
+const FINA_RANK_TALK={pick:"どのランクに挑戦する？　ランクをタップすると、私の見立てを話すね。",
+ easy:["ランク{R}なら、この子なら余裕がありそうだね！","ランク{R}の相手なら、この子の力で押し切れそう。"],
+ even:["ランク{R}は、いい勝負になりそう。がんばろう！","ランク{R}は互角かな。作戦しだいだね。"],
+ hard:["ランク{R}は…相手のほうが強そう。無理はしないでね。","ランク{R}は厳しそう。それでも挑む？"]};
+function p9Fina(t){return `<div class="p9ced p9fina"><img src="${finaFaceSrc()}" alt=""><div class="tx"><b>フィナ</b>${t}</div></div>`}
+function p9RankJudge(m,k){const ks=["li","po","in","hi","ev","de"],avg=ks.reduce((a,x)=>a+(m[x]|0),0)/ks.length,opp=(window.MMP8L&&MMP8L.PROVISIONAL_OPPONENT_STAT[k])||1,r=avg/opp;return r>=1.25?"easy":r>=0.9?"even":"hard"}
+function finaRankSay(k){const box=$("#p9fsay");if(!box||!S.m)return;const j=p9RankJudge(S.m,k),ls=FINA_RANK_TALK[j];box.innerHTML=p9Fina(ls[k%ls.length].replace("{R}",RN[k]));box.dataset.judge=j;box.dataset.rank=k}
 // 2度押しの確認（中の見た目を保ったまま戻す版。既存の arm() は文字だけのボタン用）
 function p9arm(b,t){if(b.dataset.a!="1"){const o=b.innerHTML;b.dataset.a="1";tapAt(b);b.classList.add("arm");b.innerHTML=`<span class="p9tx"><b>${t}</b></span>`;setTimeout(()=>{b.dataset.a="";b.classList.remove("arm");b.innerHTML=o},3000);return false}return !tapSoon(b,400)}
-function p8TourStart(k,b){if(bBusy||!p9arm(b,`もう一度押すとランク${RN[k]}大会に参加`))return;const r=MMP8.startTournament(S,S.m,k);if(!r.ok)return board();save();board()}
+function p8TourStart(k,b){if(bBusy)return;if(!p9arm(b,`もう一度押すとランク${RN[k]}大会に参加`)){finaRankSay(k);return}const r=MMP8.startTournament(S,S.m,k);if(!r.ok)return board();save();p9TourIntro(k).then(()=>{P9_ENTER=true;board()})}
+// ---- 大会開始の演出（E〜S 共通）：暗転 → ランクのエンブレム「公式ランクE大会」→ セドリックの一言 → 順位表（参加者が右から順に入る）。タップで飛ばせる。視差効果を減らす設定では短く ----
+let P9_ENTER=false;
+function p9TourIntro(k){return new Promise(res=>{const calm=!!(window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches),im=window.MMNPC&&MMNPC.imageOf("cedric","closeup","smile");
+ const d=document.createElement("div");d.className="p9intro";d.id="p9intro";
+ d.innerHTML=`<div class="p9ibg"></div><div class="p9iem"><span class="p9iem-l">${RN[k]}</span><b>公式ランク${RN[k]}大会</b></div><div class="p9iced"><img src="${im?im.src:CEDRIC_FACE}" alt=""><div class="tx"><b>セドリック</b>${CEDRIC_TALK.open.replace("{R}",RN[k])}</div></div><small class="p9iskip">タップで飛ばす</small>`;
+ document.body.appendChild(d);let done=false;const T=[];const fin=()=>{if(done)return;done=true;T.forEach(clearTimeout);d.classList.add("out");setTimeout(()=>{d.remove();res()},calm?0:240)};d.onclick=fin;
+ if(calm){setTimeout(fin,80);return}
+ T.push(setTimeout(()=>d.classList.add("em"),60),setTimeout(()=>{if(window.sfx)sfx(6)},120),setTimeout(()=>d.classList.add("em-out"),1350),setTimeout(()=>d.classList.add("ced"),1650),setTimeout(()=>d.classList.add("ced-out"),3150),setTimeout(fin,3450))})}
 // ---- Phase 9：公式大会（大会掲示板＝順位表・対戦表／VS画面／結果） ----
 // 大会参加者（NPC）は【暫定】データ（js/phase8/league.js）。表示の元は MMP8L.entrantView だけにしてあり、
 // 後のバトルPhaseで正式な対戦相手データに差し替えても、この画面は変えずに済む。
@@ -2777,7 +2936,8 @@ function p9TourHead(m,t){const lg=t.league,done=lg.round;
  <div class="pips" aria-label="試合の進み具合">${lg.rounds.map((_,i)=>`<i class="${i<done?"d":i==done&&t.status!="settled"?"c":""}"></i>`).join("")}</div>
  <div class="r2">${p8Hud()}<button class="p9mbtn" onclick="p9Menu()" aria-label="メニュー">☰</button></div></header>`}
 function p9Standings(lg,st,fin){const med=["🥇","🥈","🥉"],show=fin||lg.round>0;
- return `<section class="p9board2"><h3>順位表</h3><div class="p9st"><div class="p9r hd"><span>順位</span><span></span><span>参加者</span><span>勝</span><span>敗</span></div>${st.map(x=>`<div class="p9r ${x.player?"me":""}"><span class="pl">${show&&x.place<=3?med[x.place-1]:x.place}</span>${p9Pt(p9Npc(lg,x.id),"s")}<span class="nm">${x.player?`${p11Esc(S.m.name)}<em>あなた</em>`:p11Esc(x.name)}</span><span class="w">${x.w}</span><span class="l">${x.l}</span></div>`).join("")}</div></section>`}
+ const nx=!fin&&S.m&&S.m.raise&&S.m.raise.tour&&S.m.raise.tour.status=="league"?MMP8.tourNext(S.m):null,enter=P9_ENTER;P9_ENTER=false; // 次の対戦相手の行だけ柔らかく光る。大会開始の直後は参加者が右から順に入ってくる
+ return `<section class="p9board2"><h3>順位表</h3><div class="p9st${enter?" p9enter":""}"><div class="p9r hd"><span>順位</span><span></span><span>参加者</span><span>勝</span><span>敗</span></div>${st.map((x,i)=>`<div class="p9r ${x.player?"me":""}${nx&&x.id===nx.opp?" nxt":""}"${enter?` style="animation-delay:${(i*90)}ms"`:""}><span class="pl">${show&&x.place<=3?med[x.place-1]:x.place}</span>${p9Pt(p9Npc(lg,x.id),"s")}<span class="nm">${x.player?`${p11Esc(S.m.name)}<em>あなた</em>`:p11Esc(x.name)}${nx&&x.id===nx.opp?`<em class="nx">次の相手</em>`:""}</span><span class="w">${x.w}</span><span class="l">${x.l}</span></div>`).join("")}</div></section>`}
 function p9Matrix(lg){const mk={win:"○",loss:"×",self:"",next:"◎",pending:"・"};
  return `<section class="p9board2"><h3>対戦表</h3><div class="p9mx-w"><table class="p9mx"><thead><tr><th class="stk">参加者</th>${lg.entrants.map((e,i)=>`<th>${i+1}</th>`).join("")}</tr></thead><tbody>${lg.entrants.map(e=>{
   return `<tr class="${e.player?"me":""}"><th class="stk"><span class="no">${e.id+1}</span>${p9Pt(p9Npc(lg,e.id),"xs")}<span class="nm">${p11Esc(p9Short(lg,e.id))}</span></th>${lg.entrants.map(o=>{const c=MMP8L.resultCell(lg,e.id,o.id);return `<td class="c-${c}">${mk[c]}</td>`}).join("")}</tr>`}).join("")}</tbody></table></div>
@@ -2799,11 +2959,29 @@ function p9TourResult(msg){const m=S.m,t=m.raise.tour,lg=t.league,rs=t.result,w=
  ${msg?`<div class="p9msg p9tmsg">${msg}</div>`:""}${p9Standings(lg,st,true)}${p9Matrix(lg)}
  <button class="p9btn" onclick="p8EndChapter()">Chapterを終えてファームへ</button></div>`;try{window.scrollTo(0,0)}catch(e){}}
 function p8RewardText(w){return `<br>ステータスボーナス：${w.bonus.map(b=>`${LAB[b.key]}+${b.amount}`).join("・")}`+(w.firstClear?`<br>初回優勝：賞金 ${w.prize}G・🎫特訓チケット×${w.tickets}`+(w.bagUnlocked?"・バッグが6枠に拡張！":""):"<br>（クリア済みのランクのため、賞金・チケットはありません）")}
-function p8TourFight(){const m=S.m,t=m&&m.raise.tour;if(bBusy||!t||t.status!="league")return board();if(!MMP8.beginBattle(S,m,{kind:"league",rank:t.rank}).ok)return board();save();fight(t.rank)}
+function p8TourFight(){const m=S.m,t=m&&m.raise.tour;if(bBusy||!t||t.status!="league")return board();p9PreBattle("league",t.rank,()=>{if(!MMP8.beginBattle(S,m,{kind:"league",rank:t.rank}).ok)return board();save();fight(t.rank)})}
+// ---- Battle 開始前の導入（表示だけ）：バトルの背景（fight() と同じ BTB）の上に両者が登場 → 個性スキル → 主要パラメーター → 「BATTLE START」→ go()（beginBattle と fight()）
+//  Battle Engine の処理は go() の中でだけ動く（二重発動なし）。相手の能力は MMP8L.PROVISIONAL_OPPONENT_STAT（fight() が作る相手と同じ値）を参照し、別の値を持たない
+//  個性スキルは正式データが未登録（未決）のため「―（未登録）」の枠だけ。練習試合の相手は fight() が種族を決めるため、姿は「？」で出す
+let P9_PRE=null;
+function p9BattleOpp(kind,rank){const st=(window.MMP8L&&MMP8L.PROVISIONAL_OPPONENT_STAT[rank])||0,base={li:st,po:st,in:st,hi:st,ev:st,de:st,trait:"―（未登録）"};
+ if(kind=="league"){const t=S.m.raise.tour,pm=MMP8.tourNext(S.m),o=p9Npc(t.league,pm.opp);return {...base,...o,kind:p9Species(o),img:msv(o),trait:"―（未登録）"}}
+ return {...base,name:`ランク${RN[rank]}の対戦相手`,kind:"野生のモンスター",img:'<div class="pbtq">？</div>'}}
+function p9Species(x){const sp=window.MMP10M&&MMP10M.byId(x.sp);return sp?sp.kind:"―"}
+function p9TraitOf(m){return "―（未登録）"} // 個性スキル：正式データが同期されたらここで返す（表示だけ。Battle Engine の処理とは分ける）
+function p9PreBattle(kind,rank,go){const m=S.m;if(!m||window.MM_QA_NO_PREBATTLE)return go();const opp=p9BattleOpp(kind,rank),bg=(typeof BTB!="undefined"&&BTB[rank]&&BTB[rank][0])||"";
+ const old=$("#pbt");if(old)old.remove();const d=document.createElement("div");d.className="pbt";d.id="pbt";tapAt(d);
+ d.innerHTML=`<div class="pbtbg" style="background-image:url(${bg})"></div><div class="pbtwrap"><div class="pbttl"><small>${kind=="league"?`公式ランク${RN[rank]}大会　第${MMP8.tourNext(m).round+1}試合`:"練習試合"}</small><b>BATTLE</b></div>
+ <div class="pbtvs"><div class="pbtm me"><div class="mon">${msv(m)}</div><b>${p11Esc(m.name)}</b><small>${p9Species(m)}</small></div><span class="pbtx">VS</span><div class="pbtm op"><div class="mon">${opp.img}</div><b>${p11Esc(opp.name)}</b><small>${opp.kind}</small></div></div>
+ <div class="pbtsk"><div><small>個性スキル</small><b>${p9TraitOf(m)}</b></div><div><small>個性スキル</small><b>${opp.trait}</b></div></div>
+ <div class="pbtst">${P9_STAT.map(([k,lb,col])=>`<div class="vr"><span class="v${(m[k]|0)>(opp[k]|0)?" hi":""}">${m[k]|0}</span><span class="lb" style="--c:${col}">${lb}</span><span class="v${(opp[k]|0)>(m[k]|0)?" hi":""}">${opp[k]|0}</span></div>`).join("")}</div>
+ <button class="p9btn pbtgo" onclick="p9PreBattleGo()">⚔️ BATTLE START</button></div>`;
+ document.body.appendChild(d);P9_PRE=go;requestAnimationFrame(()=>d.classList.add("in"))}
+function p9PreBattleGo(){const d=$("#pbt");if(!d||tapSoon(d,350))return;const go=P9_PRE;P9_PRE=null;d.classList.add("out");setTimeout(()=>{d.remove();if(go)go()},220)}
 // ---- VS画面：試合の直前に、自分（左）と相手（右）の6能力をくらべる ----
 function p9VsScr(){const m=S.m,t=m&&m.raise&&m.raise.tour;if(!t||t.status!="league")return board();const lg=t.league,pm=MMP8.tourNext(m),o=p9Npc(lg,pm.opp);bgm("battle");p9Immersive(true);p9MenuClose();
  const rows=P9_STAT.map(([k,lb,col])=>{const a=m[k]|0,b=o[k]|0,mx=Math.max(a,b,1);return `<div class="vr"><span class="v ${a>b?"hi":""}">${a}</span><span class="p9bar l"><i style="width:${(a/mx*100).toFixed(1)}%;background:${col}"></i></span><span class="lb">${lb}</span><span class="p9bar r"><i style="width:${(b/mx*100).toFixed(1)}%;background:${col}"></i></span><span class="v ${b>a?"hi":""}">${b}</span></div>`}).join("");
- $("#app").innerHTML=`<div class="p9vs"><div class="p9vs-top"><small>公式ランク${RN[t.rank]}大会　CHAPTER ${m.raise.ch}</small><b>第${pm.round+1}試合 / 全${lg.rounds.length}試合</b></div>
+ $("#app").innerHTML=`<div class="p9vs p9vs-anim"><div class="p9vs-top"><small>公式ランク${RN[t.rank]}大会　CHAPTER ${m.raise.ch}</small><b>第${pm.round+1}試合 / 全${lg.rounds.length}試合</b></div>
  ${p9Ced(CEDRIC_TALK.vs)}<div class="p9vs-fr"><div class="fr me">${p9Pt(m,"l me")}<div class="np">${p11Esc(m.name)}</div></div><div class="vsx">VS</div><div class="fr">${p9Pt(o,"l")}<div class="np">${p11Esc(o.name)}</div></div></div>
  <div class="p9vs-tb">${rows}</div>
  <p class="p9prov">【暫定】対戦相手の名前・種族は仮の表示です。能力値は、実際の試合でのランク${RN[t.rank]}相当の相手と同じ値です。</p>

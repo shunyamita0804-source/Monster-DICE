@@ -53,16 +53,16 @@ for (const size of [H.SIZES.base, H.SIZES.se]) {
         dice: (() => { const d = document.querySelector('.chdf'); if (!d || d.hidden) return null; const r = d.getBoundingClientRect(); return [r.top, r.bottom]; })() };
     });
     assert.ok(r.sh <= r.H && r.sw <= r.W, `ページのはみ出し・スクロールなし（${r.sh}/${r.H}）`);
-    assert.deepEqual([r.cams, r.bgs], [1, ['./assets/fields/ch1a/bg_01.webp']], '今いるフィールド（FIELD 1）の背景だけ');
+    assert.deepEqual([r.cams, r.bgs], [1, ['./assets/fields/ch1a/journey/ch1_01_grassland_start.webp']], '今いるフィールド（旅立ちの草原）の背景だけ');
     assert.equal(r.dbg, 0, 'ノード・線・番号の表示は無い');
     assert.ok(r.mon[1] <= r.dockTop + 8 && r.mon[0] >= r.hudBottom - 20 && r.mon[2] >= 0 && r.mon[3] <= r.W, `モンスターは画面の中でUIに隠れない（${r.mon}・操作欄 ${r.dockTop}）`);
     assert.deepEqual(r.broken, []); assert.deepEqual(r.filt, [], '正式モンスター画像に色のフィルタをかけない');
-    assert.ok(r.objs >= 5, '停止地点は世界の中の物として置く'); assert.ok(r.env.includes('grass_front'), '手前の草（モンスターより手前の層）');
+    assert.ok(r.objs >= 2, '停止地点は世界の中の物として置く（この背景の分だけ）'); assert.ok(r.env.includes('grass_front'), '手前の草（モンスターより手前の層）');
     assert.equal(r.battleObjs, 0, 'バトル地点の石碑は常設しない'); assert.ok(r.fg >= 1, '手前を横切る草'); assert.deepEqual(r.layers, [true, true, true, true, true, true], '遠景・背景・奥・道・手前・効果の層');
     assert.match(r.text, /Chapter 1 \/ 4/); assert.match(r.text, /Turn\s*1\s*\/ 30/); assert.match(r.text, /疲れ\s*0/); assert.match(r.text, /アイテム/); assert.match(r.text, /休む/); assert.match(r.text, /サイコロ/);
     // 下の操作欄：中央の円形 STOP（幅＝高さ・角丸50%）、左＝アイテム、右＝休む（疲れ −30）。フィールドは 80〜82%、操作欄は 18〜20%
     assert.ok(Math.abs(r.stop.w - r.stop.h) < 1 && /50%/.test(r.stop.radius) && /STOP/.test(r.stop.text) && r.stop.w >= 78, JSON.stringify(r.stop));
-    assert.deepEqual(r.wings.map((w) => w[0]), ['chwing chitem', 'chwing chrest']); assert.match(r.wings[1][1], /休む.*疲れ −30/);
+    assert.deepEqual(r.wings.map((w) => w[0]), ['chwing chitem chw-tl', 'chwing chrest chw-tr', 'chwing chskill chw-bl', 'chwing chstatus chw-br'], '4コマンド：アイテム・休む・技設定・ステータス（STOP の周りに放射状）'); assert.match(r.wings[1][1], /休む.*疲れ −30/);
     const deckRatio = r.deckH / r.H; assert.ok(deckRatio >= 0.15 && deckRatio <= 0.2 && Math.abs(r.fieldH + r.deckH - r.H) <= 1 && r.dockTopEqFieldBottom, `操作欄 ${r.deckH}px（${(deckRatio * 100).toFixed(1)}%）・フィールド ${r.fieldH}px`);
     assert.ok(r.dice && r.dice[1] <= r.dockTop + 3, `サイコロは STOP の上で浮いている（案内文と重ならない）（${r.dice}・操作欄 ${r.dockTop}）`);
     assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
@@ -78,7 +78,7 @@ test('CH1-B2：サイコロ：1枚の正式画像が回って止まり、出目�
   const d = await pg.evaluate(() => ({ imgs: [...document.querySelectorAll('.chdz img')].map((i) => i.getAttribute('src')), locked: MMCHD.isLocked(), btn: document.querySelector('#brollbtn') && document.querySelector('#brollbtn').disabled, rest: document.querySelector('.chrest') && document.querySelector('.chrest').disabled }));
   assert.deepEqual(d.imgs, ['./assets/fields/ch1a/dice/dice_rolling.webp'], '正式サイコロ1枚'); assert.equal(d.locked, true); assert.equal(d.btn, true); assert.equal(d.rest, true);
   const t0 = await st(pg); await pg.evaluate(() => { chfRoll(); chfRest(); }); assert.deepEqual(await st(pg), t0, '演出中の押下は無視（ターン・疲れ・位置は変わらない）');
-  await pg.waitForSelector('.chdz-res:not([hidden])'); assert.match(await pg.evaluate(() => document.querySelector('.chdz-res').textContent), /^3！$/);
+  await pg.waitForSelector('.chdz-stop.on'); assert.deepEqual(await pg.evaluate(() => [document.querySelector('.chdz-stop').getAttribute('src'), getComputedStyle(document.querySelector('.chdz-res')).display]), ['./assets/fields/ch1a/dice/dice_stop_3.svg', 'none'], '出目3 → 3が上の停止面（数字の輪は出さない）');
   await idle(pg);
   const s = await st(pg); const walked = await pg.evaluate(() => window.__nodes);
   assert.deepEqual(walked, ['f1_1', 'f1_2', 'f1_3'], '1地点ずつ通る（瞬間移動しない）');
@@ -117,10 +117,10 @@ test('CH1-B4：分かれ道：大橋ルート／森の小道を選ぶ（出目�
 test('CH1-B5：背景の切り替え：FIELD 1 の奥から FIELD 2 の手前へ歩いて入る（前の背景の DOM は残さない）', { skip: SKIP }, async () => {
   const p = await L.open(); const pg = p.page;
   await start(p);
-  await place(pg, 'f1_12'); await idle(pg);
+  await place(pg, 'f1_3'); await idle(pg);
   await rollAs(pg, 3); await idle(pg);
   const r = await pg.evaluate(() => ({ node: S.m.raise.node, bgs: [...document.querySelectorAll('.chf-bg')].map((i) => i.getAttribute('src')), cams: document.querySelectorAll('.chf-cam').length, fd: document.querySelector('#chfd').textContent }));
-  assert.equal(r.node, 'f2_1'); assert.deepEqual(r.bgs, ['./assets/fields/ch1a/bg_02.webp']); assert.equal(r.cams, 1); assert.equal(r.fd, '大橋と清流');
+  assert.equal(r.node, 'g1_0'); assert.deepEqual(r.bgs, ['./assets/fields/ch1a/journey/ch1_02_grassland_bridge_view.webp']); assert.equal(r.cams, 1); assert.equal(r.fd, '大橋の見える草原');
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
 });
 
@@ -156,9 +156,9 @@ test('CH1-B7：再読み込み → 開始でも、同じ配置・同じ地点・
 test('CH1-B8：ゴール（大会門）→ 公式ランク大会の選択 → 大会へ（大会では疲れを増やさない）', { skip: SKIP }, async () => {
   const p = await L.open(); const pg = p.page;
   await start(p);
-  await place(pg, 'f3_12', { fatigue: 60, turnsUsed: 20 }); await idle(pg);
+  await place(pg, 'f3_3', { fatigue: 60, turnsUsed: 20, branch: 'bridge' }); await idle(pg);
   await rollAs(pg, 3); await pg.waitForSelector('.chgoal .p9rank'); await idle(pg);
-  assert.deepEqual(await pg.evaluate(() => [S.m.raise.node, S.m.raise.goal, S.m.raise.turnsUsed]), ['f3_13', true, 21], '出目がゴールを超えてもゴールで止まる');
+  assert.deepEqual(await pg.evaluate(() => [S.m.raise.node, S.m.raise.goal, S.m.raise.turnsUsed]), ['f3_5', true, 21], '出目がゴールを超えてもゴールで止まる（ライバルの地点は通過）');
   const f0 = (await st(pg)).f;
   // 画面が出た直後（0.35秒）の押下は無視・2度押しの2回目は0.4秒以上あける作りなので、他の育成テストと同じ間隔で押す
   await pg.evaluate(() => { window.__clk = []; document.addEventListener('click', (e) => window.__clk.push([Math.round(performance.now()), e.target.className || e.target.tagName, e.target.closest('.p9rank') ? e.target.closest('.p9rank').dataset.a : '-', bBusy]), true); });
@@ -236,7 +236,7 @@ test('CH1-B10：歩き：道の曲線の中間点を通る（直線で飛ばな�
 test('CH1-B11：止まる位置と目印の位置は別：能力の石碑・宝箱・イベントの物は道の脇にあり、そこに止まったモンスターと重ならない。目印は足元の草と影を持ち、普段は光らず、止まったときだけ光る', { skip: SKIP }, async () => {
   const p = await L.open(); const pg = p.page;
   await start(p);
-  const ids = await pg.evaluate(() => { const g = MMCH.graphFor(S.m), a = S.m.raise.field.nodeAssignments; return g.order.filter((id) => a[id] && ['stat', 'treasure', 'event'].includes(a[id].t) && g.nodes[id].field === 1); });
+  const ids = await pg.evaluate(() => { const g = MMCH.graphFor(S.m), a = S.m.raise.field.nodeAssignments; return g.order.filter((id) => a[id] && ['stat', 'treasure', 'event'].includes(a[id].t) && g.nodes[id].field <= 3); });
   assert.ok(ids.length >= 4);
   for (const id of ids) {
     await place(pg, id); await idle(pg);
@@ -244,15 +244,17 @@ test('CH1-B11：止まる位置と目印の位置は別：能力の石碑・宝�
       const o = document.querySelector(`#chf .chf-obj[data-id="${id}"]`), oi = o.querySelector('img').getBoundingClientRect(), mi = document.querySelector('#bmonw .mon img').getBoundingClientRect();
       const ix = Math.max(0, Math.min(oi.right, mi.right) - Math.max(oi.left, mi.left)), iy = Math.max(0, Math.min(oi.bottom, mi.bottom) - Math.max(oi.top, mi.top));
       const lm = MMCHV.landmarkPos(id), n = MMCH.graphFor(S.m).nodes[id], sc = MMCH.configFor(S.m).fieldScenes[0];
-      return { overlap: (ix * iy) / Math.min(oi.width * oi.height, mi.width * mi.height), dist: Math.hypot(lm.x - n.mx * sc.w, lm.y - n.my * sc.h) * MMCHV.state().cam.S, tuft: !!o.querySelector('.chf-tuft'), shadow: !!o.querySelector('.chf-osh'), glow: getComputedStyle(o.querySelector('.chf-glow')).opacity, hit: o.classList.contains('hit'), t: o.dataset.t, sink: getComputedStyle(o).getPropertyValue('--sink').trim() };
+      return { overlap: (ix * iy) / Math.min(oi.width * oi.height, mi.width * mi.height), dist: Math.hypot(lm.x - n.mx * sc.w, lm.y - n.my * sc.h) * MMCHV.state().cam.S, tuft: !!o.querySelector('.chf-tuft'), shadow: !!o.querySelector('.chf-osh'), glow: getComputedStyle(o.querySelector('.chf-glow')).opacity, hit: o.classList.contains('hit'), t: o.dataset.t, sink: getComputedStyle(o).getPropertyValue('--sink').trim(), hid: o.classList.contains('hid') };
     }, id);
     assert.ok(r.overlap < 0.15, `${id}（${r.t}）：モンスターと目印が食い込まない（絵の枠の重なり ${(r.overlap * 100).toFixed(0)}%）`);
     assert.ok(r.dist >= 24, `${id}：目印は道の脇（止まる位置から ${r.dist.toFixed(0)}px）`);
     assert.ok(r.tuft && r.shadow && parseFloat(r.sink) > 0, `${id}：足元の草・影・少し埋める`); assert.equal(r.glow, '0', `${id}：普段は光らない`); assert.equal(r.hit, false);
+    assert.equal(r.hid, r.t !== 'treasure', `${id}（${r.t}）：石碑・イベントの物は着くまで見えない。宝箱は最初から`);
   }
   // 止まったときだけ光る（0.5〜0.7秒）
   const id = ids[0]; await place(pg, await pg.evaluate((id) => Object.keys(MMCH.graphFor(S.m).conn).find((k) => MMCH.graphFor(S.m).conn[k].includes(id)), id)); await idle(pg);
   await rollAs(pg, 1); await pg.waitForFunction((id) => document.querySelector(`#chf .chf-obj[data-id="${id}"]`).classList.contains('hit'), id, { timeout: 15000 });
+  assert.equal(await pg.evaluate((id) => document.querySelector(`#chf .chf-obj[data-id="${id}"]`).classList.contains('hid'), id), false, '着いたときに現れる');
   const glow = await pg.evaluate((id) => { const g = document.querySelector(`#chf .chf-obj[data-id="${id}"] .chf-glow`), a = g.getAnimations()[0]; return a ? a.effect.getComputedTiming().duration : 0; }, id);
   assert.ok(glow >= 500 && glow <= 700, `光る時間 ${glow}ms`);
   await idle(pg);
@@ -262,15 +264,15 @@ test('CH1-B11：止まる位置と目印の位置は別：能力の石碑・宝�
 test('CH1-B12：背景の切り替え：フィールドの端からそのまま進む向きへ歩き続け、短い暗転のあと次のフィールドの入口の少し手前から歩いて入る（ワープしない）。前の背景の DOM は残さない', { skip: SKIP }, async () => {
   const p = await L.open(); const pg = p.page;
   await start(p);
-  await place(pg, 'f1_12'); await idle(pg);
+  await place(pg, 'f1_4'); await idle(pg);
   await startRecording(pg);
   await pg.evaluate(() => { window.__veil = 0; new MutationObserver(() => { if (document.querySelector('.chf-veil.on')) window.__veil++; }).observe(document.querySelector('#chf'), { subtree: true, attributes: true, childList: true }); });
   await rollAs(pg, 2); await idle(pg);
   const rec = await stopRecording(pg);
   const r = await pg.evaluate(() => ({ node: S.m.raise.node, bgs: [...document.querySelectorAll('.chf-bg')].map((i) => i.getAttribute('src')), cams: document.querySelectorAll('.chf-cam').length, veils: document.querySelectorAll('.chf-veil').length, veilOn: window.__veil, fd: document.querySelector('#chfd').textContent }));
-  assert.equal(r.node, 'f2_0'); assert.deepEqual(r.bgs, ['./assets/fields/ch1a/bg_02.webp']); assert.equal(r.cams, 1); assert.equal(r.veils, 0, '暗転の幕は消える'); assert.ok(r.veilOn > 0, '短い暗転があった'); assert.equal(r.fd, '大橋と清流');
+  assert.equal(r.node, 'g1_0'); assert.deepEqual(r.bgs, ['./assets/fields/ch1a/journey/ch1_02_grassland_bridge_view.webp']); assert.equal(r.cams, 1); assert.equal(r.veils, 0, '暗転の幕は消える'); assert.ok(r.veilOn > 0, '短い暗転があった'); assert.equal(r.fd, '大橋の見える草原');
   // 切り替えの前：進む向き（上）へ歩き続ける。切り替えの後：入口の手前（下）から入口へ歩いて入る
-  const before = rec.filter((x) => x.node === 'f1_13' && /walk/.test(x.cls) && x.wy > 0), after = rec.filter((x) => x.node !== 'f1_12' && x.node !== 'f1_13' && /walk/.test(x.cls) && x.wy > 0);
+  const before = rec.filter((x) => x.node === 'f1_5' && /walk/.test(x.cls) && x.wy > 0), after = rec.filter((x) => x.node !== 'f1_4' && x.node !== 'f1_5' && /walk/.test(x.cls) && x.wy > 0);
   assert.ok(before.length >= 2 && before[before.length - 1].wy < before[0].wy - 5, `端まで来ても上へ歩き続ける（${before.length}フレーム・${before[0] && before[0].wy.toFixed(0)}→${before.length && before[before.length - 1].wy.toFixed(0)}）`);
   assert.ok(after.length >= 2 && after[0].wy > after[after.length - 1].wy + 5, `次のフィールドでは入口の手前から上へ歩いて入る（${after.length}フレーム）`);
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
@@ -312,7 +314,7 @@ test('CH1-B14：バトル地点：目印は無く、着いたら草むらが揺�
   const order = await pg.evaluate(() => window.__order);
   assert.deepEqual(order.slice(0, 2), ['alert', 'rustle'].filter((x) => order.includes(x)).length === 2 ? order.slice(0, 2) : order.slice(0, 2));
   assert.ok(order.indexOf('alert') >= 0 && order.indexOf('rustle') >= 0 && order.indexOf('chbat') > Math.max(order.indexOf('alert'), order.indexOf('rustle')), `草むらの揺れと「！」のあとに案内（${order.join('→')}）`);
-  assert.deepEqual(await pg.evaluate(() => [document.querySelectorAll('.chf-alert,.chf-rustle').length, document.querySelector('.chbat h3').textContent, [...document.querySelectorAll('.chwing')].map((w) => w.disabled)]), [0, '野生のモンスター', [true, true]]);
+  assert.deepEqual(await pg.evaluate(() => [document.querySelectorAll('.chf-alert,.chf-rustle').length, document.querySelector('.chbat h3').textContent, [...document.querySelectorAll('.chwing')].map((w) => w.disabled)]), [0, '野生のモンスター', [true, true, true, true]]);
   assert.deepEqual(p.errors, []);
 });
 
@@ -321,11 +323,11 @@ test('CH1-B15：STOP：押すとサイコロが STOP の上から飛び、減速
   await start(p);
   const dice0 = await pg.evaluate(() => { const d = document.querySelector('.chdf'); return d && !d.hidden && !!d.querySelector('img'); }); assert.equal(dice0, true, 'ターンの始めはサイコロが STOP の上で浮いている');
   await rollAs(pg, 2); await pg.waitForSelector('.chdz');
-  assert.deepEqual(await pg.evaluate(() => [document.querySelector('#brollbtn').disabled, [...document.querySelectorAll('.chwing')].map((w) => w.disabled), document.querySelector('.chdf').hidden]), [true, [true, true], true]);
-  await pg.evaluate(() => { window.__res = null; new MutationObserver(() => { const res = document.querySelector('.chdz-res'), img = document.querySelector('.chdz-img'); if (res && !res.hidden && img && !window.__res) { const m = getComputedStyle(img).transform.match(/matrix\(([-\d.e]+), ([-\d.e]+)/); window.__res = { a: +m[1], b: +m[2], text: res.textContent, src: img.getAttribute('src') }; } }).observe(document.querySelector('.chdz'), { subtree: true, attributes: true, attributeFilter: ['hidden'] }); });
+  assert.deepEqual(await pg.evaluate(() => [document.querySelector('#brollbtn').disabled, [...document.querySelectorAll('.chwing')].map((w) => w.disabled), document.querySelector('.chdf').hidden]), [true, [true, true, true, true], true]);
+  await pg.evaluate(() => { window.__res = null; new MutationObserver(() => { const stop = document.querySelector('.chdz-stop'), img = document.querySelector('.chdz-img'); if (stop && img && !window.__res) { const m = getComputedStyle(img).transform.match(/matrix\(([-\d.e]+), ([-\d.e]+)/); window.__res = { a: +m[1], b: +m[2], src: stop.getAttribute('src'), roll: img.getAttribute('src'), ring: getComputedStyle(document.querySelector('.chdz-res')).display }; } }).observe(document.querySelector('.chdz'), { subtree: true, childList: true }); });
   await pg.waitForFunction(() => !!window.__res, null, { timeout: 15000 });
   const r = await pg.evaluate(() => window.__res);
-  assert.ok(Math.abs(r.a - 1) < 0.02 && Math.abs(r.b) < 0.02, `止まったサイコロは正式の角度（matrix ${r.a}, ${r.b}）`); assert.equal(r.text, '2！'); assert.equal(r.src, './assets/fields/ch1a/dice/dice_rolling.webp');
+  assert.ok(Math.abs(r.a - 1) < 0.02 && Math.abs(r.b) < 0.02, `止まったサイコロは正式の角度（matrix ${r.a}, ${r.b}）`); assert.equal(r.src, './assets/fields/ch1a/dice/dice_stop_2.svg', '出目2 → 2が上の停止面'); assert.equal(r.roll, './assets/fields/ch1a/dice/dice_rolling.webp'); assert.equal(r.ring, 'none');
   await idle(pg); assert.equal((await st(pg)).node, 'f1_2');
   const src = await pg.evaluate(() => MMCHD.play.toString()); assert.doesNotMatch(src, /performance\.now\(\)\s*%|Date\.now\(\)\s*%/, '押した時刻で出目を決めない');
   assert.deepEqual(p.errors, []);

@@ -130,8 +130,8 @@ test('QA-G3-4：最初からやり直す（reset）：画面を出した直後�
   assert.deepEqual(R.S, { g: 300, m: null }); assert.deepEqual(R.sel, []); assert.deepEqual(log, ['save', 'render']);
   assert.doesNotMatch(lineOf('function reset('), /setTimeout/, 'reset に取り消しのタイマーは足していない');
   // セーブ・ロード画面を出すたびに「最初からやり直す」の表示時刻を記録する（画面に .ghost はこのボタン1つだけ）
-  const scr = lineOf(' $("#app").innerHTML=`<button class="back" onclick="lobby()">◀ 街にもどる</button><h2>セーブ・ロード</h2>');
-  assert.match(scr, /<button class="ghost" onclick="reset\(this\)">最初からやり直す<\/button>`;tapAt\(\$\("#app \.ghost"\)\)\}$/);
+  const scr = lineOf(' $("#app").innerHTML=`<div class="svs"><header class="svhead"><button class="back" onclick="lobby()">◀ 街にもどる</button><h2>セーブ・ロード</h2></header>');
+  assert.match(scr, /<button class="ghost" onclick="reset\(this\)">最初からやり直す<\/button><\/div>`;tapAt\(\$\("#app \.ghost"\)\)\}$/);
   assert.equal(scr.split('class="ghost"').length - 1, 1);
 });
 
@@ -201,8 +201,8 @@ test('QA-G3-7：ガードは指定した場所だけ（全体には掛けない�
   assert.equal(uses('tapHold'), 3, '定義＋市場の購入確認シート＋修行メニューだけ');
   assert.match(lineOf(' <div class="p10shb">'), /onclick="mkgo\(\$\{s\.id\}\);p10Close\(\)">連れて帰る（\$\{c\.price\}G）<\/button><\/div><\/div>`;document\.body\.appendChild\(d\);tapHold\(d\.querySelector\("\.p10shb"\),350\)\}$/);
   assert.match(lineOf(' if(id=="s")tapHold('), /^ if\(id=="s"\)tapHold\(\$\("#app \.dbody"\),350\);/, '修行メニュー（カードだけが入る .dbody）');
-  assert.equal(uses('tapSoon'), 6, '定義＋tapHold・arm・p9arm・reset・ボードのメニューの背景');
-  assert.equal(uses('tapAt'), 8, '定義＋tapSoon（数え直し）・tapHold・arm・p9arm・reset・セーブ・ロード画面・ボードのメニュー');
+  assert.equal(uses('tapSoon'), 7, '定義＋tapHold・arm・p9arm・reset・ボードのメニューの背景・Battle 開始前の BATTLE START');
+  assert.equal(uses('tapAt'), 9, '定義＋tapSoon（数え直し）・tapHold・arm・p9arm・reset・セーブ・ロード画面・ボードのメニュー・Battle 開始前');
   assert.match(lineOf('function p9Menu(){'), /tapAt\(d\);d\.onclick=e=>\{if\(e\.target===d&&!tapSoon\(d,350\)\)p9MenuClose\(\)\};/, 'ボードのメニューは背景タップ（閉じる）だけ。中のボタンは従来どおり');
   assert.match(between('function board(msg){', '\n/** 分岐'), /else if\(ph=="resolve"\)setTimeout\(\(\)=>\{if\(document\.getElementById\("bmonw"\)\)p8Resolve\(\)\},350\);/, 'ボードを離れていたら着地処理をしない');
   assert.match(lineOf('function p8Resolve('), /^function p8Resolve\(\)\{const m=S\.m;if\(bBusy\|\|!m\|\|!m\.raise\.pend\|\|m\.raise\.pend\.stage!="resolve"\)return;const r=MMP8\.resolveLanding\(S,m\);save\(\);/, 'p8Resolve 自体は変えていない');

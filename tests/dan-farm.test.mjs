@@ -103,7 +103,7 @@ const SKIP = H.skipReason();
 let L;
 test.before(async () => { if (!SKIP) L = await H.launch(); });
 test.after(async () => { if (L) await L.close(); });
-const talkState = (pg) => pg.evaluate(() => { const o = document.querySelector('.mmtalk'); if (!o) return null;
+const talkState = (pg) => pg.evaluate(() => { const o = document.querySelector('.mmtalk:not(.mmtalk-out)'); if (!o) return null;
   const im = document.querySelector('.mmtalk-fig img');
   return { name: document.querySelector('.mmtalk-name').textContent, text: document.querySelector('.mmtalk-text').textContent, next: !document.querySelector('.mmtalk-next').hidden,
     img: im.getAttribute('src'), side: document.querySelector('.mmtalk-stage').dataset.side }; });

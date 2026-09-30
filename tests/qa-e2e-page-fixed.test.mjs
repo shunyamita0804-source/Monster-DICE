@@ -21,7 +21,7 @@ test('PF-1：CSS：html・body はスクロールしない（バウンスも抑�
   assert.match(HTML, /#app>\.ds>\.dbody\{flex:1 1 auto;min-height:0;[^}]*overflow-y:auto;overscroll-behavior:contain/, '一覧（.dbody）だけスクロール');
   assert.match(HTML, /#app>\.rn>\.wpanel\{[^}]*overflow-y:auto;overscroll-behavior:contain/, '牧場は選んだ機能の中身だけスクロール');
   assert.match(HTML, /#app:has\(>\.map\.town\)\{position:relative;overflow:hidden;padding-bottom:0\}/, '街は1画面で固定（スクロールしない）');
-  assert.match(HTML, /<div class="tlow\$\{msg\|\|!m\?" on":""\}"><div class="dlg">/, '案内文は知らせることがあるときだけ背景の上に出す');
+  assert.match(HTML, /<div class="tlow\$\{msg\|\|!m\?" on":""\}"><div class="dlg/, '案内文は知らせることがあるときだけ背景の上に出す');
   assert.match(HTML, /<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">/, 'viewport は従来どおり（safe-area を使う）');
   assert.match(HTML, /window\.scrollTo=function\(a,b\)\{try\{const y=a&&typeof a=="object"\?a\.top:b,app=document\.getElementById\("app"\);if\(app&&typeof y=="number"\)app\.scrollTop=y\}catch\(e\)\{\}return f\.apply\(window,arguments\)\}/, '既存の「一番上から表示」は #app にも効く');
 });

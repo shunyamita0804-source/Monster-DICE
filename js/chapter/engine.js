@@ -222,7 +222,7 @@
       // 1つの背景に特殊地点が集中しない
       const byField = {}; let sp = 0;
       f.forEach((x) => { if (SPECIAL.includes(x.t)) { byField[x.field] = (byField[x.field] || 0) + 1; sp++; } });
-      for (const s of cfg.fieldScenes) { const share = (byField[s.id] || 0) / Math.max(1, sp); if (share > (L.maxFieldShare || 0.5)) errs.push(`${rt.branch}:field${s.id} ${share.toFixed(2)}`); if (share < (L.minFieldShare || 0.15)) errs.push(`${rt.branch}:field${s.id} low ${share.toFixed(2)}`); }
+      for (const s of cfg.fieldScenes) { const share = (byField[s.id] || 0) / Math.max(1, sp); if (share > (L.maxFieldShare != null ? L.maxFieldShare : 0.5)) errs.push(`${rt.branch}:field${s.id} ${share.toFixed(2)}`); if (share < (L.minFieldShare != null ? L.minFieldShare : 0.15)) errs.push(`${rt.branch}:field${s.id} low ${share.toFixed(2)}`); }
       if (L.recoveryPerRoute && !f.some((x) => x.a && x.a.recovery)) errs.push(`${rt.branch}:no recovery`);
     }
     return errs;

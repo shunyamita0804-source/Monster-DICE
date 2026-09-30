@@ -98,7 +98,7 @@ const SKIP = H.skipReason();
 let L;
 test.before(async () => { if (!SKIP) L = await H.launch(); });
 test.after(async () => { if (L) await L.close(); });
-const talkState = (pg) => pg.evaluate(() => { const o = document.querySelector('.mmtalk'); if (!o) return null;
+const talkState = (pg) => pg.evaluate(() => { const o = document.querySelector('.mmtalk:not(.mmtalk-out)'); if (!o) return null;
   return { name: document.querySelector('.mmtalk-name').textContent, text: document.querySelector('.mmtalk-text').textContent, next: !document.querySelector('.mmtalk-next').hidden,
     img: document.querySelector('.mmtalk-fig img').getAttribute('src'), side: document.querySelector('.mmtalk-stage').dataset.side, n: document.querySelectorAll('.mmtalk').length }; });
 async function toMarket(p, gold) {
@@ -128,7 +128,8 @@ test('KR-B1：入店：初回はカレンのアップ画像で説明2行（smile
   await pg.waitForSelector('.mmtalk'); await pg.waitForTimeout(260); await pg.click('.mmtalk');
   let s2 = await talkState(pg); assert.ok(AGAIN.includes(s2.text), `再訪は1行のあいさつ：${s2.text}`); assert.match(s2.img, /karen\/closeup\/smile\.webp$/); assert.equal(s2.next, true);
   await pg.waitForTimeout(120); await pg.click('.mmtalk'); await pg.waitForTimeout(60);
-  assert.equal(await talkState(pg), null, '1行で終わる'); assert.equal(await pg.evaluate(() => document.querySelector('.p10mk').classList.contains('talk')), false, '終わると通常の閲覧へ');
+  assert.equal(await talkState(pg), null, '1行で終わる'); await pg.waitForFunction(() => !document.querySelector('.mmtalk'), null, { timeout: 3000 });   // 退場のフェードのあと
+  assert.equal(await pg.evaluate(() => document.querySelector('.p10mk').classList.contains('talk')), false, '終わると通常の閲覧へ');
   await pg.reload(); await pg.waitForFunction(() => typeof S === 'object'); await pg.evaluate(() => market()); await pg.waitForSelector('.mmtalk'); await pg.waitForTimeout(260); await pg.click('.mmtalk');
   s2 = await talkState(pg); assert.ok(AGAIN.includes(s2.text), '再読み込み後も説明ではなく1行のあいさつ');
   await H.finishTalk(pg);

@@ -183,7 +183,7 @@
             if (s.choices) for (const x of s.choices) { const bt = h('button', 'mmtalk-choice'); bt.type = 'button'; bt.textContent = x.label; bt.dataset.choice = x.id;
               bt.addEventListener('click', (e) => { e.stopPropagation(); c.choose(x.id); }); ch.appendChild(bt); } }
         },
-        onEnd(choice) { stopAnim(); clearTimeout(keyT); document.removeEventListener('keydown', onKey); ov.remove(); if (CUR && CUR.c === c) CUR = null; resolve(choice == null ? null : choice); },
+        onEnd(choice) { stopAnim(); clearTimeout(keyT); document.removeEventListener('keydown', onKey); if (ov.animate && ov.classList && !ov.__instant) { ov.classList.add('mmtalk-out'); const a = ov.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 220, easing: 'ease-in', fill: 'forwards' }); const done = () => { ov.remove(); resolve(choice == null ? null : choice); }; a.finished.then(done, done); } else { ov.remove(); resolve(choice == null ? null : choice); } if (CUR && CUR.c === c) CUR = null; },   // 退場：短くフェード（急に消さない）。Promise はフェードが終わって DOM を消してから解決する（次の画面が会話の上に出ない・会話の要素が残らない）。220ms 後に DOM から外す
         branches: opts.branches,
       });
       ov.addEventListener('click', (e) => { e.stopPropagation(); c.tap(); });
@@ -193,7 +193,7 @@
     });
   }
   /** 開いている会話を終わらせる（タイマーも止める） */
-  function close() { if (CUR) { const x = CUR; CUR = null; x.c.end(); } }
+  function close() { if (CUR) { const x = CUR; CUR = null; if (x.ov) x.ov.__instant = true; x.c.end(); } }   // 途中で閉じる（次の会話を開く・画面を切り替える）ときはフェードせず即座に消す（ウィンドウを2つ重ねない）
   const state = () => (CUR ? CUR.c.state() : null);
   const animState = () => ({ running: ANIM.timer != null, name: ANIM.name, frame: ANIM.frame });
   /** 既存NPC会話（index.html の NP 形式：{ n: 名前, t: [セリフ…] }）を、文章を変えずに共通会話の行へ変換する */

@@ -437,14 +437,14 @@ T('QA-RB7：☰メニュー →「中断」→ 開始画面（つづきから）
 // Chapter 1 のゴール → 辞退 → Chapter間ファーム → 次のChapter
 // ---------------------------------------------------------
 T('QA-RB8：Chapter 1 のゴール（大会門。残りの移動は消える）：挑戦できるのは E・D だけ → 辞退（2度押し）→ Chapter間ファーム → 次のChapterへは1回押すだけで出発（フィナの会話なし・疲れは −50 して持ち越す・視差効果を減らす設定）', async () => {
-  const p = await boot(seed({ node: 'f3_11', turnsUsed: 20, fatigue: 64, field: { ...ch1Field({ f3_12: null }), fieldId: 3, branch: 'bridge' } }), '#chf-ui #brollbtn', { calm: true }); const pg = p.page;
+  const p = await boot(seed({ node: 'f3_3', turnsUsed: 20, fatigue: 64, field: { ...ch1Field({}), fieldId: 13, branch: 'bridge' } }), '#chf-ui #brollbtn', { calm: true }); const pg = p.page;
   const ss0 = (await raiseOf(pg)).startStats;
   await setDice(pg, [3]);
   await pg.waitForTimeout(SETTLE);
   await pg.click('#brollbtn');
   await pg.waitForSelector('.chgoal .p9rank', { timeout: 20000 });
   let r = await raiseOf(pg);
-  assert.deepEqual([r.node, r.goal, r.pend, r.turnsUsed, r.fatigue], ['f3_13', true, null, 21, 71], 'f3_12 → f3_13（ゴール）で止まり、残り1歩は消える');
+  assert.deepEqual([r.node, r.goal, r.pend, r.turnsUsed, r.fatigue], ['f3_5', true, null, 21, 71], 'f3_3 → f3_4（ライバル：通過）→ f3_5（ゴール）で止まり、残り1歩は消える');
   assert.equal(await bmsg(pg), '大会門に着いた！');
   const ranks = await pg.evaluate(() => [...document.querySelectorAll('.p9rank')].map((b) => b.getAttribute('onclick')));
   assert.deepEqual(ranks, ['p8TourStart(0,this)', 'p8TourStart(1,this)'], 'Chapter 1 の挑戦上限は D');

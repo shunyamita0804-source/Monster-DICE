@@ -28,9 +28,9 @@ test('FA-1：会話の文章と表情は指定どおり（あいさつ・育成�
 
 test('FA-2：名前登録の直後に1度だけあいさつ。表示前に「表示済み」を保存するので、再読込しても二度出ない', () => {
   const S = { playerNamePending: true }, log = [];
-  const run = new Function('S', 'save', 'lobby', 'finaTalk', '$', 'MMP11P', 'p11Esc', `${fnSrc('finaFlags')}\n${fnSrc('finaIntro')}\n${fnSrc('p11NameGo')}\nreturn p11NameGo;`)(
+  const run = new Function('S', 'save', 'lobby', 'finaTalk', '$', 'MMP11P', 'p11Esc', 'finaMsg', `${fnSrc('finaFlags')}\n${fnSrc('finaIntro')}\n${fnSrc('p11NameGo')}\nreturn p11NameGo;`)(
     S, () => log.push(['save', JSON.stringify(S.npcFlags || null)]), (m) => log.push(['lobby', m]), (k) => { log.push(['talk', k]); return Promise.resolve(); },
-    () => ({ value: 'アルト' }), { confirmName: (s, v) => { s.playerNamePending = false; s.playerName = v; return v; } }, (t) => t);
+    () => ({ value: 'アルト' }), { confirmName: (s, v) => { s.playerNamePending = false; s.playerName = v; return v; } }, (t) => t, (t) => t);
   run();
   assert.deepEqual(log.map((x) => x[0]), ['save', 'lobby', 'save', 'talk']); assert.equal(log[2][1], '{"finaIntro":1}', '会話を出す前に表示済みを保存');
   assert.equal(log[3][1], 'intro'); run(); assert.equal(log.filter((x) => x[0] === 'talk').length, 1, '2回目は出ない');

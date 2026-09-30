@@ -5,9 +5,9 @@
 //    連番画像は使わず、この1枚を translate・rotate・scale・影で動かす：
 //    STOP の上で浮いていた場所（opts.from）から飛び上がる → 空中で速く回る → 減速しながらフィールドの手前（opts.land）へ落ちる → 着地 → 小さく1回跳ねる →
 //    少し横へ転がる → 最後の約0.18秒で正式の角度（0°）へ自然に戻って止まる（傾いたまま止まらない。回転量は 360° の倍数に収束）
-//  ・resultSprites：出目ごとの停止画像（dice_stop_1〜3）。今は未登録（空）。1枚の画像を回して「2が上」「3が上」を偽造しない
-//    → 未登録の間は、止まったサイコロの上に金色の光の輪と数字（「3！」）を短く出す。
-//    停止画像が届いたら configure({ resultSprites: { 1: '…/dice_stop_1.webp', 2: '…', 3: '…' } }) だけで、数字の代わりにその画像を出す
+//  ・resultSprites：出目ごとの停止面（1・2・3 が上の面）。ゲームでは config.dice（ch1a.js）から configure する（今は暫定の SVG＝dice_stop_1〜3.svg。正式画像が届いたらファイルを差し替えるだけ）。
+//    止まる瞬間に、回転中の絵から停止面へ短くクロスフェードし、内部の出目と表示の面を必ず一致させる。1枚の画像を回して「2が上」「3が上」を偽造しない。
+//    未登録のとき（このモジュール単体の既定）は、止まったサイコロの上に金色の光の輪と数字（「3！」）を出す
 //  ・演出中は isLocked() が true（サイコロ・休む・分岐・アイテムの重複操作を防ぐ）
 // =========================================================
 (function (root) {
@@ -74,9 +74,13 @@
         await Promise.race([a1.finished.catch(() => {}), wait(T + 200)]);
       } else { mv.style.transform = `translate(-50%,-50%) translate(${lx.toFixed(1)}px,${ly.toFixed(1)}px)`; await wait(T); }
       // 停止：停止画像があれば差し替え、無ければ金色の光の輪＋数字
+      //  停止面（出目ごとの画像）があれば、回転中の絵から停止面へ短くクロスフェード（急に差し替えない）。無ければ金色の光の輪＋数字
       const rs = resultSprite(value), res = ov.querySelector('.chdz-res');
-      if (rs) { img.src = rs; img.getAnimations && img.getAnimations().forEach((a) => a.cancel()); img.style.transform = 'none'; ov.dataset.face = 'sprite'; }
-      else { res.hidden = false; ov.dataset.face = 'number'; }
+      if (rs) {
+        const stop = document.createElement('img'); stop.className = 'chdz-stop'; stop.alt = `出目 ${value}`; stop.src = rs; stop.draggable = false; mv.appendChild(stop);
+        void stop.offsetWidth; stop.classList.add('on'); img.classList.add('off');
+        ov.dataset.face = 'sprite'; await wait(calm ? 0 : 160);
+      } else { res.hidden = false; ov.dataset.face = 'number'; }
       await wait(opts.fast ? 120 : C.resultMs);
       ov.classList.add('out'); await wait(160);
       return true;

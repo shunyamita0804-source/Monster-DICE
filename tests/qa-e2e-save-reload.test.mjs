@@ -194,6 +194,7 @@ T('QA-SR5：大会の試合中に再読み込み → その試合は無かった
   const pre = await H.getS(pg);
   assert.equal(pre.m.raise.battle, null);
   await pg.click('.p9go'); await pg.waitForTimeout(700); await pg.click('.p9go');
+  await pg.waitForSelector('#pbt.in'); await pg.waitForTimeout(450); await pg.click('.pbtgo');   // Battle 開始前の導入（2026-09-30）→ BATTLE START
   // 戦闘が始まり、戦闘前の状態（checkpoint）が保存されるまで待つ
   await pg.waitForFunction(() => { const s = JSON.parse(localStorage.getItem('mr4v6')); return !!(s.m.raise.battle && document.getElementById('bt')); }, null, { timeout: 10000 });
   const mid = JSON.parse(await stored(pg));
