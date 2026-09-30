@@ -1538,6 +1538,29 @@ button.p10karen img{display:block;width:100%;height:auto;margin-top:2px;transfor
 .rn .wpanel .card .st{margin-top:2px;font-size:12.5px;line-height:1.45;column-gap:10px}
 .rn .wpanel button.go{min-height:44px;margin-top:8px}
 @media (max-height:700px){.rn .fscene{aspect-ratio:941/860}.rn .rncmd button.ftile,.rn .rncmd button.fsell{height:52px;font-size:17px}}
+/* ===== 画面全体を固定（2026-09-30）：ページ（html・body）はスクロールさせない。iPhone で上下にスワイプしても、画面全体・背景がずれない（バウンス・ツールバーの伸び縮みも起きない）。
+   ゲームの枠 main は画面の高さ（100dvh。古いブラウザは 100vh）に固定。スクロールは枠の中の #app（下へ続く画面）か、各画面の一覧（.dbody・牧場の .wpanel など）の中だけ。
+   #app は main の余白 16px を内側に持ち直す（各画面の -16px の打ち消し・見出し h1 との位置は従来どおり）。 */
+html,body{height:100%;overflow:hidden;overscroll-behavior:none}
+main{box-sizing:border-box;height:100vh;height:100dvh;display:flex;flex-direction:column;padding:16px 16px 0;overflow:hidden}
+main>h1{flex:none}
+#app{flex:1 1 auto;min-height:0;margin:-16px -16px 0;padding:16px;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+/* 1画面の器（ステータス・技管理・特訓・出発準備・アイテム・プロフィール・研究所・図鑑の詳細・大会・VS・育成完了・牧場）：枠いっぱいの高さに固定し、背景は動かさない。
+   中身が多い画面は、器の中（一覧 .dbody があればそこだけ）でスクロールする */
+#app>.ds,#app>.mk2,#app>.p9tour,#app>.p9vs,#app>.p9farm:not(.fm),#app>.rn{box-sizing:border-box;height:calc(100% + 32px);min-height:0;margin:-16px;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+#app>.ds:has(>.dbody){display:flex;flex-direction:column;overflow:hidden;padding-bottom:0}
+#app>.ds:has(>.dbody)>*{flex:none}
+#app>.ds:has(>.dbody)>.dtitle{margin-top:0}   /* 縦並び（flex）では上下の余白が重ならないので、従来の見た目（.dtop の下 8px）に合わせる */
+#app>.ds>.dbody{flex:1 1 auto;min-height:0;margin:0 -12px;padding:0 12px calc(24px + env(safe-area-inset-bottom,0px));overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+/* 牧場：見出し・背景（ニックの一言）・4コマンドは固定。選んだ機能の中身（.wpanel）だけスクロール */
+#app>.rn{display:flex;flex-direction:column;overflow:hidden}
+#app>.rn>*{flex:none}
+#app>.rn>.wpanel{flex:0 1 auto;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+@media (max-height:740px){#app>.rn>.fscene{flex:0 1 auto;min-height:250px}}   /* 低い画面：一覧が見える高さを残すため、背景は少しだけ低くなってよい */
+/* 街：背景（.map）は枠の上に止めたまま。下の欄（大会・案内欄・連れているモンスター・セーブ）は、スクロールすると背景の上に重なって出てくる */
+#app>.map.town{position:sticky;top:-16px;z-index:0}   /* 止める位置は #app の余白（16px）の内側から数えるので -16px ＝画面の上端 */
+#app:has(>.map.town){padding-bottom:0}   /* 下のバーの分の余白は .tlow の中へ（背景を最後まで止めておくため） */
+#app>.tlow{position:relative;z-index:1;display:flow-root;margin:-12px -16px 0;padding:12px 16px calc(16px + var(--tbar) + env(safe-area-inset-bottom,0px));background-color:var(--bg);background-image:radial-gradient(rgba(140,100,50,.09) 1px,transparent 1.5px);background-size:14px 14px}
 </style></head><body><main>
 <h1>ミスティックモンスターズ</h1>
 <div id="app"></div>
@@ -1842,11 +1865,16 @@ function newsScr(){if(p8Blocked())return;$("#app").innerHTML=`<div class="ds pfd
 /** 設定：今ある設定（BGM・効果音のオン／オフ＝既存の sndToggle と localStorage の mr4a）だけを置く。新しい設定・セーブ項目は作らない。
  * 街と設定の画面では右上の音のボタン（#snd）を隠す（ボタンと処理は残し、ほかの画面ではこれまでどおり右上に出る） */
 function confScr(){if(p8Blocked())return;$("#app").innerHTML=`<div class="ds pfds tset">${TOWN_SVG}<div class="dtop"><button class="dback" onclick="lobby()">◀ 街にもどる</button></div><div class="dtitle" style="--dc:#d9b465"><div class="mico"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="#tic-conf"/></svg></div><div><b>設定</b><small>ゲームの設定</small></div></div><div class="tplate">${townCorners()}<dl class="pfrows"><div class="pfrow"><dt>BGM・効果音</dt><dd><button class="tsnd" data-nsfx="1" onclick="sndToggle();confScr()" aria-label="BGM・効果音">${AU.on?"🔊 オン":"🔇 オフ"}</button></dd></div></dl></div></div>`;try{window.scrollTo(0,0)}catch(e){}}
+// ---- 画面全体を固定（2026-09-30）：html・body はスクロールしない。スクロールはゲームの枠の中（#app と各画面の一覧）だけ ----
+//  既存の画面は描いた後に window.scrollTo(0,0)（一番上から表示）を呼ぶので、そのときゲームの枠（#app）も同じ位置へ戻す（ページ自体は動かない）。
+(function(){const f=window.scrollTo;if(typeof f!="function")return;window.scrollTo=function(a,b){try{const y=a&&typeof a=="object"?a.top:b,app=document.getElementById("app");if(app&&typeof y=="number")app.scrollTop=y}catch(e){}return f.apply(window,arguments)}})();
+/** 今の画面でスクロールしている所（一覧 .dbody・1画面の器・#app の順）。特訓ボードの「見ていた位置のまま」に使う */
+function gameScroller(){const a=document.getElementById("app");if(!a)return null;return [a.querySelector(":scope>.ds>.dbody"),a.querySelector(":scope>.ds,:scope>.mk2,:scope>.p9tour,:scope>.p9vs,:scope>.rn"),a].find(e=>e&&e.scrollHeight>e.clientHeight+1)||a}
 function lobby(msg,open){if(p8Blocked())return;if(S.playerNamePending)return p11NameScr(msg); // Phase 11：新規ゲームは最初にプレイヤー名を決める
  const h1=$("h1");if(h1)h1.style.display="";bgm("town");const m=S.m; // 街では見出し（h1）を CSS で隠す（main:has(>#app>.map.town)）。ほかの画面へ移れば元どおり
  $("#app").innerHTML=`<div class="map town" style="--town-bg:url(${TOWN_BG})"><div class="tbg" aria-hidden="true"></div>${TOWN_SVG}<button class="tround tnews" onclick="newsScr()" aria-label="お知らせ" title="お知らせ"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="#tic-news"/></svg></button><button class="tround tconf" onclick="confScr()" aria-label="設定" title="設定"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="#tic-conf"/></svg></button>${TOWN_LABELS.map(l=>`<div class="tlbl" style="--x:${l[1]};--y:${l[2]}"><span>${l[0]}</span><i></i></div>`).join("")}</div><nav class="tcmds tbar" aria-label="街の施設">${TOWN_CMDS(m).map((c,i)=>`<button class="hz tcmd ${c[4]=="ok"?"":c[4]}${i==4?" tsub tfarm":i==5?" tsub tprof":""}" ${c[4]=="dis"?"disabled":""} onclick="${c[3]}" aria-label="${c[0]}${c[4]=="lock"?"（未開放）":""}" title="${c[1]}"><span class="ti">${townIcon(c[2])}</span><b>${c[0]}</b></button>`).join("")}</nav>
- ${bprof()}<div class="dlg"><div class="mon dm">${svg(0,0)}</div><div class="dbub" id="msg">${msg||(m?"行きたい場所をタップしよう！":"モンスターがいません。まずは市場で選ぼう。")}</div></div>${m?mcard(m):""}
- <button class="svb" onclick="savescr()">▶ セーブ・ロード</button>`;try{window.scrollTo(0,0)}catch(e){}
+ <div class="tlow">${bprof()}<div class="dlg"><div class="mon dm">${svg(0,0)}</div><div class="dbub" id="msg">${msg||(m?"行きたい場所をタップしよう！":"モンスターがいません。まずは市場で選ぼう。")}</div></div>${m?mcard(m):""}
+ <button class="svb" onclick="savescr()">▶ セーブ・ロード</button></div>`;try{window.scrollTo(0,0)}catch(e){}
 }
 // ---- Phase 11：プレイヤー名（新規ゲームの最初に決める。空欄なら「アルト」） ----
 function p11Esc(t){return String(t).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
@@ -2727,7 +2755,7 @@ async function trRoll(){if(p7Busy||!S.m||!MMP7.trainRunOf(S.m))return;p7Busy=tru
  if(dice)dice.textContent=["","①","②","③"][n];await sleep(250);
  const r=MMP7.advanceTraining(S,S.m,n);delete run.roll;save();let msg=`${n}マス進んだ。`; // 前進・効果と「出目を使い終えた」記録を同時に保存（二重に進まない）
  if(r.gain)msg+=` ${LAB[r.gain.key]}が${r.gain.amount}上がった！`+(r.lifeGain?`${LAB[r.lifeGain.key]}が${r.lifeGain.amount}上がった！`:"");else if(!r.goal)msg+=" 何も起きなかった。";
- let y=0;try{y=window.scrollY||0}catch(e){}const keep=()=>{try{if(y&&$("#p7msg"))window.scrollTo(0,y)}catch(e){}}; // 振った後の再表示でも見ていた位置のまま（小さい画面でサイコロのボタンが毎回画面外へ戻らないように）
+ let y=0;try{const g=typeof gameScroller=="function"?gameScroller():null;y=g?g.scrollTop:(window.scrollY||0)}catch(e){}const keep=()=>{try{if(y&&$("#p7msg")){const g=typeof gameScroller=="function"?gameScroller():null;if(g)g.scrollTop=y;else window.scrollTo(0,y)}}catch(e){}}; // 振った後の再表示でも見ていた位置のまま（小さい画面でサイコロのボタンが毎回画面外へ戻らないように）
  if(r.goal){const f=MMP7.finishTraining(S,S.m);save();p7Busy=false;
   const t=f.learned!=null?`ゴール！「${SK[f.learned]?SK[f.learned][0]:f.learned}」を覚えた！`:f.reason=="already"?"ゴール！この特訓の技はすでに覚えていた。":"ゴール！（この種族の特訓技はまだ登録されていません）";
   sfx(3);trScr(msg+" "+t,{kind:f.kind});return keep()}

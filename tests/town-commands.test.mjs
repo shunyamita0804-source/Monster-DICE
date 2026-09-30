@@ -198,8 +198,8 @@ for (const [k, size] of Object.entries(H.SIZES)) {
       assert.ok(!b.clip, '施設名が切れていない');
     }
     // 下へスクロールしてもバーは画面下に出たまま。いちばん下の要素（セーブ・ロード）はバーの裏に隠れない
-    const s = await pg.evaluate(() => { scrollTo(0, 1e6); const bar = document.querySelector('.tbar').getBoundingClientRect(), sv = document.querySelector('.svb').getBoundingClientRect(); return { bar: [bar.top, bar.bottom], sv: sv.bottom, y: scrollY }; });
-    assert.ok(s.y > 0 && Math.abs(s.bar[1] - size[1]) <= 1 && s.sv <= s.bar[0], `スクロールしてもバーは画面下・セーブ・ロードは隠れない（${JSON.stringify(s)}）`);
+    const s = await pg.evaluate(() => { scrollTo(0, 1e6); const bar = document.querySelector('.tbar').getBoundingClientRect(), sv = document.querySelector('.svb').getBoundingClientRect(); return { bar: [bar.top, bar.bottom], sv: sv.bottom, y: document.getElementById('app').scrollTop, page: scrollY }; });   // 2026-09-30：スクロールするのは街の枠（#app）の中だけ
+    assert.ok(s.y > 0 && s.page === 0 && Math.abs(s.bar[1] - size[1]) <= 1 && s.sv <= s.bar[0], `スクロールしてもバーは画面下・セーブ・ロードは隠れない（${JSON.stringify(s)}）`);
     assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
   });
 }

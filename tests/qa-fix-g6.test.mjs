@@ -103,7 +103,7 @@ test('QA-G6-3：修行ボード：サイコロを振った後の再表示（ゴ�
 test('QA-G6-4：街（lobby）を開いたら、ほかの画面と同じく一番上から表示する', () => {
   // 守ること：以前は購入・合体の後などに街が途中までスクロールした位置で開き、見出しが画面の外だった
   const src = between('function lobby(msg,open){', '\n// ---- Phase 11：プレイヤー名');
-  assert.match(src, /<button class="svb" onclick="savescr\(\)">▶ セーブ・ロード<\/button>`;try\{window\.scrollTo\(0,0\)\}catch\(e\)\{\}\n\}$/, '画面を描いた後に一番上へ');
+  assert.match(src, /<button class="svb" onclick="savescr\(\)">▶ セーブ・ロード<\/button><\/div>`;try\{window\.scrollTo\(0,0\)\}catch\(e\)\{\}\n\}$/, '画面を描いた後に一番上へ（2026-09-30：下の欄は .tlow の中。window.scrollTo はゲームの枠 #app も一番上へ戻す）');
   assert.match(src, /^function lobby\(msg,open\)\{if\(p8Blocked\(\)\)return;if\(S\.playerNamePending\)return p11NameScr\(msg\);/, '育成中・名前登録前の扱いは従来どおり');
 });
 
@@ -220,12 +220,14 @@ test('QA-G6-B1：実ブラウザ（375×667・タッチ）：修行ボードで�
     trStart('po');
   });
   await pg.waitForSelector('#p7roll');
-  assert.equal(await pg.evaluate(() => scrollY), 0, '修行を始めたときは従来どおり一番上から');
+  // 2026-09-30：ページ（html・body）はスクロールしない。修行ボードは画面の器（gameScroller()）の中でスクロールする
+  const SY = () => pg.evaluate(() => scrollY + gameScroller().scrollTop);
+  assert.equal(await SY(), 0, '修行を始めたときは従来どおり一番上から');
   const visible = () => pg.waitForFunction(() => { const r = document.getElementById('p7roll').getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight; }, null, { timeout: 5000 });
   for (let k = 0; k < 3; k++) {
-    await pg.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));   // プレイヤーがボタンまで（一番下まで）スクロールする
+    await pg.evaluate(() => { const g = gameScroller(); g.scrollTop = g.scrollHeight; });   // プレイヤーがボタンまで（一番下まで）スクロールする
     await visible();
-    const y0 = await pg.evaluate(() => { document.getElementById('p7msg').dataset.old = '1'; return scrollY; });
+    const y0 = await pg.evaluate(() => { document.getElementById('p7msg').dataset.old = '1'; return scrollY + gameScroller().scrollTop; });
     assert.ok(y0 > 0, 'このサイズではスクロールしないとボタンが見えない');
     const pos0 = (await H.getS(pg)).m.raise.trainRun.pos;
     await pg.tap('#p7roll');
@@ -235,7 +237,8 @@ test('QA-G6-B1：実ブラウザ（375×667・タッチ）：修行ボードで�
     // 再表示の直後は画像・演出で高さが十数px 変わることがあるため、落ち着いた表示で確かめる（以前は scrollY 0 のまま戻らない）
     await visible().catch(() => {});
     assert.ok(await inView(pg, '#p7roll'), `${k + 1}回目：振った後もボタンが画面の中`);
-    assert.ok(await pg.evaluate(() => scrollY) > 0, `${k + 1}回目：一番上へ戻らない`);
+    assert.ok(await SY() > 0, `${k + 1}回目：一番上へ戻らない`);
+    assert.equal(await pg.evaluate(() => scrollY), 0, `${k + 1}回目：ページ自体は動かない`);
   }
   assert.deepEqual(p.errors, []); assert.deepEqual(p.badNow(), []);
 });
@@ -260,10 +263,10 @@ test('QA-G6-B2：実ブラウザ（375×667）：新規開始 → 市場で購�
   await pg.click('#app .tbar .hz[onclick="farm()"]');
   await pg.waitForSelector('#app button[onclick="dep()"]');
   await pg.evaluate(() => window.scrollTo(0, 99999));
-  assert.ok(await pg.evaluate(() => scrollY) > 0, '牧場の画面をスクロールした');
+  assert.equal(await pg.evaluate(() => scrollY), 0, '牧場の画面でもページ自体はスクロールしない（2026-09-30：画面全体を固定）');
   await pg.click('#app button[onclick="pfSellUid=null;lobby()"]');
   await pg.waitForSelector('#app .map');
-  assert.equal(await pg.evaluate(() => scrollY), 0, '牧場から戻った街も一番上から');
+  assert.deepEqual(await pg.evaluate(() => [scrollY, document.getElementById('app').scrollTop]), [0, 0], '牧場から戻った街も一番上から');
   // ファーム → 出発準備 → 出発（フィナの確認 →「始める」→ フィナ→ダン → 出発）
   await pg.click('#app .tbar .hz[onclick="hall()"]');
   await pg.waitForSelector('#app button[onclick="prepScr()"]');
