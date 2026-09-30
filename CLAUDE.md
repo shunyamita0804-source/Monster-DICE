@@ -68,6 +68,7 @@ Claude Code は作業の前に毎回このファイルを読むこと。ここ�
 - 2026-09-30 の Chapterフィールド（Chapter 1）の後：ふだんの実行は806件（合格615・skip 191・失敗0）。実ブラウザテスト（28ファイルを1つずつ）は305件で失敗0（新しい tests/qa-e2e-chapter1.test.mjs を含む。旧 Chapter 1 ボード前提の育成・セーブのテストは Chapterフィールドに合わせて書き直し、旧ボードの確認は Chapter 2 で行う）。1000回の進行シミュレーションは `node tests/chapter-sim.mjs 1000`
 - 2026-09-30 の Chapter 移動体験の改修（カメラ・歩き・目印・STOP・バトルの表示）の後：ふだんの実行は821件（合格620・skip 201・失敗0）。実ブラウザテストも含めた全件（49ファイルを1つずつ）は831件で失敗0（tests/qa-e2e-chapter1.test.mjs は CH1-B1〜B17 の19件。tests/chapter-engine.test.mjs に CH1-25〜27・DICE-06・BF-01）
 - 2026-09-30 の Chapter 1 の13枚の旅と見せ方・操作の改修（大会・VS・バトル前・街・セーブ・市場を含む）の後：ふだんの実行は832件（合格620・skip 212・失敗0）。実ブラウザテストも含めた全件（50ファイルを1つずつ）は842件で失敗0（新しい tests/qa-e2e-journey.test.mjs は JR-1〜8 の11件）
+- 2026-09-30 の次期Chapter（リアル巨大ボード方式）の内部基盤の後：ふだんの実行は848件（合格636・skip 212・失敗0。新しい tests/chapter-next.test.mjs は NX-01〜16 の16件＝合成 config で 6面・100〜200マス・強制停止・30ターン・seed・セーブ互換）
 - 既知の失敗テスト：なし（M3-3 はテストの古い期待値が原因だったため、テスト側を修正。assets/monsters/soramo/・gauru/ のフォルダは旧PHASE 1 土台の data/assets.json が登録しているプロフィールカード画像で、ユーザー判断により残す。ゲームは使わない）
 - 画面・操作にかかわる変更をしたら：ふだんのテストと、変更に関係する実ブラウザテスト（該当ファイルだけ、QA_E2E=1）が通ったら、すぐ main へ push する。全件の実ブラウザテストは push の後に実行し、問題が出たらすぐ直して再 push する（試遊をすぐできるようにするため）
 
@@ -161,6 +162,17 @@ Claude Code は作業の前に毎回このファイルを読むこと。ここ�
   - 能力マス：+10〜15。疲れの帯で失敗（+0）・大成功（×1.5）の確率が変わる（0〜19：0%／20%、20〜39：0／15、40〜59：10／10、60〜79：20／5、80〜100：30／0）。
   - イベント・宝箱は config のデータ（handler 名＋params）。疲れ回復イベントは1〜3個（−10／−20／−30／全回復）。能力・所持金のイベントの値と宝箱の中身（50G／150G）は【暫定】。回復アイテム（小−10・中−30・大＝全回復）は API（MMCH.registerFatigueItem）だけで、品名・入手は未決。
   - 平均到達ターンの確認：`node tests/chapter-sim.mjs 1000`。
+- **次期Chapter「リアル巨大ボード方式」の内部基盤（2026-09-30。見た目・新背景・新UIは未着＝config と画像を差し替えるだけで移行できる土台。現行 Chapter 1 の挙動・乱数列・セーブ形式は変えていない）**：
+  - サイコロの面の数：config の `rules.diceSides`（既定 3。次期は 6）。`MMP7.rollDie(sides, rng)`（1〜sides を等確率）を `MMP8.roll` が `MMP8.diceSides(m)`（ドライバの `diceSides`）で呼ぶ。`MMP7.rollDice`（1〜3）は特訓ボード・旧ボード（Chapter 2〜4）のまま。演出は `MMCHD.configure({ sides })`（field-view が rules.diceSides から渡す）。停止面（config.dice.resultSprites）が無い出目は数字の輪で出す（`MMCHD.missingSprites()` で確認。正式な dice_stop_4〜6 が届いたら resultSprites に足すだけ）。
+  - 疲れ：出目 1〜3 は正式値（+3／+5／+7）。4〜6 は表の最大の出目の値（+7）【暫定・未決。config の `rules.fatigueRules.roll` に 4〜6 を書けば置き換わる】。
+  - ターン：`rules.turnLimit`（出発時に `m.raise.turnLimit` へ確定）。状態は `MMCH.turnInfo(m)`＝{ used, limit, left, current, isLast, exhausted }。最後のターンは移動・停止イベント（バトルを含む）まで終えてから終了する。終了後の行き先は `rules.onTimeUp`：'end'（既定・現行＝大会なしで Chapter 終了）／'tournament'（次期＝ゴール扱いで既存の大会へ。休んで終えたときも同じ。ドライバの `onTurnsExhausted` → `MMP8.finishTurn`／`rest`）。
+  - 長距離ルート：総マス数・背景の枚数は config（paths・fieldScenes）から決まる（135・13 などの固定なし）。`MMCH.routeLengths(g)`・`sceneNodes(g, fieldId)`・`nextFields(g, fieldId)`（次に入る背景。連番の前提なし）・`sceneOrder(cfg, g)`。fieldScenes[] は担当ノード（paths[].field）・bg・w／h・depth・zoom・farBand に加えて `camera`（背景ごとのカメラの上書き）を持てる。
+  - 通過と停止：出目の途中で通った地点は何も起こさない（能力・イベント・宝箱・バトルは停止地点＝`MMCH.resolve` だけ）。通過はドライバの `onPass`（`MMCH.registerPassHandler(type, fn)` で種類ごとに登録したときだけ何かする。既定は無し）。
+  - 強制停止：ノードの `forceStop`（path の `forceStop:[index…]`、`nodeOverrides[id].forceStop:true`、config の `forceStopKinds:['rival', …]`）。マップ（`MMCH.trackOf`）の `node.stop:true` になり、`MMP8.step`／`chooseBranch` は出目が残っていてもそこで止めて残りを消す（ライバル専用の if は書かない）。現行 Chapter 1 は強制停止なし（ライバル f3_4 の扱いは未決）。
+  - 固定＋可変：骨格（start・branch・merge・strong・rival・special・goal＝paths[].fixed）と候補ノード（slot）は今までどおり。可変の内容は `layoutRules.counts` に書いた種類だけを seed で割り当てる（書かない種類は乱数を消費しない）。`special`＝Chapter固有の固定イベント（`config.specials[nodeId]`＝{ handler, params, text, once }）。マス種別の正式名は `MMCH.NODE_TYPES`（stat_life…stat_toughness・event・rest・treasure・wild・strong・rival・special）。内部の割り当て（t／k／bt）は変えず、`nodeTypeName(a)`／`assignOfType(name)` で相互変換する。
+  - seed／セーブ：Chapter 開始時の配置（layoutSeed＋nodeAssignments）を `m.raise.field` に保存し、ロード後も引き直さない（従来どおり。version 6・mr4v6・pend の形は不変。新しい項目は足していない）。
+  - 同行者：Chapter へ行くのはプレイヤー・フィナ・育成中のモンスター（ダンは同行しない）。停止地点の結果 → フィナの一言は `MMCH.companionReaction(m, fx)`（`config.companion.reactions[key]`。key は `MMCH.REACTION_KEYS`＝gold・stat_up・stat_great・stat_fail・treasure・wild・strong・rival・tired・recovered・goal_near・time_last）。本文は未登録（null＝何も出さない）。画面は `MMCHV.registerReactionRenderer(fn)` で表示を差し込む（既定は表示しない。会話UIは未決）。
+  - 合成 config の作り方は tests/chapter-next.test.mjs の `makeNextConfig`（Chapter 番号 2〜4 を借りる）。
 
 ### 大会
 
@@ -412,6 +424,7 @@ Claude Code は作業の前に毎回このファイルを読むこと。ここ�
 - 能力選択イベント（3つから1つ選ぶ）の上昇量・出現率：未決
 - 特訓チケット地点の出現条件：未決
 - 分岐ルート用 1〜6 サイコロを振る場面：未決（未実装）
+- 次期Chapter（リアル巨大ボード方式）：総マス数（100〜200）・背景の枚数・正式背景・巨大マスの見た目・新 STOP UI・フィナの会話UI・出目 4〜6 の疲れ・サイコロの停止画像 dice_stop_4〜6・現行 Chapter 1 のライバルを強制停止にするか・ダンの出発時の掛け合い（DAN_TALK.handoff「ダン、この子のことお願いしてもいい？／ああ。こっちは任せてくれ。」がダンへ預けるように読める）の文面：未決・素材待ち（内部基盤は 2026-09-30 に実装済み。§3「次期Chapter」）
 - Chapterフィールドの素材待ち：サイコロの正式な停止画像 dice_stop_1〜3（今は暫定の SVG）、泉・祠（イベント）の自然物、ライバル本人の立ち姿、正式な歩行アニメ（idle／walk／run）。いずれも config／registerMonsterAnimator で差し替えるだけ（2026-09-30）
 - 個性スキル（Battle 開始前の導入で表示する「個性スキル」の正式データ）：未登録・未決。今は「―（未登録）」の枠だけ（p9TraitOf で返す。Battle Engine の処理とは分ける）
 - フィナの大会の見立て（FINA_RANK_TALK：余裕／互角／厳しい の文面）とセドリックの大会開始の一言（CEDRIC_TALK.open）：暫定の文面＝要確認

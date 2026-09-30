@@ -287,11 +287,14 @@
   // =========================================================
   // 修行
   // =========================================================
-  function rollDice(rng = Math.random) {
+  /** 面の数を指定して振る（1〜sides を等確率）。Chapterフィールドエンジンの config（rules.diceSides）から使う。特訓ボード・旧Chapterは rollDice（1〜3）のまま */
+  function rollDie(sides, rng = Math.random) {
+    if (!Number.isInteger(sides) || sides < 1) throw new Error(`サイコロの面の数が不正です：${sides}`);
     const r = rng();
     if (!(r >= 0 && r < 1)) throw new Error(`乱数は[0, 1)の範囲である必要があります：${r}`);
-    return DICE_MIN + Math.floor(r * (DICE_MAX - DICE_MIN + 1));
+    return DICE_MIN + Math.floor(r * sides);
   }
+  function rollDice(rng = Math.random) { return rollDie(DICE_MAX - DICE_MIN + 1, rng); }
   /** 1〜15マス目の種類。15マス目は 'g'（ゴール） */
   function trainSquare(pos) {
     if (pos === TRAIN_LEN) return 'g';
@@ -502,7 +505,7 @@
     isNothingSquare,
     registerMoveset, getMoveset,
     hasClearedRank, recordRankClear,
-    rollDice, trainSquare, canStartTraining, startTraining, advanceTraining, finishTraining,
+    rollDice, rollDie, trainSquare, canStartTraining, startTraining, advanceTraining, finishTraining,
     addFusionSpeciesResolver, resolveFusionSpecies, fusionInheritCandidates, pickFusionInherit,
     bagCap, bagFree, vaultHasRoom, canAccessVault, bagAdd, setBagFullHandler, moveVaultToBag, moveBagToVault,
     registerItem, getItemDef, setShopCatalog, getShopCatalog, shopBuy, shopSell,

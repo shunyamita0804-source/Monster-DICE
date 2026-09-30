@@ -26,7 +26,8 @@ export function runOnce(E, seed, policy = 'cautious', branchPick = null) {
   P7.ensureProg(S.m); const m = S.m;
   const d = P8.depart(S, m, rnd); if (!d.ok) throw new Error('depart ' + d.reason);
   const st = { turns: 0, goal: false, branch: null, stat: 0, event: 0, battle: 0, treasure: 0, rests: 0, forcedRests: 0, fatigueSum: 0, fatigueN: 0, hit100: 0, maxFatigue: 0, statOutcome: { ok: 0, great: 0, fail: 0 } };
-  for (let guard = 0; guard < 200; guard++) {
+  const maxPhases = (m.raise.turnLimit || 30) * (P8.diceSides(m) + 4);   // 1ターン＝サイコロ＋出目ぶんの step＋分岐＋停止処理（面の数・ターン数は config から）
+  for (let guard = 0; guard < maxPhases; guard++) {
     const ph = P8.boardPhase(m);
     if (ph === 'goal' || ph === 'timeup') break;
     if (ph === 'roll') {

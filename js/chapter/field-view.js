@@ -49,7 +49,8 @@
   const asset = (cfg, k) => (cfg.assets && cfg.assets[k]) || '';
   const sceneOf = (cfg, id) => cfg.fieldScenes.find((s) => s.id === id);
   const MO = () => ({ ...DEF.motion, ...((V.cfg && V.cfg.motion) || {}), terrain: { ...DEF.motion.terrain, ...(((V.cfg && V.cfg.motion) || {}).terrain || {}) } });
-  const CA = () => ({ ...DEF.camera, ...((V.cfg && V.cfg.camera) || {}), zoom: { ...DEF.camera.zoom, ...(((V.cfg && V.cfg.camera) || {}).zoom || {}) } });
+  // カメラ：既定 ← config.camera（Pattern 全体）← fieldScenes[].camera（背景ごとの上書き）
+  const CA = () => { const c = (V.cfg && V.cfg.camera) || {}, s = (V.sc && V.sc.camera) || {}; return { ...DEF.camera, ...c, ...s, zoom: { ...DEF.camera.zoom, ...(c.zoom || {}), ...(s.zoom || {}) } }; };
   const PX = () => ({ ...DEF.parallax, ...((V.cfg && V.cfg.parallax) || {}) });
   const monH = () => ((V.cfg && V.cfg.monster && V.cfg.monster.h) || 176);
 
@@ -166,7 +167,7 @@
     fv.querySelectorAll('.chf-cam,.chf-canopy,.chf-veil').forEach((e) => e.remove());   // 前のフィールドの DOM は捨てる（画像を積み上げない）
     fv.insertAdjacentHTML('afterbegin', sceneHtml(m, fieldId) + overlayHtml(V.cfg, m));
     V.par0 = null; V.focus = null;
-    const g = V.g, nx = g.order.find((k) => g.nodes[k].field === fieldId + 1); if (nx) preloadField(V.cfg, fieldId + 1);
+    for (const f of MMCH.nextFields(V.g, fieldId)) preloadField(V.cfg, f);   // 次に入る背景（つながりの先。背景IDの連番は前提にしない）
   }
 
   // ---------------------------------------------------------
@@ -419,7 +420,7 @@
     const r = m.raise, ph = P8().boardPhase(m), f = MMCH.fieldOf(m);
     V.cfg = MMCH.configFor(m); V.g = MMCH.graphFor(m); V.calm = calmMode();
     const node = V.g.nodes[r.node] || V.g.nodes[V.g.start], key = `${m.uid}:${f.chapterId}:${f.patternId}:${f.layoutSeed}`;
-    if (root.MMCHD) { if (V.cfg.dice && V.diceCfg !== V.cfg.dice) { MMCHD.configure(V.cfg.dice); V.diceCfg = V.cfg.dice; } MMCHD.preload(); }
+    if (root.MMCHD) { if (V.diceCfg !== (V.cfg.dice || V.cfg)) { MMCHD.configure({ ...(V.cfg.dice || {}), sides: MMCH.rulesOf(V.cfg).diceSides }); V.diceCfg = V.cfg.dice || V.cfg; } MMCHD.preload(); }   // 面の数は rules.diceSides（停止面が無い出目は数字で出す）
     const app = $('#app'), same = V.key === key && V.field === node.field && $('#chf');
     if (!same) {
       V.key = key; V.field = null; V.moving = false; V.focus = null; V.tgt.z = 1; V.cam.z = 1;
@@ -567,8 +568,16 @@
         tail = T ? T.t : '';
       } else if (fx.kind === 'battle') await encounter(m, fx.battleType);
       if (r.goal) tail = `${tail}　大会門に着いた！`.trim(); else if (r.timeUp) tail = `${tail}　ターンを使い切った…`.trim();
+      await showReaction(m, fx);
     } finally { busySet(false); }
     if (onField()) chfBoard(tail || undefined);
+  }
+  // ---- 同行者（フィナ）のリアクションの差し込み口：停止地点の結果 → MMCH.companionReaction（config.companion.reactions）→ 登録した描画（既定は何も出さない。会話UIは未決） ----
+  let reactionRenderer = null;
+  function registerReactionRenderer(fn) { reactionRenderer = typeof fn === 'function' ? fn : null; }
+  async function showReaction(m, fx) {
+    if (!reactionRenderer) return;
+    try { const rx = MMCH.companionReaction(m, fx); if (rx) await reactionRenderer(rx, { m, fx, calm: V.calm }); } catch (e) {}
   }
   // ---- アイテム（疲れ回復）：サイコロを振る前だけ。正式な回復アイテムが登録されていなければ、使えるものは無い ----
   function chfItems() {
@@ -589,5 +598,5 @@
   root.MMCHV = Object.freeze({ STEP_MS, FACING, DEFAULTS: DEF,
     state: () => ({ field: V.field, cam: { ...V.cam }, target: { ...V.tgt }, key: V.key, moving: V.moving, look: [...V.look], focus: V.focus ? { ...V.focus } : null, monster: V.monPos ? { ...V.monPos } : null, animator: (V.animator || DEFAULT_ANIMATOR).id }),
     lookOf, sideOffset, landmarkPos: (id) => { const n = V.g && V.g.nodes[id]; if (!n) return null; const m = gS() && gS().m, a = MMCH.fieldOf(m).nodeAssignments[id] || (['strong', 'rival'].includes(n.kind) ? { t: 'battle', bt: n.kind } : null), look = lookOf(V.cfg, a); return look ? landmarkPos(V.cfg, V.g, V.sc, id, look) : null; },
-    zoomAt, registerMonsterAnimator, focusPoint, stepDuration: (from, to) => { const r = MMCH.routeBetween(V.g, from, to).map((p) => [p[0] * V.sc.w, p[1] * V.sc.h]); return stepDuration(r, to); } });
+    zoomAt, registerMonsterAnimator, registerReactionRenderer, focusPoint, stepDuration: (from, to) => { const r = MMCH.routeBetween(V.g, from, to).map((p) => [p[0] * V.sc.w, p[1] * V.sc.h]); return stepDuration(r, to); } });
 })(typeof window !== 'undefined' ? window : globalThis);

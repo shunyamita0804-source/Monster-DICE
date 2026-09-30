@@ -12,14 +12,21 @@
 // =========================================================
 (function (root) {
   'use strict';
-  const C = { rollingSprite: './assets/fields/ch1a/dice/dice_rolling.webp', resultSprites: {}, min: 1, max: 3, ms: 920, resultMs: 480, settleMs: 180 };
+  // sides：面の数（config.dice.sides。省略時は 3）。resultSprites に無い出目（例：6面で 4〜6 の停止画像が未着）は、数字の輪で出す（fallback。エンジン・演出は止まらない）
+  const C = { rollingSprite: './assets/fields/ch1a/dice/dice_rolling.webp', resultSprites: {}, min: 1, max: 3, sides: 3, ms: 920, resultMs: 480, settleMs: 180 };
   let locked = false, cache = null;
-  function configure(o) { if (o && typeof o === 'object') { Object.assign(C, o); if (o.resultSprites) C.resultSprites = { ...o.resultSprites }; cache = null; } return { ...C, resultSprites: { ...C.resultSprites } }; }
+  function configure(o) {
+    if (o && typeof o === 'object') {
+      Object.assign(C, o); if (o.resultSprites) C.resultSprites = { ...o.resultSprites }; cache = null;
+      if (Number.isInteger(o.sides) && o.sides >= 1) { C.sides = o.sides; C.min = 1; C.max = o.sides; } else if (Number.isInteger(o.max)) C.sides = C.max - C.min + 1;
+    }
+    return { ...C, resultSprites: { ...C.resultSprites } };
+  }
   const valid = (v) => Number.isInteger(v) && v >= C.min && v <= C.max;
-  /** 出目だけを決める（描画しない）。forcedResult があればそれ（テスト用） */
+  /** 出目だけを決める（描画しない）。forcedResult があればそれ（テスト用）。面の数は configure({ sides }) */
   function roll({ forcedResult, rnd } = {}) {
-    if (forcedResult != null) { if (!valid(forcedResult)) throw new Error('MMCHD：forcedResult は 1〜3'); return forcedResult; }
-    const P7 = root.MMP7; return P7 && P7.rollDice ? P7.rollDice(rnd || Math.random) : C.min + Math.floor((rnd || Math.random)() * (C.max - C.min + 1));
+    if (forcedResult != null) { if (!valid(forcedResult)) throw new Error(`MMCHD：forcedResult は ${C.min}〜${C.max}`); return forcedResult; }
+    const P7 = root.MMP7; return P7 && P7.rollDie ? P7.rollDie(C.max - C.min + 1, rnd || Math.random) : C.min + Math.floor((rnd || Math.random)() * (C.max - C.min + 1));
   }
   /** 出目を決めて演出する：{ result, animationPromise } */
   function rollDice(opts = {}) { const result = roll(opts); return { result, animationPromise: opts.animate === false ? Promise.resolve(true) : play(result, opts) }; }
@@ -86,5 +93,7 @@
       return true;
     } catch (e) { return false; } finally { ov.remove(); locked = false; }
   }
-  root.MMCHD = Object.freeze({ configure, roll, rollDice, play, preload, resultSprite, spinFrames, isLocked: () => locked });
+  /** 停止面が登録されていない出目（数字で出す出目）。正式な停止画像が届く前の確認用 */
+  const missingSprites = () => { const out = []; for (let v = C.min; v <= C.max; v++) if (!resultSprite(v)) out.push(v); return out; };
+  root.MMCHD = Object.freeze({ configure, roll, rollDice, play, preload, resultSprite, missingSprites, spinFrames, isLocked: () => locked });
 })(typeof window !== 'undefined' ? window : globalThis);

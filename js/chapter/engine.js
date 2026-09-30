@@ -12,6 +12,9 @@
 //  ・イベント：イベントの種類（handler）ごとの処理を EVENT_HANDLERS に登録する（巨大な switch にしない）
 //  ・宝箱：tier（normal / rare / special）と開封まで。中身は未決（config.treasurePool.contents が null のあいだは何も渡さない）
 //  ・バトル：type（wild / strong / rival）。絵の asset key は type ごとに分ける（同じ絵でも差し替えは config だけ）
+//  ・次期Chapter（リアル巨大ボード方式）の土台（2026-09-30）：rules.diceSides（面の数）・rules.onTimeUp（ターン切れ→大会）・forceStop（強制停止）・
+//    special（Chapter固有の固定イベント）・onPass（通過は効果なし）・turnInfo・NODE_TYPES（正式名）・companionReaction（フィナの一言の差し込み口）。
+//    総マス数・背景の枚数は config から決まる（コードに固定しない）
 //
 //  進行（ターン・移動・分岐・停止地点・バトルの前後・大会）は js/phase8/raising.js（MMP8）の既存の仕組みをそのまま使い、
 //  このエンジンは MMP8.registerChapterDriver で「疲れ・休む・停止地点の種類・効果」を差し込むだけ。セーブは v6（mr4v6）のまま。
@@ -32,6 +35,8 @@
   // ---------------------------------------------------------
   const DEFAULT_RULES = fz({
     turnLimit: 30,
+    diceSides: 3,                 // サイコロの面の数（1〜diceSides を等確率）。次期Chapterは config の rules.diceSides: 6
+    onTimeUp: 'end',              // ターンを使い切った時：'end'＝大会なしで Chapter 終了（現行）／'tournament'＝最後のターンの停止処理のあと大会へ（次期Chapter）
     dice: fz({ min: 1, max: 3 }),
     statGainRange: fz([10, 15]),
     greatMultiplier: 1.5,
@@ -65,7 +70,13 @@
   // ---------------------------------------------------------
   const CONFIGS = {};   // { chapterId: { patternId: config } }
   const GRAPHS = new Map();
-  const rulesOf = (cfg) => ({ ...DEFAULT_RULES, ...(cfg.rules || {}), fatigueRules: { ...DEFAULT_RULES.fatigueRules, ...((cfg.rules || {}).fatigueRules || {}) } });
+  function rulesOf(cfg) {
+    const c = cfg.rules || {}, R = { ...DEFAULT_RULES, ...c, fatigueRules: { ...DEFAULT_RULES.fatigueRules, ...(c.fatigueRules || {}) } };
+    const sides = Number.isInteger(c.diceSides) ? c.diceSides : (c.dice && Number.isInteger(c.dice.max) ? c.dice.max - (c.dice.min || 1) + 1 : DEFAULT_RULES.diceSides);   // 旧形式 rules.dice.{min,max} も読む
+    R.diceSides = Math.max(1, sides); R.dice = { min: 1, max: R.diceSides };
+    if (R.onTimeUp !== 'tournament') R.onTimeUp = 'end';
+    return R;
+  }
   function registerConfig(cfg) {
     if (!isObj(cfg) || !Number.isInteger(cfg.chapterId) || typeof cfg.patternId !== 'string') throw new Error('MMCH：config が不正です');
     for (const k of ['fieldScenes', 'paths', 'layoutRules']) if (!cfg[k]) throw new Error(`MMCH：config.${k} がありません`);
@@ -132,6 +143,7 @@
     const scenes = {}; for (const s of cfg.fieldScenes) scenes[s.id] = s;
     const nodes = {}, conn = {}, order = [], curves = {}, OV = cfg.nodeOverrides || {};
     let start = null, goal = null;
+    const stopKinds = Array.isArray(cfg.forceStopKinds) ? cfg.forceStopKinds : [];   // 種類ごとの強制停止（例：['rival']）。既定は無し（現行 Chapter 1 の進み方を変えない）
     for (const p of cfg.paths) {
       const sc = scenes[p.field]; if (!sc) throw new Error(`MMCH：path ${p.id} の field ${p.field} がありません`);
       // 道の曲線（既定は滑らか。config の path.curve が 'linear' なら折れ線のまま）。ノードはこの曲線の上に等間隔（奥行き補正）で置く
@@ -143,7 +155,9 @@
         nodes[id] = { id, path: p.id, idx: i, field: p.field, x: pos[0], y: pos[1], s, d: +depthOf(sc, pos[1]).toFixed(3), kind, branch: p.branch || null,
           side: o.side || (p.side && p.side[i]) || (i % 2 ? 1 : -1), terrain: o.terrain || p.terrain || 'grass',
           // 見せ方の上書き（config.nodeOverrides）：monster＝止まる位置（既定は道の上の点）、landmark＝目印の位置・大きさ、camera＝カメラの寄り
-          mx: o.monster ? o.monster[0] : pos[0], my: o.monster ? o.monster[1] : pos[1], lm: o.landmark || null, cam: o.camera || null };
+          mx: o.monster ? o.monster[0] : pos[0], my: o.monster ? o.monster[1] : pos[1], lm: o.landmark || null, cam: o.camera || null,
+          // 強制停止：path の forceStop:[index...]・nodeOverrides[id].forceStop・config.forceStopKinds の種類。出目が残っていてもここで止まり、残りの移動は消える（MMP8.step が node.stop で判定）
+          forceStop: !!((p.forceStop && p.forceStop.includes(i)) || o.forceStop === true || stopKinds.includes(kind)) };
         if (p.noSlot && p.noSlot.includes(i) && kind === 'slot') nodes[id].kind = 'normal';
         order.push(id);
         if (i > 0) conn[`${p.id}${i - 1}`] = [id];
@@ -187,13 +201,21 @@
   function trackOf(cfg) {
     const key = `${cfg.chapterId}:${cfg.patternId}`; if (TRACKS.has(key)) return TRACKS.get(key);
     const g = buildGraph(cfg), nodes = {};
-    for (const [id, n] of Object.entries(g.nodes)) nodes[id] = { type: n.kind === 'goal' ? 'tournament' : n.kind === 'start' ? 'start' : 'normal', x: n.x, y: n.y, field: n.field, lane: n.path };
+    for (const [id, n] of Object.entries(g.nodes)) nodes[id] = { type: n.kind === 'goal' ? 'tournament' : n.kind === 'start' ? 'start' : 'normal', x: n.x, y: n.y, field: n.field, lane: n.path, ...(n.forceStop ? { stop: true } : {}) };
     const t = fz({ nodes: fz(nodes), conn: g.conn, start: g.start, goal: g.goal, engine: key });
     TRACKS.set(key, t);
     return t;
   }
   /** 現在地から「次の分岐かゴール」までの歩数（分岐の案内用） */
-  function stepsToMerge(g, from, mergeAt) { let n = 0, x = from; while (x && x !== mergeAt && n < 200) { const nx = g.conn[x] || []; if (nx.length !== 1) break; x = nx[0]; n++; } return n + 1; }
+  function stepsToMerge(g, from, mergeAt) { let n = 0, x = from; const cap = g.order.length; while (x && x !== mergeAt && n < cap) { const nx = g.conn[x] || []; if (nx.length !== 1) break; x = nx[0]; n++; } return n + 1; }
+  /** 背景（scene）ごとのノード（進む順）。総マス数・背景の枚数は config から決まる（コードに固定しない） */
+  const sceneNodes = (g, fieldId) => g.order.filter((id) => g.nodes[id].field === fieldId);
+  /** この背景から次に入る背景（つながりの先。分岐なら複数） */
+  function nextFields(g, fieldId) { const out = []; for (const id of sceneNodes(g, fieldId)) for (const t of g.conn[id] || []) { const f = g.nodes[t].field; if (f !== fieldId && !out.includes(f)) out.push(f); } return out; }
+  /** 背景の旅の順（スタートから到達順。到達しない背景は最後） */
+  function sceneOrder(cfg, g) { const seen = []; for (const rt of g.routes) for (const id of rt.seq) { const f = g.nodes[id].field; if (!seen.includes(f)) seen.push(f); } for (const s of cfg.fieldScenes) if (!seen.includes(s.id)) seen.push(s.id); return seen; }
+  /** ルートの長さ（総マス数）：最短・最長（スタートを含まない歩数） */
+  function routeLengths(g) { const L = g.routes.map((r) => r.seq.length - 1); return { min: Math.min(...L), max: Math.max(...L), nodes: g.order.length }; }
 
   // ---------------------------------------------------------
   // 配置（Chapter開始時に1回だけ）：固定骨格＋候補ノードへのシード付き割り当て
@@ -202,9 +224,11 @@
   function routeFacts(g, seq, assign) {
     return seq.map((id) => { const n = g.nodes[id], a = assign[id] || (n.kind === 'strong' || n.kind === 'rival' ? { t: 'battle', bt: n.kind } : null); return { id, field: n.field, t: kindOfAssign(a), a }; });
   }
+  /** 配置で割り当てる種類：layoutRules.counts に書いた種類だけ（書かない種類は乱数を消費しない＝既存の seed の配置を変えない） */
+  const slotTypes = (L) => SPECIAL.filter((t) => Array.isArray(L.counts && L.counts[t]));
   /** 配置の制約を満たすか（違反の理由の配列。空なら合格） */
   function validateLayout(cfg, g, assign) {
-    const L = cfg.layoutRules, errs = [];
+    const L = cfg.layoutRules, errs = [], TYPES = slotTypes(L);
     let recoveryTotal = 0;
     for (const a of Object.values(assign)) if (a.t === 'event' && a.recovery) recoveryTotal++;
     const [rlo, rhi] = L.recoveryEvents || [1, 3];
@@ -212,8 +236,8 @@
     for (const rt of g.routes) {
       const f = routeFacts(g, rt.seq, assign), cnt = { stat: 0, event: 0, battle: 0, treasure: 0 }, stats = {};
       f.forEach((x) => { if (cnt[x.t] != null) cnt[x.t]++; if (x.t === 'stat') stats[x.a.k] = (stats[x.a.k] || 0) + 1; });
-      for (const t of SPECIAL) { const [lo, hi] = L.counts[t]; if (cnt[t] < lo || cnt[t] > hi) errs.push(`${rt.branch}:${t}=${cnt[t]}`); }
-      for (const k of STATS) { const c = stats[k] || 0; if (c < 1) errs.push(`${rt.branch}:no ${k}`); if (c > (L.maxPerStat || 3)) errs.push(`${rt.branch}:${k}x${c}`); }
+      for (const t of TYPES) { const [lo, hi] = L.counts[t]; if (cnt[t] < lo || cnt[t] > hi) errs.push(`${rt.branch}:${t}=${cnt[t]}`); }
+      if (L.allStats !== false) for (const k of STATS) { const c = stats[k] || 0; if (c < 1) errs.push(`${rt.branch}:no ${k}`); if (c > (L.maxPerStat || 3)) errs.push(`${rt.branch}:${k}x${c}`); }
       for (let i = 2; i < f.length; i++) if (SPECIAL.includes(f[i].t) && f[i].t === f[i - 1].t && f[i].t === f[i - 2].t) errs.push(`${rt.branch}:3x${f[i].t}@${i}`);
       for (let i = 1; i < f.length; i++) if (f[i].t === 'treasure' && f[i - 1].t === 'treasure') errs.push(`${rt.branch}:treasure adjacent`);
       for (let i = 0; i < Math.min(L.noBattleFirst || 0, f.length); i++) if (f[i].t === 'battle') errs.push(`${rt.branch}:early battle`);
@@ -229,7 +253,7 @@
   }
   /** 候補ノードへの割り当てを1回作る（制約の検査は validateLayout） */
   function draftLayout(cfg, g, r) {
-    const L = cfg.layoutRules, assign = {};
+    const L = cfg.layoutRules, assign = {}, TYPES = slotTypes(L);
     const slots = g.order.filter((id) => g.nodes[id].kind === 'slot');
     const shared = slots.filter((id) => !g.nodes[id].branch), byBranch = {};
     slots.filter((id) => g.nodes[id].branch).forEach((id) => { (byBranch[g.nodes[id].branch] = byBranch[g.nodes[id].branch] || []).push(id); });
@@ -239,21 +263,21 @@
     for (const rt of g.routes) {
       const bias = (cfg.branches || []).flatMap((b) => b.options).find((o) => o.id === rt.branch);
       target[rt.branch] = {};
-      for (const t of SPECIAL) { const [lo, hi] = L.counts[t], lean = bias && bias.lean ? bias.lean[t] || 0 : 0; const base = randInt(lo, hi, r); target[rt.branch][t] = clamp(base + lean, lo, hi) - fixedIn(rt.seq, t); }
+      for (const t of TYPES) { const [lo, hi] = L.counts[t], lean = bias && bias.lean ? bias.lean[t] || 0 : 0; const base = randInt(lo, hi, r); target[rt.branch][t] = clamp(base + lean, lo, hi) - fixedIn(rt.seq, t); }
     }
     // 共通の区間に置く数：各ルートの目標 × 共通区間の割合（少ないほうに合わせる）
     const sharedCount = {};
-    for (const t of SPECIAL) {
+    for (const t of TYPES) {
       sharedCount[t] = Math.min(...g.routes.map((rt) => { const own = (byBranch[rt.branch] || []).length; return Math.round(target[rt.branch][t] * shared.length / Math.max(1, shared.length + own)); }));
     }
     const fill = (ids, counts) => {
-      const bag = []; for (const t of SPECIAL) for (let i = 0; i < Math.max(0, counts[t]); i++) bag.push(t);
+      const bag = []; for (const t of TYPES) for (let i = 0; i < Math.max(0, counts[t]); i++) bag.push(t);
       while (bag.length < ids.length) bag.push('normal');
       const order = shuffle(ids, r); bag.length = order.length;
       order.forEach((id, i) => { if (bag[i] && bag[i] !== 'normal') assign[id] = { t: bag[i] }; });
     };
     fill(shared, sharedCount);
-    for (const rt of g.routes) { const ids = byBranch[rt.branch] || []; if (!ids.length) continue; const c = {}; for (const t of SPECIAL) c[t] = target[rt.branch][t] - sharedCount[t]; fill(ids, c); }
+    for (const rt of g.routes) { const ids = byBranch[rt.branch] || []; if (!ids.length) continue; const c = {}; for (const t of TYPES) c[t] = target[rt.branch][t] - sharedCount[t]; fill(ids, c); }
     // 中身：能力は6種類を巡回して偏りを防ぐ、イベント・宝箱は tier と内容、バトルは野生
     const statIds = g.order.filter((id) => assign[id] && assign[id].t === 'stat');
     let bagS = []; statIds.forEach((id) => { if (!bagS.length) bagS = shuffle(STATS, r); assign[id].k = bagS.pop(); });
@@ -309,12 +333,40 @@
     if (r.field) for (const k of ['consumedEvents', 'openedTreasures', 'clearedStats']) if (!Array.isArray(r.field[k])) r.field[k] = [];
     return m;
   }
-  /** 停止地点の種類（配置の割り当て。無ければ骨格の種類） */
+  /** 停止地点の種類（配置の割り当て。無ければ骨格の種類。固定の強敵・ライバル・Chapter固有イベント（special）は骨格から） */
   function typeAt(m, id) {
-    const f = fieldOf(m), g = graphFor(m); if (!f || !g || !g.nodes[id]) return null;
+    const f = fieldOf(m), g = graphFor(m), cfg = configFor(m); if (!f || !g || !g.nodes[id]) return null;
     const a = f.nodeAssignments[id], k = g.nodes[id].kind;
     if (a) return { ...a };
+    if (k === 'strong' || k === 'rival') return { t: 'battle', bt: k, fixed: true };
+    if (k === 'special') return { t: 'special', fixed: true, ...((cfg && cfg.specials && cfg.specials[id]) || {}) };
     return { t: k === 'goal' ? 'goal' : k === 'start' ? 'start' : 'normal' };
+  }
+  // ---- マス種別の正式名（内部の割り当て {t, k, bt, ...} との対応）。新しい名前を乱立させず、既存の t／k／bt をそのまま使う ----
+  //  stat_life…stat_toughness＝{t:'stat', k}、event、wild／strong／rival＝{t:'battle', bt}、treasure、rest＝疲れ回復イベント（{t:'event', recovery:true}）、special＝Chapter固有の固定イベント
+  const NODE_TYPES = fz({
+    stat_life: fz({ t: 'stat', k: 'li' }), stat_power: fz({ t: 'stat', k: 'po' }), stat_intelligence: fz({ t: 'stat', k: 'in' }),
+    stat_accuracy: fz({ t: 'stat', k: 'hi' }), stat_evasion: fz({ t: 'stat', k: 'ev' }), stat_toughness: fz({ t: 'stat', k: 'de' }),
+    event: fz({ t: 'event' }), rest: fz({ t: 'event', recovery: true }), treasure: fz({ t: 'treasure' }),
+    wild: fz({ t: 'battle', bt: 'wild' }), strong: fz({ t: 'battle', bt: 'strong' }), rival: fz({ t: 'battle', bt: 'rival' }),
+    special: fz({ t: 'special' }), start: fz({ t: 'start' }), goal: fz({ t: 'goal' }), normal: fz({ t: 'normal' }),
+  });
+  const STAT_NAMES = fz({ li: 'stat_life', po: 'stat_power', in: 'stat_intelligence', hi: 'stat_accuracy', ev: 'stat_evasion', de: 'stat_toughness' });
+  /** 割り当て → 正式名 */
+  function nodeTypeName(a) {
+    if (!isObj(a)) return 'normal';
+    if (a.t === 'stat') return STAT_NAMES[a.k] || 'stat';
+    if (a.t === 'battle') return BATTLE_TYPES.includes(a.bt) ? a.bt : 'wild';
+    if (a.t === 'event') return a.recovery ? 'rest' : 'event';
+    return NODE_TYPES[a.t] ? a.t : 'normal';
+  }
+  /** 正式名 → 割り当ての骨（配置の結果や config.nodeOverrides から作るとき用） */
+  const assignOfType = (name) => (NODE_TYPES[name] ? { ...NODE_TYPES[name] } : null);
+  /** ターンの状態（Engine で一元管理。画面はこれを表示するだけ） */
+  function turnInfo(m) {
+    const r = m && isObj(m.raise) ? m.raise : null; if (!r) return null;
+    const limit = Number.isInteger(r.turnLimit) ? r.turnLimit : null, used = r.turnsUsed | 0, left = limit == null ? Infinity : Math.max(0, limit - used);
+    return { used, limit, left, current: limit == null ? used + (r.pend ? 0 : 1) : Math.min(used + (r.pend || left === 0 ? 0 : 1), limit), isLast: limit != null && (r.pend ? used === limit : left === 1), exhausted: left === 0 && !r.pend };
   }
 
   // ---------------------------------------------------------
@@ -323,7 +375,13 @@
   const rules = (m) => rulesOf(configFor(m) || {});
   const fatigue = (m) => clampFatigue(m && m.raise ? m.raise.fatigue : 0);
   function addFatigue(m, n) { const b = fatigue(m); m.raise.fatigue = clampFatigue(b + n); return m.raise.fatigue - b; }
-  const rollFatigue = (cfgOrRules, v) => (cfgOrRules.fatigueRules || DEFAULT_RULES.fatigueRules).roll[v] || 0;
+  /** 出目ごとの移動疲れ（正式：1→+3・2→+5・3→+7）。表に無い大きな出目（4〜6）は表の最大の出目の値【暫定：正式な値は未決。config の fatigueRules.roll に 4〜6 を書けば置き換わる】 */
+  function rollFatigue(cfgOrRules, v) {
+    const T = (cfgOrRules.fatigueRules || DEFAULT_RULES.fatigueRules).roll || {};
+    if (T[v] != null) return T[v];
+    const ks = Object.keys(T).map(Number).filter((k) => Number.isInteger(k) && k <= v);
+    return ks.length ? T[Math.max(...ks)] : 0;
+  }
   /** 疲れ 100 ならサイコロは振れない（休むだけ） */
   const canRoll = (m) => fatigue(m) < rules(m).fatigueRules.max;
   /** 疲れ回復（アイテム・イベント共通）。{ amount } は減らす量、{ full: true } は全回復 */
@@ -366,6 +424,45 @@
   function registerEventHandler(name, fn) { if (typeof name !== 'string' || typeof fn !== 'function') throw new Error('MMCH：イベント処理の登録が不正です'); EVENT_HANDLERS[name] = fn; }
 
   // ---------------------------------------------------------
+  // 通過（onPass）と停止（onLand＝resolve）の分離
+  //  出目の途中で通り過ぎた地点は何も起こさない（能力・宝箱・イベント・バトルは停止地点だけ）。
+  //  通過時に何かを起こす地点が将来必要になったら registerPassHandler(type, fn) で種類ごとに登録する（既定は何も登録しない）
+  // ---------------------------------------------------------
+  const PASS_HANDLERS = {};
+  function registerPassHandler(type, fn) { if (typeof type !== 'string' || typeof fn !== 'function') throw new Error('MMCH：通過処理の登録が不正です'); PASS_HANDLERS[type] = fn; }
+  function onPass(S, m, id, from) { const a = typeAt(m, id), h = a && PASS_HANDLERS[a.t]; return h ? h(S, m, id, a, from) : null; }
+
+  // ---------------------------------------------------------
+  // 同行者（フィナ）のリアクション：停止地点の結果 → 短い一言。会話の本文は config.companion.reactions（未登録なら null＝何も出さない）
+  //  reactions: { gold:[...], stat_up:[...], stat_great:[...], stat_fail:[...], treasure:[...], wild:[...], strong:[...], rival:[...], tired:[...], recovered:[...], goal_near:[...], time_last:[...] }
+  //  各要素は共通会話の行（{ npc, expression, text }）か文字列。画面側は MMCHV.registerReactionRenderer で表示の仕方を差し込む（既定は表示しない）
+  // ---------------------------------------------------------
+  const REACTION_KEYS = fz(['gold', 'stat_up', 'stat_great', 'stat_fail', 'treasure', 'wild', 'strong', 'rival', 'tired', 'recovered', 'goal_near', 'time_last']);
+  /** 停止地点の結果（resolve の戻り値）から、リアクションの種類を決める */
+  function reactionKeyOf(fx, m) {
+    if (!isObj(fx)) return null;
+    if (fx.kind === 'battle') return BATTLE_TYPES.includes(fx.battleType) ? fx.battleType : 'wild';
+    if (fx.kind === 'chstat') return fx.outcome === 'fail' ? 'stat_fail' : fx.outcome === 'great' ? 'stat_great' : 'stat_up';
+    if (fx.kind === 'treasure') return 'treasure';
+    if (fx.kind === 'gold') return 'gold';
+    if (fx.kind === 'fatigue') return 'recovered';
+    if (fx.kind === 'stat' || fx.kind === 'multi') return 'stat_up';
+    return null;
+  }
+  let reactionResolver = null;
+  function registerReactionResolver(fn) { reactionResolver = typeof fn === 'function' ? fn : null; }
+  /** リアクションの行を返す（無ければ null）。key を省略すると fx から決める */
+  function companionReaction(m, fx, opts = {}) {
+    const cfg = configFor(m), key = opts.key || reactionKeyOf(fx, m); if (!cfg || !key) return null;
+    if (reactionResolver) return reactionResolver(m, fx, key, cfg) || null;
+    const C = cfg.companion || {}, lines = (C.reactions || {})[key];
+    if (!Array.isArray(lines) || !lines.length) return null;
+    const pick1 = lines[Math.floor((opts.rnd || Math.random)() * lines.length)];
+    const line = typeof pick1 === 'string' ? { text: pick1 } : { ...pick1 };
+    return { key, npc: line.npc || C.npc || 'fina', expression: line.expression || 'normal', text: line.text || '' };
+  }
+
+  // ---------------------------------------------------------
   // 停止地点の効果（MMP8.resolveLanding から呼ばれる）
   // ---------------------------------------------------------
   function resolve(S, m, id, rnd = Math.random) {
@@ -393,6 +490,13 @@
       return { kind: 'treasure', tier: a.tier, reward };
     }
     if (a.t === 'battle') return { kind: 'battle', battleType: a.bt || 'wild' };
+    if (a.t === 'special') {   // Chapter固有の固定イベント（config.specials[nodeId]＝{ handler, params, text, once }）。once（既定）なら1回だけ
+      if (a.once !== false && f.consumedEvents.includes(id)) return { kind: 'none', note: 'consumed' };
+      const h = a.handler && EVENT_HANDLERS[a.handler];
+      if (a.once !== false) f.consumedEvents.push(id);
+      if (!h) return { kind: 'none', note: 'special', text: a.text || '' };
+      return { ...h(S, m, a.params || {}, rnd), special: id, text: a.text || '' };
+    }
     return a.t === 'goal' ? { kind: 'none', note: 'goal' } : { kind: 'none', note: 'normal' };
   }
 
@@ -402,6 +506,12 @@
   const DRIVER = fz({
     handles: (key) => Number.isInteger(key) && handles(key),
     turnLimit: (key) => rulesOf(getConfig(key) || {}).turnLimit,
+    /** サイコロの面の数（個体の Pattern の config。rules.diceSides） */
+    diceSides: (m) => rulesOf(configFor(m) || {}).diceSides,
+    /** 通過した地点（効果なし。登録した通過処理があればそれだけ） */
+    onPass: (S, m, id, from) => onPass(S, m, id, from),
+    /** 最後のターンの停止処理まで終えたとき：rules.onTimeUp が 'tournament' なら大会へ（ゴール扱い）。既定は従来どおり大会なしで終了 */
+    onTurnsExhausted: (S, m) => ({ toGoal: rulesOf(configFor(m) || {}).onTimeUp === 'tournament' }),
     /** 出発：Pattern を選んで配置を確定（疲れは前Chapterから max(0, f − carry)） */
     onDepart(S, m, key, rnd = Math.random, fresh) {
       const pat = selectPattern(key, rnd), cfg = getConfig(key, pat);
@@ -436,9 +546,10 @@
   });
   function attach(P8 = root.MMP8) { if (P8 && typeof P8.registerChapterDriver === 'function') P8.registerChapterDriver(DRIVER); }
 
-  root.MMCH = fz({ STATS, SPECIAL, TIERS, BATTLE_TYPES, DEFAULT_RULES, rng, newSeed, registerConfig, getConfig, patterns, handles, selectPattern,
-    buildGraph, trackOf, alongPersp, smoothCurve, measure, pointAt, routeBetween, depthOf, stepsToMerge, validateLayout, generateLayout, initRun, fieldOf, configFor, graphFor, validField, sanitize, typeAt,
+  root.MMCH = fz({ STATS, SPECIAL, TIERS, BATTLE_TYPES, NODE_TYPES, REACTION_KEYS, DEFAULT_RULES, rng, newSeed, registerConfig, getConfig, patterns, handles, selectPattern,
+    buildGraph, trackOf, alongPersp, smoothCurve, measure, pointAt, routeBetween, depthOf, stepsToMerge, sceneNodes, nextFields, sceneOrder, routeLengths,
+    validateLayout, generateLayout, initRun, fieldOf, configFor, graphFor, validField, sanitize, typeAt, nodeTypeName, assignOfType, turnInfo,
     fatigue, addFatigue, rollFatigue, canRoll, recover, carryFatigue, registerFatigueItem, fatigueItemEffect, useFatigueItem,
-    statOdds, statOutcome, statAmount, registerEventHandler, resolve, DRIVER, attach, rulesOf });
+    statOdds, statOutcome, statAmount, registerEventHandler, registerPassHandler, onPass, resolve, reactionKeyOf, registerReactionResolver, companionReaction, DRIVER, attach, rulesOf });
   attach();
 })(typeof window !== 'undefined' ? window : globalThis);

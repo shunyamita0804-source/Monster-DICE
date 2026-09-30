@@ -342,10 +342,12 @@
     const d = driverFor(r.ch);
     return !r.pend && !r.goal && !r.tour && !r.battle && r.node != null && turnsLeft(m) > 0 && (!d || d.canRoll(m));   // エンジン：疲れ100ならサイコロ不可
   }
-  /** サイコロ（1〜3）を振る＝1ターン消費。出目はここで確定して pend に記録する */
+  /** サイコロの面の数：エンジンの Chapter は config（rules.diceSides）、それ以外（旧ボード）は従来の 1〜3 */
+  function diceSides(m) { const d = m && isObj(m.raise) ? driverFor(m.raise.ch) : null; const n = d && d.diceSides ? d.diceSides(m) : 0; return Number.isInteger(n) && n >= 1 ? n : P7.DICE_MAX - P7.DICE_MIN + 1; }
+  /** サイコロを振る＝1ターン消費。出目（1〜面の数）はここで確定して pend に記録する */
   function roll(S, m, rnd = Math.random) {
     if (!canRoll(m)) return { ok: false };
-    const value = P7.rollDice(rnd), r = m.raise;
+    const value = P7.rollDie(diceSides(m), rnd), r = m.raise;
     r.turnsUsed += 1;
     r.pend = { roll: value, left: value, stage: 'move' };
     const d = driverFor(r.ch); if (d) Object.assign(r.pend, d.onRoll(S, m, value));   // エンジン：出目が決まった時点で疲れを加算（停止地点では加算後の疲れで判定）
@@ -361,7 +363,19 @@
     if (!canRest(m)) return { ok: false };
     const r = m.raise; r.turnsUsed += 1;
     const out = { ok: true, ...driverFor(r.ch).onRest(S, m) };
-    return turnsLeft(m) === 0 ? { ...out, timeUp: true } : out;
+    if (turnsLeft(m) !== 0) return out;
+    const d = driverFor(r.ch), x = d.onTurnsExhausted ? d.onTurnsExhausted(S, m) : null;   // 最後のターンを休んで終えたときも同じ規則（'tournament' なら大会へ）
+    if (x && x.toGoal) { r.goal = true; return { ...out, timeUp: true, goal: true }; }
+    return { ...out, timeUp: true };
+  }
+  /** 強制停止のマス（マップの node.stop）：出目が残っていてもここで止まり、残りの移動は消える（ライバル・強敵などの必須イベント。マス側の設定だけで決まる） */
+  const isStopNode = (trk, id) => !!(trk && id != null && trk.nodes[id] && trk.nodes[id].stop === true);
+  /** 1マス進んだあと：止まる（残り0・ゴール・強制停止）なら resolve へ、通過なら onPass（通過したマスは効果を出さない） */
+  function afterMove(S, m, trk, from) {
+    const r = m.raise, p = r.pend, d = driverFor(r.ch);
+    if (d && d.onStep) d.onStep(S, m);
+    if (p.left <= 0 || isGoalNode(trk, r.node) || isStopNode(trk, r.node)) { p.left = 0; p.stage = 'resolve'; }   // ゴール・強制停止に着いたら残り移動は消える
+    else { p.stage = 'move'; if (d && d.onPass) d.onPass(S, m, r.node, from); }
   }
   /** 1マスだけ進める（演出用に1歩ずつ保存できる）。分岐に来たら branch、止まる位置に来たら resolve */
   function step(S, m) {
@@ -370,18 +384,16 @@
     const opts = trk.conn[r.node] || [];
     if (p.left <= 0 || !opts.length) { p.left = 0; p.stage = 'resolve'; return { stage: 'resolve' }; }
     if (opts.length > 1) { p.stage = 'branch'; p.opts = [...opts]; return { stage: 'branch', opts: p.opts }; }
-    r.node = opts[0]; p.left -= 1;
-    { const d = driverFor(r.ch); if (d && d.onStep) d.onStep(S, m); }
-    if (p.left <= 0 || isGoalNode(trk, r.node)) { p.left = 0; p.stage = 'resolve'; }   // ゴールに着いたら残り移動は消える
+    const from = r.node; r.node = opts[0]; p.left -= 1;
+    afterMove(S, m, trk, from);
     return { stage: p.stage, node: r.node };
   }
   /** 分岐の選択（プレイヤーが選ぶ。ランダムには決めない） */
   function chooseBranch(S, m, id) {
     const r = m && m.raise, p = r && r.pend, trk = boardOf(m);
     if (!p || p.stage !== 'branch' || !Array.isArray(p.opts) || !p.opts.includes(id)) return { ok: false };
-    r.node = id; p.left -= 1; delete p.opts;
-    { const d = driverFor(r.ch); if (d && d.onStep) d.onStep(S, m); }
-    if (p.left <= 0 || isGoalNode(trk, id)) { p.left = 0; p.stage = 'resolve'; } else p.stage = 'move';
+    const from = r.node; r.node = id; p.left -= 1; delete p.opts;
+    afterMove(S, m, trk, from);
     return { ok: true, stage: p.stage, node: id };
   }
 
@@ -433,7 +445,11 @@
   function finishTurn(S, m) {
     const r = m.raise; r.pend = null;
     if (isGoalNode(boardOf(m), r.node)) { r.goal = true; return { goal: true }; }
-    return turnsLeft(m) === 0 ? { timeUp: true } : {};
+    if (turnsLeft(m) !== 0) return {};
+    // 最後のターンの停止処理まで終えてから：エンジンの Chapter は onTurnsExhausted で「そのまま大会へ（ゴール扱い）」にできる（既定・旧ボードは従来どおり timeup）
+    const d = driverFor(r.ch), x = d && d.onTurnsExhausted ? d.onTurnsExhausted(S, m) : null;
+    if (x && x.toGoal) { r.goal = true; return { goal: true, timeUp: true }; }
+    return { timeUp: true };
   }
   function skipBattleSquare(S, m) {
     const r = m && m.raise;
@@ -523,7 +539,7 @@
   }
   /** 【暫定】練習試合の相手の強さ＝個体の表示ランク（未クリアはE）。旧仕様の「現在ランク」に相当 */
   const practiceRank = (m) => Math.max(RANK_E, highestCleared(m));
-  Object.assign(API, { registerChapterDriver, canRest, rest, turnsLeft, boardPhase, canRoll, roll, step, chooseBranch, registerSquareEffect, resolveLanding, skipBattleSquare,
+  Object.assign(API, { registerChapterDriver, canRest, rest, turnsLeft, boardPhase, canRoll, diceSides, roll, step, chooseBranch, registerSquareEffect, resolveLanding, skipBattleSquare,
     canEndChapter, endChapter, declineTournament, beginBattle, markBattleDone, finishBattle, practiceRank });
 
   // =========================================================

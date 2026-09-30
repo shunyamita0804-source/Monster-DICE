@@ -452,7 +452,11 @@ test('QA-C9：育成ボード：通常Chapterは20ターン、サイコロは1�
   assert.deepEqual([...seen].sort(), [1, 2, 3]);
   assert.equal(P7.rollDice(() => 0.999999), 3);
   assert.deepEqual(C.CHAPTERS.map((c) => [c.no, c.theme]), [[1, 'meadow'], [2, 'coast'], [3, 'sky'], [4, 'volcano']]);
-  assert.match(rd('js/phase8/raising.js'), /const value = P7\.rollDice\(rnd\)/, 'ボードのサイコロは MMP7.rollDice（1〜3）');
+  // ボードのサイコロ：エンジンの Chapter は config の面の数（rules.diceSides）、旧ボード（Chapter 2〜4）は従来の 1〜3（MMP7.DICE_MAX）
+  assert.match(rd('js/phase8/raising.js'), /const value = P7\.rollDie\(diceSides\(m\), rnd\)/, 'ボードのサイコロは MMP7.rollDie（面の数はドライバ／既定 1〜3）');
+  const w = {}; for (const f of ['js/phase7/progression.js', 'js/phase8/league.js', 'js/phase8/raising.js']) new Function('window', rd(f))(w);
+  assert.equal(w.MMP8.diceSides({ raise: { ch: 2 } }), 3, 'エンジンが担当しない Chapter は 1〜3');
+  assert.deepEqual([0, 0.5, 0.999].map((x) => w.MMP7.rollDie(6, () => x)), [1, 4, 6]);
 });
 
 test('QA-C10：修行：5種類・15マス・能力上昇 +2〜3・丈夫さはCランククリアで解放・回数上限は progression.js の定義', () => {

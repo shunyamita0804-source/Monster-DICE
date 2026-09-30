@@ -127,3 +127,9 @@
 - 大会：ランク選択は E〜S を並べ、挑戦できないランクは鎖と錠で封印（既存の解放条件と連動。押せない要素は p9rlock）。案内はフィナで、ランクをタップすると見立て（余裕／互角／厳しい）。開始時に暗転 → エンブレム → セドリック → 順位表（参加者が右から順に入る）。次の対戦相手の行だけ光る。VS は左右から入る。Battle 開始前に導入（両者・個性スキルの枠・主要パラメーター・BATTLE START）を足した。fight()・Battle Engine・.bt 系 CSS は変えていない。
 - 【未決・素材待ち】個性スキルの正式データ（今は「―（未登録）」の枠）、サイコロの正式な停止画像、フィナの見立ての文面（FINA_RANK_TALK）とセドリックの開始の一言（CEDRIC_TALK.open）の最終確認、練習試合の相手の姿（fight() が種族を決めるため導入では「？」）。
 - 「レイナ」と呼ばれた市場のNPCは、正式NPCのカレンとして扱った（旧仕様の「リナ」は使わない）。
+
+## 次期Chapter「リアル巨大ボード方式」の内部基盤（2026-09-30）
+- 目的：正式デザイン（新背景・巨大マス・新UI）が届いたとき、config と画像を差し替えるだけで移行できるよう、Engine・データ構造・サイコロ・ターン・移動・マスイベント・強制停止・セーブ・テストの土台だけを先に整えた。見た目は作っていない。現行 Chapter 1（1〜3・13枚・30ターン）の挙動・配置の乱数列・セーブ形式（version 6・mr4v6・pend）は変えていない。
+- 変えたもの：js/phase7/progression.js（rollDie）・js/phase8/raising.js（diceSides・強制停止 node.stop・通過 onPass・onTurnsExhausted）・js/chapter/engine.js（rules.diceSides／onTimeUp・forceStop・special・NODE_TYPES・turnInfo・registerPassHandler・companionReaction・sceneNodes／nextFields／sceneOrder／routeLengths・stepsToMerge の固定上限撤廃）・js/chapter/dice-renderer.js（sides・missingSprites）・js/chapter/field-view.js（次の背景の先読みをつながりから・fieldScenes[].camera・registerReactionRenderer）・tests/chapter-next.test.mjs（新規16件）・tests/chapter-sim.mjs（ループ上限を config から）・tests/qa-static-guards.test.mjs（QA-C9）。詳細は CLAUDE.md §3「次期Chapter」。
+- 【暫定・未決】出目 4〜6 の移動疲れ（今は表の最大＝+7。config の fatigueRules.roll で置き換え）、サイコロの停止画像 dice_stop_4〜6（今は数字の輪）、総マス数（100〜200）・背景の枚数（コードに固定していない）、フィナのリアクションの本文と会話UI（フックだけ）、現行 Chapter 1 のライバル（f3_4）を強制停止にするか（今は従来どおり通過できる）。
+- 同行者の監査：Chapter へ行くのはプレイヤー・フィナ・育成中のモンスター（ダンは同行しない）。Chapter フィールド（engine・field-view・ch1a）にダンは出ない。出発時の掛け合い DAN_TALK.handoff（index.html：フィナ「ダン、この子のことお願いしてもいい？」→ダン「ああ。こっちは任せてくれ。」）は、ダンへモンスターを預けて旅立つように読めるため、文面の見直しは仕様側の判断待ち（コードは変えていない）。DAN_TALK.chapter「残りNターンか…」は Chapter間ファームの一言で、同行ではない。
