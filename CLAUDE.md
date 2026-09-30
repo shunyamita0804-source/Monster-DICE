@@ -29,8 +29,9 @@ Claude Code は作業の前に毎回このファイルを読むこと。ここ�
 | js/phase13/field.js | 旧 Chapter 1 のフィールド表示（試作。Chapter 1 は js/chapter/ が担当するため、今は表示されない） |
 | js/chapter/engine.js | Chapterフィールドの共通エンジン `MMCH`（config の登録・ノードの組み立て・配置の生成と検証・疲れ・能力マス・イベント・宝箱・バトル）。MMP8.registerChapterDriver で raising.js へつなぐ。Chapter ごとの分岐（if chapter===N）は書かない |
 | js/chapter/configs/ch1a.js | Chapter 1 Pattern A「大橋と清流の草原」の config（データだけ）。新しい Chapter／パターンは configs/ にファイルを足して MMCH.registerConfig する |
-| js/chapter/dice-renderer.js | サイコロ `MMCHD`（出目 rollDice と演出 play を分ける。回転中の正式画像1枚を動かす。停止画像は resultSprites に登録するだけ） |
-| js/chapter/field-view.js | Chapterフィールドの画面（`MMCHV`・chf*。背景・環境素材・止まる地点の絵・モンスターの歩行・カメラ・HUD・下の操作欄） |
+| js/chapter/dice-renderer.js | サイコロ `MMCHD`（出目 rollDice と演出 play を分ける。回転中の正式画像1枚を動かす：STOP の上から飛び → 減速 → 着地 → 小さく跳ねる → 最後の約0.18秒で正式の角度（0°）へ収束。停止画像は resultSprites に登録するだけ） |
+| js/chapter/field-view.js | Chapterフィールドの画面（`MMCHV`・chf*。層分け・視差・rAF のカメラ追従・道の曲線に沿った歩き・止まる位置と目印の分離・停止の演出・背景の切り替え・HUD・下の操作欄＝中央 STOP＋左右の弧。歩行アニメの差し込み口 registerMonsterAnimator） |
+| js/battle/fit.js | バトル画面の表示だけの補正 `MMBF`（#bt が出たら、HUD と技UIの間に収まる「切れない最大の大きさ」を計算して .mw／.mon にインラインの寸法を入れる。fight()・.bt 系 CSS は変えない） |
 | assets/fields/ch1a/ | Chapter 1 Pattern A の背景3枚・止まる地点の絵・環境素材・サイコロ（README.md に出どころ・加工・使った／使わなかった素材） |
 | js/npc/npc.js | 共通NPC表示・共通会話。`MMNPC` |
 | assets/monsters/ | 4原種の正式画像 |
@@ -65,6 +66,7 @@ Claude Code は作業の前に毎回このファイルを読むこと。ここ�
 - 実ブラウザテストも含める場合：`QA_E2E=1 node --test --test-concurrency=1 tests/*.test.mjs`（Playwright＋Chromium を使う。約20〜30分。並列だと約7.9MBの index.html の読み込みが重なり不安定になるため、必ず1ファイルずつ）。共通部品は tests/e2e/harness.mjs
 - Stage 3（2026-09-29）の後：ふだんの実行は763件（合格589・skip 174・失敗0）。2026-09-30 の牧場の「様子を見る」で2件、継続用救済の整合修正で3件、画面全体の固定（tests/qa-e2e-page-fixed.test.mjs）で8件を追加し776件（合格594・skip 182・失敗0）、実ブラウザテスト込みの全件は785件。実ブラウザテストも含めた全件（46ファイルを1つずつ）は773件。失敗0が基準（2026-09-30：qa-fix-g3 の QA-G3-B9 の不安定さを解消し、2周とも 773/773。KNOWN_ISSUES.md の Stage 3）
 - 2026-09-30 の Chapterフィールド（Chapter 1）の後：ふだんの実行は806件（合格615・skip 191・失敗0）。実ブラウザテスト（28ファイルを1つずつ）は305件で失敗0（新しい tests/qa-e2e-chapter1.test.mjs を含む。旧 Chapter 1 ボード前提の育成・セーブのテストは Chapterフィールドに合わせて書き直し、旧ボードの確認は Chapter 2 で行う）。1000回の進行シミュレーションは `node tests/chapter-sim.mjs 1000`
+- 2026-09-30 の Chapter 移動体験の改修（カメラ・歩き・目印・STOP・バトルの表示）の後：ふだんの実行は821件（合格620・skip 201・失敗0）。実ブラウザテストも含めた全件（49ファイルを1つずつ）は831件で失敗0（tests/qa-e2e-chapter1.test.mjs は CH1-B1〜B17 の19件。tests/chapter-engine.test.mjs に CH1-25〜27・DICE-06・BF-01）
 - 既知の失敗テスト：なし（M3-3 はテストの古い期待値が原因だったため、テスト側を修正。assets/monsters/soramo/・gauru/ のフォルダは旧PHASE 1 土台の data/assets.json が登録しているプロフィールカード画像で、ユーザー判断により残す。ゲームは使わない）
 - 画面・操作にかかわる変更をしたら：ふだんのテストと、変更に関係する実ブラウザテスト（該当ファイルだけ、QA_E2E=1）が通ったら、すぐ main へ push する。全件の実ブラウザテストは push の後に実行し、問題が出たらすぐ直して再 push する（試遊をすぐできるようにするため）
 
@@ -134,7 +136,18 @@ Claude Code は作業の前に毎回このファイルを読むこと。ここ�
 - 育成を始めると、育成完了か育成放棄まで街へ戻れない（中断・再開はできる）。
 - Chapterボード上に NPC（フィナを含む）を置かない。
 - **Chapterフィールド（2026-09-30。Chapter 1 から）**：Chapter 1 は js/chapter/ のエンジン＋config（Pattern A「大橋と清流の草原」）で動く。Chapter 2〜4 は従来のボード（20ターン）のまま。
-  - 3つのFIELD（旅立ちの草原・大橋と清流・大会へ続く高原）を1地点ずつ歩く。止まる地点の絵だけを出し、ノードの丸・線・番号は出さない（?chdebug=1 のときだけ点を出す）。
+  - 3つのFIELD（旅立ちの草原・大橋と清流・大会へ続く高原）を1地点ずつ歩く。止まる地点の目印だけを出し、ノードの丸・線・番号は出さない（?chdebug=1 のときだけ点と道筋を出す）。
+  - **見せ方（2026-09-30 改修。「すごろくの駒」ではなく「モンスターと一緒に旅する」画面）**：
+    - 画面：上〜中央＝フィールド（80〜82%）、下＝操作欄（18〜20%。`--chdeck`＝clamp(128px,19dvh,166px)）。操作欄は中央の大きな円形 STOP（#brollbtn。サイコロを止める＝振る）を、左の弧「アイテム」（.chitem）と右の弧「休む　疲れ −30」（.chrest）が包む。サイコロ（.chdf）はターンの始めに STOP の上で浮いて回る。案内文（#bmsg）は操作欄の上の行。
+    - カメラ（field-view.js の DEF.camera。config.camera で上書き）：モンスターを画面の中央より少し下（anchorY 0.64）に置き、進む向きの先を多く見せる（lookAhead＝画面幅の 11%）。移動が始まると 110ms 遅れて追いかけ（followDelay・followTau 150ms）、止まるとゆっくり止まる（settleTau 240ms）。ズームは移動中 0.98・着地 1.02・分岐 0.93・停止地点の物へ寄るとき 1.03（大きくズームしない）。カメラの状態はセーブしない（再読み込み後は今の地点からその場で合わせる）。
+    - 層（.chf-cam の中）：遠景の帯（背景の上部の写しを少し遅く。fieldScenes[].farBand）→ 背景 → 奥の環境（haze 0.15 以上）→ 道（背景の上の目印・モンスター：足元の y で前後）→ 手前の環境（草・岩）→ 効果。視差は config.parallax（far 0.94・back 0.97・road 1・front 1.14）。手前を横切る草は config.foreground[field]（数地点に1つ）。
+    - 歩き：道は config.paths[].pts を Catmull-Rom で滑らかにした曲線（curve:'linear' で折れ線）。ノードは曲線の上に置き、隣の地点へは MMCH.routeBetween の点列で歩く（直線で飛ばない）。別の道へ移るときは config.edges['from>to'] の中間点。出目が決まると約0.1秒の構え → 加速 → 1地点 200〜350ms（画面上の距離と地形 config.motion.terrain：坂は遅め・橋は一定）→ 最後の30%で減速 → 着地（0.17秒）。見た目（上下動・前傾・向き・影）は monsterAnimator（既定は CSS のクラス ready／walk／land／idle／rest）。正式な歩行アニメが届いたら MMCHV.registerMonsterAnimator({ set(el, state, info) }) で差し替える（移動・カメラの処理は変えない）。
+    - 止まる位置と目印の位置は別：モンスターは道の上の点（node.mx／my）に止まり、目印は道の脇（config.nodeLook の gap＝道からの距離、side＝側。道ごとの置き方は paths[].landmark、地点ごとの上書きは config.nodeOverrides[id]＝{ monster, landmark:{x,y,scale,depth,anchor,opacity}, camera, terrain, side }）。目印は少し埋め（sink）、足元を草（.chf-tuft＝grass_front の一部）で隠し、接地影を持つ。普段は光らず、止まったときだけ0.65秒光る（後ろの光と drop-shadow。絵の色は変えない）。
+    - 能力＝道端の古代石碑（nodes/stat_*）。イベント＝内容に応じた自然物（eventPool[].asset：木陰＝木、小休憩＝岩、珍しい草＝花、つまずく＝岩。泉・祠は tier の祠を小さく置く＝【暫定・素材待ち】）。宝箱＝草むらの脇（開けるときカメラが少し寄る）。バトル＝目印を置かない（着いたら草むらが揺れて「！」→ 案内。config.battleMarkers:true で旧来の石碑を常設）。ライバル本人＋モンスターは battleTypes.rival.figure（asset key）で置ける構造（素材は未着）。wild／rival の asset key は分けたまま。
+    - 背景に描かれている物（大橋・大会門・木立・遺跡）には素材を重ねない（FIELD 2 の forest_path_b、FIELD 3 の大木・石柱は外した）。手前の草・岩の帯だけ視差の前景として残す。
+    - 背景の切り替え：フィールドの端から進む向きへ歩き続け、カメラが前へ寄りながら短い暗転（.chf-veil）→ 次のフィールドの入口の少し手前から歩いて入る（向きを保つ）。分岐：カメラが少し引いて2つの道の入口を見せてから選択肢、選ぶと選んだ道へ少し寄ってから歩く。
+    - 操作のロック：サイコロ・移動・着地・結果・イベント・バトルへの切り替えの間は STOP・アイテム・休む・分岐を受け付けない（bBusy＋MMCHD.isLocked）。
+    - Pattern B／C・Chapter 2〜4 は config（paths・edges・nodeOverrides・landmarks・foreground・camera・parallax・motion・fieldScenes[].farBand）を足すだけ。画面側に Pattern 専用の座標・分岐は書かない（tests/chapter-engine.test.mjs CH1-27 で監視）。
   - 30ターン・サイコロ1〜3。FIELD 2 で大きな分岐（大橋ルート＝短い・バトル多め／森の小道＝長い・能力・イベント・宝箱多め）。合流してゴール → 公式大会 → ファーム。30ターン切れは大会なしで Chapter 終了（失敗ではない）。
   - 配置は固定の骨組み＋ランダム割り当て。Chapter 開始時に seed で決めてセーブ（m.raise.field：chapterId・patternId・fieldId・layoutSeed・nodeAssignments・consumedEvents・openedTreasures・clearedStats・branch）。再読込・バトルから戻っても引き直さない。
   - 疲れ（m.raise.fatigue、0〜100）：出目確定時に 1→+3・2→+5・3→+7、ボードのバトル +5、大会は0。100 でサイコロ不可 → 休む（−30・1ターン・移動なし・ライフ回復なし）。次の Chapter へは max(0, 疲れ−50)。
@@ -384,6 +397,7 @@ Claude Code は作業の前に毎回このファイルを読むこと。ここ�
 - 能力選択イベント（3つから1つ選ぶ）の上昇量・出現率：未決
 - 特訓チケット地点の出現条件：未決
 - 分岐ルート用 1〜6 サイコロを振る場面：未決（未実装）
+- Chapterフィールドの素材待ち：サイコロの停止画像 dice_stop_1〜3、泉・祠（イベント）の自然物、ライバル本人の立ち姿、正式な歩行アニメ（idle／walk／run）。いずれも config／registerMonsterAnimator で差し替えるだけ（2026-09-30）
 - Chapter 2〜4 のフィールド表示・各Chapterのマップパターン（全12マップ予定）の残り：未決
 - 合体仕様の今後の改修（合体時の色の変化の扱いを含む）：未決
 - 牧場でのフィナ ↔ ニックの掛け合い（初回入場など）：未実装・未決

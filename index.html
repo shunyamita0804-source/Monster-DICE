@@ -696,8 +696,8 @@ button.dclose{position:absolute;right:10px;top:10px;width:30px;height:30px;paddi
 .p0 .ibg{background:repeating-linear-gradient(100deg,rgba(255,255,255,.1) 0 3px,transparent 3px 22px),linear-gradient(110deg,#ff9a2a,#b8360a 55%,#4a1204);animation:spd .5s linear infinite}
 .p1 .ibg{background:repeating-linear-gradient(80deg,rgba(255,255,255,.1) 0 3px,transparent 3px 22px),linear-gradient(250deg,#3aa8ff,#1a4ab8 55%,#08163a);animation:spd2 .5s linear infinite}
 @keyframes spd{to{background-position:-60px 0,0 0}}@keyframes spd2{to{background-position:60px 0,0 0}}
-.iim{position:absolute;top:-14%;width:92%;height:215%}
-.p0 .iim{left:-8%}.p1 .iim{right:-8%}
+.iim{position:absolute;top:11%;width:56%;height:78%}
+.p0 .iim{left:4%}.p1 .iim{right:4%}
 .iim2{width:100%;height:100%;animation:kb 3s ease-out both}.p1 .iim2{animation-delay:.9s}
 .iim2{filter:drop-shadow(0 0 16px rgba(255,255,255,.35))}.iim2 img{width:100%;height:100%;object-fit:contain;object-position:center top}
 .iim2 img.b2{display:none}
@@ -1098,40 +1098,55 @@ button.mkc b{font-size:.9rem}button.mkc small{font-size:.66rem;color:#ffe9b0}
 .p9dnb{background:none;border:0;box-shadow:none;padding:0}
 /* ===== Phase 10：正式モンスター画像（加工なし） ===== */
 .p10im{width:100%;height:100%;object-fit:contain;display:block;-webkit-user-drag:none;user-select:none}
-/* ===== Chapterフィールド（Chapterフィールドエンジン：js/chapter/。2026-09-30）：背景の道をモンスターが歩く正式の育成ボード =====
-   重ね順：背景 → 環境（奥：y で前後）→ 停止地点・モンスター（y で前後）→ 環境（手前）→ 画面の飾り → UI。ノード・線・番号は出さない */
-#app>.chfw{position:relative;box-sizing:border-box;height:calc(100% + 32px);margin:-16px;overflow:hidden;background:#0b1636}
-.chf{position:absolute;inset:0;overflow:hidden;background:#0b1636;touch-action:none;transition:opacity .36s ease,transform .36s ease;transform-origin:50% 45%}
-.chf.chf-out{opacity:0;transform:scale(1.07)}
-.chf.chf-in{opacity:0;transform:scale(.965);transition:none}
-.chf.chf-in.chf-in2{opacity:1;transform:none;transition:opacity .4s ease,transform .4s ease}
+/* ===== Chapterフィールド（Chapterフィールドエンジン：js/chapter/。2026-09-30 改修）：背景の道をモンスターと一緒に旅する正式の育成ボード =====
+   画面：上〜中央＝フィールド（.chf。高さは 100% − 操作欄）、下＝操作欄（.chdeck：中央の円形 STOP・左の弧＝アイテム・右の弧＝休む）。
+   重ね順（.chf-cam）：遠景の帯（far）→ 背景 → 奥の環境（back）→ 道（停止地点・モンスター：足元の y で前後）→ 手前の環境（front）→ 効果（fx）。ノード・線・番号は出さない */
+#app>.chfw{position:relative;box-sizing:border-box;height:calc(100% + 32px);margin:-16px;overflow:hidden;background:#0b1636;--chdeck:clamp(128px,19vh,166px);--chcmd:98px;--chstop:92px;--chwing:62px}
+@supports (height:1dvh){#app>.chfw{--chdeck:clamp(128px,19dvh,166px)}}
+.chf{position:absolute;left:0;right:0;top:0;bottom:var(--chdeck);overflow:hidden;background:#0b1636;touch-action:none}
 .chf-cam{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform}
-.chf-bg{position:absolute;left:0;top:0;width:100%;height:100%;display:block;user-select:none;-webkit-user-select:none;pointer-events:none}
+.chf-pg{position:absolute;inset:0;pointer-events:none;will-change:transform}
+.chf-far{z-index:1}.chf-bg{z-index:2}.chf-back{z-index:3}.chf-road{z-index:4}.chf-front{z-index:6}.chf-fx{position:absolute;inset:0;z-index:7;pointer-events:none}
+.chf-bg,.chf-farimg{position:absolute;left:0;top:0;width:100%;height:100%;display:block;user-select:none;-webkit-user-select:none;pointer-events:none}
+.chf-farimg{-webkit-mask-image:linear-gradient(#000 calc(var(--to,34%) - 12%),transparent var(--to,34%));mask-image:linear-gradient(#000 calc(var(--to,34%) - 12%),transparent var(--to,34%))}
 .chf-env,.chf-obj{position:absolute;transform:translate(-50%,calc(-100% + var(--sink,0) * 100%));pointer-events:none}
 .chf-env img,.chf-obj img{display:block;width:100%;height:auto;-webkit-mask-image:linear-gradient(to top,transparent 0,#000 calc(var(--sink,0) * 100% + 1px));mask-image:linear-gradient(to top,transparent 0,#000 calc(var(--sink,0) * 100% + 1px))}
-.chf-obj img{width:auto;max-width:none}
-.chf-obj.st img{width:100%;height:auto}
+.chf-obj img{width:auto;max-width:none;position:relative;z-index:1}
+.chf-obj.st img,.chf-obj.tr img,.chf-obj.nat img{width:100%;height:auto}
 .chf-env.fr{pointer-events:none}
-/* 接地影：光は右上から（背景の太陽）→ 影は左下へ少しずらす */
+/* 接地影（環境・停止地点・モンスター）。足元の草（.chf-tuft）は目印の根元を隠す */
 .chf-esh,.chf-osh,.chf-msh{position:absolute;left:44%;bottom:calc(var(--sink,0) * 100% - 4%);width:86%;height:16%;transform:translate(-50%,40%);border-radius:50%;background:radial-gradient(closest-side,rgba(28,34,12,calc(var(--o,.35) + .1)),rgba(28,34,12,0));pointer-events:none;z-index:-1}
 .chf-obj .chf-osh{--o:.34;width:92%}
-.chf-obj.st .chf-osh{--o:.2;height:22%}
-.chf-obj.used{opacity:.5;transition:opacity .4s}
-.chf-obj.gone{opacity:0;transition:opacity .5s}
-.chf-obj.st.used{opacity:.78}
-.chf-obj.hit img{animation:chfhit .6s ease-out}
+.chf-obj.st .chf-osh{--o:.24;height:20%}
+.chf-tuft{position:absolute;left:50%;bottom:calc(var(--sink,0) * 100% - 7%);height:30%;max-height:36px;min-height:12px;transform:translate(-50%,40%);background-size:auto 100%;background-repeat:repeat-x;-webkit-mask-image:linear-gradient(to right,transparent,#000 18%,#000 82%,transparent);mask-image:linear-gradient(to right,transparent,#000 18%,#000 82%,transparent);pointer-events:none;z-index:2}
+.chf-fg{position:absolute;transform:translate(-50%,-100%);background-size:auto 100%;background-repeat:repeat-x;-webkit-mask-image:linear-gradient(to right,transparent,#000 16%,#000 84%,transparent);mask-image:linear-gradient(to right,transparent,#000 16%,#000 84%,transparent);pointer-events:none}
+/* 停止したときだけ光る（絵の色は変えない：後ろの光と drop-shadow だけ） */
+.chf-glow{position:absolute;left:50%;top:50%;width:160%;height:140%;transform:translate(-50%,-54%) scale(.7);border-radius:50%;background:radial-gradient(closest-side,rgba(255,238,160,.9),rgba(255,214,106,.4) 52%,rgba(255,214,106,0));opacity:0;pointer-events:none;z-index:0}
+.chf-obj.hit .chf-glow{animation:chfglow .65s ease-out}
+@keyframes chfglow{0%{opacity:0;transform:translate(-50%,-54%) scale(.7)}35%{opacity:1;transform:translate(-50%,-54%) scale(1)}100%{opacity:0;transform:translate(-50%,-54%) scale(1.25)}}
+.chf-obj.hit img{animation:chfhit .65s ease-out}
+@keyframes chfhit{0%{filter:drop-shadow(0 0 0 rgba(255,236,150,0))}35%{filter:drop-shadow(0 0 12px rgba(255,236,150,.95))}100%{filter:drop-shadow(0 0 0 rgba(255,236,150,0))}}
 .chf-obj.tr.open img{animation:chfopen .7s ease-out}
-@keyframes chfhit{0%{filter:brightness(1)}35%{filter:brightness(1.45) drop-shadow(0 0 10px rgba(255,236,150,.9))}100%{filter:brightness(1)}}
 @keyframes chfopen{0%{transform:scale(1)}30%{transform:scale(1.12,.9)}60%{transform:scale(.96,1.06)}100%{transform:scale(1)}}
-/* モンスター（足元＝ノード。奥ほど小さく）。歩くと軽く上下して少し傾く。右へ進むときだけ左右反転 */
-.chf-mon{position:absolute;width:var(--mh);height:var(--mh);transform:translate(-50%,-94%) scale(var(--d,1));transform-origin:50% 94%;transition:left .24s ease-in-out,top .24s ease-in-out,transform .24s ease-in-out;pointer-events:none}
+.chf-obj.used img{opacity:.55;transition:opacity .4s}
+.chf-obj.st.used img{opacity:.8}
+.chf-obj.gone{opacity:0!important;transition:opacity .5s}
+/* モンスター：足元の点に置き、向き（flip）→ 前傾（lean）→ 上下動（bob）の順に包む。歩きの見た目はクラス（walk／ready／land／rest）＝monsterAnimator の既定 */
+.chf-mon{position:absolute;width:var(--mh);height:var(--mh);transform:translate(-50%,-94%) scale(var(--d,1));transform-origin:50% 94%;pointer-events:none}
 .chf-mon .chf-msh{--o:.4;left:50%;bottom:4%;width:62%;height:13%}
 .chf-flip{width:100%;height:100%;transition:transform .16s ease}
 .chf-flip.r{transform:scaleX(-1)}
+.chf-lean{width:100%;height:100%;transform:rotate(var(--lean,0deg));transform-origin:50% 92%;transition:transform .12s linear}
 .chf-bob{width:100%;height:100%}
 .chf-mon .mon{width:100%;height:100%}
-.chf-mon.walk .chf-bob{animation:chfbob .24s ease-in-out infinite}
-@keyframes chfbob{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-5%) rotate(-3deg)}}
+.chf-mon.walk .chf-bob{animation:chfbob calc(.26s / var(--spd,1)) ease-in-out infinite}
+@keyframes chfbob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5%)}}
+.chf-mon.walk .chf-msh{animation:chfshb calc(.26s / var(--spd,1)) ease-in-out infinite}
+@keyframes chfshb{0%,100%{transform:translate(-50%,40%) scale(1)}50%{transform:translate(-50%,40%) scale(.84)}}
+.chf-mon.ready .chf-bob{animation:chfready .12s ease-out both}
+@keyframes chfready{0%{transform:scale(1)}50%{transform:scale(1.05,.94)}100%{transform:scale(.98,1.03)}}
+.chf-mon.land .chf-bob{animation:chfland .18s ease-out both}
+@keyframes chfland{0%{transform:translateY(-4%)}45%{transform:translateY(0) scale(1.06,.93)}100%{transform:none}}
 .chf-mon.rest .chf-bob{animation:chfidle 3.4s ease-in-out infinite}
 @keyframes chfidle{0%,100%{transform:translateY(0)}50%{transform:translateY(-1.6%)}}
 .chf-mon.resting .chf-bob{animation:chfnap 1.8s ease-in-out infinite;transform-origin:50% 100%}
@@ -1139,13 +1154,21 @@ button.mkc b{font-size:.9rem}button.mkc small{font-size:.66rem;color:#ffe9b0}
 .chf-zz{position:absolute;right:4%;top:2%;font:900 34px/1 var(--mm-font-head);color:#fff;text-shadow:0 2px 6px rgba(0,0,40,.6);animation:chfzz .9s ease-out forwards}
 .chf-zz small{font-size:.6em}
 @keyframes chfzz{0%{opacity:0;transform:translate(0,10px)}30%{opacity:1}100%{opacity:0;transform:translate(10px,-24px)}}
-@media (prefers-reduced-motion:reduce){.chf-mon.walk .chf-bob,.chf-mon.rest .chf-bob,.chf-mon.resting .chf-bob{animation:none}}
+@media (prefers-reduced-motion:reduce){.chf-mon.walk .chf-bob,.chf-mon.walk .chf-msh,.chf-mon.rest .chf-bob,.chf-mon.resting .chf-bob,.chf-mon.ready .chf-bob,.chf-mon.land .chf-bob,.chdf,.chdf img,.chstopw.on .chstop-rim::after{animation:none}}
 .chf-canopy{position:absolute;left:0;right:0;top:0;height:42%;background-size:100% auto;background-repeat:no-repeat;background-position:50% 0;pointer-events:none;z-index:3;animation:chffade .6s ease-out}
 @keyframes chffade{from{opacity:0}}
+.chf-veil{position:absolute;inset:0;background:#0b1636;opacity:0;transition:opacity .28s ease;z-index:4;pointer-events:none}
+.chf-veil.on{opacity:1}
+/* バトル地点：草むらが揺れて「！」（目印は常設しない） */
+.chf-rustle{position:absolute;transform:translate(-50%,-100%);background-size:auto 100%;background-repeat:repeat-x;-webkit-mask-image:linear-gradient(to right,transparent,#000 20%,#000 80%,transparent);mask-image:linear-gradient(to right,transparent,#000 20%,#000 80%,transparent);transform-origin:50% 100%;animation:chfrus .55s ease-in-out;z-index:5}
+@keyframes chfrus{0%,100%{transform:translate(-50%,-100%) skewX(0)}20%{transform:translate(-50%,-103%) skewX(-9deg)}40%{transform:translate(-50%,-100%) skewX(8deg)}60%{transform:translate(-50%,-102%) skewX(-6deg)}80%{transform:translate(-50%,-100%) skewX(4deg)}}
+.chf-alert{position:absolute;transform:translate(-50%,-100%) scale(calc(.6 + var(--d,1) * .9));transform-origin:50% 100%;font:900 60px/1 var(--mm-font-head);font-style:normal;color:#ffe07a;-webkit-text-stroke:2px #7a3a00;text-shadow:0 3px 0 #5a2a04,0 0 14px rgba(255,180,60,.8);animation:chfalert .5s cubic-bezier(.2,1.5,.4,1) both;z-index:6}
+@keyframes chfalert{from{opacity:0;transform:translate(-50%,-70%) scale(calc(.3 + var(--d,1) * .4))}}
 .chf-dbg{position:absolute;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:#ff3;border:2px solid #000;z-index:9000;font:10px/1 sans-serif}
 .chf-dbg b{position:absolute;left:10px;top:-4px;color:#fff;text-shadow:0 0 2px #000;white-space:nowrap}
 .chf-dbg.k-slot{background:#9ef}.chf-dbg.k-branch,.chf-dbg.k-merge{background:#f6a}.chf-dbg.k-strong,.chf-dbg.k-rival{background:#f44}
-/* UI：上に Chapter・Turn・疲れ、下に一言と操作（画面の端だけ。中央はモンスターとフィールド） */
+.chf-dbgsvg{position:absolute;left:0;top:0;z-index:8990;pointer-events:none;fill:none;stroke:#ff0;stroke-width:3;stroke-dasharray:8 6}
+/* UI（HUD・結果・シート・操作欄）。.chf-ui はフィールド＋操作欄の全体に重ねる */
 .chf-ui{position:absolute;inset:0;pointer-events:none;z-index:5;font-family:var(--mm-font-body)}
 .chf-ui>*{pointer-events:auto}
 .chh{position:absolute;left:8px;right:56px;top:calc(env(safe-area-inset-top,0px) + 8px);display:flex;align-items:flex-start;gap:8px;pointer-events:none}
@@ -1168,30 +1191,52 @@ button.mkc b{font-size:.9rem}button.mkc small{font-size:.66rem;color:#ffe9b0}
 .chh-fat.f-hi i::after{background:linear-gradient(90deg,#f08a3a,#e0442e)}
 .chh-fat.f-hi b{color:#ffb39a}
 .chh-menu{flex:none;width:40px;height:40px;margin:0}
-.chdock{position:absolute;left:0;right:0;bottom:0;padding:0 10px calc(10px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:8px;pointer-events:none}
-.chdock>*{pointer-events:auto}
-.chmsg{align-self:center;max-width:94%;margin:0;padding:6px 14px;border-radius:14px;background:rgba(6,14,38,.72);border:1px solid rgba(217,180,101,.55);color:#fff;font-size:13px;line-height:1.45;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+/* 操作欄（command deck）：中央の円形 STOP を左右の弧（アイテム・休む）が包む。サイコロは STOP の上で浮いて回る */
+.chdeck{position:absolute;left:0;right:0;bottom:0;height:var(--chdeck);box-sizing:border-box;padding:0 8px calc(4px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;justify-content:flex-end;gap:2px;background:linear-gradient(180deg,#0e1a44,#08122e 40%,#060c22);border-top:2px solid #d9b465;box-shadow:inset 0 3px 0 #08122e,inset 0 4px 0 rgba(217,180,101,.55),0 -6px 18px rgba(0,0,0,.45)}
+.chmsg{align-self:center;max-width:100%;margin:0;padding:3px 10px;border-radius:10px;color:#fff;font-size:12.5px;line-height:1.35;text-align:center;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .chmsg:empty{display:none}
 .chmsg small{color:#e8cf8e}
-.chbtns{display:grid;grid-template-columns:1fr 1fr 1.45fr;gap:8px;align-items:stretch}
-.chb,.chdice{margin:0;min-height:62px;border-radius:14px;border:1.5px solid #d9b465;background:linear-gradient(180deg,rgba(34,58,118,.97),rgba(12,26,62,.97));color:#fff;font:800 15px/1.2 var(--mm-font-head);letter-spacing:.04em;box-shadow:0 0 0 1px rgba(20,12,0,.55),0 4px 10px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,236,180,.25);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
-.chb small{font:600 10.5px/1 var(--mm-font-body);color:#e8cf8e}
-.chb.must{border-color:#ffd66a;box-shadow:0 0 0 2px rgba(255,214,106,.5),0 0 16px rgba(255,214,106,.45)}
-.chdice{flex-direction:row;gap:8px;background:linear-gradient(180deg,#8e1b2a,#5a0f1c);border:2px solid #e8c86a;box-shadow:0 0 0 1px rgba(40,6,10,.7),inset 0 0 0 2px rgba(255,214,140,.35),0 5px 12px rgba(0,0,0,.4);font-size:17px}
-.chdice img{width:40px;height:40px;object-fit:contain;filter:drop-shadow(0 2px 3px rgba(0,0,0,.5))}
-.chdice span{font:800 17px/1 var(--mm-font-head)}
-.chb:disabled,.chdice:disabled{opacity:.55;filter:saturate(.6)}
-.chsheet{margin:0 0 2px;padding:10px 12px 12px;border-radius:16px;background:linear-gradient(180deg,rgba(20,36,82,.95),rgba(8,18,46,.96));border:1.5px solid #d9b465;color:#fff;box-shadow:0 6px 18px rgba(0,0,0,.45);max-height:62vh;max-height:62dvh;overflow:auto;overscroll-behavior:contain}
+.chmsg b{color:#f3d98e}
+.chcmd{position:relative;display:flex;align-items:center;justify-content:center;height:var(--chcmd)}
+.chwing{position:relative;z-index:1;flex:1 1 0;max-width:152px;min-width:0;height:var(--chwing);margin:0;padding:0;border:1.5px solid #d9b465;background:linear-gradient(180deg,rgba(38,64,128,.98),rgba(12,26,62,.98));color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font:800 14px/1.1 var(--mm-font-head);letter-spacing:.04em;box-shadow:0 0 0 1px rgba(20,12,0,.55),0 4px 10px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,236,180,.25)}
+.chwing.chitem{border-radius:34px 8px 8px 34px;margin-right:-26px;padding-right:26px}
+.chwing.chrest{border-radius:8px 34px 34px 8px;margin-left:-26px;padding-left:26px}
+.chwing svg{width:20px;height:20px;fill:none;stroke:#f3d98e;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.chwing b{font:inherit}
+.chwing small{font:600 10px/1 var(--mm-font-body);color:#e8cf8e}
+.chwing:disabled{opacity:.5;filter:saturate(.6)}
+.chwing.must{border-color:#ffd66a;box-shadow:0 0 0 2px rgba(255,214,106,.5),0 0 16px rgba(255,214,106,.45)}
+.chstopw{position:relative;z-index:2;flex:none;width:calc(var(--chstop) + 14px);height:var(--chcmd);display:flex;align-items:center;justify-content:center}
+.chstop{position:relative;width:var(--chstop);height:var(--chstop);margin:0;padding:0;border:0;border-radius:50%;background:transparent;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:none;filter:drop-shadow(0 6px 10px rgba(0,0,0,.55))}
+.chstop-rim{position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 210deg,#f6e3a0,#a97a25 18%,#f9edb8 38%,#8c6418 58%,#f6e3a0 78%,#a97a25);box-shadow:0 0 0 3px #12102a,0 0 0 4px rgba(255,220,140,.35),0 0 16px rgba(255,190,80,.4)}
+.chstop-dome{position:absolute;inset:7px;border-radius:50%;background:radial-gradient(circle at 50% 30%,#ff9a86 0,#cf2531 36%,#75101c 76%,#3f0510 100%);box-shadow:inset 0 -7px 12px rgba(0,0,0,.5),inset 0 4px 8px rgba(255,255,255,.22),0 0 0 1px rgba(60,10,10,.8)}
+.chstop-dome::after{content:"";position:absolute;left:18%;top:7%;width:64%;height:34%;border-radius:50%;background:linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,0))}
+.chstop b{position:relative;z-index:1;font:900 21px/1 var(--mm-font-head);letter-spacing:.1em;color:#fff6d8;text-shadow:0 2px 0 #5a0a14,0 0 10px rgba(255,120,80,.6)}
+.chstop-cap{position:absolute;left:50%;bottom:-3px;transform:translateX(-50%);white-space:nowrap;font:600 9.5px/1 var(--mm-font-body);color:#e8cf8e;letter-spacing:.04em}
+/* 押せるときの光の脈動：opacity だけを動かす（box-shadow を毎フレーム変えると待機中もスタイル計算が走る） */
+.chstop-rim::after{content:"";position:absolute;inset:-5px;border-radius:50%;box-shadow:0 0 26px 6px rgba(255,200,90,.85);opacity:0;pointer-events:none}
+.chstopw.on .chstop-rim::after{animation:chstopglow 1.6s ease-in-out infinite}
+@keyframes chstopglow{50%{opacity:1}}
+.chstop:disabled{filter:saturate(.3) brightness(.7) drop-shadow(0 4px 8px rgba(0,0,0,.5))}
+.chstop.wait .chstop-dome{background:radial-gradient(circle at 50% 30%,#8391c4 0,#2f4280 40%,#131c3e 100%)}
+.chstop.wait b{font-size:30px;text-shadow:0 2px 0 #0a1030}
+.chdf{position:absolute;left:50%;top:-120px;width:62px;height:62px;transform:translateX(-50%);pointer-events:none;z-index:3;animation:chdffloat 2.2s ease-in-out infinite}
+.chdf img{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 8px 8px rgba(0,0,0,.45));animation:chdfspin 3.6s linear infinite}
+.chdf[hidden]{display:none}
+@keyframes chdffloat{50%{transform:translate(-50%,-9px)}}
+@keyframes chdfspin{to{transform:rotate(360deg)}}
+/* シート（分岐・バトル・大会門・ターン終了・アイテム）：フィールドの下端（操作欄のすぐ上）に重ねる */
+.chsheet{position:absolute;left:10px;right:10px;bottom:calc(var(--chdeck) + 8px);margin:0;padding:10px 12px 12px;border-radius:16px;background:linear-gradient(180deg,rgba(20,36,82,.96),rgba(8,18,46,.97));border:1.5px solid #d9b465;color:#fff;box-shadow:0 6px 18px rgba(0,0,0,.45);max-height:calc(100% - var(--chdeck) - 84px);overflow:auto;overscroll-behavior:contain;box-sizing:border-box;animation:chsheet .26s ease-out}
+@keyframes chsheet{from{opacity:0;transform:translateY(12px)}}
 .chsheet h3{margin:0 0 8px;font:800 16px/1.3 var(--mm-font-head);color:#f3d98e;text-align:center;letter-spacing:.06em}
 .chsheet .p9btn,.chsheet .p9btn2{width:100%;margin:6px 0 0}
-.chsheet.chgoal{max-height:66vh;max-height:66dvh}
-.chroute{display:flex;flex-direction:column;align-items:flex-start;gap:3px;width:100%;margin:0 0 8px;padding:10px 14px;border-radius:12px;border:1.5px solid #d9b465;background:linear-gradient(180deg,rgba(40,66,130,.95),rgba(16,30,70,.95));color:#fff;text-align:left}
+.chroute{display:flex;flex-direction:column;align-items:flex-start;gap:3px;width:100%;margin:0 0 8px;padding:10px 14px;border-radius:12px;border:1.5px solid #d9b465;background:linear-gradient(180deg,rgba(40,66,130,.95),rgba(16,30,70,.95));color:#fff;text-align:left;box-sizing:border-box}
 .chroute b{font:800 16px/1.2 var(--mm-font-head);letter-spacing:.04em}
 .chroute small{font-size:12px;color:#dfe6f8;line-height:1.4}
 .chroute.k-forest{border-color:#9fd67a}
 .chitems small{display:block;font-size:11px;color:#e8cf8e}
 /* 停止地点の結果：短く出して自動で消える（タップで早送り） */
-.chpop{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);min-width:170px;max-width:82%;padding:10px 18px 12px;border-radius:16px;background:linear-gradient(180deg,rgba(24,40,90,.94),rgba(8,18,46,.94));border:1.5px solid #d9b465;color:#fff;text-align:center;box-shadow:0 8px 22px rgba(0,0,0,.45);animation:chpop .28s cubic-bezier(.2,1.4,.4,1);z-index:20}
+.chpop{position:absolute;left:50%;top:36%;transform:translate(-50%,-50%);min-width:170px;max-width:82%;padding:10px 18px 12px;border-radius:16px;background:linear-gradient(180deg,rgba(24,40,90,.94),rgba(8,18,46,.94));border:1.5px solid #d9b465;color:#fff;text-align:center;box-shadow:0 8px 22px rgba(0,0,0,.45);animation:chpop .28s cubic-bezier(.2,1.4,.4,1);z-index:20}
 .chpop small{display:block;font-size:12.5px;color:#e8cf8e;line-height:1.45}
 .chpop b{display:block;font:800 22px/1.25 var(--mm-font-head);letter-spacing:.04em}
 .chpop.great{border-color:#ffe07a;box-shadow:0 0 0 2px rgba(255,224,122,.4),0 0 26px rgba(255,214,106,.55),0 8px 22px rgba(0,0,0,.45)}
@@ -1200,18 +1245,18 @@ button.mkc b{font-size:.9rem}button.mkc small{font-size:.66rem;color:#ffe9b0}
 .chpop.fail b{font-size:16px;color:#dfe3ec}
 .chpop.out{opacity:0;transform:translate(-50%,-60%);transition:opacity .16s,transform .16s}
 @keyframes chpop{from{opacity:0;transform:translate(-50%,-40%) scale(.9)}}
-/* サイコロ：1枚の正式画像を translate・rotate・scale で動かす（連番画像は使わない）。止まったら金色の光の輪と出目 */
+/* サイコロ：1枚の正式画像を translate・rotate・scale で動かす（連番画像は使わない）。STOP の上から飛び、フィールドの手前に落ちて正式の角度で止まる。止まったら金色の光の輪と出目 */
 .chdz{position:absolute;inset:0;z-index:30;pointer-events:none}
-.chdz-mv{position:absolute;left:50%;top:58%;width:96px;height:96px;transform:translate(-50%,0);will-change:transform}
+.chdz-mv{position:absolute;width:88px;height:88px;transform:translate(-50%,-50%);will-change:transform}
 .chdz-img{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 6px 8px rgba(0,0,0,.35))}
-.chdz-sh{position:absolute;left:50%;top:calc(58% + 88px);width:84px;height:16px;border-radius:50%;background:radial-gradient(closest-side,rgba(0,0,0,.45),rgba(0,0,0,0));transform:translate(-50%,0)}
-.chdz-res{position:absolute;left:50%;top:calc(58% - 58px);transform:translate(-50%,0);display:flex;align-items:baseline;justify-content:center;width:84px;height:84px;animation:chdzres .32s cubic-bezier(.2,1.5,.4,1)}
-.chdz-res b{position:relative;z-index:1;margin-top:10px;font:900 44px/1 var(--mm-font-head);color:#fff5d0;text-shadow:0 0 6px rgba(255,200,80,.9),0 2px 0 #7a4a10,0 3px 8px rgba(0,0,0,.5)}
+.chdz-sh{position:absolute;width:80px;height:16px;margin-top:40px;border-radius:50%;background:radial-gradient(closest-side,rgba(0,0,0,.45),rgba(0,0,0,0));transform:translate(-50%,-50%)}
+.chdz-res{position:absolute;transform:translate(-50%,-50%);display:flex;align-items:baseline;justify-content:center;width:88px;height:88px;animation:chdzres .32s cubic-bezier(.2,1.5,.4,1)}
+.chdz-res b{position:relative;z-index:1;margin-top:12px;font:900 44px/1 var(--mm-font-head);color:#fff5d0;text-shadow:0 0 6px rgba(255,200,80,.9),0 2px 0 #7a4a10,0 3px 8px rgba(0,0,0,.5)}
 .chdz-res i{position:relative;z-index:1;font:900 26px/1 var(--mm-font-head);font-style:normal;color:#fff5d0;text-shadow:0 2px 0 #7a4a10}
 .chdz-ring{position:absolute;inset:0;border-radius:50%;border:3px solid rgba(255,214,106,.95);box-shadow:0 0 14px rgba(255,214,106,.8),inset 0 0 12px rgba(255,214,106,.55);background:radial-gradient(closest-side,rgba(255,226,140,.35),rgba(255,226,140,0))}
 .chdz.out{opacity:0;transition:opacity .16s}
-@keyframes chdzres{from{opacity:0;transform:translate(-50%,6px) scale(.7)}}
-@media (max-height:720px){.chb,.chdice{min-height:52px}.chdice img{width:34px;height:34px}.chmsg{font-size:12px;padding:5px 12px}.chh-nm{font-size:14px}}
+@keyframes chdzres{from{opacity:0;transform:translate(-50%,-50%) scale(.7)}}
+@media (max-height:720px){#app>.chfw{--chcmd:86px;--chstop:80px;--chwing:54px}.chwing{font-size:13px}.chmsg{font-size:12px;padding:2px 8px}.chh-nm{font-size:14px}.chstop b{font-size:19px}.chdf{width:54px;height:54px;top:-106px}.chsheet{max-height:calc(100% - var(--chdeck) - 70px)}}
 /* ===== Phase 10：市場（暖色のファンタジー市場・横スワイプのカルーセル） ===== */
 .p10mk{position:relative;margin:-16px -16px 0;min-height:100vh;overflow:hidden;color:#fff4dc;padding-bottom:calc(22px + env(safe-area-inset-bottom,0px));background:#6b4226}
 .p10bg{position:absolute;top:0;left:0;right:0;height:100%;z-index:0;pointer-events:none}
@@ -1722,6 +1767,8 @@ main>h1{flex:none}
 <script src="./js/chapter/configs/ch1a.js"></script>
 <script src="./js/chapter/dice-renderer.js"></script>
 <script src="./js/chapter/field-view.js"></script>
+<!-- バトル画面の表示だけの補正（fight()・.bt 系 CSS は変えない）：モンスターの絵を HUD と技UIの間に収める -->
+<script src="./js/battle/fit.js"></script>
 <script>
 const $=s=>document.querySelector(s),R=n=>Math.floor(Math.random()*n),sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const IMG=MMP10M.SPECIES.map(s=>s.image.src); // Phase 10：正式画像（番号IDの順。画像ファイルは assets/monsters/。旧ノビトン画像など旧版は使わない）

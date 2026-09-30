@@ -21,17 +21,17 @@
 | bg_02.webp | 01_backgrounds/ch1_patternA_bg_02_bridge.jpeg | FIELD 2 大橋と清流（分岐） |
 | bg_03.webp | 01_backgrounds/ch1_patternA_bg_03_goal.jpeg | FIELD 3 大会へ続く高原（ゴール） |
 | dice/dice_rolling.webp | 02_dice/dice_stop_1_emblem.png | サイコロ回転中の本体（1枚を動かす） |
-| nodes/stat_*.webp（6） | 03_nodes/stats/ | 能力マス（ライフ・ちから・かしこさ・命中・回避・丈夫さ） |
-| nodes/event_normal・rare・special | 03_nodes/event/（special は event_deluxe） | イベント（normal／rare／special） |
-| nodes/treasure_normal・rare・special | 03_nodes/treasure/（special は treasure_deluxe） | 宝箱（normal／rare／special） |
-| nodes/battle_wild・battle_rival | 03_nodes/battle/ | バトル（wild・strong は battle_wild、rival は battle_rival）。ZIP の2枚はバイト単位で同じ画像（要確認：rival 用の別の絵が届いたら差し替えるだけ） |
-| env/flower_path | 04_landmarks/nature | FIELD 1 の奥（道の脇の花） |
-| env/rock_strip_b | 04_landmarks/terrain | FIELD 1 の手前の岩 |
-| env/forest_path_b | 04_landmarks/nature | FIELD 2 の奥（森の小道の入口） |
-| env/rock_strip_long | 04_landmarks/terrain | FIELD 2・3 の手前の岩 |
-| env/ancient_tree_large | 04_landmarks/nature | FIELD 3 の奥の大木 |
-| env/ancient_pillar | 04_landmarks/ruins | FIELD 3 の道の脇の石柱（2本） |
-| env/grass_flower_border | 04_landmarks/nature | 各FIELD の最前面の草（モンスターの足元より手前） |
+| nodes/stat_*.webp（6） | 03_nodes/stats/ | 能力地点の目印＝道端の古代石碑（ライフ・ちから・かしこさ・命中・回避・丈夫さ）。道の脇に少し埋めて置き、足元を草で隠す |
+| nodes/event_normal・rare・special | 03_nodes/event/（special は event_deluxe） | 自然物の無いイベント（泉・祠・お金・賢者）の目印を小さく道端に置く【暫定：泉・祠の素材待ち】。木陰＝ancient_tree_large、小休憩＝rock_strip_b、珍しい草＝flower_path、つまずく＝rock_strip_long を使う |
+| nodes/treasure_normal・rare・special | 03_nodes/treasure/（special は treasure_deluxe） | 宝箱（normal／rare／special）。草むらの脇に置き、モンスターはその横に止まる |
+| nodes/battle_wild・battle_rival | 03_nodes/battle/ | バトル地点の石碑（wild・strong は battle_wild、rival は battle_rival）。2026-09-30 から目印は常設しない（config の battleMarkers:false。着いたら草むらが揺れて現れる）。asset key は分けたまま保持。ZIP の2枚はバイト単位で同じ画像（要確認：rival 用の別の絵が届いたら差し替えるだけ） |
+| env/flower_path | 04_landmarks/nature | FIELD 1 の奥（道の脇の花。遠景として少し遅く動く）。イベント「珍しい草」の目印にも使う |
+| env/rock_strip_b | 04_landmarks/terrain | FIELD 1 の手前の岩（視差の前景）。イベント「小休憩」の目印にも使う |
+| env/forest_path_b | 04_landmarks/nature | （2026-09-30 から使わない：森の小道の木立は背景に描かれているため重ねない。ファイルは残す） |
+| env/rock_strip_long | 04_landmarks/terrain | FIELD 2・3 の手前の岩（視差の前景）。イベント「つまずく」の目印にも使う |
+| env/ancient_tree_large | 04_landmarks/nature | イベント「木陰」の木（道端に小さく）。FIELD 3 の固定の大木は外した（背景の木立と重なるため） |
+| env/ancient_pillar | 04_landmarks/ruins | （2026-09-30 から使わない：遺跡・大会門は背景に描かれているため重ねない。ファイルは残す） |
+| env/grass_flower_border | 04_landmarks/nature | 各FIELD の最前面の草（視差の前景）。一部を切り出して、目印の足元の草（.chf-tuft）・手前を横切る草（config.foreground）・バトル地点で揺れる草むらにも使う |
 | env/leaf_canopy_frame | 04_landmarks/nature | 森の小道を選んだときだけ FIELD 2 の上に重ねる葉 |
 
 ## 使わなかった素材（理由）

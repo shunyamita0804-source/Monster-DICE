@@ -76,12 +76,13 @@ function mon(P7, P8, S, state = 'none', over = {}) {
   P7.ensureProg(m); m.raise.state = state; return m;
 }
 
-// 読み込むスクリプト（この順番で17本）。PHASE 1 の土台（js/main.js・js/core・js/ui・js/dev・js/systems・css/）は含めない
+// 読み込むスクリプト（この順番で18本）。PHASE 1 の土台（js/main.js・js/core・js/ui・js/dev・js/systems・css/）は含めない
 const SCRIPTS = [
   'js/battle-bridge.js', 'js/integration/adapter.js', 'js/phase7/progression.js', 'js/phase8/league.js', 'js/phase8/raising.js',
   'js/phase10/monsters.js', 'js/phase11/player.js', 'js/phase12/scenes.js', 'js/phase12/dice.js', 'js/phase13/field.js',
   'js/phase9/chapters.js', 'js/phase9/board-art.js', 'js/npc/npc.js',
   'js/chapter/engine.js', 'js/chapter/configs/ch1a.js', 'js/chapter/dice-renderer.js', 'js/chapter/field-view.js',   // 2026-09-30：Chapterフィールドエンジン
+  'js/battle/fit.js',   // 2026-09-30：バトル画面の表示だけの補正（fight()・.bt 系 CSS は変えない）
 ];
 // 旧名称（大文字小文字・区切りの違いも含む）。正式名称「ミスティックモンスターズ／MYSTIC MONSTERS」は含まない
 const OLD_NAME = /モンスターマスター|monster[\s_-]?master|monster[\s_-]?dice|ミスティックモンスター(?!ズ)|mystic[\s_-]?monster(?!s)/gi;
@@ -216,18 +217,18 @@ test('QA-G10：ルーレットは技6枠＋固定MISS1枠。新しく生まれ�
 // =========================================================
 // 2) 読み込むスクリプト・head
 // =========================================================
-test('QA-S1：index.html の <script src> は17ファイルをこの順番で読み込む（重複なし・全ファイル実在・module なし）', () => {
+test('QA-S1：index.html の <script src> は18ファイルをこの順番で読み込む（重複なし・全ファイル実在・module なし）', () => {
   const tags = [...HTML.matchAll(/<script\b[^>]*\bsrc="([^"]*)"[^>]*>/g)].map((m) => m[1]);
   assert.deepEqual(tags, SCRIPTS.map((f) => './' + f));
   for (const f of SCRIPTS) assert.ok(existsSync(path.join(ROOT, f)), f);
   assert.doesNotMatch(NODATA, /<script\b[^>]*type="module"/, 'ES module として読み込まない');
-  // 本体のインラインスクリプトは、17本すべての後に置かれている（MMP 系を使うため）
-  const lastSrc = CODE.lastIndexOf('<script src="./js/chapter/field-view.js"></script>');
+  // 本体のインラインスクリプトは、18本すべての後に置かれている（MMP 系を使うため）
+  const lastSrc = CODE.lastIndexOf('<script src="./js/battle/fit.js"></script>');
   const inline = [...CODE.matchAll(/<script>/g)].map((m) => m.index);
   assert.ok(inline.length >= 1 && inline.every((i) => i > lastSrc));
 });
 
-test('QA-S2：PHASE 1 の土台（js/main.js・js/core・js/ui・js/dev・js/systems・css/）を読み込まない。読み込む17本は import・export・fetch を使わない', () => {
+test('QA-S2：PHASE 1 の土台（js/main.js・js/core・js/ui・js/dev・js/systems・css/）を読み込まない。読み込む18本は import・export・fetch を使わない', () => {
   const tags = [...NODATA.matchAll(/<script\b[^>]*\bsrc="([^"]*)"/g)].map((m) => m[1]);
   for (const s of tags) assert.doesNotMatch(s, /js\/(main\.js|core\/|ui\/|dev\/|systems\/)|css\//, s);
   const links = [...NODATA.matchAll(/<link\b[^>]*>/g)].map((m) => m[0]);

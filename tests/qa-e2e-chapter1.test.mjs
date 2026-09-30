@@ -14,8 +14,11 @@ let L;
 test.before(async () => { if (!SKIP) L = await H.launch(); });
 test.after(async () => { if (L) await L.close(); });
 
-/** 名前登録 → ソラモを連れて Chapter 1 へ出発（配置は固定のシード） */
+/** 名前登録 → ソラモを連れて Chapter 1 へ出発（配置は固定のシード）。前のテストのページは閉じる（開いたままだと描画が遅くなり、時間で判定するテストが不安定になる） */
+let opened = [];
 async function start(p) {
+  for (const q of opened) if (q !== p) await q.ctx.close().catch(() => {});
+  opened = [p];
   const pg = p.page;
   await H.newGame(pg, 'テスト');
   await pg.evaluate(() => { const m = mk(0); m.name = 'ソラ'; MMP7.ensureProg(m); S.m = m; save(); MMP8.depart(S, m, () => 0.37); save(); board(); });
@@ -38,12 +41,16 @@ for (const size of [H.SIZES.base, H.SIZES.se]) {
     await start(p);
     await pg.evaluate(() => Promise.all([...document.images].map((i) => (i.decode ? i.decode().catch(() => {}) : 0))));
     const r = await pg.evaluate(() => {
-      const mon = document.querySelector('#bmonw .mon img').getBoundingClientRect(), dock = document.querySelector('.chbtns').getBoundingClientRect(), hud = document.querySelector('.chh').getBoundingClientRect();
+      const mon = document.querySelector('#bmonw .mon img').getBoundingClientRect(), dock = document.querySelector('.chdeck').getBoundingClientRect(), hud = document.querySelector('.chh').getBoundingClientRect();
       const broken = [...document.images].filter((i) => !(i.complete && i.naturalWidth > 0)).map((i) => i.getAttribute('src'));
       const filt = []; for (let e = document.querySelector('#bmonw .mon img'); e && e !== document.body; e = e.parentElement) { const f = getComputedStyle(e).filter; if (f && f !== 'none' && !/^drop-shadow/.test(f)) filt.push(e.className); }
       return { sh: document.documentElement.scrollHeight, H: innerHeight, sw: document.documentElement.scrollWidth, W: innerWidth, cams: document.querySelectorAll('.chf-cam').length, bgs: [...document.querySelectorAll('.chf-bg')].map((i) => i.getAttribute('src')),
         dbg: document.querySelectorAll('.chf-dbg,.p9n,.p13n,svg line,svg path.p9ln').length, mon: [mon.top, mon.bottom, mon.left, mon.right], dockTop: dock.top, hudBottom: hud.bottom, broken, filt,
-        objs: document.querySelectorAll('#chf .chf-obj').length, env: [...document.querySelectorAll('#chf .chf-env')].map((e) => e.dataset.asset), text: document.querySelector('#chf-ui').innerText };
+        objs: document.querySelectorAll('#chf .chf-obj').length, env: [...document.querySelectorAll('#chf .chf-env')].map((e) => e.dataset.asset), text: document.querySelector('#chf-ui').innerText,
+        battleObjs: document.querySelectorAll('#chf .chf-obj[data-t="battle"]').length, fg: document.querySelectorAll('#chf .chf-fg').length, layers: ['.chf-far', '.chf-bg', '.chf-back', '.chf-road', '.chf-front', '.chf-fx'].map((c) => !!document.querySelector('#chf ' + c)),
+        stop: (() => { const b = document.querySelector('#brollbtn'), r = b.getBoundingClientRect(); return { w: r.width, h: r.height, radius: getComputedStyle(b).borderRadius, text: b.textContent.trim() }; })(),
+        wings: [...document.querySelectorAll('.chwing')].map((w) => [w.className, w.textContent.replace(/\s+/g, ' ').trim()]), fieldH: document.querySelector('#chf').getBoundingClientRect().height, deckH: dock.height, dockTopEqFieldBottom: Math.abs(dock.top - document.querySelector('#chf').getBoundingClientRect().bottom) <= 1,
+        dice: (() => { const d = document.querySelector('.chdf'); if (!d || d.hidden) return null; const r = d.getBoundingClientRect(); return [r.top, r.bottom]; })() };
     });
     assert.ok(r.sh <= r.H && r.sw <= r.W, `ページのはみ出し・スクロールなし（${r.sh}/${r.H}）`);
     assert.deepEqual([r.cams, r.bgs], [1, ['./assets/fields/ch1a/bg_01.webp']], '今いるフィールド（FIELD 1）の背景だけ');
@@ -51,7 +58,13 @@ for (const size of [H.SIZES.base, H.SIZES.se]) {
     assert.ok(r.mon[1] <= r.dockTop + 8 && r.mon[0] >= r.hudBottom - 20 && r.mon[2] >= 0 && r.mon[3] <= r.W, `モンスターは画面の中でUIに隠れない（${r.mon}・操作欄 ${r.dockTop}）`);
     assert.deepEqual(r.broken, []); assert.deepEqual(r.filt, [], '正式モンスター画像に色のフィルタをかけない');
     assert.ok(r.objs >= 5, '停止地点は世界の中の物として置く'); assert.ok(r.env.includes('grass_front'), '手前の草（モンスターより手前の層）');
+    assert.equal(r.battleObjs, 0, 'バトル地点の石碑は常設しない'); assert.ok(r.fg >= 1, '手前を横切る草'); assert.deepEqual(r.layers, [true, true, true, true, true, true], '遠景・背景・奥・道・手前・効果の層');
     assert.match(r.text, /Chapter 1 \/ 4/); assert.match(r.text, /Turn\s*1\s*\/ 30/); assert.match(r.text, /疲れ\s*0/); assert.match(r.text, /アイテム/); assert.match(r.text, /休む/); assert.match(r.text, /サイコロ/);
+    // 下の操作欄：中央の円形 STOP（幅＝高さ・角丸50%）、左＝アイテム、右＝休む（疲れ −30）。フィールドは 80〜82%、操作欄は 18〜20%
+    assert.ok(Math.abs(r.stop.w - r.stop.h) < 1 && /50%/.test(r.stop.radius) && /STOP/.test(r.stop.text) && r.stop.w >= 78, JSON.stringify(r.stop));
+    assert.deepEqual(r.wings.map((w) => w[0]), ['chwing chitem', 'chwing chrest']); assert.match(r.wings[1][1], /休む.*疲れ −30/);
+    const deckRatio = r.deckH / r.H; assert.ok(deckRatio >= 0.15 && deckRatio <= 0.2 && Math.abs(r.fieldH + r.deckH - r.H) <= 1 && r.dockTopEqFieldBottom, `操作欄 ${r.deckH}px（${(deckRatio * 100).toFixed(1)}%）・フィールド ${r.fieldH}px`);
+    assert.ok(r.dice && r.dice[1] <= r.dockTop + 3, `サイコロは STOP の上で浮いている（案内文と重ならない）（${r.dice}・操作欄 ${r.dockTop}）`);
     assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
   });
 }
@@ -157,3 +170,190 @@ test('CH1-B8：ゴール（大会門）→ 公式ランク大会の選択 → �
   assert.equal(await pg.evaluate(() => MMCH.fatigue(S.m)), f0, '大会に入っても疲れは変わらない');
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
 });
+
+// =========================================================
+// 2026-09-30 改修：カメラ・歩き・目印の分離・STOP・バトルの表示（Chapter 移動体験の品質向上）
+// =========================================================
+/** 1フレームごとにモンスターの画面位置・カメラを記録する仕掛け（stop() で止める） */
+const startRecording = (pg) => pg.evaluate(() => {
+  window.__rec = []; window.__recOn = true; window.__cls = []; const t0 = performance.now();
+  // クラスの切り替わり（ready／walk／land／idle）はフレームに依らず記録する
+  const w0 = document.querySelector('#bmonw'); new MutationObserver(() => { const c = /ready/.test(w0.className) ? 'ready' : /walk/.test(w0.className) ? 'walk' : /land/.test(w0.className) ? 'land' : 'idle'; if (window.__cls[window.__cls.length - 1] !== c) window.__cls.push(c); }).observe(w0, { attributes: true, attributeFilter: ['class'] });
+  const f = (now) => { if (!window.__recOn) return; const w = document.querySelector('#bmonw'), fv = document.querySelector('#chf'); if (w && fv) { const fr = fv.getBoundingClientRect(), r = w.querySelector('.mon img').getBoundingClientRect(), st = MMCHV.state(); window.__rec.push({ t: Math.round(now - t0), x: r.left + r.width / 2 - fr.left, y: r.bottom - fr.top, wx: st.monster ? st.monster.x : 0, wy: st.monster ? st.monster.y : 0, cx: st.cam.x, cy: st.cam.y, tx: st.cam.tx, ty: st.cam.ty, S: st.cam.S, z: st.cam.z, cls: w.className, node: w.dataset.node, moving: st.moving, front: (document.querySelector('.chf-front') || {}).style ? document.querySelector('.chf-front').style.transform : '', back: document.querySelector('.chf-back') ? document.querySelector('.chf-back').style.transform : '', W: fr.width, H: fr.height }); } requestAnimationFrame(f); };
+  requestAnimationFrame(f);
+});
+const stopRecording = (pg) => pg.evaluate(() => { window.__recOn = false; return window.__rec; });
+const maxStep = (rec, k) => { let m = 0; for (let i = 1; i < rec.length; i++) m = Math.max(m, Math.hypot(rec[i][k[0]] - rec[i - 1][k[0]], rec[i][k[1]] - rec[i - 1][k[1]])); return m; };
+
+test('CH1-B9：カメラ：移動が始まるとモンスターより少し遅れて追いかけ、跳ばずに滑らかに動き、止まるとゆっくり止まる。ズームは 0.97〜1.03 の範囲。視差（前景と奥）は違う量だけ動く', { skip: SKIP }, async () => {
+  const p = await L.open(); const pg = p.page;
+  await start(p);
+  await startRecording(pg);
+  await rollAs(pg, 3); await idle(pg); await pg.waitForTimeout(1200);
+  const rec = await stopRecording(pg);
+  const walk = rec.filter((r) => /walk/.test(r.cls)); assert.ok(walk.length >= 10, `歩きのフレーム ${walk.length}`);
+  // 注視点（cam.x/y＝背景の画素）はモンスターの位置（wx/wy）より少し遅れて動き出す（移動開始の「少し引く」ズームは別）
+  const tMonStart = rec.find((r, i) => i > 0 && Math.hypot(r.wx - rec[i - 1].wx, r.wy - rec[i - 1].wy) > 0.5).t;
+  const tCamStart = rec.find((r, i) => i > 0 && Math.hypot(r.cx - rec[i - 1].cx, r.cy - rec[i - 1].cy) > 0.5 && r.t >= tMonStart).t;
+  assert.ok(tCamStart - tMonStart >= 50 && tCamStart - tMonStart <= 400, `カメラは少し遅れて追いかける（モンスター ${tMonStart}ms → カメラ ${tCamStart}ms）`);
+  assert.ok(maxStep(rec, ['tx', 'ty']) < 12, `カメラが跳ばない（1フレーム最大 ${maxStep(rec, ['tx', 'ty']).toFixed(1)}px）`);
+  assert.ok(maxStep(rec, ['x', 'y']) < 12, `モンスターが跳ばない（1フレーム最大 ${maxStep(rec, ['x', 'y']).toFixed(1)}px）`);
+  const camMoved = Math.hypot(rec[rec.length - 1].tx - rec[0].tx, rec[rec.length - 1].ty - rec[0].ty); assert.ok(camMoved > 20, `カメラは固定ではない（${camMoved.toFixed(1)}px 動いた）`);
+  for (const r of rec) assert.ok(r.z >= 0.97 && r.z <= 1.031, `ズームは小さく（${r.z}）`);
+  const zs = rec.map((r) => r.z); assert.ok(Math.min(...zs) < 0.995 && Math.max(...zs) > 1.005, '移動中は少し引き、着いたら軽く寄る');
+  const last = rec[rec.length - 1]; assert.equal(last.moving, false);
+  assert.ok(last.y > last.H * 0.4 && last.y < last.H * 0.8 && last.x > 0 && last.x < last.W, `止まったあと、モンスターは画面の中央より少し下（${Math.round(last.y)} / ${Math.round(last.H)}）`);
+  for (const r of rec) assert.ok(r.x >= -5 && r.x <= r.W + 5 && r.y >= 0 && r.y <= r.H + 5, 'モンスターは画面の外へ出ない');
+  const tail = rec.slice(-8); assert.ok(maxStep(tail, ['tx', 'ty']) < 0.6, 'カメラは止まっている（追従が終わる）');
+  assert.notEqual(last.front, last.back, `視差：前景 ${last.front} と奥 ${last.back} は違う量だけ動く`); assert.ok(/translate3d/.test(last.front), '前景が動いている');
+  assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
+});
+
+test('CH1-B10：歩き：道の曲線の中間点を通る（直線で飛ばない）。出目が決まると約0.1秒の構え → 加速 → 最後に減速して着地の順。1地点 0.20〜0.35秒、3地点でも約1.2秒以内', { skip: SKIP }, async () => {
+  const p = await L.open(); const pg = p.page;
+  await start(p);
+  await place(pg, 'f1_2'); await idle(pg);
+  await startRecording(pg);
+  await rollAs(pg, 3); await idle(pg);
+  const rec = await stopRecording(pg);
+  const phases = await pg.evaluate(() => window.__cls);
+  assert.deepEqual(phases.filter((x) => x !== 'idle'), ['ready', 'walk', 'land'], `構え → 歩き → 着地（${phases.join('→')}）`);
+  const walk = rec.filter((r) => /walk/.test(r.cls)), dur = walk[walk.length - 1].t - walk[0].t;
+  assert.ok(dur >= 500 && dur <= 1500, `3地点の歩きは ${dur}ms（設計 約0.9秒。負荷で伸びることがある）`);
+  const steps = await pg.evaluate(() => ['f1_3', 'f1_4', 'f1_5'].map((to, i) => MMCHV.stepDuration(['f1_2', 'f1_3', 'f1_4'][i], to)));
+  for (const ms of steps) assert.ok(ms >= 200 && ms <= 350, `1地点 ${ms}ms`);
+  // 速度の形：最初は遅く始まり、最後は遅くなって止まる
+  const sp = (a, b) => Math.hypot(b.x - a.x, b.y - a.y) / Math.max(1, b.t - a.t);
+  const v0 = sp(walk[0], walk[2]), vm = Math.max(...walk.slice(2, -2).map((r, i) => sp(walk[i + 2], walk[i + 3]))), v1 = sp(walk[walk.length - 3], walk[walk.length - 1]);
+  assert.ok(v0 < vm * 0.85 && v1 < vm * 0.85, `加速・減速がある（始 ${v0.toFixed(2)} / 最大 ${vm.toFixed(2)} / 終 ${v1.toFixed(2)} px/ms）`);
+  // 曲線：通った位置が「地点から地点への直線」から離れる場所がある（道のカーブに沿う）
+  const route = await pg.evaluate(() => { const g = MMCH.graphFor(S.m); return [MMCH.routeBetween(g, 'f1_2', 'f1_3').length, MMCH.routeBetween(g, 'f1_3', 'f1_4').length, MMCH.routeBetween(g, 'f1_4', 'f1_5').length]; });
+  for (const n of route) assert.ok(n >= 3, `中間点 ${n}`);
+  assert.equal((await st(pg)).node, 'f1_5');
+  assert.deepEqual(p.errors, []);
+});
+
+test('CH1-B11：止まる位置と目印の位置は別：能力の石碑・宝箱・イベントの物は道の脇にあり、そこに止まったモンスターと重ならない。目印は足元の草と影を持ち、普段は光らず、止まったときだけ光る', { skip: SKIP }, async () => {
+  const p = await L.open(); const pg = p.page;
+  await start(p);
+  const ids = await pg.evaluate(() => { const g = MMCH.graphFor(S.m), a = S.m.raise.field.nodeAssignments; return g.order.filter((id) => a[id] && ['stat', 'treasure', 'event'].includes(a[id].t) && g.nodes[id].field === 1); });
+  assert.ok(ids.length >= 4);
+  for (const id of ids) {
+    await place(pg, id); await idle(pg);
+    const r = await pg.evaluate((id) => {
+      const o = document.querySelector(`#chf .chf-obj[data-id="${id}"]`), oi = o.querySelector('img').getBoundingClientRect(), mi = document.querySelector('#bmonw .mon img').getBoundingClientRect();
+      const ix = Math.max(0, Math.min(oi.right, mi.right) - Math.max(oi.left, mi.left)), iy = Math.max(0, Math.min(oi.bottom, mi.bottom) - Math.max(oi.top, mi.top));
+      const lm = MMCHV.landmarkPos(id), n = MMCH.graphFor(S.m).nodes[id], sc = MMCH.configFor(S.m).fieldScenes[0];
+      return { overlap: (ix * iy) / Math.min(oi.width * oi.height, mi.width * mi.height), dist: Math.hypot(lm.x - n.mx * sc.w, lm.y - n.my * sc.h) * MMCHV.state().cam.S, tuft: !!o.querySelector('.chf-tuft'), shadow: !!o.querySelector('.chf-osh'), glow: getComputedStyle(o.querySelector('.chf-glow')).opacity, hit: o.classList.contains('hit'), t: o.dataset.t, sink: getComputedStyle(o).getPropertyValue('--sink').trim() };
+    }, id);
+    assert.ok(r.overlap < 0.15, `${id}（${r.t}）：モンスターと目印が食い込まない（絵の枠の重なり ${(r.overlap * 100).toFixed(0)}%）`);
+    assert.ok(r.dist >= 24, `${id}：目印は道の脇（止まる位置から ${r.dist.toFixed(0)}px）`);
+    assert.ok(r.tuft && r.shadow && parseFloat(r.sink) > 0, `${id}：足元の草・影・少し埋める`); assert.equal(r.glow, '0', `${id}：普段は光らない`); assert.equal(r.hit, false);
+  }
+  // 止まったときだけ光る（0.5〜0.7秒）
+  const id = ids[0]; await place(pg, await pg.evaluate((id) => Object.keys(MMCH.graphFor(S.m).conn).find((k) => MMCH.graphFor(S.m).conn[k].includes(id)), id)); await idle(pg);
+  await rollAs(pg, 1); await pg.waitForFunction((id) => document.querySelector(`#chf .chf-obj[data-id="${id}"]`).classList.contains('hit'), id, { timeout: 15000 });
+  const glow = await pg.evaluate((id) => { const g = document.querySelector(`#chf .chf-obj[data-id="${id}"] .chf-glow`), a = g.getAnimations()[0]; return a ? a.effect.getComputedTiming().duration : 0; }, id);
+  assert.ok(glow >= 500 && glow <= 700, `光る時間 ${glow}ms`);
+  await idle(pg);
+  assert.deepEqual(p.errors, []);
+});
+
+test('CH1-B12：背景の切り替え：フィールドの端からそのまま進む向きへ歩き続け、短い暗転のあと次のフィールドの入口の少し手前から歩いて入る（ワープしない）。前の背景の DOM は残さない', { skip: SKIP }, async () => {
+  const p = await L.open(); const pg = p.page;
+  await start(p);
+  await place(pg, 'f1_12'); await idle(pg);
+  await startRecording(pg);
+  await pg.evaluate(() => { window.__veil = 0; new MutationObserver(() => { if (document.querySelector('.chf-veil.on')) window.__veil++; }).observe(document.querySelector('#chf'), { subtree: true, attributes: true, childList: true }); });
+  await rollAs(pg, 2); await idle(pg);
+  const rec = await stopRecording(pg);
+  const r = await pg.evaluate(() => ({ node: S.m.raise.node, bgs: [...document.querySelectorAll('.chf-bg')].map((i) => i.getAttribute('src')), cams: document.querySelectorAll('.chf-cam').length, veils: document.querySelectorAll('.chf-veil').length, veilOn: window.__veil, fd: document.querySelector('#chfd').textContent }));
+  assert.equal(r.node, 'f2_0'); assert.deepEqual(r.bgs, ['./assets/fields/ch1a/bg_02.webp']); assert.equal(r.cams, 1); assert.equal(r.veils, 0, '暗転の幕は消える'); assert.ok(r.veilOn > 0, '短い暗転があった'); assert.equal(r.fd, '大橋と清流');
+  // 切り替えの前：進む向き（上）へ歩き続ける。切り替えの後：入口の手前（下）から入口へ歩いて入る
+  const before = rec.filter((x) => x.node === 'f1_13' && /walk/.test(x.cls) && x.wy > 0), after = rec.filter((x) => x.node !== 'f1_12' && x.node !== 'f1_13' && /walk/.test(x.cls) && x.wy > 0);
+  assert.ok(before.length >= 2 && before[before.length - 1].wy < before[0].wy - 5, `端まで来ても上へ歩き続ける（${before.length}フレーム・${before[0] && before[0].wy.toFixed(0)}→${before.length && before[before.length - 1].wy.toFixed(0)}）`);
+  assert.ok(after.length >= 2 && after[0].wy > after[after.length - 1].wy + 5, `次のフィールドでは入口の手前から上へ歩いて入る（${after.length}フレーム）`);
+  assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
+});
+
+test('CH1-B13：分岐：カメラが少し引いて（zoom 0.93）2つの道の入口のほうを見てから選択肢を出す。選ぶと選んだ道のほうへ寄ってから歩き出す。再読み込み後は今の地点を基準にカメラを合わせる', { skip: SKIP }, async () => {
+  const p = await L.open(); const pg = p.page;
+  await start(p);
+  await place(pg, 'f2_2'); await idle(pg);
+  await rollAs(pg, 3); await pg.waitForSelector('.chroute'); await pg.waitForTimeout(700);
+  const b = await pg.evaluate(() => MMCHV.state());
+  assert.ok(Math.abs(b.target.z - 0.93) < 0.001 && b.focus && b.focus.mix > 0, `分岐でカメラは少し引く（${b.target.z}・${JSON.stringify(b.focus)}）`);
+  await pg.click('.chroute.k-forest'); await pg.waitForTimeout(60);
+  const c = await pg.evaluate(() => MMCHV.state()); assert.ok(c.focus && c.target.z === 1, '選んだ道のほうへ寄る');
+  await idle(pg);
+  const d = await pg.evaluate(() => MMCHV.state()); assert.equal(d.focus, null); assert.equal((await st(pg)).node, 'b1');
+  // 再読み込み：カメラの状態は保存しない。今の地点からその場で合わせる（目標＝現在）
+  await pg.reload(); await pg.waitForFunction(() => typeof MMP8 === 'object');
+  await pg.click('.p15start'); await pg.waitForSelector('#chf .chf-bg'); await pg.waitForTimeout(400);
+  const e = await pg.evaluate(() => { const s = MMCHV.state(), r = document.querySelector('#bmonw .mon img').getBoundingClientRect(), f = document.querySelector('#chf').getBoundingClientRect(); return { dx: Math.abs(s.cam.x - s.target.x), dy: Math.abs(s.cam.y - s.target.y), node: document.querySelector('#bmonw').dataset.node, y: (r.bottom - f.top) / f.height, inX: r.left >= 0 && r.right <= f.width }; });
+  assert.ok(e.dx < 0.5 && e.dy < 0.5, `再読み込み後はその場で合っている（${e.dx}・${e.dy}）`); assert.equal(e.node, 'b1'); assert.ok(e.y > 0.4 && e.y < 0.8 && e.inX, `モンスターは中央より少し下（${e.y.toFixed(2)}）`);
+  assert.deepEqual(p.errors, []);
+});
+
+test('CH1-B14：バトル地点：目印は無く、着いたら草むらが揺れて「！」→ 野生のモンスターの案内。移動・演出・結果の間は STOP・アイテム・休む・分岐を受け付けない', { skip: SKIP }, async () => {
+  const p = await L.open(); const pg = p.page;
+  await start(p);
+  const id = await pg.evaluate(() => { const g = MMCH.graphFor(S.m), a = S.m.raise.field.nodeAssignments; return g.order.find((x) => a[x] && a[x].t === 'battle' && g.nodes[x].idx > 0 && !g.nodes[x].branch); });
+  const prev = await pg.evaluate((id) => Object.keys(MMCH.graphFor(S.m).conn).find((k) => MMCH.graphFor(S.m).conn[k].includes(id)), id);
+  await place(pg, prev, { fatigue: 20, turnsUsed: 9 }); await idle(pg);
+  assert.equal(await pg.evaluate((id) => !!document.querySelector(`#chf .chf-obj[data-id="${id}"]`), id), false, 'バトルの目印は置かない');
+  await pg.evaluate(() => { window.__order = []; new MutationObserver(() => { for (const [k, sel] of [['alert', '.chf-alert'], ['rustle', '.chf-rustle'], ['chbat', '.chbat']]) if (document.querySelector(sel) && !window.__order.includes(k)) window.__order.push(k); }).observe(document.querySelector('#chfw'), { subtree: true, childList: true }); });
+  await rollAs(pg, 1);
+  // 移動中の二重操作：何も変わらない
+  await pg.waitForFunction(() => bBusy || MMCHD.isLocked());
+  const t0 = await st(pg); await pg.evaluate(() => { chfRoll(); chfRest(); chfItems(); chfPick('a0'); }); const t1 = await st(pg);
+  assert.deepEqual([t1.turns, t1.f], [t0.turns, t0.f]); assert.equal(await pg.evaluate(() => !!document.querySelector('#chitems')), false);
+  await pg.waitForSelector('.chbat'); await idle(pg);
+  const order = await pg.evaluate(() => window.__order);
+  assert.deepEqual(order.slice(0, 2), ['alert', 'rustle'].filter((x) => order.includes(x)).length === 2 ? order.slice(0, 2) : order.slice(0, 2));
+  assert.ok(order.indexOf('alert') >= 0 && order.indexOf('rustle') >= 0 && order.indexOf('chbat') > Math.max(order.indexOf('alert'), order.indexOf('rustle')), `草むらの揺れと「！」のあとに案内（${order.join('→')}）`);
+  assert.deepEqual(await pg.evaluate(() => [document.querySelectorAll('.chf-alert,.chf-rustle').length, document.querySelector('.chbat h3').textContent, [...document.querySelectorAll('.chwing')].map((w) => w.disabled)]), [0, '野生のモンスター', [true, true]]);
+  assert.deepEqual(p.errors, []);
+});
+
+test('CH1-B15：STOP：押すとサイコロが STOP の上から飛び、減速・着地・小さく跳ねて、傾かず正式の角度（回転 0°）で止まってから出目を出す。演出中は STOP・アイテム・休むを押せない。出目は1〜3の乱数（表示と分離）', { skip: SKIP }, async () => {
+  const p = await L.open(); const pg = p.page;
+  await start(p);
+  const dice0 = await pg.evaluate(() => { const d = document.querySelector('.chdf'); return d && !d.hidden && !!d.querySelector('img'); }); assert.equal(dice0, true, 'ターンの始めはサイコロが STOP の上で浮いている');
+  await rollAs(pg, 2); await pg.waitForSelector('.chdz');
+  assert.deepEqual(await pg.evaluate(() => [document.querySelector('#brollbtn').disabled, [...document.querySelectorAll('.chwing')].map((w) => w.disabled), document.querySelector('.chdf').hidden]), [true, [true, true], true]);
+  await pg.evaluate(() => { window.__res = null; new MutationObserver(() => { const res = document.querySelector('.chdz-res'), img = document.querySelector('.chdz-img'); if (res && !res.hidden && img && !window.__res) { const m = getComputedStyle(img).transform.match(/matrix\(([-\d.e]+), ([-\d.e]+)/); window.__res = { a: +m[1], b: +m[2], text: res.textContent, src: img.getAttribute('src') }; } }).observe(document.querySelector('.chdz'), { subtree: true, attributes: true, attributeFilter: ['hidden'] }); });
+  await pg.waitForFunction(() => !!window.__res, null, { timeout: 15000 });
+  const r = await pg.evaluate(() => window.__res);
+  assert.ok(Math.abs(r.a - 1) < 0.02 && Math.abs(r.b) < 0.02, `止まったサイコロは正式の角度（matrix ${r.a}, ${r.b}）`); assert.equal(r.text, '2！'); assert.equal(r.src, './assets/fields/ch1a/dice/dice_rolling.webp');
+  await idle(pg); assert.equal((await st(pg)).node, 'f1_2');
+  const src = await pg.evaluate(() => MMCHD.play.toString()); assert.doesNotMatch(src, /performance\.now\(\)\s*%|Date\.now\(\)\s*%/, '押した時刻で出目を決めない');
+  assert.deepEqual(p.errors, []);
+});
+
+test('CH1-B16：歩行アニメの差し込み口：registerMonsterAnimator({ set }) を登録すると、移動の処理はそのままで、ready → walk → land → idle の状態だけが渡される', { skip: SKIP }, async () => {
+  const p = await L.open(); const pg = p.page;
+  await start(p);
+  await pg.evaluate(() => { window.__anim = []; MMCHV.registerMonsterAnimator({ id: 'test', set(el, state, info) { if (!window.__anim.length || window.__anim[window.__anim.length - 1] !== state) window.__anim.push(state); if (state === 'walk') window.__spd = info && info.speed; } }); });
+  await rollAs(pg, 2); await idle(pg);
+  const a = await pg.evaluate(() => ({ seq: window.__anim, spd: window.__spd, id: MMCHV.state().animator, node: S.m.raise.node }));
+  assert.deepEqual(a.seq.filter((x) => x !== 'idle'), ['ready', 'walk', 'land'], JSON.stringify(a.seq)); assert.ok(typeof a.spd === 'number'); assert.equal(a.id, 'test'); assert.equal(a.node, 'f1_2');
+  assert.deepEqual(p.errors, []);
+});
+
+for (const size of [H.SIZES.base, H.SIZES.se]) {
+  test(`CH1-B17（${size.join('×')}）：バトル画面：VS のカットインと試合画面で、モンスターの絵が枠・HUD・技UIに切れない（比率を保ち、切れない最大の大きさ。fight()・.bt 系 CSS は変えない）`, { skip: SKIP }, async () => {
+    const p = await L.open({ size }); const pg = p.page;
+    await start(p);
+    await pg.evaluate(() => { const r = S.m.raise; r.pend = { roll: 1, left: 0, stage: 'battle', fx: { kind: 'battle', battleType: 'wild' } }; MMP8.beginBattle(S, S.m, { kind: 'practice', rank: 0 }); save(); fight(0); });
+    await pg.waitForSelector('#bt .intro .ipn.p1 .iim2 img');   // 出た直後（拡大アニメの一番大きいとき）に測る
+    const intro = await pg.evaluate(() => [0, 1].map((s) => { const pn = document.querySelector(`.ipn.p${s}`).getBoundingClientRect(), im = document.querySelector(`.ipn.p${s} .iim2 img`).getBoundingClientRect(); return { inside: im.left >= pn.left - 2 && im.right <= pn.right + 2 && im.top >= pn.top - 2 && im.bottom <= pn.bottom + 2, w: im.width, h: im.height, pn: [pn.left, pn.top, pn.right, pn.bottom].map(Math.round), im: [im.left, im.top, im.right, im.bottom].map(Math.round) }; }));
+    for (const i of intro) assert.ok(i.inside && i.w > 80, `カットインの絵は枠の中（${JSON.stringify(i)}）`);
+    await pg.waitForFunction(() => !document.querySelector('#bt .intro'), null, { timeout: 15000 }); await pg.waitForTimeout(800);
+    const r = await pg.evaluate(() => { const q = (s) => document.querySelector(s).getBoundingClientRect(); const m = MMBF.measure(); return { fit: +document.querySelector('#bt').dataset.fit, imgs: ['#m0 .mon > img', '#m1 .mon > img'].map((s) => { const b = q(s); return [b.left, b.top, b.right, b.bottom, b.width, b.height]; }), top: m.top, bottom: m.bottom, W: innerWidth, cssDefault: 118, mw: [q('#m0'), q('#m1')].map((b) => b.width) }; });
+    for (const b of r.imgs) { assert.ok(b[0] >= -1 && b[2] <= r.W + 1, `左右に切れない ${b}`); assert.ok(b[1] >= r.top - 1 && b[3] <= r.bottom + 1, `HUD（${Math.round(r.top)}）と技UI（${Math.round(r.bottom)}）の間 ${b}`); assert.ok(Math.abs(b[4] - b[5]) < 1, '比率（正方形の枠）'); }
+    assert.ok(r.fit >= r.cssDefault && r.mw[0] === r.fit && r.mw[1] === r.fit, `切れない最大の大きさ ${r.fit}px（CSS の既定 ${r.cssDefault} 以上）`);
+    assert.ok(Math.abs(r.imgs[0][3] - r.imgs[1][3]) < 1, '足元の高さをそろえる');
+    assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
+  });
+}

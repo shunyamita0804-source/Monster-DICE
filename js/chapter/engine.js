@@ -85,20 +85,40 @@
   //  path = { id, field, pts:[[x,y]...], n, next:[pathId...], start?, goal?, branch?, fixed:{ index: kind }, bias? }
   //  ノードID は `${path.id}${index}`。各ノードは field・x・y（背景に対する割合）・kind（固定の骨格）を持つ
   // ---------------------------------------------------------
+  /** 道の点列を通る滑らかな曲線（Catmull-Rom）。画面では「マスの間を直線で飛ぶ」のではなく、道のカーブに沿って歩く。seg＝点と点の間の分割数 */
+  function smoothCurve(pts, seg = 10) {
+    if (!Array.isArray(pts) || pts.length < 3) return (pts || []).map((p) => [p[0], p[1]]);
+    const P = [pts[0], ...pts, pts[pts.length - 1]], out = [[pts[0][0], pts[0][1]]];
+    for (let i = 1; i < P.length - 2; i++) {
+      const [p0, p1, p2, p3] = [P[i - 1], P[i], P[i + 1], P[i + 2]];
+      for (let k = 1; k <= seg; k++) {
+        const t = k / seg, t2 = t * t, t3 = t2 * t;
+        const x = 0.5 * ((2 * p1[0]) + (-p0[0] + p2[0]) * t + (2 * p0[0] - 5 * p1[0] + 4 * p2[0] - p3[0]) * t2 + (-p0[0] + 3 * p1[0] - 3 * p2[0] + p3[0]) * t3);
+        const y = 0.5 * ((2 * p1[1]) + (-p0[1] + p2[1]) * t + (2 * p0[1] - 5 * p1[1] + 4 * p2[1] - p3[1]) * t2 + (-p0[1] + 3 * p1[1] - 3 * p2[1] + p3[1]) * t3);
+        out.push([+x.toFixed(4), +y.toFixed(4)]);
+      }
+    }
+    return out;
+  }
+  /** 点列を「その場所の大きさで割った長さ」（奥ほど画面上の間隔が縮む）で測る：各点の累積距離 s と全長 */
+  function measure(pts, depthAt, W = 1, H = 1) {
+    const s = [0];
+    for (let i = 1; i < pts.length; i++) {
+      const [x0, y0] = pts[i - 1], [x1, y1] = pts[i], d = Math.hypot((x1 - x0) * W, (y1 - y0) * H), k = (depthAt((y0 + y1) / 2) || 1);   // 背景の画素での長さ
+      s.push(s[i - 1] + d / k);
+    }
+    return { s, total: s[s.length - 1] };
+  }
+  /** 曲線上の距離 s の位置 [x, y] */
+  function pointAt(pts, S, s) {
+    if (s <= 0) return [pts[0][0], pts[0][1]];
+    for (let i = 1; i < pts.length; i++) if (s <= S.s[i]) { const a = pts[i - 1], b = pts[i], L = S.s[i] - S.s[i - 1], r = L ? (s - S.s[i - 1]) / L : 0; return [+(a[0] + (b[0] - a[0]) * r).toFixed(4), +(a[1] + (b[1] - a[1]) * r).toFixed(4)]; }
+    const e = pts[pts.length - 1]; return [e[0], e[1]];
+  }
   function alongPersp(pts, n, depthAt, W = 1, H = 1) {
     // 同じ歩幅で奥へ進むほど画面上の間隔が縮むよう、画面上の長さを「その場所の大きさ」で割った長さで等分する
-    const seg = []; let total = 0;
-    for (let i = 1; i < pts.length; i++) {
-      const [x0, y0] = pts[i - 1], [x1, y1] = pts[i], d = Math.hypot((x1 - x0) * W, (y1 - y0) * H), s = (depthAt((y0 + y1) / 2) || 1);   // 背景の画素での長さ
-      seg.push({ a: pts[i - 1], b: pts[i], len: d / s }); total += d / s;
-    }
-    const out = [];
-    for (let k = 0; k < n; k++) {
-      let t = n === 1 ? 0 : (total * k) / (n - 1), i = 0;
-      while (i < seg.length - 1 && t > seg[i].len) { t -= seg[i].len; i++; }
-      const g = seg[i], r = g.len ? Math.min(1, t / g.len) : 0;
-      out.push([+(g.a[0] + (g.b[0] - g.a[0]) * r).toFixed(4), +(g.a[1] + (g.b[1] - g.a[1]) * r).toFixed(4)]);
-    }
+    const S = measure(pts, depthAt, W, H), out = [];
+    for (let k = 0; k < n; k++) out.push(pointAt(pts, S, n === 1 ? 0 : (S.total * k) / (n - 1)));
     return out;
   }
   function depthOf(scene, y) {
@@ -110,14 +130,20 @@
   function buildGraph(cfg) {
     const key = `${cfg.chapterId}:${cfg.patternId}`; if (GRAPHS.has(key)) return GRAPHS.get(key);
     const scenes = {}; for (const s of cfg.fieldScenes) scenes[s.id] = s;
-    const nodes = {}, conn = {}, order = [];
+    const nodes = {}, conn = {}, order = [], curves = {}, OV = cfg.nodeOverrides || {};
     let start = null, goal = null;
     for (const p of cfg.paths) {
       const sc = scenes[p.field]; if (!sc) throw new Error(`MMCH：path ${p.id} の field ${p.field} がありません`);
-      const pos = alongPersp(p.pts, p.n, (y) => depthOf(sc, y), sc.w || 1, sc.h || 1);
+      // 道の曲線（既定は滑らか。config の path.curve が 'linear' なら折れ線のまま）。ノードはこの曲線の上に等間隔（奥行き補正）で置く
+      const pts = p.curve === 'linear' ? p.pts.map((q) => [q[0], q[1]]) : smoothCurve(p.pts, p.curveSegments || 10);
+      const depthAt = (y) => depthOf(sc, y), M = measure(pts, depthAt, sc.w || 1, sc.h || 1);
+      curves[p.id] = { pts, s: M.s, total: M.total, field: p.field, terrain: p.terrain || 'grass', speed: p.speed || 1 };
       for (let i = 0; i < p.n; i++) {
-        const id = `${p.id}${i}`, kind = (p.fixed && p.fixed[i]) || 'slot';
-        nodes[id] = { id, path: p.id, idx: i, field: p.field, x: pos[i][0], y: pos[i][1], d: +depthOf(sc, pos[i][1]).toFixed(3), kind, branch: p.branch || null, side: (p.side && p.side[i]) || (i % 2 ? 1 : -1) };
+        const id = `${p.id}${i}`, kind = (p.fixed && p.fixed[i]) || 'slot', s = p.n === 1 ? 0 : (M.total * i) / (p.n - 1), pos = pointAt(pts, M, s), o = OV[id] || {};
+        nodes[id] = { id, path: p.id, idx: i, field: p.field, x: pos[0], y: pos[1], s, d: +depthOf(sc, pos[1]).toFixed(3), kind, branch: p.branch || null,
+          side: o.side || (p.side && p.side[i]) || (i % 2 ? 1 : -1), terrain: o.terrain || p.terrain || 'grass',
+          // 見せ方の上書き（config.nodeOverrides）：monster＝止まる位置（既定は道の上の点）、landmark＝目印の位置・大きさ、camera＝カメラの寄り
+          mx: o.monster ? o.monster[0] : pos[0], my: o.monster ? o.monster[1] : pos[1], lm: o.landmark || null, cam: o.camera || null };
         if (p.noSlot && p.noSlot.includes(i) && kind === 'slot') nodes[id].kind = 'normal';
         order.push(id);
         if (i > 0) conn[`${p.id}${i - 1}`] = [id];
@@ -132,9 +158,29 @@
     const routes = [];
     (function walk(id, seq, br) { const s = [...seq, id], nx = conn[id] || []; const b = nodes[id].branch || br; if (!nx.length) { routes.push({ branch: b, seq: s }); return; } for (const t of nx) walk(t, s, b); })(start, [], null);
     const branchAt = Object.keys(conn).filter((id) => conn[id].length > 1);
-    const g = fz({ key, chapterId: cfg.chapterId, patternId: cfg.patternId, nodes, conn, order, start, goal, routes, branchAt });
+    const g = fz({ key, chapterId: cfg.chapterId, patternId: cfg.patternId, nodes, conn, order, start, goal, routes, branchAt, curves, edges: cfg.edges || {} });
     GRAPHS.set(key, g);
     return g;
+  }
+  /**
+   * 地点 from → to の歩く道筋（背景に対する割合の点列。最初＝from の止まる位置、最後＝to の止まる位置）。
+   *  同じ道の隣どうし：道の曲線に沿う（マスの間を直線で飛ばない）。別の道へ（分岐・合流）：config.edges['from>to'] の中間点（あれば曲線化）、無ければ直線。
+   *  別のフィールドへ（背景の切り替え）：空（画面側が切り替えの演出をする）
+   */
+  function routeBetween(g, from, to) {
+    const a = g.nodes[from], b = g.nodes[to]; if (!a || !b) return [];
+    if (a.field !== b.field) return [];
+    const head = [a.mx, a.my], tail = [b.mx, b.my];
+    let mid = [];
+    if (a.path === b.path) {
+      const c = g.curves[a.path], lo = Math.min(a.s, b.s), hi = Math.max(a.s, b.s);
+      mid = c.pts.filter((p, i) => c.s[i] > lo + 1e-6 && c.s[i] < hi - 1e-6);
+      if (a.s > b.s) mid.reverse();
+    } else {
+      const e = g.edges[`${from}>${to}`];
+      if (Array.isArray(e) && e.length) mid = smoothCurve([head, ...e, tail], 8).slice(1, -1);
+    }
+    return [head, ...mid, tail];
   }
   /** MMP8（raising.js）へ登録する形のトラック（nodes・conn・start・goal）。種類はラン（Chapter開始時の配置）ごとに決まるため type は骨格だけ */
   const TRACKS = new Map();
@@ -391,7 +437,7 @@
   function attach(P8 = root.MMP8) { if (P8 && typeof P8.registerChapterDriver === 'function') P8.registerChapterDriver(DRIVER); }
 
   root.MMCH = fz({ STATS, SPECIAL, TIERS, BATTLE_TYPES, DEFAULT_RULES, rng, newSeed, registerConfig, getConfig, patterns, handles, selectPattern,
-    buildGraph, trackOf, alongPersp, depthOf, stepsToMerge, validateLayout, generateLayout, initRun, fieldOf, configFor, graphFor, validField, sanitize, typeAt,
+    buildGraph, trackOf, alongPersp, smoothCurve, measure, pointAt, routeBetween, depthOf, stepsToMerge, validateLayout, generateLayout, initRun, fieldOf, configFor, graphFor, validField, sanitize, typeAt,
     fatigue, addFatigue, rollFatigue, canRoll, recover, carryFatigue, registerFatigueItem, fatigueItemEffect, useFatigueItem,
     statOdds, statOutcome, statAmount, registerEventHandler, resolve, DRIVER, attach, rulesOf });
   attach();

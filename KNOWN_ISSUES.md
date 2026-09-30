@@ -105,3 +105,14 @@
   - 旧素材（互換のため残す）：town/previous（0.33MB）、scenes/farm_interval.jpg（0.81MB）、embedded の FARMIMG・TRIMG2・NPI.b（0.41MB）、fields/ch1_meadow.jpg（0.71MB、旧 Chapter 1 試作 js/phase13/field.js が参照。今は表示されない）、dice/branch（0.48MB、1〜6のサイコロ。振る場面は未実装）、ui/provisional（0.14MB、data/assets.json が登録）。
   - 旧 PHASE 1 の土台（js/core・js/dev・js/ui・js/main.js・css/*.css・data/*.json、計約0.25MB）：index.html は読み込まないが、テスト（rules.test など）と Phase 6 側のコメント・参照がある。
 - Git 履歴（書き換えはしていない）：全168コミットで約132MB（圧縮後）。大半は過去の大きなフィナの画像（縮小前の約3MBのPNG×20枚、約65MB）と index.html の履歴（約7MB）。書き換えの価値は「後回しでよい」。
+
+## Chapter 移動体験の品質向上（Chapterフィールドの見せ方の改修、2026-09-30）
+- 目的：「すごろくの駒が動く画面」から「育てているモンスターと一緒にフィールドを旅する画面」へ。内部の node 式・進行（MMP8／MMCH）・セーブ v6（mr4v6）はそのまま。カメラの状態はセーブしない。
+- 変えたもの：js/chapter/field-view.js（全面改修）・js/chapter/dice-renderer.js（STOP の上から飛んで正式の角度で止まる）・js/chapter/engine.js（道の曲線・中間点・止まる位置と目印の分離・routeBetween）・js/chapter/configs/ch1a.js（見せ方の設定・目印の配置）・index.html の Chapter の CSS（操作欄を中央 STOP＋左右の弧へ）・js/battle/fit.js（新規）。詳細は CLAUDE.md §3「Chapterフィールド」。
+- 判断したこと：
+  - 旧 Chapter 1 ボードの途中のセーブは、これまでどおり Chapter 1 の開始地点・0ターン・新しい配置から（変更なし）。
+  - 止まる地点の光る演出は、絵に filter をかけずに「後ろの光（.chf-glow）＋ drop-shadow」に変えた（「正式画像の色を CSS の filter で変えない」に合わせた）。
+  - バトル画面の「モンスターが切れる」は、戦闘前の VS カットイン（.ipn の枠から絵がはみ出て切れていた）と、試合画面の絵の大きさ（118px 固定）の2つ。カットインは .iim の CSS（.bt 系ではない）で枠の中に収め、試合画面は js/battle/fit.js が寸法から「切れない最大の大きさ」を計算して .mw／.mon にインラインの寸法を入れる（390×844 で 171px・375×667 で 145px。既定の 118px より小さくなるのは画面が狭くて切れるときだけ）。fight()・.bt 系 CSS・Battle Engine は変えていない（tests/phase7.test.mjs のハッシュはそのまま）。
+- 【暫定・素材待ち】泉・祠のイベント（spring／holy_spring／legend_spring／coin／sage／charm）は tier の祠（nodes/event_*）を小さく道端に置いている。ライバル本人の立ち姿（battleTypes.rival.figure）、サイコロの停止画像（dice_stop_1〜3）、正式な歩行アニメは未着。
+- 【未決】強敵・ライバルの強さ（練習試合と同じ）、疲れ回復アイテムの品名は変わらず未決。
+- 使わなくなった素材（ファイルは残す）：env/ancient_pillar・env/ancient_tree_large（木陰イベントで使う）・env/forest_path_b（背景に描かれているため重ねない）。nodes/battle_wild・battle_rival・battle_strong の絵は battleMarkers:false の間は表示しない（asset key は維持）。

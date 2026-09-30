@@ -259,3 +259,81 @@ test('シミュレーション（1000回）：平均22〜25ターン付近・30�
     assert.ok(s.avgStops.stat > 4 && s.avgStops.event > 2 && s.avgStops.battle > 1.5 && s.avgStops.treasure > 0.8, JSON.stringify(s.avgStops));
   }
 });
+
+// =========================================================
+// 2026-09-30 改修：道の曲線・中間点・止まる位置と目印の分離・見せ方の config（Chapter 移動体験の品質向上）
+// =========================================================
+test('CH1-25：道は折れ線ではなく滑らかな曲線（Catmull-Rom）。ノードは曲線の上に置かれ、隣の地点へは曲線に沿った点列で歩く（直線で飛ばない）', () => {
+  const { CH } = loadEngine(), cfg = CH.getConfig(1), g = CH.buildGraph(cfg);
+  const c = CH.smoothCurve([[0, 0], [1, 1], [2, 0]], 4);
+  assert.equal(c.length, 9, '2区間 × 4分割 ＋ 始点'); assert.deepEqual(c[0], [0, 0]); assert.deepEqual(c[c.length - 1], [2, 0]);
+  assert.ok(c[2][1] > 0.4 && c[2][1] < 1, '中間は通る点の間を滑らかにつなぐ');
+  assert.deepEqual(CH.smoothCurve([[0, 0], [1, 1]]), [[0, 0], [1, 1]], '点が2つなら折れ線のまま');
+  for (const p of cfg.paths) { const cv = g.curves[p.id]; assert.ok(cv && cv.pts.length > p.pts.length, `${p.id}：曲線の点列`); assert.equal(cv.terrain, p.terrain); }
+  // 同じ道の隣どうし：3点以上（中間点）で、始点＝止まる位置・終点＝止まる位置
+  const r = CH.routeBetween(g, 'f1_3', 'f1_4');
+  assert.ok(r.length >= 3, `中間点を通る（${r.length}）`); assert.deepEqual(r[0], [g.nodes.f1_3.mx, g.nodes.f1_3.my]); assert.deepEqual(r[r.length - 1], [g.nodes.f1_4.mx, g.nodes.f1_4.my]);
+  for (let i = 1; i < r.length; i++) assert.ok(r[i][1] <= r[i - 1][1] + 0.01, '奥へ向かって進む（戻らない）');
+  // 曲線上の距離 s は増える。ノードは曲線上の点
+  const ids = g.order.filter((id) => g.nodes[id].path === 'f1_');
+  for (let i = 1; i < ids.length; i++) assert.ok(g.nodes[ids[i]].s > g.nodes[ids[i - 1]].s);
+  const cv = g.curves.f1_, n = g.nodes.f1_5, near = cv.pts.some((p) => Math.hypot(p[0] - n.x, p[1] - n.y) < 0.02); assert.ok(near, 'ノードは曲線の上');
+  // 別のフィールドへ：空（画面側が背景の切り替えをする）
+  assert.deepEqual(CH.routeBetween(g, 'f1_13', 'f2_0'), []);
+});
+
+test('CH1-26：分岐・合流など別の道へ移るときは config.edges の中間点（曲線化）を通る。無い組み合わせは直線。止まる位置（mx/my）と目印は config.nodeOverrides で分けられる', () => {
+  const { CH } = loadEngine(), cfg = CH.getConfig(1), g = CH.buildGraph(cfg);
+  assert.ok(cfg.edges['f2_3>a0'] && cfg.edges['f2_3>b0'], '分岐の中間点');
+  const ra = CH.routeBetween(g, 'f2_3', 'a0'), rb = CH.routeBetween(g, 'f2_3', 'b0');
+  assert.ok(ra.length > 3 && rb.length > 3, `分岐の道筋は曲線（${ra.length}・${rb.length}）`);
+  assert.deepEqual(ra[0], [g.nodes.f2_3.mx, g.nodes.f2_3.my]); assert.deepEqual(ra[ra.length - 1], [g.nodes.a0.mx, g.nodes.a0.my]);
+  // 上書きの構造：monster（止まる位置）・landmark（目印）・camera・terrain・side
+  const c2 = j(cfg); c2.chapterId = 3; c2.patternId = 'T'; c2.nodeOverrides = { f1_4: { monster: [0.5, 0.65], landmark: { x: 0.3, y: 0.6, scale: 1.2, opacity: 0.8, anchor: 'foot' }, camera: { zoom: 1.02 }, terrain: 'slope', side: -1 } };
+  const g2 = CH.registerConfig(c2), n = g2.nodes.f1_4;
+  assert.deepEqual([n.mx, n.my], [0.5, 0.65], '止まる位置は道の点と別に持てる'); assert.notDeepEqual([n.x, n.y], [n.mx, n.my]);
+  assert.deepEqual(n.lm, { x: 0.3, y: 0.6, scale: 1.2, opacity: 0.8, anchor: 'foot' }); assert.deepEqual(n.cam, { zoom: 1.02 }); assert.equal(n.terrain, 'slope'); assert.equal(n.side, -1);
+  const r = CH.routeBetween(g2, 'f1_3', 'f1_4'); assert.deepEqual(r[r.length - 1], [0.5, 0.65], '歩く道筋の終点は止まる位置');
+  assert.equal(g.nodes.a2.terrain, 'slope'); assert.equal(g.nodes.a8.terrain, 'bridge'); assert.equal(g.nodes.b3.terrain, 'forest'); assert.equal(g.nodes.f3_5.terrain, 'highland');
+  const c3 = j(cfg); c3.chapterId = 4; c3.patternId = 'L'; c3.paths[0].curve = 'linear'; const g3 = CH.registerConfig(c3);
+  assert.equal(g3.curves.f1_.pts.length, cfg.paths[0].pts.length, "curve:'linear' なら折れ線のまま");
+});
+
+test('CH1-27：見せ方の config：バトルの目印は常設しない、背景に描かれている物（石柱・森の小道・大木）は重ねない、手前を横切る草がある、イベントは内容に応じた自然物、カメラ・視差・歩きの設定がある', () => {
+  const { CH } = loadEngine(), cfg = CH.getConfig(1);
+  assert.equal(cfg.battleMarkers, false);
+  for (const f of [1, 2, 3]) { const as = cfg.landmarks[f].map((L) => L.asset); for (const bad of ['ancient_pillar', 'forest_path_b', 'ancient_tree']) assert.ok(!as.includes(bad), `FIELD ${f}：${bad} を重ねない`); assert.ok(as.includes('grass_front'), `FIELD ${f}：手前の草（視差の前景）`); }
+  for (const f of [1, 2, 3]) { const fg = cfg.foreground[f]; assert.ok(fg && fg.length >= 1 && fg.length <= 3, `FIELD ${f}：手前を横切る草は数地点に1つ`); for (const F of fg) assert.ok(cfg.assets[F.asset] && F.x > 0 && F.x < 1 && F.y > 0 && F.y < 1); }
+  const nat = cfg.eventPool.filter((e) => e.asset); assert.ok(nat.length >= 4, '自然物のイベント'); for (const e of nat) assert.ok(existsSync(path.join(ROOT, cfg.assets[e.asset])), e.id);
+  assert.equal(cfg.eventPool.find((e) => e.id === 'shade').asset, 'ancient_tree', '木陰＝木');
+  assert.ok(cfg.nodeLook.stat.side !== 0 && cfg.nodeLook.stat.gap >= 120, '能力の石碑は道の脇（道の中央に置かない）'); assert.ok(cfg.nodeLook.treasure.gap >= 120, '宝箱は道の脇');
+  assert.equal(cfg.nodeLook.tuft, 'grass_front');
+  assert.ok(cfg.camera && cfg.camera.zoom.move < 1 && cfg.camera.zoom.stop > 1 && cfg.camera.zoom.branch < 1 && cfg.camera.lookAhead > 0 && cfg.camera.followDelay >= 80 && cfg.camera.followDelay <= 150);
+  assert.ok(cfg.parallax.far < cfg.parallax.back && cfg.parallax.back < cfg.parallax.road && cfg.parallax.road < cfg.parallax.front, '遠景 → 中景 → 前景の順に速い');
+  assert.ok(cfg.motion.minMs >= 200 && cfg.motion.maxMs <= 350 && cfg.motion.terrain.slope.speed < 1 && cfg.motion.terrain.bridge.fixed, '1地点 0.20〜0.35秒。坂は少しゆっくり、橋はやや一定');
+  for (const s of cfg.fieldScenes) assert.ok(s.farBand && s.farBand.k < 1, `${s.name}：遠景の帯`);
+  const view = rd('js/chapter/field-view.js').split('\n').map((l) => l.replace(/\/\/.*$/, '')).join('\n');
+  assert.doesNotMatch(view, /chapterId\s*===\s*\d|f1_|f2_|f3_|'a\d'|大橋|はじまりの草原/, '画面側に Pattern A 専用の座標・分岐を書かない');
+  assert.match(view, /registerMonsterAnimator/, '歩行アニメの差し込み口'); assert.match(view, /routeBetween/, '道の曲線に沿って歩く'); assert.match(view, /requestAnimationFrame/, 'カメラは毎フレーム追従');
+});
+
+test('DICE-06：サイコロの回転は最後に 360° の倍数（正式の角度）へ収束する（傾いたまま止まらない）。収束は最後の 0.15〜0.2 秒', () => {
+  const w = {}; new Function('window', rd('js/phase7/progression.js'))(w); new Function('window', rd('js/chapter/dice-renderer.js'))(w); const D = w.MMCHD;
+  for (const dir of [1, -1]) for (const spin of [900, 990, 1080]) {
+    const fr = D.spinFrames(dir, spin, 0.19), last = fr[fr.length - 1], deg = parseFloat(last.transform.match(/rotate\(([-\d.]+)deg\)/)[1]);
+    assert.equal(Math.abs(deg % 360), 0, `${dir}×${spin}：${deg}`); assert.equal(last.offset, 1);
+    const before = fr[fr.length - 2]; assert.ok(Math.abs(1 - before.offset - 0.19) < 1e-9, '収束の区間');
+  }
+  const c = D.configure(); assert.ok(c.settleMs >= 150 && c.settleMs <= 200); assert.ok(c.ms <= 1000, 'STOP から止まるまで約1秒');
+});
+
+test('BF-01：バトル画面の表示だけの補正（js/battle/fit.js）：fight()・.bt 系 CSS に触れず、寸法から「切れない最大の大きさ」を計算する', () => {
+  const w = { addEventListener() {} }; new Function('window', rd('js/battle/fit.js'))(w); const F = w.MMBF;
+  assert.deepEqual(F.compute({ top: 148, bottom: 371, width: 179, vsBottom: 371, height: 223 }), { size: 171, lift: 0 }, '390×844：使える高さ 223 − 余白');
+  assert.deepEqual(F.compute({ top: 133, bottom: 293, width: 172, vsBottom: 293, height: 160 }), { size: 144, lift: 0 }, '375×667');
+  assert.deepEqual(F.compute({ top: 100, bottom: 400, width: 120, vsBottom: 400, height: 300 }), { size: 112, lift: 0 }, '横幅で制限');
+  assert.deepEqual(F.compute({ top: 100, bottom: 700, width: 400, vsBottom: 700, height: 600 }), { size: 210, lift: 0 }, '上限');
+  assert.equal(F.compute({ top: 100, bottom: 360, width: 200, vsBottom: 400, height: 260 }).lift, 44, '技UIが絵の枠より上なら足元を上げる');
+  const src = rd('js/battle/fit.js'); assert.doesNotMatch(src, /innerHTML|insertAdjacentHTML|createElement/, 'DOM を作らない（インラインの寸法だけ）');
+  assert.doesNotMatch(rd('index.html').slice(rd('index.html').indexOf('<style>'), rd('index.html').indexOf('</style>')).split('\n').filter((l) => /^\.chf|^\.chd|^\.chs|^\.chw|^\.chh|^\.chp|^\.chm|^\.chc|^#app>\.chfw/.test(l)).join('\n'), /\.bt[\s.{]|#rl|#go|\.rl|\.rw/, 'Chapter の CSS はバトルのセレクタに触れない');
+});
