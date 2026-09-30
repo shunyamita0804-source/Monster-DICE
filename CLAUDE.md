@@ -26,7 +26,12 @@ Claude Code は作業の前に毎回このファイルを読むこと。ここ�
 | js/phase10/monsters.js | 正式モンスターデータ・市場・購入救済・売却。`MMP10M` |
 | js/phase11/player.js | プレイヤー名。`MMP11P` |
 | js/phase12/scenes.js、js/phase12/dice.js | 背景・サイコロ演出 |
-| js/phase13/field.js | Chapter 1 のフィールド表示 |
+| js/phase13/field.js | 旧 Chapter 1 のフィールド表示（試作。Chapter 1 は js/chapter/ が担当するため、今は表示されない） |
+| js/chapter/engine.js | Chapterフィールドの共通エンジン `MMCH`（config の登録・ノードの組み立て・配置の生成と検証・疲れ・能力マス・イベント・宝箱・バトル）。MMP8.registerChapterDriver で raising.js へつなぐ。Chapter ごとの分岐（if chapter===N）は書かない |
+| js/chapter/configs/ch1a.js | Chapter 1 Pattern A「大橋と清流の草原」の config（データだけ）。新しい Chapter／パターンは configs/ にファイルを足して MMCH.registerConfig する |
+| js/chapter/dice-renderer.js | サイコロ `MMCHD`（出目 rollDice と演出 play を分ける。回転中の正式画像1枚を動かす。停止画像は resultSprites に登録するだけ） |
+| js/chapter/field-view.js | Chapterフィールドの画面（`MMCHV`・chf*。背景・環境素材・止まる地点の絵・モンスターの歩行・カメラ・HUD・下の操作欄） |
+| assets/fields/ch1a/ | Chapter 1 Pattern A の背景3枚・止まる地点の絵・環境素材・サイコロ（README.md に出どころ・加工・使った／使わなかった素材） |
 | js/npc/npc.js | 共通NPC表示・共通会話。`MMNPC` |
 | assets/monsters/ | 4原種の正式画像 |
 | assets/title/ | 開始画面の正式画像（README.md に出どころ） |
@@ -59,6 +64,7 @@ Claude Code は作業の前に毎回このファイルを読むこと。ここ�
 - 実行方法：リポジトリ直下で `node --test tests/*.test.mjs`（Node 22 で確認。約7秒。実ブラウザテストは skip になる）
 - 実ブラウザテストも含める場合：`QA_E2E=1 node --test --test-concurrency=1 tests/*.test.mjs`（Playwright＋Chromium を使う。約20〜30分。並列だと約7.9MBの index.html の読み込みが重なり不安定になるため、必ず1ファイルずつ）。共通部品は tests/e2e/harness.mjs
 - Stage 3（2026-09-29）の後：ふだんの実行は763件（合格589・skip 174・失敗0）。2026-09-30 の牧場の「様子を見る」で2件、継続用救済の整合修正で3件、画面全体の固定（tests/qa-e2e-page-fixed.test.mjs）で8件を追加し776件（合格594・skip 182・失敗0）、実ブラウザテスト込みの全件は785件。実ブラウザテストも含めた全件（46ファイルを1つずつ）は773件。失敗0が基準（2026-09-30：qa-fix-g3 の QA-G3-B9 の不安定さを解消し、2周とも 773/773。KNOWN_ISSUES.md の Stage 3）
+- 2026-09-30 の Chapterフィールド（Chapter 1）の後：ふだんの実行は806件（合格615・skip 191・失敗0）。実ブラウザテスト（28ファイルを1つずつ）は305件で失敗0（新しい tests/qa-e2e-chapter1.test.mjs を含む。旧 Chapter 1 ボード前提の育成・セーブのテストは Chapterフィールドに合わせて書き直し、旧ボードの確認は Chapter 2 で行う）。1000回の進行シミュレーションは `node tests/chapter-sim.mjs 1000`
 - 既知の失敗テスト：なし（M3-3 はテストの古い期待値が原因だったため、テスト側を修正。assets/monsters/soramo/・gauru/ のフォルダは旧PHASE 1 土台の data/assets.json が登録しているプロフィールカード画像で、ユーザー判断により残す。ゲームは使わない）
 - 画面・操作にかかわる変更をしたら：ふだんのテストと、変更に関係する実ブラウザテスト（該当ファイルだけ、QA_E2E=1）が通ったら、すぐ main へ push する。全件の実ブラウザテストは push の後に実行し、問題が出たらすぐ直して再 push する（試遊をすぐできるようにするため）
 
@@ -127,6 +133,14 @@ Claude Code は作業の前に毎回このファイルを読むこと。ここ�
 - 最終ルート：Chapter 4 終了時に A ランク以上をクリアしていれば進む。マップが未登録のため、現在はChapter間ファームから「育成を完了して街へ戻る」代替処理で完了する。マップを登録すれば通常の進行になる。
 - 育成を始めると、育成完了か育成放棄まで街へ戻れない（中断・再開はできる）。
 - Chapterボード上に NPC（フィナを含む）を置かない。
+- **Chapterフィールド（2026-09-30。Chapter 1 から）**：Chapter 1 は js/chapter/ のエンジン＋config（Pattern A「大橋と清流の草原」）で動く。Chapter 2〜4 は従来のボード（20ターン）のまま。
+  - 3つのFIELD（旅立ちの草原・大橋と清流・大会へ続く高原）を1地点ずつ歩く。止まる地点の絵だけを出し、ノードの丸・線・番号は出さない（?chdebug=1 のときだけ点を出す）。
+  - 30ターン・サイコロ1〜3。FIELD 2 で大きな分岐（大橋ルート＝短い・バトル多め／森の小道＝長い・能力・イベント・宝箱多め）。合流してゴール → 公式大会 → ファーム。30ターン切れは大会なしで Chapter 終了（失敗ではない）。
+  - 配置は固定の骨組み＋ランダム割り当て。Chapter 開始時に seed で決めてセーブ（m.raise.field：chapterId・patternId・fieldId・layoutSeed・nodeAssignments・consumedEvents・openedTreasures・clearedStats・branch）。再読込・バトルから戻っても引き直さない。
+  - 疲れ（m.raise.fatigue、0〜100）：出目確定時に 1→+3・2→+5・3→+7、ボードのバトル +5、大会は0。100 でサイコロ不可 → 休む（−30・1ターン・移動なし・ライフ回復なし）。次の Chapter へは max(0, 疲れ−50)。
+  - 能力マス：+10〜15。疲れの帯で失敗（+0）・大成功（×1.5）の確率が変わる（0〜19：0%／20%、20〜39：0／15、40〜59：10／10、60〜79：20／5、80〜100：30／0）。
+  - イベント・宝箱は config のデータ（handler 名＋params）。疲れ回復イベントは1〜3個（−10／−20／−30／全回復）。能力・所持金のイベントの値と宝箱の中身（50G／150G）は【暫定】。回復アイテム（小−10・中−30・大＝全回復）は API（MMCH.registerFatigueItem）だけで、品名・入手は未決。
+  - 平均到達ターンの確認：`node tests/chapter-sim.mjs 1000`。
 
 ### 大会
 

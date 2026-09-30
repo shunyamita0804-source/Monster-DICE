@@ -2,7 +2,7 @@
 // QA：静的ガード（ブラウザを使わない）
 //  1) Phase 6 保護対象の拡張：legacy 原本・js/systems/ の各ファイル・技データ・素早さ分離処理・
 //     バトルチェックポイント形式を固定し、CLAUDE.md に書かれたハッシュ先頭8桁とも照合する
-//  2) index.html が読み込む <script src> は現在の13ファイルだけ（PHASE 1 の土台を誤って読み込まない）
+//  2) index.html が読み込む <script src> は現在の17ファイルだけ（PHASE 1 の土台を誤って読み込まない）
 //  3) 画面に出る旧名称（モンスターマスターなど）と、ガウルの旧名「ハヤテ」が出てよい場所
 //  4) CLAUDE.md の確定仕様の数値と、コード上の定数・計算が一致すること
 //  ※ index.html は base64 画像の非常に長い行を含むため、全文を出力しない。data: URI は短い印に置き換えてから調べる。
@@ -76,11 +76,12 @@ function mon(P7, P8, S, state = 'none', over = {}) {
   P7.ensureProg(m); m.raise.state = state; return m;
 }
 
-// 読み込むスクリプト（この順番で13本）。PHASE 1 の土台（js/main.js・js/core・js/ui・js/dev・js/systems・css/）は含めない
+// 読み込むスクリプト（この順番で17本）。PHASE 1 の土台（js/main.js・js/core・js/ui・js/dev・js/systems・css/）は含めない
 const SCRIPTS = [
   'js/battle-bridge.js', 'js/integration/adapter.js', 'js/phase7/progression.js', 'js/phase8/league.js', 'js/phase8/raising.js',
   'js/phase10/monsters.js', 'js/phase11/player.js', 'js/phase12/scenes.js', 'js/phase12/dice.js', 'js/phase13/field.js',
   'js/phase9/chapters.js', 'js/phase9/board-art.js', 'js/npc/npc.js',
+  'js/chapter/engine.js', 'js/chapter/configs/ch1a.js', 'js/chapter/dice-renderer.js', 'js/chapter/field-view.js',   // 2026-09-30：Chapterフィールドエンジン
 ];
 // 旧名称（大文字小文字・区切りの違いも含む）。正式名称「ミスティックモンスターズ／MYSTIC MONSTERS」は含まない
 const OLD_NAME = /モンスターマスター|monster[\s_-]?master|monster[\s_-]?dice|ミスティックモンスター(?!ズ)|mystic[\s_-]?monster(?!s)/gi;
@@ -215,18 +216,18 @@ test('QA-G10：ルーレットは技6枠＋固定MISS1枠。新しく生まれ�
 // =========================================================
 // 2) 読み込むスクリプト・head
 // =========================================================
-test('QA-S1：index.html の <script src> は13ファイルをこの順番で読み込む（重複なし・全ファイル実在・module なし）', () => {
+test('QA-S1：index.html の <script src> は17ファイルをこの順番で読み込む（重複なし・全ファイル実在・module なし）', () => {
   const tags = [...HTML.matchAll(/<script\b[^>]*\bsrc="([^"]*)"[^>]*>/g)].map((m) => m[1]);
   assert.deepEqual(tags, SCRIPTS.map((f) => './' + f));
   for (const f of SCRIPTS) assert.ok(existsSync(path.join(ROOT, f)), f);
   assert.doesNotMatch(NODATA, /<script\b[^>]*type="module"/, 'ES module として読み込まない');
-  // 本体のインラインスクリプトは、13本すべての後に置かれている（MMP 系を使うため）
-  const lastSrc = CODE.lastIndexOf('<script src="./js/npc/npc.js"></script>');
+  // 本体のインラインスクリプトは、17本すべての後に置かれている（MMP 系を使うため）
+  const lastSrc = CODE.lastIndexOf('<script src="./js/chapter/field-view.js"></script>');
   const inline = [...CODE.matchAll(/<script>/g)].map((m) => m.index);
   assert.ok(inline.length >= 1 && inline.every((i) => i > lastSrc));
 });
 
-test('QA-S2：PHASE 1 の土台（js/main.js・js/core・js/ui・js/dev・js/systems・css/）を読み込まない。読み込む13本は import・export・fetch を使わない', () => {
+test('QA-S2：PHASE 1 の土台（js/main.js・js/core・js/ui・js/dev・js/systems・css/）を読み込まない。読み込む17本は import・export・fetch を使わない', () => {
   const tags = [...NODATA.matchAll(/<script\b[^>]*\bsrc="([^"]*)"/g)].map((m) => m[1]);
   for (const s of tags) assert.doesNotMatch(s, /js\/(main\.js|core\/|ui\/|dev\/|systems\/)|css\//, s);
   const links = [...NODATA.matchAll(/<link\b[^>]*>/g)].map((m) => m[0]);
@@ -256,7 +257,7 @@ test('QA-N1：index.html（base64画像とコメントを除く）に旧名称�
   assert.match(NODATA, /alt="ミスティックモンスターズ MYSTIC MONSTERS"/, '開始画面の画像の代替テキストは正式名称');
 });
 
-test('QA-N2：読み込む13本のJS（コメントを除く）に旧名称が無い。例外は Phase 6 保護対象 battle-bridge.js のチェックポイント形式名と検証メッセージだけ', () => {
+test('QA-N2：読み込む17本のJS（コメントを除く）に旧名称が無い。例外は Phase 6 保護対象 battle-bridge.js のチェックポイント形式名と検証メッセージだけ', () => {
   for (const f of SCRIPTS) {
     const hits = stripComments(rd(f)).match(OLD_NAME) || [];
     if (f === 'js/battle-bridge.js') assert.deepEqual(hits, ['monster-master', 'モンスターマスター'], f);

@@ -177,20 +177,20 @@ T('QA-NG2：開始ボタン → 名前登録画面（初期値「アルト」・
   await pg.waitForSelector('.map');
   const t = await pg.evaluate(() => ({
     hz: [...document.querySelectorAll('.hz')].map((b) => [b.getAttribute('onclick'), b.disabled]),
-    prof: document.querySelector('.bprof').innerText.replace(/\s+/g, ' '), topUi: document.querySelectorAll('.tttl, .tpinfo, .map.town .p115pn').length,
+    prof: document.querySelectorAll('#app .bprof').length, topUi: document.querySelectorAll('.tttl, .tpinfo, .map.town .p115pn').length,
     msg: document.querySelector('#msg').textContent, bar: document.querySelectorAll('.topbar').length,
     sw: document.documentElement.scrollWidth, iw: innerWidth, fina: document.querySelectorAll('img[src*="npc/fina"]').length,
   }));
-  assert.deepEqual(t.hz, [['market()', false], ['farm()', false], ['museum()', false], ['townArena()', false], ['hall()', true], ['profileScr()', false]]);
+  assert.deepEqual(t.hz, [['market()', false], ['farm()', false], ['museum()', false], ['townArena()', false], ['hall()', true], ['profileScr()', false], ['savescr()', false]]);
   assert.equal(t.topUi, 0, '街の上部に「街」の札・プレイヤー情報は出さない（プロフィールへまとめた）');
-  assert.match(t.prof, /育成完了 0回/); assert.doesNotMatch(t.prof, /300G|ゆうしゃ|ランク/, '下の欄に名前・ランク・所持金を重ねない');
+  assert.equal(t.prof, 0, '街の下の欄（bprof）は廃止（2026-09-30。育成完了・大会の勝利はプロフィールへ）');
   assert.equal(t.bar, 0, '旧い上部の帯（大会優勝・所持金）は出さない');
   assert.equal(t.msg, 'ようこそ、ゆうしゃさん！ まずは市場でモンスターを選ぼう。');
   assert.equal(t.sw, t.iw, '横スクロールが出ない');
   assert.equal(t.fina, 0, '会話が終われば街にフィナは残らない');
   // プレイヤー情報（名前・所持金・最高到達ランク）はプロフィールに出す
   await pg.click('.hz[onclick="profileScr()"]'); await pg.waitForSelector('.pfds');
-  assert.match(await pg.evaluate(() => document.querySelector('.pfds .tplate').innerText.replace(/\s+/g, ' ')), /プレイヤー ゆうしゃ 所持金 300 ?G 最高到達ランク ー 獲得トロフィー 準備中/);
+  assert.match(await pg.evaluate(() => document.querySelector('.pfds .tplate').innerText.replace(/\s+/g, ' ')), /プレイヤー ゆうしゃ 所持金 300 ?G 最高到達ランク ー 育成完了 0 ?回 大会の勝利 0 ?勝 獲得トロフィー 準備中/);
   await pg.click('.pfds .dback'); await pg.waitForSelector('.tbar .tcmd');
   noErrors(p);
 });

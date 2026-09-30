@@ -14,6 +14,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import * as H from './e2e/harness.mjs';
+import { loadEngine, lcg as chLcg } from './chapter-sim.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, '..');
@@ -295,7 +296,7 @@ test('QA-G1-9：ランダムに壊したセーブ（決まった乱数のファ�
     for (const p of paths(base)) for (const v of JL) { const o = j(base); setPath(o, p, v); one(`${bn}:${p.join('.')}=${JSON.stringify(v)}`, o); }
     for (let i = 0; i < 300; i++) {
       const o = j(base), lab = [];
-      for (let k = 1 + Math.floor(rnd() * 4); k > 0; k--) { const pp = paths(o); if (!pp.length) break; const p = pick(pp), v = pick(JUNK); setPath(o, p, v); lab.push(`${p.join('.')}=${JSON.stringify(v)}`); }
+      for (let k = 1 + Math.floor(rnd() * 4); k > 0; k--) { const pp = paths(o); if (!pp.length) break; const p = pick(pp), v = pick(JUNK); setPath(o, p, v && typeof v === 'object' ? j(v) : v); /* 値はコピーして入れる（同じ配列を2か所に入れて自分自身を含む形にしない） */ lab.push(`${p.join('.')}=${JSON.stringify(v)}`); }
       one(`${bn}:rand:${lab.join(',')}`, o);
     }
   }
@@ -333,14 +334,29 @@ test('QA-G1-B1：S.m が文字列・牧場に数値や null が入ったセー�
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
 });
 
-test('QA-G1-B2：分岐待ち（pend）が壊れたChapter途中のセーブでも再開でき、サイコロを振れる', { skip: H.skipReason() }, async () => {
+/** Chapter 1（Chapterフィールド）の途中：実物のエンジンで配置を作り、f1_3・3ターン使用にする（assign で地点の種類を上書き） */
+function onField(M, assign = {}) {
+  const S = town(M), E = loadEngine(); assert.equal(M.P8.depart(S, S.m).ok, true);
+  E.CH.initRun(S.m, E.CH.getConfig(1, 'A'), chLcg(5), 516106998);
+  Object.assign(S.m.raise.field.nodeAssignments, assign);
+  Object.assign(S.m.raise, { node: 'f1_3', turnsUsed: 3, turnLimit: 30, fatigue: 20 });
+  return S;
+}
+/** 従来のボード（Chapter 2）の途中 */
+function onBoard2(M) { const S = onBoard(M); Object.assign(S.m.raise, { ch: 2, node: 'S' }); return S; }
+
+test('QA-G1-B2：分岐待ち（pend）が壊れたChapter途中のセーブでも再開でき、サイコロを振れる（従来のボード・Chapterフィールドとも）', { skip: H.skipReason() }, async () => {
   // 守ること：以前は p9BranchHtml が opts を読めず、開始画面から先へ進めなかった
-  const M = load(); const S0 = j(onBoard(M)); S0.m.raise.pend = { stage: 'branch' };
-  const p = await L.open({ save: S0 });
-  await start(p, '#brollbtn');
-  const S = await H.getS(p.page);
-  assert.equal(S.m.raise.pend, null); assert.equal(S.m.raise.turnsUsed, 3);
-  assert.deepEqual(p.errors, []);
+  const M = load();
+  for (const [label, S0, sel] of [['Chapter 2（従来のボード）', j(onBoard2(M)), '.p9board #brollbtn'], ['Chapter 1（Chapterフィールド）', j(onField(M)), '#chf-ui #brollbtn']]) {
+    S0.m.raise.pend = { stage: 'branch' };
+    const p = await L.open({ save: S0 });
+    await start(p, sel);
+    const S = await H.getS(p.page);
+    assert.equal(S.m.raise.pend, null, label); assert.equal(S.m.raise.turnsUsed, 3, label);
+    assert.equal(await p.page.evaluate(() => !document.querySelector('#brollbtn').disabled), true, `${label}：サイコロを振れる`);
+    assert.deepEqual(p.errors, []);
+  }
 });
 
 test('QA-G1-B3：修行の種類が壊れたセーブでも再開でき、Chapter間ファームが開く', { skip: H.skipReason() }, async () => {
@@ -354,13 +370,15 @@ test('QA-G1-B3：修行の種類が壊れたセーブでも再開でき、Chapte
   assert.deepEqual(p.errors, []);
 });
 
-test('QA-G1-B4：戦闘前状態（battle）の snap が無いセーブでも再開でき、バトルマスの選択に戻る', { skip: H.skipReason() }, async () => {
+test('QA-G1-B4：戦闘前状態（battle）の snap が無いセーブでも再開でき、バトルマスの選択に戻る（従来のボード・Chapterフィールドとも）', { skip: H.skipReason() }, async () => {
   // 守ること：以前は finishBattle が snap.wins を読めず、開始画面から先へ進めなかった
-  const M = load(); const S0 = j(onBoard(M));
-  S0.m.raise.pend = { roll: 1, left: 0, stage: 'battle', fx: { kind: 'battle' } }; S0.m.raise.battle = { kind: 'practice', done: true };
-  const p = await L.open({ save: S0 });
-  await start(p, '[onclick="bBattleGo()"]');
-  const S = await H.getS(p.page);
-  assert.equal(S.m.raise.battle, null); assert.equal(S.m.raise.pend.stage, 'battle');
-  assert.deepEqual(p.errors, []);
+  const M = load();
+  for (const [label, S0, fx] of [['Chapter 2（従来のボード）', j(onBoard2(M)), { kind: 'battle' }], ['Chapter 1（Chapterフィールド）', j(onField(M, { f1_3: { t: 'battle', bt: 'wild' } })), { kind: 'battle', battleType: 'wild' }]]) {
+    S0.m.raise.pend = { roll: 1, left: 0, stage: 'battle', fx }; S0.m.raise.battle = { kind: 'practice', done: true };
+    const p = await L.open({ save: S0 });
+    await start(p, '[onclick="bBattleGo()"]');
+    const S = await H.getS(p.page);
+    assert.equal(S.m.raise.battle, null, label); assert.equal(S.m.raise.pend.stage, 'battle', label);
+    assert.deepEqual(p.errors, []);
+  }
 });

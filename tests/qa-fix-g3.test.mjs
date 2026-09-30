@@ -21,6 +21,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import * as H from './e2e/harness.mjs';
+import { loadEngine, lcg as chLcg } from './chapter-sim.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, '..');
@@ -374,23 +375,30 @@ test('QA-G3-B5：実ブラウザ：ボードの ☰ のダブルタップでメ�
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
 });
 
-test('QA-G3-B6：実ブラウザ：ボードを出してすぐ別の画面へ移ったら、0.35秒後の着地処理はしない（画面を戻さない）。次にボードを開いたとき1回だけ処理', { skip: H.skipReason() }, async () => {
+test('QA-G3-B6：実ブラウザ：ボードを出してすぐ別の画面へ移ったら、0.35秒後の着地処理はしない（画面を戻さない）。次にボードを開いたとき1回だけ処理（従来のボード・Chapterフィールドとも）', { skip: H.skipReason() }, async () => {
   // 守ること：以前は着地処理のタイマーがボードを離れたあとも動き、ステータス画面・開始画面の上にボードを描き直していた
-  const M = load(); const p = await L.open({ save: j(onBoard(M)) }); const pg = p.page;
-  await start(p, '#brollbtn');
-  const po0 = await pg.evaluate(() => { const m = S.m; m.raise.node = 'p2'; m.raise.pend = { roll: 1, left: 0, stage: 'resolve' }; save(); const po = m.po; board(); hall('st'); return po; });
-  assert.equal(await H.text(pg).then((t) => /能力バランス/.test(t)), true, 'ステータス画面');
-  await pg.waitForTimeout(700);   // 0.35秒のタイマーが過ぎるのを待つ（何も起きないことの確認）
-  let S = await H.getS(pg);
-  assert.ok(await pg.$('#app .ds-st'), 'ステータス画面のまま（ボードに戻されない）'); assert.equal(await pg.$('#bmonw'), null);
-  assert.equal(S.m.raise.pend.stage, 'resolve', '止まったマスの処理は保存されたまま'); assert.equal(S.m.po, po0);
-  await pg.evaluate(() => board());
-  await pg.waitForFunction(() => S.m.raise.pend == null);
-  S = await H.getS(pg);
-  assert.ok(S.m.po - po0 >= 5 && S.m.po - po0 <= 7, `ちからマスの効果は1回だけ（+${S.m.po - po0}）`);
-  assert.equal((await H.storedSave(pg)).m.po, S.m.po);
-  await pg.waitForTimeout(500); assert.equal((await H.getS(pg)).m.po, S.m.po, '二重には適用しない');
-  assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
+  const M = load(), E = loadEngine();
+  const board2 = j(onBoard(M)); Object.assign(board2.m.raise, { ch: 2, node: 'S' });
+  const field = j(onBoard(M)); E.CH.initRun(field.m, E.CH.getConfig(1, 'A'), chLcg(3), 516106998);
+  field.m.raise.field.nodeAssignments.f1_2 = { t: 'stat', k: 'po' }; Object.assign(field.m.raise, { node: 'f1_0', turnLimit: 30, fatigue: 5 });
+  for (const [label, save0, sel, node] of [['Chapter 2（従来のボード）', board2, '.p9board #brollbtn', null], ['Chapter 1（Chapterフィールド）', field, '#chf-ui #brollbtn', 'f1_2']]) {
+    const p = await L.open({ save: save0 }); const pg = p.page;
+    await start(p, sel);
+    const s0 = await pg.evaluate((node) => { const m = S.m; if (node) m.raise.node = node; m.raise.pend = { roll: 1, left: 0, stage: 'resolve' }; save(); const c = JSON.parse(JSON.stringify(S)); board(); hall('st'); return c; }, node);
+    assert.equal(await H.text(pg).then((t) => /能力バランス/.test(t)), true, `${label}：ステータス画面`);
+    await pg.waitForTimeout(700);   // 0.35秒（フィールドは0.3秒）のタイマーが過ぎるのを待つ（何も起きないことの確認）
+    let S = await H.getS(pg);
+    assert.ok(await pg.$('#app .ds-st'), `${label}：ステータス画面のまま（ボードに戻されない）`); assert.equal(await pg.$('#bmonw'), null);
+    assert.deepEqual(S, s0, `${label}：止まったマスの処理は保存されたまま（何も変わらない）`);
+    await pg.evaluate(() => board());
+    await pg.waitForFunction(() => S.m.raise.pend == null && !bBusy && !document.querySelector('.chpop'), null, { timeout: 15000 });
+    S = await H.getS(pg);
+    if (node) { const d = S.m.po - s0.m.po; assert.ok(d >= 10 && d <= 23, `${label}：ちからの地点の効果は1回だけ（+${d}）`); }
+    assert.deepEqual(await H.storedSave(pg), S, `${label}：処理した結果を保存`);
+    await pg.waitForTimeout(600); assert.deepEqual(await H.getS(pg), S, `${label}：二重には適用しない`);
+    assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
+    await p.ctx.close();
+  }
 });
 
 test('QA-G3-B7：実ブラウザ：育成放棄の最終確認を「やめない」で閉じてすぐ開き直しても、「放棄する」が押せるまで3秒待つ', { skip: H.skipReason() }, async () => {

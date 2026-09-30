@@ -152,8 +152,8 @@ test('QA-RF-B10：合体（ベース→相手→誕生）：200G・2体→1体�
     assert.deepEqual(c.prog.train, { po: 0, in: 0, hi: 0, ev: 0, de: 0 });
     assert.deepEqual(s.raiseRec, before.raiseRec);                               // 合体では育成完了回数は増えない
     assert.deepEqual(await pg.evaluate(() => sel), []);
-    // 街：子を連れている
-    assert.match(await txt(pg, '#app .card'), /ガウラC/);
+    // 街：子を連れている（街にモンスターカードは出さない。2026-09-30。名前は案内文と連れている個体で確かめる）
+    assert.equal(await pg.evaluate(() => S.m.name), 'ガウラC'); assert.equal(await pg.$('#app .card'), null);
     assert.equal(await pg.evaluate(() => document.querySelector('.hz[onclick="hall()"]').disabled), false);
     await invariants(p);
   } finally { await p.ctx.close(); }

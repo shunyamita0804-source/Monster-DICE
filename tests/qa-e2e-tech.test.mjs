@@ -449,8 +449,8 @@ B('QA-TN3：フィナの会話を5回（タップで送って選択肢で終え�
   const p = await openTown({ size: H.SIZES.base });
   const pg = p.page;
   await quiet(pg);
-  // Playwright は最初のクリックで window に確認用のリスナーを付けるため、数え始める前に1回クリックしておく（何も起きない街の下の欄）
-  await pg.click('.bprof');
+  // Playwright は最初のクリックで window に確認用のリスナーを付けるため、数え始める前に1回クリックしておく（何も起きない街の背景。2026-09-30 に街の下の欄は廃止）
+  await pg.click('.map.town .tbg', { force: true });
   await quiet(pg);
   const keydown0 = (await talkSnap(pg)).keydown;
   const c0 = await cdp(pg);

@@ -138,20 +138,20 @@ T('QA-SR3：サイコロ演出中に再読み込み → 出目・使用ターン
   await setupTown(pg);
   await departDirect(pg);
   await pg.waitForTimeout(500);
-  // 出目を3に固定（押した瞬間の1回だけ）。S→p1→p2→p3（ふつうのマス）
+  // 出目を3に固定（押した瞬間の1回だけ）。Chapter 1 はChapterフィールド：f1_0 → f1_1 → f1_2 → f1_3
   await pg.evaluate(() => { window.__rnd = Math.random; Math.random = () => 0.99; });
   await pg.click('#brollbtn');
   await pg.evaluate(() => { Math.random = window.__rnd; });
   const st = JSON.parse(await stored(pg));
-  assert.deepEqual(st.m.raise.pend, { roll: 3, left: 3, stage: 'move' }, '出目は演出の前に保存済み');
-  assert.equal(st.m.raise.turnsUsed, 1); assert.equal(st.m.raise.node, 'S');
-  const { boot } = await reloadResume(pg, '.p9board');
+  assert.deepEqual(st.m.raise.pend, { roll: 3, left: 3, stage: 'move', fatigueAdded: 7 }, '出目（と疲れ +7）は演出の前に保存済み');
+  assert.equal(st.m.raise.turnsUsed, 1); assert.equal(st.m.raise.node, 'f1_0'); assert.equal(st.m.raise.fatigue, 7);
+  const { boot } = await reloadResume(pg, '#chf');
   assert.deepEqual(boot, st, '起動直後の S は保存された途中状態と同じ（振り直しなし）');
-  await pg.waitForFunction(() => S.m.raise.pend == null, null, { timeout: 15000 });
-  await pg.waitForSelector('#brollbtn');
+  await pg.waitForFunction(() => S.m.raise.pend == null && !bBusy && !document.querySelector('.chpop'), null, { timeout: 15000 });
+  await pg.waitForSelector('#brollbtn, #chf-ui .chsheet');
   const after = await H.getS(pg);
-  assert.equal(after.m.raise.node, 'p3', '出目3の分だけ進んだ');
-  assert.equal(after.m.raise.turnsUsed, 1, 'ターンは1回分だけ（二重に使っていない）');
+  assert.equal(after.m.raise.node, 'f1_3', '出目3の分だけ進んだ');
+  assert.equal(after.m.raise.turnsUsed, 1, 'ターンは1回分だけ（二重に使っていない）'); assert.equal(after.m.raise.fatigue, 7, '疲れも1回分だけ');
   assert.deepEqual(after, JSON.parse(await stored(pg)), '進んだ結果も保存済み');
   noErrors(p);
 });

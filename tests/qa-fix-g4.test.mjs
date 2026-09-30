@@ -169,7 +169,7 @@ test('QA-G4-B1：実ブラウザ：新規開始→市場で「<!--」「<b>X</b>
   let S = await H.getS(pg); assert.equal(S.m.name, CM, '名前は入力のまま保存'); assert.equal(S.g, 0, '初回救済は従来どおり');
   assert.equal(await count(pg, '#app .svb'), 1, '街の「セーブ・ロード」が残る');
   assert.equal((await txt(pg, '#msg'))[0], `${CM}をつれて帰った！（はじめての1体のため、所持金を500Gまで補填しました）`);
-  assert.deepEqual(await txt(pg, '#app .card .info b'), [CM], 'モンスターカードの名前');
+  assert.equal(await count(pg, '#app .map ~ .tlow .card'), 0, '街にはモンスターカードを出さない（2026-09-30。名前は牧場・ファームで文字のまま出ることを下で確かめる）');
   await pg.evaluate(() => { S.g = 5000; save(); lobby(); });
   await buy(pg, BOLD);
   assert.equal((await txt(pg, '#msg'))[0], `${BOLD}をつれて帰った！（牧場に預けました）`); assert.equal(await count(pg, '#msg b'), 0, '名前のタグは効かない');
@@ -283,7 +283,10 @@ test('QA-G4-B5：実ブラウザ：セーブコードの名前「"><img src=x on
   await pg.fill('#sc', b64); await pg.click('#app button[onclick="imp()"]');
   await pg.waitForFunction(() => /ロードしました/.test((document.querySelector('#msg') || {}).textContent || ''));
   const S = await H.getS(pg); assert.equal(S.m.name, XSS, '読み込んだ名前はそのまま'); assert.equal(S.box[0].name, CM);
-  assert.deepEqual(await txt(pg, '#app .card .info b'), [XSS]); assert.equal(await count(pg, '#app .svb'), 1);
+  assert.equal(await count(pg, '#app .svb'), 1);
+  await pg.click('.hz[onclick="farm()"]'); await pg.waitForSelector('#app .ftiles');
+  assert.deepEqual(await txt(pg, '.wpanel .card .info b'), [XSS], '牧場（預ける）のモンスターカードの名前');
+  await pg.click('.back'); await pg.waitForSelector('#app .map');
   await pg.click('.hz[onclick="farm()"]'); await pg.waitForSelector('#app .ftiles');
   await pg.click('.fsell');
   assert.deepEqual(await txt(pg, '.wpanel .row .info b'), [XSS, CM]); assert.equal(await count(pg, '.wpanel button[onclick^="pfSellPick("]'), 2);
