@@ -125,14 +125,18 @@ test('SL-5：確定後は選んだ個体だけを外して売却額を1回だけ
 });
 
 test('SL-6：8体とも育成完了・200G未満（購入は上限、合体は資金不足）→ 1体売却すれば、合体または継続用救済で次の育成へ進める', () => {
-  const { P7, P8, M } = load();
-  for (let g0 = 0; g0 < 200; g0 += 10) {
-    const S = P8.newSave(); S.g = g0; const ms = Array.from({ length: 8 }, (_, i) => doneMon(P7, P8, S, { name: 'M' + i })); S.m = ms[0]; S.box = ms.slice(1);
-    assert.deepEqual(M.canPurchase(S, 'solamo', 8), { ok: false, reason: 'full' }); assert.ok(!(owned(S) >= 2 && S.g >= M.FUSION_COST));
-    const r = M.sell(S, S.box[0].uid); assert.equal(r.price, 100, '最も安い育成完了個体（記録なし・ランクなし）でも100G');
-    const canMerge = owned(S) >= 2 && S.g >= M.FUSION_COST, buy = M.canPurchase(S, 'solamo', owned(S));
-    assert.ok(canMerge !== !!buy.ok, `${g0}G→${S.g}G：合体か購入のどちらか一方で次へ進める（${canMerge ? '合体' : '継続用救済'}）`);
-    if (!canMerge) { assert.equal(buy.continueRescue, true); assert.equal(M.purchase(S, 'solamo', 7).after, 0); }
+  for (const access of [false, true]) {   // 今（研究所の合体UIが未実装＝合体を使えない）と、合体UIができた後
+    const { P7, P8, M } = load(); if (access) M.setFusionAccess(() => true);
+    for (let g0 = 0; g0 < 200; g0 += 10) {
+      const S = P8.newSave(); S.g = g0; const ms = Array.from({ length: 8 }, (_, i) => doneMon(P7, P8, S, { name: 'M' + i })); S.m = ms[0]; S.box = ms.slice(1);
+      assert.deepEqual(M.canPurchase(S, 'solamo', 8), { ok: false, reason: 'full' }); assert.ok(!(owned(S) >= 2 && S.g >= M.FUSION_COST));
+      const r = M.sell(S, S.box[0].uid); assert.equal(r.price, 100, '最も安い育成完了個体（記録なし・ランクなし）でも100G');
+      const canMerge = M.fusionAvailable(S) && owned(S) >= 2 && S.g >= M.FUSION_COST;   // 合体は画面から行けるときだけ数える
+      const buy = M.canPurchase(S, 'solamo', owned(S));
+      assert.ok(canMerge !== !!buy.ok, `${access}・${g0}G→${S.g}G：合体か購入のどちらか一方で次へ進める（${canMerge ? '合体' : '継続用救済'}）`);
+      if (!canMerge) { assert.equal(buy.continueRescue, true); assert.equal(M.purchase(S, 'solamo', 7).after, 0); }
+      if (!access) assert.equal(canMerge, false, '今は合体を使えないので、売却後は必ず継続用救済');
+    }
   }
 });
 

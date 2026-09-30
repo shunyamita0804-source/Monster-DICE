@@ -108,11 +108,17 @@
   const firstPurchaseRescueApplies = (S, owned) => owned === 0 && (S.g || 0) < ECONOMY.marketPrice;
   // ---- 継続用救済（初回救済とは別の独立した条件。市場価格・購入条件・合体料金は変えない） ----
   //  次の育成を続けられる個体（未育成・育成中）が手持ち・牧場に1体もおらず（＝全員が育成完了）、所持金が500G未満で、
-  //  今の個体数と所持金では合体（200G）もできないときだけ、通常販売中の500Gのモンスターの購入を確定する時点で
+  //  今の個体数と所持金では合体（200G）もできない（または合体の画面へ行けない）ときだけ、通常販売中の500Gのモンスターの購入を確定する時点で
   //  不足分を補い、所持金を500Gにして通常どおり購入する（購入後は0G）。
   //  補填は purchase()（購入の確定処理）の中だけで行い、確定前の所持金には加えない（アイテム購入・合体費用には使えない）。
   //  手持ち・牧場とも0体のときは初回救済の対象で、ここでは扱わない。所持上限（8体）の判定もこれまでどおり先に行う。
   const FUSION_COST = 200;   // 合体費用（index.html の fuse() と同じ値。判定の参照用で、合体料金はここでは決めない）
+  //  合体を今プレイヤーが使えるか（画面から合体へ行けるか）。合体の処理（fuse など）が残っていても、画面から行けなければ使えない扱い。
+  //  2026-09-30：合体は牧場から外し、研究所の合体UIは未実装 → 既定は「使えない」。研究所の合体UIを作ったら、
+  //  その画面を出す側で MMP10M.setFusionAccess(() => true)（または開ける条件を返す関数）を登録すれば、救済の判定に合体が戻る。セーブには持たない。
+  let fusionAccess = () => false;
+  function setFusionAccess(fn) { fusionAccess = typeof fn === 'function' ? fn : () => false; }
+  function fusionAvailable(S) { try { return !!fusionAccess(S); } catch (e) { return false; } }
   const ownedMonsters = (S) => [S && S.m, ...(S && Array.isArray(S.box) ? S.box : [])].filter(Boolean);
   const raiseStateOf = (m) => { const P7 = root.MMP7; return P7 && typeof P7.raiseState === 'function' ? P7.raiseState(m) : ((m && m.raise && m.raise.state) || 'none'); };
   function continueRescueApplies(S, key, owned) {
@@ -122,7 +128,7 @@
     const mons = ownedMonsters(S);
     if (!mons.length || owned !== mons.length) return false;                                     // 0体は初回救済の対象
     if (!mons.every((m) => raiseStateOf(m) === 'done')) return false;                            // 未育成・育成中の個体がいれば発動しない
-    if (mons.length >= 2 && (S.g || 0) >= FUSION_COST) return false;                            // 今の所持金で合体できるなら発動しない
+    if (fusionAvailable(S) && mons.length >= 2 && (S.g || 0) >= FUSION_COST) return false;      // 合体を使えて、今の所持金で合体できるなら発動しない
     return true;
   }
   /** 購入できるか：not_in_market（市場に無い：ジオルなど）/ waiting（入荷待ち）/ full（8体まで）/ no_money
@@ -203,5 +209,5 @@
 
   root.MMP10M = fz({ STAT_KEYS, STAT_LABELS, STAT_MAX, SPEED_MIN, SPEED_MAX, isValidSpeed, UNIQUE_SKILLS, SPECIES,
     byId, byKey, keyOf, idOf, imageOf, silhouetteOf, speedOf, baseOf, skillOf, skillText, ensureSpeed, ECONOMY, MARKET_CATALOG,
-    OWN_LIMIT, marketItem, canPurchase, purchase, FUSION_COST, continueRescueApplies, SELL, sellQuote, canSell, sell, NOBITON_STOCK_RAISES, nobitonStock });
+    OWN_LIMIT, marketItem, canPurchase, purchase, FUSION_COST, setFusionAccess, fusionAvailable, continueRescueApplies, SELL, sellQuote, canSell, sell, NOBITON_STOCK_RAISES, nobitonStock });
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -80,14 +80,60 @@ test('R4：次の育成に使える個体がいれば継続用救済は動かな
   }
 });
 
-test('R5：今の所持金で合体して次の育成へ進めるなら継続用救済は動かない（2体以上・200G以上）。199Gなら動く', () => {
+test('R5：合体を使える（研究所の合体UIができた後）ときは、今の所持金で合体して次の育成へ進めるなら継続用救済は動かない（2体以上・200G以上）。199Gなら動く', () => {
   const { P7, P8, M } = load();
+  M.setFusionAccess(() => true);   // 研究所の合体UIを作ったときに登録する想定（この load() の中だけ）
+  assert.equal(M.fusionAvailable(), true);
   for (const g of [200, 300, 499]) for (const n of [2, 3]) {
     const S = save(P7, P8, Array(n).fill('done'), g);
     assert.deepEqual(M.purchase(S, 'solamo', n), { ok: false, reason: 'no_money' }, `${n}体・${g}G：合体できる`); assert.equal(S.g, g);
   }
   const S = save(P7, P8, ['done', 'done'], 199); assert.equal(M.canPurchase(S, 'solamo', 2).continueRescue, true, '199Gでは合体できない');
   const one = save(P7, P8, ['done'], 499); assert.equal(M.canPurchase(one, 'solamo', 1).continueRescue, true, '1体だけなら合体できない');
+});
+
+test('R10：研究所の合体UIが未実装の今は「合体を使えない」扱い：育成完了2体以上・200〜499G でも継続用救済が発生する', () => {
+  const { P7, P8, M } = load();
+  assert.equal(M.fusionAvailable(), false, '既定は合体を使えない（画面から合体へ行けない）');
+  for (const g of [200, 300, 499]) for (const n of [2, 3, 7]) {
+    const S = save(P7, P8, Array(n).fill('done'), g);
+    assert.equal(M.continueRescueApplies(S, 'solamo', n), true, `${n}体・${g}G`);
+    assert.deepEqual(M.canPurchase(S, 'gauru', n), { ok: true, price: 500, rescue: false, continueRescue: true });
+    assert.equal(S.g, g, '判定だけでは所持金は変わらない');
+    assert.deepEqual(M.purchase(S, 'solamo', n), { ok: true, key: 'solamo', price: 500, rescued: false, before: g, after: 0, continueRescued: true, topUp: 500 - g });
+  }
+  // 救済の他の条件は従来どおり
+  assert.equal(M.continueRescueApplies(save(P7, P8, ['done', 'none'], 300), 'solamo', 2), false, '未育成の個体がいれば発動しない');
+  assert.equal(M.continueRescueApplies(save(P7, P8, ['done', 'done'], 500), 'solamo', 2), false, '500G以上なら発動しない');
+  assert.deepEqual(M.purchase(save(P7, P8, Array(8).fill('done'), 300), 'solamo', 8), { ok: false, reason: 'full' }, '所持上限8体が先');
+  assert.equal(M.continueRescueApplies(save(P7, P8, ['done', 'done'], 300), 'nobiton', 2), false, '入荷待ちは対象外');
+  // 登録の扱い：関数以外・例外を出す関数は「使えない」
+  M.setFusionAccess(null); assert.equal(M.fusionAvailable(), false);
+  M.setFusionAccess(() => { throw new Error('x'); }); assert.equal(M.fusionAvailable(), false);
+  M.setFusionAccess((S) => !!(S && S.g >= 0)); assert.equal(M.fusionAvailable({ g: 1 }), true, '判定関数にはセーブが渡る');
+  assert.equal(M.continueRescueApplies(save(P7, P8, ['done', 'done'], 300), 'solamo', 2), false, '合体を使えるようになれば従来の条件に戻る');
+});
+
+test('R11：売却との関係は従来どおり（救済は売却を条件に含めない。売却の可否・売却額・売却後の購入は変わらない）', () => {
+  const { P7, P8, M } = load();
+  const S = save(P7, P8, ['done', 'done'], 300);
+  assert.equal(M.continueRescueApplies(S, 'solamo', 2), true, '売れる個体がいても救済は発生する（売却は条件に含めない：未決のまま従来どおり）');
+  const u = S.box[0].uid;
+  assert.deepEqual([M.canSell(S, u).ok, M.canSell(S, u).price], [true, 100], '売却の可否・売却額（育成完了・記録なし＝100G）は変わらない');
+  assert.deepEqual(M.sell(S, u), { ok: true, uid: u, name: 'ソラモ', sp: 0, kind: 'done', price: 100, before: 300, after: 400 });
+  assert.deepEqual(M.canSell(S, S.m.uid), { ok: false, reason: 'last' }, '最後の1体は売却できない');
+  assert.deepEqual(M.purchase(S, 'solamo', 1), { ok: true, key: 'solamo', price: 500, rescued: false, before: 400, after: 0, continueRescued: true, topUp: 100 });
+  const R = save(P7, P8, ['raising', 'done'], 300);
+  assert.equal(M.canSell(R, R.box[0].uid).reason, 'raising', '育成中の個体がいる間は売却できない（従来どおり）');
+});
+
+test('R12：合体の処理そのものは残っている（fuse・selm・合体の選択画面・費用200G）。救済の変更は monsters.js の判定だけ。ゲーム側で合体を「使える」と登録していない', () => {
+  const fuse = between('async function fuse(){', '\nfunction ');
+  assert.match(fuse, /if\(S\.g<200\)return;S\.g-=200;/, '合体費用200Gはそのまま');
+  assert.match(HTML, /function selm\(i\)\{/, 'selm は残る');
+  assert.match(HTML, /onclick="fuse\(\)">合体させる！（200G）/, '合体の選択画面（farm(\'\',\'c\')）は残る');
+  assert.doesNotMatch(HTML, /setFusionAccess/, '研究所の合体UIが未実装のため、index.html は合体を使えると登録しない');
+  assert.doesNotMatch(SRC.mo, /S\.(fusion|fuse|canFuse)\b|fusionAccess\s*:/, 'セーブに新しい項目を足さない');
 });
 
 test('R6：500G以上なら救済なしで代金500Gだけを支払う。価格・入荷待ち・市場外・所持上限の判定は従来どおり', () => {
