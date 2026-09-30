@@ -305,29 +305,37 @@ test('T3-7：VS画面：左に自分・右に相手・中央にVS、正式6能�
 // ---------------------------------------------------------
 // Step 4：Chapter間ファーム
 // ---------------------------------------------------------
-test('T4-1：Chapter間ファームは専用画面（未育成・育成完了のファームは従来のまま）', () => {
+test('T4-1：ファームは正式デザインの1画面（育成開始前・Chapter間・育成完了とも fmScr）。Chapter中はボードへ（ステータス・技管理だけ開ける）', () => {
   const hall = between('function _hall(tab,msg){', '\nfunction after(');
-  assert.match(hall, /if\(S\.m&&MMP7\.raiseState\(S\.m\)=="farm"&&\(tab\|\|ht\)=="t"\)\{ht="t";return p9FarmScr\(msg\)\}/);
-  assert.match(hall, /b=p8FarmPanel\(\)/, '未育成・育成完了は従来のファーム');
+  assert.match(hall, /if\(S\.m&&MMP7\.inChapter\(S\.m\)&&tab!="st"&&tab!="w"\)\{board\(msg\);return\}/);
+  assert.match(hall, /if\(S\.m&&\(tab\|\|ht\)=="t"\)\{ht="t";while\(S\.m\.eq\.length<6\)S\.m\.eq\.push\(-1\);return fmScr\(msg\)\}/);
+  assert.match(fnLine('function p9FarmScr('), /^function p9FarmScr\(msg\)\{return fmScr\(msg\)\}/, 'Chapter間ファームの関数名は互換のため残し、正式デザインの画面へ');
 });
 
-test('T4-2：ファームのコマンド：主要5項目（ボード＝出発準備／次のChapterへ・修行・ステータス・技管理・アイテム）＋サブ（中断・育成放棄）。遷移先は従来どおり、街へ戻るコマンドは無い', () => {
-  const f = between('function p9FarmScr(msg){', '\n// ---- Phase 8：育成中の画面遷移');
-  for (const [label, call] of [['ボード', 'prepScr()'], ['特訓', "hall('s')"], ['ステータス', "hall('st')"], ['技管理', "hall('w')"], ['アイテム', 'shopScr()'], ['中断', 'p8Suspend()'], ['育成放棄', 'p8AbandonAsk()']]) {   // 試遊修正で表示名を変更（遷移先は同じ）
-    assert.ok(f.includes(`"${label}"`) && f.includes(`"${call}"`), label);
-  }
-  assert.doesNotMatch(f, /街にもどる|lobby\(|market\(|farm\(/);
+test('T4-2：ファームのコマンド：主要4つ（特訓・ステータス・技管理・アイテム）と最下部の進行ボタン1つ。「ボード」コマンドは無い（Chapterへの進行は進行ボタン）。遷移先は従来の関数', () => {
+  const f = between('function fmScr(msg){', '\n// ---- Phase 8：育成中の画面遷移');
+  assert.match(f, /const cmd=\[\["hall\('s'\)","train","特訓"\],\["hall\('st'\)","status","ステータス"\],\["hall\('w'\)","moves","技管理"\],\["shopScr\(\)","item","アイテム"\]\];/);
+  assert.doesNotMatch(f, /"ボード"|ボード閲覧/, 'ボードのコマンドは置かない');
+  // 進行ボタン（1つ）：開始前＝育成を始める／Chapter間＝Chapter Nへ進む（どちらも従来の出発準備 prepScr。出発の確認＝フィナの選択肢はそこから）／完了＝街へ戻る
+  assert.match(f, /const go=st=="none"\?\{t:"育成を始める",s:`\$\{chNm\(k\)\}「\$\{chSub\(k\)\}」へ出発`,on:"prepScr\(\)",c:""\}/);
+  assert.match(f, /:done\?\{t:"街へ戻る",s:"",on:"lobby\(\)",c:" back"\}/);
+  assert.match(f, /:fin&&!MMP8\.isPlayable\(MMP8\.FINAL\)\?\{t:"育成を完了して街へ戻る",s:"最終ルートは準備中",on:"pfixFinishNoFinal\(this\)",c:""\}/, '最終ルートが未登録：従来どおりファームから育成完了（2度押し）');
+  assert.match(f, /:\{t:fin\?"最終ルートへ進む":`\$\{chNm\(k\)\}へ進む`,[\s\S]*?on:"prepScr\(\)",c:" p9c-go"\};/);
+  // 丸ボタン：開始前＝街へ戻る／Chapter間（育成中）＝中断（街へ戻るは出さない）。育成放棄は Chapter間だけ（2段階確認＋3秒は p8AbandonAsk のまま）
+  assert.match(f, /const side=st=="none"\?`<button class="back fmrd" onclick="lobby\(\)">\$\{fmIc\("town"\)\}<span>街へ戻る<\/span><\/button>`\n  :st=="farm"\?`<button class="fmrd" onclick="p8Suspend\(\)">\$\{fmIc\("pause"\)\}<span>中断<\/span><\/button>`:"";/);
+  assert.match(f, /\$\{st=="farm"\?`<button class="fmab p8danger" onclick="p8AbandonAsk\(\)">育成放棄<\/button>`:""\}/);
+  assert.doesNotMatch(f, /ファームメニュー|market\(|museum\(|farm\(\)/);
 });
 
-test('T4-3：モンスターが主役（大きな正式モンスター画像）。コマンド列の方が場所を取らない', () => {
-  const f = between('function p9FarmScr(msg){', '\n// ---- Phase 8：育成中の画面遷移');
-  assert.match(f, /<div class="p9hero"><div class="mon p9bob">\$\{msv\(m\)\}<\/div>/);
-  // 試遊修正：コマンドは舞台の外（下）に移し、舞台はモンスターと背景だけ（コマンドが舞台に重ならない）
-  assert.ok(f.indexOf('<div class="p9hero">') < f.indexOf('<nav class="p9cmd p15cmd"') && f.indexOf('</div>\n <nav class="p9cmd p15cmd"') > 0, 'コマンドは舞台の後ろ（外）');
-  assert.match(HTML, /\.p9farm \.p9cmd\.p15cmd\{position:static;/, 'コマンドは舞台に重ねない');
-  assert.ok(+HTML.match(/\.p9hero \.mon\{[^}]*width:(\d+)px/)[1] >= 180, 'モンスター画像は大きいまま');
-  assert.match(f, /\$\{p8Hud\(/, '修行チケットなどのHUD'); assert.match(f, /MMP8\.rankLabel\(m\)/);
-  assert.match(f, /c\?c\.desc:""/, '次のChapterの説明'); assert.match(f, /前回の結果/);
+test('T4-3：正式背景・ダン（正式アップ画像）が寄り添い、育成中の個体（正式画像）が主役。情報パネルは名前・種族／大会ランク・特訓チケット／育成状態・Chapter だけ（所持金・6能力は出さない）', () => {
+  const f = between('function fmScr(msg){', '\n// ---- Phase 8：育成中の画面遷移');
+  assert.match(HTML, /const FARM_BG="assets\/farm\/farm_main\.jpg";/); assert.ok(existsSync(path.join(ROOT, 'assets/farm/farm_main.jpg')));
+  assert.match(HTML, /const DAN_FIG="assets\/npc\/dan\/closeup\/smile\.png";/); assert.ok(existsSync(path.join(ROOT, 'assets/npc/dan/closeup/smile.png')));
+  assert.match(f, /<img class="fmdan" src="\$\{DAN_FIG\}" alt="" aria-hidden="true"><div class="fmmon mon">\$\{msv\(m\)\}<\/div>/, '育成中の個体は msv（正式画像）で表示。種族は固定しない');
+  for (const w of ['${p11Esc(m.name)}', '${sp?sp.kind:""}', '<dt>大会ランク</dt><dd>${MMP8.rankLabel(m)}</dd>', '<dt>特訓チケット</dt><dd>${S.trainTix}枚</dd>', '<span class="fmbadge">${state}</span>']) assert.ok(f.includes(w), w);
+  assert.match(f, /const state=st=="none"\?"育成準備中":done\?"育成完了":fin\?"最終ルート前":`Chapter \$\{last\?last\.ch:Math\.max\(1,k-1\)\} 終了`;/, '育成状態はセーブから判断（新しいデータは持たない）');
+  assert.doesNotMatch(f, /S\.g\b|🪙|KS\.map/, 'ファームに所持金・6能力を常時表示しない');
+  assert.match(HTML, /\.fm,\.fm\.p9farm\{[^}]*height:100dvh;[^}]*display:flex;flex-direction:column;overflow:hidden;/, '1画面（100dvh）に収める');
 });
 
 // ---------------------------------------------------------
@@ -397,8 +405,11 @@ test('T5-3：正式マップの分岐待ち・マス効果の途中で中断→�
 });
 
 test('T5-4：新しい画面（ボード・大会・VS・結果・ファーム）に街へ戻る導線が無い／中断・育成放棄へ行ける', () => {
-  const src = between('function p9Ch(ch){', '\nasync function bRoll(){') + between('function p9TourHead(m,t){', '\nfunction p8RewardText(') + between('function p9VsScr(){', '\n// 育成リソースHUD') + between('function p9FarmScr(msg){', '\n// ---- Phase 8：育成中の画面遷移');
+  const src = between('function p9Ch(ch){', '\nasync function bRoll(){') + between('function p9TourHead(m,t){', '\nfunction p8RewardText(') + between('function p9VsScr(){', '\n// 育成リソースHUD') + fnLine('function p9FarmScr(');
   assert.doesNotMatch(src.replace(/\/\/.*$/gm, ''), /街にもどる|lobby\(|market\(|museum\(|savescr\(/);
+  // ファーム（fmScr）の街への導線は、育成開始前（街へ戻る）と育成完了（街へ戻る）と個体がいないときだけ。Chapter間は中断・育成放棄
+  const fm = between('function fmScr(msg){', '\n// ---- Phase 8：育成中の画面遷移').replace(/\/\/.*$/gm, '');
+  assert.equal((fm.match(/lobby\(/g) || []).length, 3); assert.doesNotMatch(fm, /market\(|museum\(|savescr\(/);
   assert.match(fnLine('function p8BoardMenu('), /p8Suspend\(\)/); assert.match(fnLine('function p8BoardMenu('), /p8AbandonAsk\(\)/);
   assert.match(between('function p9TourHead(m,t){', '\nfunction p9Standings('), /onclick="p9Menu\(\)"/, '大会中もメニュー（中断・育成放棄）へ行ける');
 });

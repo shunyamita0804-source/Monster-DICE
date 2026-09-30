@@ -260,8 +260,8 @@ test('QA-RF-B2：牧場の表示：連れている個体・牧場の個体の名
     await tap(pg, '.back');
     await pg.waitForSelector('#app .map');
     await tap(pg, '.hz[onclick="hall()"]');
-    await pg.waitForSelector('.ttab');
-    await tap(pg, `.ttab[onclick="hall('st')"]`);
+    await pg.waitForSelector('.fmb');
+    await tap(pg, `.fmb[onclick="hall('st')"]`);   // ファームのコマンド「ステータス」
     await pg.waitForSelector('.dhero');
     const t = await txt(pg, '#app');
     assert.match(t, /ガウB/); assert.match(t, /ガウル/);

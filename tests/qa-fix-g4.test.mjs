@@ -215,19 +215,20 @@ test('QA-G4-B1：実ブラウザ：新規開始→市場で「<!--」「<b>X</b>
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
 });
 
-test('QA-G4-B2：実ブラウザ：名前「<!--」の個体でも Chapter間ファームのコマンド7つ・ステータス・育成放棄の確認が出る（再読込後も同じ）', { skip: H.skipReason() }, async () => {
+test('QA-G4-B2：実ブラウザ：名前「<!--」の個体でも Chapter間ファームのボタン7つ（4コマンド・進行ボタン・中断・育成放棄）・ステータス・育成放棄の確認が出る（再読込後も同じ）', { skip: H.skipReason() }, async () => {
   // 守ること：以前はコマンドが0個になり（出発・中断・育成放棄も無い）、再読込しても直らず進めなくなっていた
   const M = load(); const p = await open({ save: j(atFarm(M, CM)) }); const pg = p.page;
   await start(p, '#app .p9farm');
   for (const k of [0, 1]) {
     if (k) { await pg.reload(); await start(p, '#app .p9farm'); }
-    assert.equal(await count(pg, '#app .p9cmd button'), 7, 'コマンド（ボード・修行・ステータス・技管理・アイテム・中断・育成放棄）');
-    assert.deepEqual(await txt(pg, '#app .p9plate b'), [CM]);
+    assert.equal(await count(pg, '#app .fmcmd button.fmb'), 4, '4コマンド（特訓・ステータス・技管理・アイテム）');
+    assert.equal(await count(pg, '#app button.fmgo[onclick="prepScr()"], #app button.fmrd[onclick="p8Suspend()"], #app button.fmab[onclick="p8AbandonAsk()"]'), 3, '進行ボタン・中断・育成放棄');
+    assert.deepEqual(await txt(pg, '#app .fmnm b'), [CM]);
   }
-  await pg.click('#app .p9cmd button[onclick="hall(\'st\')"]'); await pg.waitForSelector('#app .dnm');
+  await pg.click('#app .fmcmd button[onclick="hall(\'st\')"]'); await pg.waitForSelector('#app .dnm');
   assert.deepEqual(await txt(pg, '#app .dnm'), [CM], 'ステータスの名前');
-  await pg.evaluate(() => hall('t')); await pg.waitForSelector('#app .p9cmd');
-  await pg.click('#app .p9cmd button[onclick="p8AbandonAsk()"]'); await pg.waitForSelector('.p8mc');
+  await pg.evaluate(() => hall('t')); await pg.waitForSelector('#app .fmcmd');
+  await pg.click('#app button.fmab[onclick="p8AbandonAsk()"]'); await pg.waitForSelector('.p8mc');
   assert.equal((await txt(pg, '.p8mc p'))[0], `${CM}の育成をやめますか？`); assert.equal(await count(pg, '.p8mc button'), 2, '「やめない」「放棄に進む」');
   await pg.click('.p8mc button.p8danger'); await pg.waitForSelector('#p8abgo');
   assert.equal((await txt(pg, '.p8mc p'))[0], `本当に${CM}を放棄しますか？この操作は取り消せません。`); assert.equal(await count(pg, '.p8mc button'), 2);
@@ -264,8 +265,9 @@ test('QA-G4-B4：実ブラウザ：育成完了画面・ファームの完了表
   assert.equal((await txt(pg, '#app .p9dn b.big'))[0], `🎉 ${CM}の育成が完了した！`);
   assert.equal(await count(pg, `#app button[onclick="farm('','a')"]`), 1, '「牧場へ」が残る');
   await H.finishTalk(pg);
-  await pg.evaluate(() => hall('t')); await pg.waitForSelector('#app .dnote');
-  assert.ok((await txt(pg, '#app .dnote'))[0].startsWith(`🎉 ${CM}の育成は完了しています。`));
+  await pg.evaluate(() => hall('t')); await pg.waitForSelector('#app .fm-done');
+  assert.deepEqual(await txt(pg, '#app .fmnm b'), [CM], 'ファーム（育成完了）の名前は文字のまま');
+  assert.deepEqual(await txt(pg, '#app .fmbadge'), ['育成完了']);
   await noInjected(p);
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
 });

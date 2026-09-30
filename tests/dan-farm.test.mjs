@@ -40,14 +40,15 @@ test('DAN-3：ダンの顔はダンが話す一言（ファームの吹き出し
   assert.equal((HTML.match(/\$\{DAN_FACE\}/g) || []).length, 2);
   assert.equal((HTML.match(/\$\{msg\?`<div class="dmsg"><span>\$\{msg\}<\/span><\/div>`:""\}/g) || []).length, 2, 'dscr・p7Shell のメッセージ欄は文字だけ');
   assert.doesNotMatch(HTML, /class="dmsg"><img/);
-  assert.match(HTML, /\$\{msg\?`<div class="p9say sys"><span>\$\{msg\}<\/span><\/div>`:`<div class="p9say"><img src="\$\{DAN_FACE\}" alt=""><span>\$\{bcomm\(\)\}<\/span><\/div>`\}/, 'Chapter間ファーム：通知は顔なし、ダンの一言だけ顔つき');
+
   assert.equal((HTML.replace(/^\s*\/\/.*$/gm, '').match(/NPI\.b/g) || []).length, 0, '画面から旧コウの顔を参照しない（コメントを除く）');
-  const hall = lineOf(' $("#app").innerHTML=`${MMP8.canVisitTown(S)');
+  const hall = HTML.slice(HTML.indexOf('function fmScr(msg){'), HTML.indexOf('\n// ---- Phase 8：育成中の画面遷移'));   // ファーム（正式デザイン。育成開始前・Chapter間・育成完了）
   assert.match(hall, /\$\{msg\?`<div class="kbub kt ksys">\$\{msg\}<\/div>`:""\}<div class="kbub kdan\$\{msg\?"":" kt"\}"><b>ダン<\/b><br>\$\{bcomm\(\)\}<\/div>/, 'ファーム：通知は名前なしの別のトースト。ダンの吹き出しはダンの一言だけ');
   assert.match(hall, /s=p\.querySelector\('\.ksys'\),b=p\.querySelector\('\.kdan'\);if\(s\)s\.remove\(\);/, '顔を押すとダンの吹き出し（通知は消す）');
   assert.match(hall, /aria-label="ダンのコメントを見る"><img src="\$\{DAN_FACE\}" alt="">/);
   const code = HTML.replace(/^\s*\/\/.*$/gm, '');
   assert.doesNotMatch(code.slice(code.indexOf('function _hall('), code.indexOf('\nfunction after(')), /コウ/, 'ファームにコウの名前を出さない');
+  assert.doesNotMatch(hall, /コウ/, 'ファーム（fmScr）にコウの名前を出さない');
 });
 
 test('DAN-4：旧コウのデータは互換のため残す（NP.b の名前とセリフ・NPI.b・assets/embedded/npi_b_kou.png）', () => {

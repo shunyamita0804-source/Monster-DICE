@@ -153,11 +153,11 @@ const SEL = {
   ranch: ['button.back', '.ftile', '.fsell', '.wpanel button'],
   museum: ['.dtop .dback', '.mgc'],
   save: ['button.back', '.card.slot button', 'button.ghost'],
-  hall: ['button.back', '.ttab', '[onclick="prepScr()"]'],
+  hall: ['button.back', '.fmb', '[onclick="prepScr()"]'],   // ファーム（育成開始前）：街へ戻る・4コマンド・進行ボタン「育成を始める」
   prep: ['.dback', '[onclick*="p7Depart"]'],
   board: ['.p9mbtn', '#brollbtn'],
   goal: ['.p9mbtn', '.p9rank', '.p9btn2'],
-  farmInterval: ['.p15b'],
+  farmInterval: ['.fmb', '.fmgo', '.fmrd', '.fmab'],   // Chapter間ファーム：4コマンド・進行ボタン・中断・育成放棄
   trainMenu: ['.dback', '.p12tc:not([disabled])'],
   trainBoard: ['#p7roll'],
 };
@@ -313,7 +313,7 @@ describe('QA-TS：390×844 の通し（JS エラー・読み込み・壊れた�
   T('QA-TS8：Chapter間ファーム → 修行メニュー → 修行ボード', async () => {
     // 大会を最後まで戦う代わりに、大会の記録を外してゴールで辞退した状態にする（この画面の通しが目的）
     await pg.evaluate(() => { const m = S.m; m.raise.tour = null; m.raise.battle = null; MMP8.declineTournament(S, m); S.trainTix = 3; save(); hall('t'); });
-    await waitSel(pg, '.p15b.p9c-go');
+    await waitSel(pg, '.fmgo.p9c-go');
     await check(pg, 'Chapter間ファーム', SEL.farmInterval);
     await pg.click(`.p15b[onclick="hall('s')"]`);
     await waitSel(pg, `[onclick="trStart('po')"]`);
@@ -328,8 +328,8 @@ describe('QA-TS：390×844 の通し（JS エラー・読み込み・壊れた�
   T('QA-TS9：Chapter 2 のボード（地図）→ 育成完了（フィナの会話）→ 街', async () => {
     // 修行はゲームの関数で最後まで進め、Chapter間ファームの「ボード」→ 出発準備 → 出発
     await pg.evaluate(() => { for (let i = 0; i < 20 && MMP7.trainRunOf(S.m); i++) { const r = MMP7.advanceTraining(S, S.m, 3); if (r.goal) MMP7.finishTraining(S, S.m); } save(); hall('t'); });
-    await waitSel(pg, '.p15b.p9c-go');
-    await pg.click('.p15b.p9c-go');
+    await waitSel(pg, '.fmgo.p9c-go');
+    await pg.click('.fmgo.p9c-go');
     await waitSel(pg, '[onclick*="p7Depart"]');
     await pg.click('[onclick*="p7Depart"]');
     await waitSel(pg, '#brollbtn');
@@ -409,7 +409,7 @@ for (const [key, label] of [['se', 'iPhone SE 相当'], ['android', 'Android 相
     await waitSel(pg, '.p9rank');
     await check(pg, 'ゴール（大会の選択）', SEL.goal, { fixed: ['.p9rank', '.p9btn2'] });
     await pg.evaluate(() => { MMP8.declineTournament(S, S.m); S.trainTix = 3; save(); hall('t'); });
-    await waitSel(pg, '.p15b.p9c-go');
+    await waitSel(pg, '.fmgo.p9c-go');
     await check(pg, 'Chapter間ファーム', SEL.farmInterval);
     await pg.click(`.p15b[onclick="hall('s')"]`);
     await waitSel(pg, `[onclick="trStart('po')"]`);

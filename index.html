@@ -1413,6 +1413,59 @@ button.p10karen img{display:block;width:100%;height:auto;margin-top:2px;transfor
 .mmtalk-choice:focus-visible{outline:3px solid #f6dc92;outline-offset:2px}
 @keyframes mmtalkNx{0%,100%{transform:translateY(0);opacity:1}50%{transform:translateY(3px);opacity:.6}}
 @media (prefers-reduced-motion:reduce){.mmtalk,.mmtalk-next{animation:none}}
+/* ===== ファーム（正式デザイン 2026-09-30。fmScr）：正式背景 FARM_BG・ダン・育成中の個体・情報パネル・4コマンド・進行ボタンを1画面（100dvh）に収める。
+   深い濃紺・金の二重線・Shippori Mincho（街と同じ系統）。低い画面（高さ700px以下）はキャラクターと余白を縮め、コマンドは画面外へ出さない ===== */
+.fm,.fm.p9farm{position:relative;box-sizing:border-box;margin:-16px;height:100dvh;min-height:540px;display:flex;flex-direction:column;overflow:hidden;padding:0 12px calc(10px + env(safe-area-inset-bottom,0px));background:#0c1630 var(--fm-bg) 58% 0/cover no-repeat;color:#fff;font-family:var(--mm-font-body)}
+.fm::before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(to bottom,rgba(8,14,30,.38),rgba(8,14,30,0) 11%,rgba(8,14,30,0) 52%,rgba(8,14,30,.55) 78%,rgba(8,14,30,.7))}
+.fmhd{position:relative;z-index:4;flex:none;display:flex;justify-content:space-between;align-items:flex-start;padding-top:calc(env(safe-area-inset-top,0px) + 10px)}
+.fmplq{position:relative;flex:none;white-space:nowrap;padding:6px 22px 7px;border-radius:8px;background:linear-gradient(#223766,#12204a);border:1.5px solid #e0b861;box-shadow:inset 0 0 0 2px #0c1630,inset 0 0 0 3px rgba(224,184,97,.55),0 3px 8px rgba(0,0,0,.4)}
+.fmplq::before,.fmplq::after{content:"";position:absolute;top:50%;width:7px;height:7px;background:#e0b861;transform:translateY(-50%) rotate(45deg)}
+.fmplq::before{left:-4px}.fmplq::after{right:-4px}
+.fmplq b{font-family:var(--mm-font-head);font-weight:800;font-size:17px;letter-spacing:.3em;margin-right:-.3em;color:#f6dc98;text-shadow:0 1px 0 #000}
+.fm .fmab{margin:4px 46px 0 0;padding:5px 12px;min-height:32px;border-radius:16px;font-size:12px;box-shadow:0 2px 6px rgba(0,0,0,.35);background:linear-gradient(#5a1a16,#3a0f0c);border:1.5px solid #d05a4a;color:#ffd6cf}
+.fmstage{position:relative;z-index:1;flex:1 1 auto;min-height:0}
+.fmdan{position:absolute;left:-9%;bottom:-8%;height:min(84%,350px);width:auto;pointer-events:none;user-select:none;-webkit-user-drag:none}
+.fm .fmmon{position:absolute;left:30%;right:-2%;bottom:-2%;width:auto;height:min(64%,290px);z-index:2}
+.fm .fmmon::after{content:"";position:absolute;left:12%;right:10%;bottom:-3%;height:11%;border-radius:50%;background:radial-gradient(ellipse,rgba(40,30,10,.45),rgba(40,30,10,0) 70%);z-index:0}
+.fm .fmmon img,.fm .fmmon svg{width:100%;height:100%;object-fit:contain;object-position:50% 100%}
+.fm .kbub{left:auto;right:0;top:2%;bottom:auto;width:min(64%,236px);min-height:0;box-sizing:border-box;padding:7px 10px 8px 46px;border:1.5px solid #9c7430;border-radius:12px;background:rgba(251,241,220,.96);color:#3a2a14;font-weight:500;font-size:12.5px;line-height:1.45;opacity:0;z-index:5;pointer-events:none;box-shadow:0 3px 8px rgba(0,0,0,.3)}
+.fm .kbub.kt{opacity:1;animation:fmin .35s ease-out}
+@keyframes fmin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.fm .kbub b{display:inline-block;margin-bottom:3px;padding:2px 8px;border:1px solid #e0b861;border-radius:8px;background:#1d2f57;color:#fff;font-size:11px;line-height:1.2}
+.fm .kbub::after{display:none}
+.fm .kbub.ksys{background:rgba(12,31,86,.94);border-color:#c9a24d;color:#fff}
+.fm .kav{left:auto;right:calc(min(64%,236px) - 40px);top:calc(2% + 8px);width:32px;height:32px;border:2px solid #e0b861;background:#f3e2c0;cursor:pointer;z-index:6}
+.fminfo{position:relative;z-index:3;flex:none;display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:0 10px;margin-top:6px;padding:9px 12px;border-radius:12px;color:#3a2a14;background:linear-gradient(rgba(251,244,226,.97),rgba(238,224,193,.97));border:1.5px solid #9c7430;box-shadow:inset 0 0 0 2px #fff8e6,inset 0 0 0 3px rgba(156,116,48,.4),0 4px 10px rgba(0,0,0,.4)}
+.fmnm{min-width:0}
+.fmnm b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--mm-font-head);font-weight:800;font-size:20px;line-height:1.2;color:#2a1c0a}
+.fmtag{display:inline-block;margin-top:4px;padding:1px 7px;border:1px solid #b8914a;border-radius:6px;background:#fff7e4;color:#7a5a24;font-size:11px;font-weight:700}
+.fmmid{margin:0;padding:0 10px;border-left:1px solid rgba(156,116,48,.45);border-right:1px solid rgba(156,116,48,.45)}
+.fmmid div{display:flex;justify-content:space-between;align-items:baseline;gap:8px;line-height:1.55}
+.fmmid dt{font-size:11px;font-weight:700;color:#7a6440}
+.fmmid dd{margin:0;font-size:14px;font-weight:800;color:#2a1c0a}
+.fmst{display:flex;flex-direction:column;align-items:flex-start;min-width:0;line-height:1.2}
+.fmbadge{display:inline-block;margin-bottom:4px;padding:2px 9px;border-radius:11px;border:1px solid #1f5a2e;background:linear-gradient(#4d9a55,#2f7440);color:#fff;font-size:11.5px;font-weight:700;white-space:nowrap}
+.fm-none .fmbadge{border-color:#7a5418;background:linear-gradient(#c9973a,#9a6e22)}
+.fm-done .fmbadge{border-color:#0c1630;background:linear-gradient(#2c467f,#1a2d58)}
+.fmst small{font-size:10.5px;font-weight:700;color:#7a6440}
+.fmst b{font-family:var(--mm-font-head);font-weight:800;font-size:15px;color:#2a1c0a;white-space:nowrap}
+.fmst .fmchs{font-weight:500;color:#6a5536;white-space:nowrap}
+.fmcmd{position:relative;z-index:3;flex:none;display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;margin-top:10px}
+.fm button.fmb{display:flex;align-items:center;justify-content:center;gap:10px;height:52px;min-height:0;margin:0;padding:0 8px;border-radius:10px;text-align:center;color:#fff;font-family:var(--mm-font-head);font-weight:800;font-size:17px;letter-spacing:.1em;text-shadow:0 1px 1px #000;background:linear-gradient(#223766,#15254a 55%,#101c3a);border:1.5px solid #e0b861;box-shadow:inset 0 0 0 2px #0c1630,inset 0 0 0 3px rgba(224,184,97,.5),0 3px 8px rgba(0,0,0,.45)}
+.fm .fmb svg,.fm .fmrd svg{width:26px;height:26px;flex:none;fill:none;stroke:#e0b861;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.fm .fmb svg .f{fill:rgba(224,184,97,.25)}
+.fmft{position:relative;z-index:3;flex:none;display:flex;align-items:center;gap:10px;margin-top:10px}
+.fm button.fmgo{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;height:64px;margin:0;padding:0 10px;border-radius:14px;color:#fff;background:linear-gradient(#2c467f,#1a2d58 55%,#12204a);border:2px solid #f6dc98;box-shadow:inset 0 0 0 2px #0c1630,inset 0 0 0 4px rgba(246,220,152,.65),0 0 12px rgba(246,220,152,.35),0 4px 10px rgba(0,0,0,.5);font-weight:700}
+.fm .fmgo small{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;letter-spacing:.06em;color:#f6dc98}
+.fm .fmgo b{font-family:var(--mm-font-head);font-weight:800;font-size:22px;letter-spacing:.12em;line-height:1.2;text-shadow:0 2px 2px #000;white-space:nowrap}
+.fm button.fmrd{flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;width:64px;height:64px;margin:0;padding:0;border-radius:50%;color:#fff;font-size:10.5px;font-weight:700;background:linear-gradient(#223766,#12204a);border:1.5px solid #e0b861;box-shadow:inset 0 0 0 2px #0c1630,inset 0 0 0 3px rgba(224,184,97,.5),0 3px 8px rgba(0,0,0,.45)}
+.fm .fmrd svg{width:24px;height:24px}
+@media (max-height:700px){
+ .fmhd{padding-top:calc(env(safe-area-inset-top,0px) + 6px)}
+ .fminfo{margin-top:4px;padding:6px 10px}.fmnm b{font-size:17px}.fmtag{margin-top:2px}
+ .fmcmd{gap:6px 8px;margin-top:7px}.fm button.fmb{height:44px;font-size:16px}
+ .fmft{margin-top:7px}.fm button.fmgo{height:56px}.fm .fmgo b{font-size:20px}.fm button.fmrd{width:56px;height:56px}
+}
 </style></head><body><main>
 <h1>ミスティックモンスターズ</h1>
 <div id="app"></div>
@@ -2001,7 +2054,7 @@ function dscr(id,msg){if(id=="b")return hall("t"); // Phase 8：旧「腕試し�
   const n=m.eq.filter(x=>x>=0&&SK[x]).length;
   c=`<div class="dcard"><div class="dh">バトルのルーレット <small>${n} / 6 セット中</small></div><div class="dhint">枠をタップして選び、下の技をタップしてセット</div><div class="drl">${rows}</div></div>
   <div class="dcard"><div class="dh">技の一覧 <small>${own.length} / ${skl(m).length} 習得</small></div><div class="dflt">${[["a","すべて"],["p","✊ ちから"],["i","📖 かしこさ"]].map(([v,l])=>`<button class="${wflt==v?"on":""}" onclick="wflt='${v}';hall('w')">${l}</button>`).join("")}</div><div class="dskg">${cards}</div></div>`}
- $("#app").innerHTML=`<div class="ds ds-${id}" style="--dc:${D[3]}"><div class="dbg" style="background-image:url(${TRIMG2})"></div><div class="dtop"><button class="dback" onclick="lastSk=-1;hall('t')">${S.m&&MMP7.inChapter(S.m)?"◀ ボードへ":"◀ ファーム"}</button><div class="dmoney">🪙 ${S.g}G</div></div><div class="dtitle"><img src="${TABS[D[2]]}" alt=""><div><b>${D[0]}</b><small>${D[1]}</small></div></div>${msg?`<div class="dmsg"><span>${msg}</span></div>`:""}<div class="dbody">${c}</div></div>`;
+ $("#app").innerHTML=`<div class="ds ds-${id}" style="--dc:${D[3]}"><div class="dbg" style="background-image:url(${FARM_BG})"></div><div class="dtop"><button class="dback" onclick="lastSk=-1;hall('t')">${S.m&&MMP7.inChapter(S.m)?"◀ ボードへ":"◀ ファーム"}</button><div class="dmoney">🪙 ${S.g}G</div></div><div class="dtitle"><img src="${TABS[D[2]]}" alt=""><div><b>${D[0]}</b><small>${D[1]}</small></div></div>${msg?`<div class="dmsg"><span>${msg}</span></div>`:""}<div class="dbody">${c}</div></div>`;
  if(id=="s")tapHold($("#app .dbody"),350); // 特訓メニューを出したタップの2打目で、特訓（チケット1枚）を始めない
  if(id=="w"&&lastSk>=0&&document.body.insertAdjacentHTML)document.body.insertAdjacentHTML("beforeend",`<div id="dsh">${skSheet(lastSk,m)}</div>`);try{window.scrollTo(0,0)}catch(e){}}
 function skd(k){lastSk=k;hall("w")}
@@ -2029,7 +2082,7 @@ function _hall(tab,msg){p9Immersive(false);
  {const o=document.getElementById&&document.getElementById("dsh");if(o)o.remove()}
  if(S.m&&MMP7.trainRunOf(S.m)){trScr();return} // Phase 7：特訓中はそのまま特訓ボードへ
  if(S.m&&MMP7.inChapter(S.m)&&tab!="st"&&tab!="w"){board(msg);return} // Phase 8：Chapter中に使えるファーム機能はステータス・わざだけ
- if(S.m&&MMP7.raiseState(S.m)=="farm"&&(tab||ht)=="t"){ht="t";return p9FarmScr(msg)} // Phase 9：Chapter間ファームは専用画面（モンスターが主役）
+ if(S.m&&(tab||ht)=="t"){ht="t";while(S.m.eq.length<6)S.m.eq.push(-1);return fmScr(msg)} // ファーム（正式デザイン）：育成開始前・Chapter間・育成完了を同じ画面で（下の fmScr）
  bgm("train");ht=tab||ht;const m=S.m;while(m.eq.length<6)m.eq.push(-1);let b="";
  if(ht!="t"){dscr(ht,msg);return}
  if(ht=="t"){b=p8FarmPanel()} // Phase 7：Chapter進行中／ファーム帰還中で導線を切り替える
@@ -2509,19 +2562,43 @@ function p8FarmPanel(){const m=S.m,st=MMP7.raiseState(m),r=m.raise||{},last=(r.l
  return (st=="farm"?p8Hud():"")+head+res+`<button class="go" onclick="prepScr()">🎒 出発準備</button><button class="t" onclick="hall('s')">🥋 特訓<small>特訓チケット ${S.trainTix}枚</small></button><button class="t" onclick="shopScr()">🛒 アイテム屋<small>購入・売却</small></button>`+(st=="farm"?`<div class="p8menu"><button onclick="p8Suspend()">⏸ 中断</button><button class="p8danger" onclick="p8AbandonAsk()">🏳 育成放棄</button></div>`:"")}
 
 // ---- Phase 9：Chapter間ファーム（育成中のモンスターを主役に、右側に細いコマンド列。街へ戻るコマンドは無い） ----
-function p9FarmScr(msg){const m=S.m,r=m.raise,k=MMP8.nextChapterKey(m),fin=k==MMP8.FINAL,c=fin?null:MMP9C.byNo(k),last=(r.log||[]).slice(-1)[0],can=MMP8.canDepart(S,m);bgm("farm");p9Immersive(true);p9MenuClose();
- const pips=[1,2,3,4].map(i=>{const d=MMP7.hasEndedChapter(m,i);return `<i class="${d?"d":i==k?"c":""}" title="Chapter ${i}">${d?"✓":i}</i>`}).join("")+(fin?`<i class="c f" title="最終ルート">★</i>`:"");
- const cmd=[["p9c-go","prepScr()","🎒","ボード","出発準備／次のChapterへ"],["","hall('s')","🥋","特訓",`チケット×${S.trainTix}`],["","hall('st')","📊","ステータス",""],["","hall('w')","⚔️","技管理",""],["","shopScr()","🛒","アイテム",""],["p15sub","p8Suspend()","⏸","中断",""],["p8danger p15sub","p8AbandonAsk()","🏳","育成放棄",""]]; // 主要5項目＋サブ（中断・育成放棄）。遷移先は従来どおり
- const lr=last&&!last.legacy?`<div class="p9res2"><span>Chapter</span><b>${p8ChLabel(last.ch)}</b><span>ボード</span><b>${last.reachedGoal?`${last.turnsUsed}ターンでゴール`:`ゴールできず（${last.turnLimit||""}ターン）`}</b><span>公式大会</span><b>${last.tour?`ランク${RN[last.tour.rank]}大会　${last.tour.place}位${last.tour.won?"（優勝）":""}`:last.declined?"辞退":"参加なし"}</b></div>`:last?`<p class="p9s">${p8ChLabel(last.ch)}（旧セーブから引き継ぎ）</p>`:"";
- $("#app").innerHTML=`<div class="p9farm p15f"><header class="p9hud"><div class="r1"><div class="p9plq"><div class="no">Chapter間ファーム</div><div class="nm">${fin?"次：最終ルート":`次：Chapter ${k}　${MMP8.chapterName(k)}`}</div></div>
- <div class="p9rk" title="その個体がクリアした最高ランク"><span>ランク</span><b>${MMP8.rankLabel(m)}</b></div></div>
- <div class="r2"><div class="p9pips" aria-label="Chapterの進み具合">${pips}</div>${p8Hud(`<span class="p9chip">🪙<b>${S.g}</b><small>G</small></span>`)}</div></header>
- <div class="p9stage" style="background-image:url(${MMP12S.FARM_INTERVAL.src});background-position:${MMP12S.FARM_INTERVAL.focus}">${msg?`<div class="p9say sys"><span>${msg}</span></div>`:`<div class="p9say"><img src="${DAN_FACE}" alt=""><span>${bcomm()}</span></div>`}
- <div class="p9hero"><div class="mon p9bob">${msv(m)}</div><div class="p9plate"><b>${p11Esc(m.name)}</b><span>ランク ${MMP8.rankLabel(m)}</span></div></div>
- </div>
- <nav class="p9cmd p15cmd" aria-label="コマンド">${cmd.map(([cl,on,ic,t,sub],i)=>(i==5?`<div class="p15subs">`:"")+`<button class="p15b ${cl}" onclick="${on}"><span class="p15ic">${ic}</span><span class="p15lb"><b>${t}</b>${sub?`<small>${sub}</small>`:""}</span></button>`+(i==6?`</div>`:"")).join("")}</nav>
- <section class="p9card"><h3>${fin?"次は最終ルート":"次のChapter"}</h3>${fin?pfixFinalNote():`<div class="p9nx"><b>Chapter ${k}　${MMP8.chapterName(k)}</b><p class="p9s">${c?c.desc:""}</p></div>`}${can.ok||fin?"":`<p class="p9s p9warn">${P7_ERR[can.reason]||"まだ出発できません。"}</p>`}</section>
- ${lr?`<section class="p9card"><h3>前回の結果</h3>${lr}</section>`:""}</div>`;try{window.scrollTo(0,0)}catch(e){}}
+function p9FarmScr(msg){return fmScr(msg)} // Chapter間ファーム：正式デザインのファーム画面（fmScr）へ。関数名は互換のため残す
+
+// ---- ファーム（正式デザイン 2026-09-30）：育成開始前・Chapter間・育成完了を1画面で見せる ----
+//  正式背景 FARM_BG の上に、ダン（正式アップ画像）と育成中の個体、情報パネル（名前・種族／大会ランク・特訓チケット／育成状態・Chapter）、
+//  4コマンド（特訓・ステータス・技管理・アイテム）、最下部の進行ボタン（1つ）。遷移先は従来の関数のまま：
+//  特訓 hall('s')・ステータス hall('st')・技管理 hall('w')・アイテム shopScr()・出発準備 prepScr()（出発の確認＝フィナの選択肢はここから）・中断 p8Suspend()・育成放棄 p8AbandonAsk()・街 lobby()
+//  状態はセーブから判断するだけ（新しいデータは持たない）。育成中（Chapter間）は街へ戻るボタンを出さず、中断を出す
+const FARM_BG="assets/farm/farm_main.jpg";
+const DAN_FIG="assets/npc/dan/closeup/smile.png"; // ファームに立つダン（正式アップ画像）。顔は吹き出しの DAN_FACE
+const FM_IC={train:'<path d="M3 13h3v6H3zM26 13h3v6h-3zM6 10h3v12H6zM23 10h3v12h-3zM9 16h14"/>',status:'<path d="M16 3l11 6.5v13L16 29 5 22.5v-13z"/><path d="M16 9l6 3.5v7L16 23l-6-3.5v-7z" class="f"/>',moves:'<path d="M6 5h15a3 3 0 013 3v19H9a3 3 0 01-3-3z"/><path d="M6 24a3 3 0 013-3h15"/><path d="M15 9l1.6 3.3 3.6.5-2.6 2.5.6 3.6-3.2-1.7-3.2 1.7.6-3.6-2.6-2.5 3.6-.5z"/>',item:'<path d="M9 11h14l2 17H7z"/><path d="M12 11V8a4 4 0 018 0v3"/><path d="M11 17h10"/>',town:'<path d="M5 15L16 6l11 9"/><path d="M8 13v13h16V13"/><path d="M13 26v-7h6v7"/>',pause:'<path d="M12 9v14M20 9v14"/><circle cx="16" cy="16" r="12"/>'};
+const fmIc=k=>`<svg viewBox="0 0 32 32" aria-hidden="true">${FM_IC[k]}</svg>`;
+function fmScr(msg){const m=S.m;if(!m)return lobby();p9MenuClose();
+ const st=MMP7.raiseState(m),r=m.raise||{},k=MMP8.nextChapterKey(m),fin=k==MMP8.FINAL,last=(r.log||[]).slice(-1)[0],sp=MMP10M.byId(m.sp),done=st=="done",can=done?{ok:true}:MMP8.canDepart(S,m);
+ bgm(st=="farm"?"farm":"train");p9Immersive(true);ht="t";
+ const chNm=c=>c==MMP8.FINAL?"最終ルート":`Chapter ${c}`,chSub=c=>c==MMP8.FINAL||c==null?"":MMP8.chapterName(c);
+ // 育成状態（セーブから判断）：開始前＝育成準備中／Chapter間＝終わったChapter／完了＝育成完了
+ const state=st=="none"?"育成準備中":done?"育成完了":fin?"最終ルート前":`Chapter ${last?last.ch:Math.max(1,k-1)} 終了`;
+ const chL=done?"到達":"次のChapter",ch=done?(last?`Chapter ${last.ch}`:"ー"):chNm(k),chS=done?"":chSub(k);
+ // 最下部の進行ボタン（1つ）：開始前＝育成を始める／Chapter間＝Chapter Nへ進む／完了＝街へ戻る
+ const warn=!done&&!fin&&!can.ok?(P7_ERR[can.reason]||"まだ出発できません。"):"";
+ const go=st=="none"?{t:"育成を始める",s:`${chNm(k)}「${chSub(k)}」へ出発`,on:"prepScr()",c:""}
+  :done?{t:"街へ戻る",s:"",on:"lobby()",c:" back"}
+  :fin&&!MMP8.isPlayable(MMP8.FINAL)?{t:"育成を完了して街へ戻る",s:"最終ルートは準備中",on:"pfixFinishNoFinal(this)",c:""} // 最終ルートが未登録：従来どおりChapter間ファームから育成完了（2度押し。pfixFinishNoFinal）
+  :{t:fin?"最終ルートへ進む":`${chNm(k)}へ進む`,s:fin?"":`「${chSub(k)}」`,on:"prepScr()",c:" p9c-go"};
+ const side=st=="none"?`<button class="back fmrd" onclick="lobby()">${fmIc("town")}<span>街へ戻る</span></button>`
+  :st=="farm"?`<button class="fmrd" onclick="p8Suspend()">${fmIc("pause")}<span>中断</span></button>`:"";
+ const cmd=[["hall('s')","train","特訓"],["hall('st')","status","ステータス"],["hall('w')","moves","技管理"],["shopScr()","item","アイテム"]];
+ $("#app").innerHTML=`<div class="fm fm-${st}${st=="farm"?" p9farm p15f":""}" style="--fm-bg:url(${FARM_BG})">
+ <header class="fmhd"><div class="fmplq"><b>ファーム</b></div>${st=="farm"?`<button class="fmab p8danger" onclick="p8AbandonAsk()">育成放棄</button>`:""}</header>
+ <div class="fmstage">${msg?`<div class="kbub kt ksys">${msg}</div>`:""}<div class="kbub kdan${msg?"":" kt"}"><b>ダン</b><br>${bcomm()}</div><div class="kav" onclick="const p=this.parentNode,s=p.querySelector('.ksys'),b=p.querySelector('.kdan');if(s)s.remove();if(b){b.classList.remove('kt');void b.offsetWidth;b.classList.add('kt')}" aria-label="ダンのコメントを見る"><img src="${DAN_FACE}" alt=""></div>
+  <img class="fmdan" src="${DAN_FIG}" alt="" aria-hidden="true"><div class="fmmon mon">${msv(m)}</div></div>
+ <section class="fminfo" aria-label="育成中のモンスター"><div class="fmnm"><b>${p11Esc(m.name)}</b><span class="fmtag">${sp?sp.kind:""}</span></div>
+  <dl class="fmmid"><div><dt>大会ランク</dt><dd>${MMP8.rankLabel(m)}</dd></div><div><dt>特訓チケット</dt><dd>${S.trainTix}枚</dd></div></dl>
+  <div class="fmst"><span class="fmbadge">${state}</span><small>${chL}</small><b>${ch}</b>${chS?`<small class="fmchs">${chS}</small>`:""}</div></section>
+ <nav class="fmcmd" aria-label="コマンド">${cmd.map(([on,ic,lb])=>`<button class="p15b fmb" onclick="${on}">${fmIc(ic)}<span>${lb}</span></button>`).join("")}</nav>
+ <div class="fmft"><button class="fmgo${go.c}" onclick="${go.on}">${go.s||warn?`<small>${warn||go.s}</small>`:""}<b>${go.t}</b></button>${side}</div>
+</div>`;try{window.scrollTo(0,0)}catch(e){}}
 
 // ---- Phase 8：育成中の画面遷移（街への帰還禁止・起動／中断からの復帰） ----
 function p8StateLabel(m){const st=MMP7.raiseState(m),r=m&&m.raise;return st=="board"?`CHAPTER ${r.ch} 進行中`:st=="final"?"最終CHAPTER 進行中":st=="farm"?"Chapter間ファーム":st=="done"?"育成完了":"未育成"}
@@ -2576,7 +2653,7 @@ async function trRoll(){if(p7Busy||!S.m||!MMP7.trainRunOf(S.m))return;p7Busy=tru
 
 // ---- 出発準備（バッグ⇄保管庫・Chapter選択） ----
 const p7ItemName=it=>{const d=MMP7.getItemDef(it.id);return d?d.name:it.id};
-function p7Shell(ic,title,sub,body,msg,back){return `<div class="ds" style="--dc:#e8b23a"><div class="dbg" style="background-image:url(${TRIMG2})"></div><div class="dtop"><button class="dback" onclick="${back||"hall('t')"}">◀ ファーム</button><div class="dmoney">🪙 ${S.g}G</div></div><div class="dtitle"><div class="mico">${ic}</div><div><b>${title}</b><small>${sub}</small></div></div>${msg?`<div class="dmsg"><span>${msg}</span></div>`:""}<div class="dbody">${body}</div></div>`}
+function p7Shell(ic,title,sub,body,msg,back){return `<div class="ds" style="--dc:#e8b23a"><div class="dbg" style="background-image:url(${FARM_BG})"></div><div class="dtop"><button class="dback" onclick="${back||"hall('t')"}">◀ ファーム</button><div class="dmoney">🪙 ${S.g}G</div></div><div class="dtitle"><div class="mico">${ic}</div><div><b>${title}</b><small>${sub}</small></div></div>${msg?`<div class="dmsg"><span>${msg}</span></div>`:""}<div class="dbody">${body}</div></div>`}
 function prepScr(msg){if(!S.m)return lobby();if(!MMP7.canAccessVault(S))return hall("t","Chapter中はバッグの準備ができません。");bgm("train");
  const cap=MMP7.bagCap(S),bag=S.inv.bag,vt=S.inv.vault,c=MMP8.canDepart(S,S.m),nx=MMP8.nextChapterKey(S.m);
  const bagRows=[...Array(cap)].map((_,i)=>bag[i]?`<div class="p7it"><span>${i+1}. ${p7ItemName(bag[i])}</span><button onclick="p7ToVault(${i})">保管庫へ</button></div>`:`<div class="p7it emp"><span>${i+1}. （空き）</span></div>`).join("");

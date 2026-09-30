@@ -169,7 +169,7 @@ T('QA-RB1：市場で購入 → ファーム → 出発準備：1回目の押下
   // 街 → ファーム（未育成の間は街へ戻るボタンがある）
   await pg.click('.hz[onclick="hall()"]');
   await pg.waitForSelector('button[onclick="prepScr()"]');
-  assert.match(await H.text(pg), /まだ育成を始めていません/);
+  assert.match(await H.text(pg), /育成準備中[\s\S]*育成を始める/, 'ファーム：育成準備中・進行ボタン「育成を始める」');
   assert.ok(await lobbyButtons(pg) >= 1, '未育成の間はファームから街へ戻れる');
   await pg.click('button[onclick="prepScr()"]');
   const dep = 'button[onclick="p7Depart(this)"]';
@@ -443,14 +443,14 @@ T('QA-RB8：Chapter 1 のゴール（残りの移動は消える）：挑戦で�
   assert.deepEqual([r.state, r.ch, r.node, r.turnsUsed, r.goal], ['farm', 2, null, 0, false]);
   assert.deepEqual(r.log.at(-1), { ch: 1, reachedGoal: true, turnsUsed: 9, turnLimit: 20, declined: true, tour: null });
   const farmText = await H.text(pg);
-  assert.match(farmText, /Chapter間ファーム/);
-  assert.match(farmText, /CHAPTER 1「はじまりの草原」が終わった。/);
-  assert.match(farmText, /9ターンでゴール/);
+  assert.match(farmText, /Chapter 1 終了/, 'ファームの育成状態');
+  assert.match(await pg.evaluate(() => document.querySelector('.ksys').textContent), /CHAPTER 1「はじまりの草原」が終わった。/, 'Chapterの結果は通知（名前・顔なし）');
+  assert.match(farmText, /次のChapter\s*Chapter 2\s*潮風の海岸/);
   assert.equal(await lobbyButtons(pg), 0, 'Chapter間ファームに街へ戻る導線は無い');
   await assertSynced(pg);
   // ボード（出発準備）→ 次のChapterへ：1回押すだけ。フィナの会話は出ない
   await pg.waitForTimeout(SETTLE);
-  await pg.click('button.p15b[onclick="prepScr()"]');
+  await pg.click('button.fmgo[onclick="prepScr()"]');   // 進行ボタン「Chapter 2へ進む」→ 出発準備
   const dep = 'button[onclick="p7Depart(this)"]';
   await pg.waitForSelector(dep);
   const dt = await pg.evaluate((s) => document.querySelector(s).textContent, dep);
@@ -490,7 +490,7 @@ T('QA-RB9：修行は Chapter 1 を終えるまで（未育成の間は）始め
   noErrors(p);
   // Chapter間ファーム（Chapter 1 は終えた）でチケット0枚 → すべて押せない（丈夫さは C 以上のクリアで解放）
   p = await boot(seed({ state: 'farm', ch: 2, node: null, turnLimit: null, log: [{ ch: 1, reachedGoal: true, turnsUsed: 14, turnLimit: 20, declined: true, tour: null }] }, { trainTix: 0 }), '.p9farm.p15f'); pg = p.page;
-  assert.match(await pg.evaluate(() => document.querySelector('button.p15b[onclick="hall(\'s\')"]').innerText.replace(/\s+/g, ' ')), /チケット×0/);
+  assert.match(await pg.evaluate(() => document.querySelector('.fmmid').innerText.replace(/\s+/g, ' ')), /特訓チケット 0枚/);
   await pg.evaluate(() => hall('s'));
   await pg.waitForSelector('button.p12tc');
   cards = await pg.evaluate(() => [...document.querySelectorAll('button.p12tc')].map((b) => [b.disabled, b.innerText.replace(/\s+/g, ' ')]));
