@@ -1,6 +1,6 @@
 // =========================================================
 // 闘技場NPC「ヴァルガス」（闘技場の管理者。公式ランク大会の進行役セドリックとは別人物）
-//  ・アップ画像のみ（closeup の6表情：normal・guide・stern・approval・surprised・respect）。小さい顔は立ち絵 normal から切り出した face.png
+//  ・アップ画像のみ（closeup の6表情：normal・guide・stern・approval・surprised・respect）。小さい顔は立ち絵 normal から切り出した face.webp
 //  ・闘技場はロック中のまま（開放条件・内容・報酬は未決）。街の闘技場ボタンを押すと、案内文（システム表示）はそのまま、その下にヴァルガスの一言
 //  ・画面遷移・セーブ・バトルはしない。Phase 6 には触れない
 //  実ブラウザのテストは QA_E2E=1 のときだけ実行する（tests/e2e/harness.mjs）。
@@ -19,23 +19,24 @@ const EXPR = ['normal', 'guide', 'stern', 'approval', 'surprised', 'respect'];
 function loadNpc() { const ctx = { console }; ctx.window = ctx; vm.createContext(ctx); vm.runInContext(readFileSync(path.join(ROOT, 'js/npc/npc.js'), 'utf8'), ctx); return ctx.MMNPC; }
 const lineOf = (s) => HTML.split('\n').find((l) => l.startsWith(s));
 const vargasTalk = () => { const i = HTML.indexOf('const VARGAS_TALK={'); return new Function(`return ${HTML.slice(i + 'const VARGAS_TALK='.length, HTML.indexOf('};', i) + 1)}`)(); };
-const png = (p) => { const b = readFileSync(path.join(ROOT, p)); return { sig: b.subarray(1, 4).toString(), w: b.readUInt32BE(16), h: b.readUInt32BE(20), type: b[25] }; };
+/** 可逆WebP（VP8L）の見出しを読む：形式・幅・高さ・透過の有無（2026-09-30：透過PNGから画素を変えずに変換） */
+const webp = (p) => { const b = readFileSync(path.join(ROOT, p)); const v = b.readUInt32LE(21); return { sig: b.subarray(8, 12).toString(), type: b.subarray(12, 16).toString() + (b[20] === 0x2f && (v >>> 28) & 1 ? '+alpha' : ''), w: (v & 0x3fff) + 1, h: ((v >>> 14) & 0x3fff) + 1 }; };
 
 test('VAR-1：ヴァルガスは闘技場の管理者として、アップ画像（closeup）の6表情で登録。セドリック（大会の進行役）とは別', () => {
   const M = loadNpc(), v = M.get('vargas');
   assert.deepEqual([v.name, v.role, v.board, v.defaultView, v.defaultExpr], ['ヴァルガス', '闘技場の管理者', false, 'closeup', 'normal']);
   assert.deepEqual([...M.expressionsOf('vargas', 'closeup')], EXPR);
-  assert.equal(M.imageOf('vargas', 'closeup', 'respect').src, 'assets/npc/vargas/closeup/respect.png');
+  assert.equal(M.imageOf('vargas', 'closeup', 'respect').src, 'assets/npc/vargas/closeup/respect.webp');
   assert.equal(M.get('cedric').role, '公式ランク大会の進行役', 'セドリックはそのまま（別人物）');
   assert.deepEqual(['dan', 'nick', 'karen', 'elliot', 'fina'].map((k) => M.get(k).name), ['ダン', 'ニック', 'カレン', 'エリオット', 'フィナ']);
 });
 
 test('VAR-2：素材は透過PNG（RGBA）。立ち絵6枚は 573×760、小さい顔は 256×256。README に元画像との対応・透明化の方法・表情名が仮であること', () => {
-  for (const e of EXPR) { const i = png(`assets/npc/vargas/closeup/${e}.png`); assert.deepEqual([i.sig, i.type, i.w, i.h], ['PNG', 6, 573, 760], e); }
-  const f = png('assets/npc/vargas/face.png'); assert.deepEqual([f.sig, f.type, f.w, f.h], ['PNG', 6, 256, 256]);
+  for (const e of EXPR) { const i = webp(`assets/npc/vargas/closeup/${e}.webp`); assert.deepEqual([i.sig, i.type, i.w, i.h], ['WEBP', 'VP8L+alpha', 573, 760], e); }
+  const f = webp('assets/npc/vargas/face.webp'); assert.deepEqual([f.sig, f.type, f.w, f.h], ['WEBP', 'VP8L+alpha', 256, 256]);
   const md = readFileSync(path.join(ROOT, 'assets/npc/vargas/README.md'), 'utf8');
   assert.match(md, /画像内容から決めた仮名・要確認/); assert.match(md, /市松模様/);
-  for (const e of EXPR) assert.ok(md.includes(`closeup/${e}.png`), e);
+  for (const e of EXPR) assert.ok(md.includes(`closeup/${e}.webp`), e);
 });
 
 test('VAR-3：一言は VARGAS_TALK.locked。短く重い口調（〜だ／〜来い）。開放条件を断言しない。軽い言い方・怒鳴り・古風すぎる武人語は使わない', () => {
@@ -45,7 +46,7 @@ test('VAR-3：一言は VARGAS_TALK.locked。短く重い口調（〜だ／〜�
     assert.ok(s.length <= 24, `短く：${s}`);
     assert.doesNotMatch(s, /だぜ|ぜ！|！！|ランク|勝利|優勝|クリア|育成完了|レベル|条件|報酬|G$|でござる|拙者|なのだ|ですね|ましょう/, s);
   }
-  assert.match(lineOf('const VARGAS_FACE='), /^const VARGAS_FACE="assets\/npc\/vargas\/face\.png";/);
+  assert.match(lineOf('const VARGAS_FACE='), /^const VARGAS_FACE="assets\/npc\/vargas\/face\.webp";/);
 });
 
 test('VAR-4：闘技場はロック表示のまま。押すと案内文（システム表示）と、ヴァルガスの一言だけ。画面遷移・セーブ・バトル・開放条件は無い。Phase 6 には入れない', () => {
@@ -87,7 +88,7 @@ test('VAR-B1：街：闘技場（ロック中）を押すと、案内文はシ�
     await pg.waitForFunction(() => { const i = document.querySelector('.vgsay img'); return i && i.complete && i.naturalWidth > 0; });
     const r = await read(pg);
     assert.equal(r.v.length, 1, '一言は1つだけ（増えない）');
-    assert.deepEqual([r.v[0].name, r.v[0].src, r.v[0].ok], ['ヴァルガス', 'assets/npc/vargas/face.png', true]);
+    assert.deepEqual([r.v[0].name, r.v[0].src, r.v[0].ok], ['ヴァルガス', 'assets/npc/vargas/face.webp', true]);
     assert.ok(T.includes(r.v[0].text), r.v[0].text);
     assert.equal(r.msg, '闘技場は、まだ利用できません。'); assert.equal(r.msgFace, false, '案内文はシステム表示（顔・名前なし）');
     assert.equal(r.town, true, '街のまま'); assert.deepEqual(r.lock, ['townArena()'], 'ロック表示のまま');

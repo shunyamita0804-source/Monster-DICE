@@ -1,6 +1,6 @@
 // =========================================================
 // 大会NPC「セドリック」（公式ランク大会の進行・実況・案内。闘技場の管理者ヴァルガスとは別人物）
-//  ・アップ画像のみ（closeup の6表情：normal・smile・guide・happy・surprised・serious）。小さい顔は立ち絵 normal から切り出した face.png
+//  ・アップ画像のみ（closeup の6表情：normal・smile・guide・happy・surprised・serious）。小さい顔は立ち絵 normal から切り出した face.webp
 //  ・大会の画面（ゴールのランク選択・順位表・VS画面・結果）に、顔・名前つきの短いアナウンス（CEDRIC_TALK）
 //  ・システム表示（参加条件・報酬・試合結果の文・中断の案内など）はセドリックの発言にしない（顔・名前なしのまま）
 //  ・Phase 6（fight() など）には触れない。大会の進行・報酬・参加条件は変えない
@@ -20,23 +20,24 @@ const EXPR = ['normal', 'smile', 'guide', 'happy', 'surprised', 'serious'];
 function loadNpc() { const ctx = { console }; ctx.window = ctx; vm.createContext(ctx); vm.runInContext(readFileSync(path.join(ROOT, 'js/npc/npc.js'), 'utf8'), ctx); return ctx.MMNPC; }
 const lineOf = (s) => HTML.split('\n').find((l) => l.startsWith(s));
 const cedricTalk = () => { const i = HTML.indexOf('const CEDRIC_TALK={'); return new Function(`return ${HTML.slice(i + 'const CEDRIC_TALK='.length, HTML.indexOf('};', i) + 1)}`)(); };
-const png = (p) => { const b = readFileSync(path.join(ROOT, p)); return { sig: b.subarray(1, 4).toString(), w: b.readUInt32BE(16), h: b.readUInt32BE(20), type: b[25] }; };
+/** 可逆WebP（VP8L）の見出しを読む：形式・幅・高さ・透過の有無（2026-09-30：透過PNGから画素を変えずに変換） */
+const webp = (p) => { const b = readFileSync(path.join(ROOT, p)); const v = b.readUInt32LE(21); return { sig: b.subarray(8, 12).toString(), type: b.subarray(12, 16).toString() + (b[20] === 0x2f && (v >>> 28) & 1 ? '+alpha' : ''), w: (v & 0x3fff) + 1, h: ((v >>> 14) & 0x3fff) + 1 }; };
 const between = (a, b) => HTML.slice(HTML.indexOf(a), HTML.indexOf(b, HTML.indexOf(a)));
 
 test('CED-1：セドリックは公式ランク大会の進行役として、アップ画像（closeup）の6表情で登録。Chapterボードには置かない', () => {
   const M = loadNpc(), c = M.get('cedric');
   assert.deepEqual([c.name, c.role, c.board, c.defaultView, c.defaultExpr], ['セドリック', '公式ランク大会の進行役', false, 'closeup', 'normal']);
   assert.deepEqual([...M.expressionsOf('cedric', 'closeup')], EXPR);
-  assert.equal(M.imageOf('cedric', 'closeup', 'guide').src, 'assets/npc/cedric/closeup/guide.png');
+  assert.equal(M.imageOf('cedric', 'closeup', 'guide').src, 'assets/npc/cedric/closeup/guide.webp');
   assert.deepEqual(['dan', 'nick', 'karen', 'fina'].map((k) => M.get(k).name), ['ダン', 'ニック', 'カレン', 'フィナ'], 'ほかのNPCはそのまま');
 });
 
 test('CED-2：素材は透過PNG（RGBA）。立ち絵6枚は 573×760、小さい顔は 256×256。README に元画像との対応・透明化の方法・表情名が仮であること', () => {
-  for (const e of EXPR) { const i = png(`assets/npc/cedric/closeup/${e}.png`); assert.deepEqual([i.sig, i.type, i.w, i.h], ['PNG', 6, 573, 760], e); }
-  const f = png('assets/npc/cedric/face.png'); assert.deepEqual([f.sig, f.type, f.w, f.h], ['PNG', 6, 256, 256]);
+  for (const e of EXPR) { const i = webp(`assets/npc/cedric/closeup/${e}.webp`); assert.deepEqual([i.sig, i.type, i.w, i.h], ['WEBP', 'VP8L+alpha', 573, 760], e); }
+  const f = webp('assets/npc/cedric/face.webp'); assert.deepEqual([f.sig, f.type, f.w, f.h], ['WEBP', 'VP8L+alpha', 256, 256]);
   const md = readFileSync(path.join(ROOT, 'assets/npc/cedric/README.md'), 'utf8');
-  assert.match(md, /市松模様/); assert.match(md, /face\.png/); assert.match(md, /仮名・要確認/);
-  for (const e of EXPR) assert.ok(md.includes(`closeup/${e}.png`), e);
+  assert.match(md, /市松模様/); assert.match(md, /face\.webp/); assert.match(md, /仮名・要確認/);
+  for (const e of EXPR) assert.ok(md.includes(`closeup/${e}.webp`), e);
 });
 
 test('CED-3：一言は CEDRIC_TALK。丁寧で公式感のある口調（です・ます）。絶叫・若者言葉・ダン／ニックの口調は使わない', () => {
@@ -50,7 +51,7 @@ test('CED-3：一言は CEDRIC_TALK。丁寧で公式感のある口調（です
     lost: '大会はここまでです。見事な戦いでした。' });
   const all = [T.entry, T.first, ...T.next, T.vs, T.won, T.lost];
   for (const s of all) assert.doesNotMatch(s, /うおお|激アツ|ヤバ|マジ|だぜ|だな|任せておけ|任せてくれ|賞金|チケット|報酬|G$/, s);
-  assert.match(lineOf('const CEDRIC_FACE='), /^const CEDRIC_FACE="assets\/npc\/cedric\/face\.png";/);
+  assert.match(lineOf('const CEDRIC_FACE='), /^const CEDRIC_FACE="assets\/npc\/cedric\/face\.webp";/);
 });
 
 test('CED-4：表示場所：ゴールのランク選択・順位表（次の相手）・VS画面・結果画面。システム表示（.p9msg／.p9s／報酬／.p9prov）とは別の要素', () => {
@@ -124,7 +125,7 @@ test('CED-B1：ゴールのランク選択 → 順位表 → 試合後 → VS画
   const p = await boot(H.SIZES.base); const pg = p.page; const T = await pg.evaluate(() => CEDRIC_TALK);
   // 大会一覧（ゴールのランク選択）
   await waitImg(pg);
-  assert.deepEqual(await ceds(pg), [{ name: 'セドリック', src: 'assets/npc/cedric/face.png', ok: true, text: T.entry }]);
+  assert.deepEqual(await ceds(pg), [{ name: 'セドリック', src: 'assets/npc/cedric/face.webp', ok: true, text: T.entry }]);
   assert.ok(await sysClean(pg));
   assert.equal(await pg.evaluate(() => document.querySelectorAll('.p9rank').length), 3, 'ランクの選択肢は従来どおり（E・D・C）');
   // 参加 → 順位表（最初の試合の前）

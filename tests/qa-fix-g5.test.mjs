@@ -125,7 +125,7 @@ test('QA-G5-3：画面の会話（talk）：会話を開いたのと同じ Enter
 test('QA-G5-4：画面の会話：静止画の無いNPCのアニメーションの行でも、文字送りのあいだ立ち絵を隠さない（静止画のあるNPC・画像の無いNPCは従来どおり）', () => {
   // 守ること：以前は1文字目が出た時点で立ち絵が隠れ、見えないままアニメーションだけが動き続けていた
   const c = clock(), doc = fakeDoc(), M = load(c, doc);
-  const fr = [1, 2, 3].map((i) => `assets/npc/fina/animations/wave/wave_0${i}.png`);
+  const fr = [1, 2, 3].map((i) => `assets/npc/fina/animations/wave/wave_0${i}.webp`);
   M.register('qa_anim', { name: 'アニメだけ', views: {}, anims: { closeup: { wave: { frames: fr, fps: 8 } } } });
   M.register('qa_none', { name: '画像なし', views: {} });
   M.talk([{ npc: 'qa_anim', anim: 'wave', text: 'あいうえお' }, { text: 'つぎ' }, { npc: 'qa_none', text: 'なし' }, { npc: 'fina', anim: 'wave', text: 'フィナ' }]);
@@ -219,7 +219,7 @@ test('QA-G5-B3：実ブラウザ：静止画の無いNPCのアニメーション
   // 守ること：以前は1文字目が出た時点で .mmtalk-fig が hidden になっていた
   const p = await open(t); const pg = p.page;
   const pre = await pg.evaluate(async () => {
-    const fr = [1, 2, 3, 4, 5, 6].map((i) => `assets/npc/fina/animations/wave/wave_0${i}.png`);
+    const fr = [1, 2, 3, 4, 5, 6].map((i) => `assets/npc/fina/animations/wave/wave_0${i}.webp`);
     MMNPC.register('qa_anim', { name: 'テスト', views: {}, anims: { closeup: { wave: { frames: fr, fps: 8 } } } });
     const r = await MMNPC.preload('qa_anim');
     MMNPC.talk([{ npc: 'qa_anim', anim: 'wave', text: 'アニメーションだけのテストです' }]);   // 会話の終わり（Promise）は待たない
@@ -228,7 +228,7 @@ test('QA-G5-B3：実ブラウザ：静止画の無いNPCのアニメーション
   assert.deepEqual(pre, [true, true, true, true, true, true], 'コマの画像はすべて読み込める');
   await pg.waitForFunction(() => MMNPC.state() && MMNPC.state().text.length >= 3);
   const r = await pg.evaluate(() => { const f = document.querySelector('.mmtalk-fig'), i = f.querySelector('img'); return { hidden: f.hidden, disp: getComputedStyle(f).display, src: i.getAttribute('src'), anim: MMNPC.animState().running }; });
-  assert.equal(r.hidden, false); assert.notEqual(r.disp, 'none'); assert.match(r.src, /wave_0\d\.png$/); assert.equal(r.anim, true);
+  assert.equal(r.hidden, false); assert.notEqual(r.disp, 'none'); assert.match(r.src, /wave_0\d\.webp$/); assert.equal(r.anim, true);
   await H.finishTalk(pg);
   await pg.evaluate(() => { MMNPC.talk([{ npc: 'fina', anim: 'wave', text: 'フィナのアニメーションです' }]); });   // 会話の終わり（Promise）は待たない
   await pg.waitForFunction(() => MMNPC.state() && MMNPC.state().text.length >= 3);

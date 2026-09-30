@@ -1,6 +1,6 @@
 // =========================================================
 // 研究所NPC「エリオット」（研究所の案内・研究・解析を担当する研究者）
-//  ・アップ画像のみ（closeup の6表情：normal・smile・guide・thinking・curious・serious）。小さい顔は立ち絵 normal から切り出した face.png
+//  ・アップ画像のみ（closeup の6表情：normal・smile・guide・thinking・curious・serious）。小さい顔は立ち絵 normal から切り出した face.webp
 //  ・研究所（museum()）の図鑑一覧と、図鑑の詳細（musd(i)）に、顔・名前つきの短い一言（ELLIOT_TALK）。会話ウィンドウは開かない
 //  ・図鑑の見出し・「近日公開」などのシステム表示はエリオットの発言にしない。図鑑の中身・研究所の背景（base64 の AS.*）は変えない
 //  実ブラウザのテストは QA_E2E=1 のときだけ実行する（tests/e2e/harness.mjs）。
@@ -19,22 +19,23 @@ const EXPR = ['normal', 'smile', 'guide', 'thinking', 'curious', 'serious'];
 function loadNpc() { const ctx = { console }; ctx.window = ctx; vm.createContext(ctx); vm.runInContext(readFileSync(path.join(ROOT, 'js/npc/npc.js'), 'utf8'), ctx); return ctx.MMNPC; }
 const lineOf = (s) => HTML.split('\n').find((l) => l.startsWith(s));
 const elliotTalk = () => { const i = HTML.indexOf('const ELLIOT_TALK={'); return new Function(`return ${HTML.slice(i + 'const ELLIOT_TALK='.length, HTML.indexOf('};', i) + 1)}`)(); };
-const png = (p) => { const b = readFileSync(path.join(ROOT, p)); return { sig: b.subarray(1, 4).toString(), w: b.readUInt32BE(16), h: b.readUInt32BE(20), type: b[25] }; };
+/** 可逆WebP（VP8L）の見出しを読む：形式・幅・高さ・透過の有無（2026-09-30：透過PNGから画素を変えずに変換） */
+const webp = (p) => { const b = readFileSync(path.join(ROOT, p)); const v = b.readUInt32LE(21); return { sig: b.subarray(8, 12).toString(), type: b.subarray(12, 16).toString() + (b[20] === 0x2f && (v >>> 28) & 1 ? '+alpha' : ''), w: (v & 0x3fff) + 1, h: ((v >>> 14) & 0x3fff) + 1 }; };
 
 test('ELI-1：エリオットは研究所の研究者として、アップ画像（closeup）の6表情で登録。Chapterボードには置かない', () => {
   const M = loadNpc(), e = M.get('elliot');
   assert.deepEqual([e.name, e.role, e.board, e.defaultView, e.defaultExpr], ['エリオット', '研究所の研究者', false, 'closeup', 'normal']);
   assert.deepEqual([...M.expressionsOf('elliot', 'closeup')], EXPR);
-  assert.equal(M.imageOf('elliot', 'closeup', 'curious').src, 'assets/npc/elliot/closeup/curious.png');
+  assert.equal(M.imageOf('elliot', 'closeup', 'curious').src, 'assets/npc/elliot/closeup/curious.webp');
   assert.deepEqual(['dan', 'nick', 'karen', 'cedric', 'fina'].map((k) => M.get(k).name), ['ダン', 'ニック', 'カレン', 'セドリック', 'フィナ'], 'ほかのNPCはそのまま');
 });
 
 test('ELI-2：素材は透過PNG（RGBA）。立ち絵6枚は 573×760、小さい顔は 256×256。README に元画像との対応・透明化の方法・表情名が仮であること', () => {
-  for (const e of EXPR) { const i = png(`assets/npc/elliot/closeup/${e}.png`); assert.deepEqual([i.sig, i.type, i.w, i.h], ['PNG', 6, 573, 760], e); }
-  const f = png('assets/npc/elliot/face.png'); assert.deepEqual([f.sig, f.type, f.w, f.h], ['PNG', 6, 256, 256]);
+  for (const e of EXPR) { const i = webp(`assets/npc/elliot/closeup/${e}.webp`); assert.deepEqual([i.sig, i.type, i.w, i.h], ['WEBP', 'VP8L+alpha', 573, 760], e); }
+  const f = webp('assets/npc/elliot/face.webp'); assert.deepEqual([f.sig, f.type, f.w, f.h], ['WEBP', 'VP8L+alpha', 256, 256]);
   const md = readFileSync(path.join(ROOT, 'assets/npc/elliot/README.md'), 'utf8');
-  assert.match(md, /画像内容から決めた仮名・要確認/); assert.match(md, /face\.png/);
-  for (const e of EXPR) assert.ok(md.includes(`closeup/${e}.png`), e);
+  assert.match(md, /画像内容から決めた仮名・要確認/); assert.match(md, /face\.webp/);
+  for (const e of EXPR) assert.ok(md.includes(`closeup/${e}.webp`), e);
 });
 
 test('ELI-3：一言は ELLIOT_TALK。柔らかい敬語。博士口調（なのだ・であるぞ）・偉そうな言い方・ほかのNPCの口調は使わない', () => {
@@ -46,7 +47,7 @@ test('ELI-3：一言は ELLIOT_TALK。柔らかい敬語。博士口調（なの
     assert.doesNotMatch(s, /なのだ|であるぞ|じゃ。|だな|だぜ|わよ|任せ/, s);
     assert.match(s, /(ます|ましょう|ましょうか|ですね|ましたね)[。？]$/, `敬語：${s}`);
   }
-  assert.match(lineOf('const ELLIOT_FACE='), /^const ELLIOT_FACE="assets\/npc\/elliot\/face\.png";/);
+  assert.match(lineOf('const ELLIOT_FACE='), /^const ELLIOT_FACE="assets\/npc\/elliot\/face\.webp";/);
 });
 
 test('ELI-4：表示場所は研究所の図鑑一覧（museum）と図鑑の詳細（musd）だけ。図鑑の中身・背景（AS.*）・入口の制限（p8Blocked）・関数名は従来どおり', () => {
@@ -86,7 +87,7 @@ test('ELI-B1：研究所：図鑑一覧と詳細（ソラモ・ガウル）に�
   await H.newGame(pg, 'テスト');
   await pg.click('.hz[onclick="museum()"]', { force: true }); await pg.waitForSelector('.mgrid'); await waitImgs(pg);
   let s = await say(pg);
-  assert.equal(s.length, 1); assert.deepEqual([s[0].name, s[0].src, s[0].ok], ['エリオット', 'assets/npc/elliot/face.png', true]);
+  assert.equal(s.length, 1); assert.deepEqual([s[0].name, s[0].src, s[0].ok], ['エリオット', 'assets/npc/elliot/face.webp', true]);
   assert.ok(T.lab.includes(s[0].text), s[0].text);
   const grid = await pg.evaluate(() => [...document.querySelectorAll('.mgc')].map((b) => b.innerText.replace(/\s+/g, ' ').trim()));
   assert.deepEqual(grid, ['No.001 ソラモ', 'No.002 ガウル', '？ No.003 ノビトン 近日公開'], '図鑑の中身は従来どおり');

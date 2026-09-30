@@ -106,7 +106,7 @@ try {
     return { cls: b && b.className, name: b && b.querySelector('b') && b.querySelector('b').textContent,
       src: img && img.getAttribute('src'), nw: img && img.naturalWidth, dan: document.body.innerText.includes('ダン') };
   });
-  rec('牧場：ニックの吹き出し（顔が読める・「ダン」なし）', f.cls === 'fbub fnick' && f.name === 'ニック' && /assets\/npc\/nick\/face\.png/.test(f.src || '') && f.nw > 0 && !f.dan, JSON.stringify(f));
+  rec('牧場：ニックの吹き出し（顔が読める・「ダン」なし）', f.cls === 'fbub fnick' && f.name === 'ニック' && /assets\/npc\/nick\/face\.webp/.test(f.src || '') && f.nw > 0 && !f.dan, JSON.stringify(f));
   await page.screenshot({ path: `${OUT}/ranch_390.png` });
 
   await page.evaluate(() => { farm('', 'a'); dep(); }); await sleep(800);
@@ -117,7 +117,7 @@ try {
 
   await page.evaluate(() => hall('t')); await sleep(1200);
   const h = await page.evaluate(() => { const b = document.querySelector('.kdan b'); const i = document.querySelector('.kav img'); return { name: b && b.textContent, src: i && i.getAttribute('src'), nw: i && i.naturalWidth }; });
-  rec('ファーム：ダン（顔が読める）', h.name === 'ダン' && /assets\/npc\/dan\/face\.png/.test(h.src || '') && h.nw > 0, JSON.stringify(h));
+  rec('ファーム：ダン（顔が読める）', h.name === 'ダン' && /assets\/npc\/dan\/face\.webp/.test(h.src || '') && h.nw > 0, JSON.stringify(h));
   await page.screenshot({ path: `${OUT}/hall_390.png` });
 
   await page.evaluate(() => prepScr()); await sleep(1000);

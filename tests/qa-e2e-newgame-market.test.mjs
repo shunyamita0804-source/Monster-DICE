@@ -158,7 +158,7 @@ T('QA-NG2：開始ボタン → 名前登録画面（初期値「アルト」・
   await pg.click('.p11go');
   await pg.waitForSelector('.mmtalk');
   const open = await pg.evaluate(() => window.__talkOpen);
-  assert.deepEqual({ ...open }, { idx: 0, total: 3, name: 'フィナ', expr: 'smile', typing: true, text: '', nextShown: false, img: 'assets/npc/fina/closeup/smile.png' },
+  assert.deepEqual({ ...open }, { idx: 0, total: 3, name: 'フィナ', expr: 'smile', typing: true, text: '', nextShown: false, img: 'assets/npc/fina/closeup/smile.webp' },
     '開いた直後：1行目を1文字ずつ表示中で、▼はまだ出ない');
   const st = await H.storedSave(pg);
   assert.equal(st.v, 6); assert.equal(st.playerName, 'ゆうしゃ'); assert.ok(!st.playerNamePending, '名前登録待ちは消える');
@@ -167,9 +167,9 @@ T('QA-NG2：開始ボタン → 名前登録画面（初期値「アルト」・
   assert.equal(st.m, null); assert.deepEqual(st.box, []);
   const lines = await talkLines(pg);
   assert.deepEqual(lines.map((l) => [l.idx, l.name, l.expr, l.text, l.img, l.next]), [
-    [0, 'フィナ', 'smile', 'はじめまして。私はフィナです！', 'assets/npc/fina/closeup/smile.png', true],
-    [1, 'フィナ', 'normal', 'これからあなたのモンスター育成をお手伝いしますね。', 'assets/npc/fina/closeup/normal.png', true],
-    [2, 'フィナ', 'guide', 'まずは市場へ行って、一緒に育てるモンスターを迎えてみましょう！', 'assets/npc/fina/closeup/guide.png', true],
+    [0, 'フィナ', 'smile', 'はじめまして。私はフィナです！', 'assets/npc/fina/closeup/smile.webp', true],
+    [1, 'フィナ', 'normal', 'これからあなたのモンスター育成をお手伝いしますね。', 'assets/npc/fina/closeup/normal.webp', true],
+    [2, 'フィナ', 'guide', 'まずは市場へ行って、一緒に育てるモンスターを迎えてみましょう！', 'assets/npc/fina/closeup/guide.webp', true],
   ], '全文表示のあとに▼が出る');
   const after = await pg.evaluate(() => ({ n: document.querySelectorAll('.mmtalk').length, st: MMNPC.state() }));
   assert.deepEqual(after, { n: 0, st: null }, '最後のタップで会話が閉じる');

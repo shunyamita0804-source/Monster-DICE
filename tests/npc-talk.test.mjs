@@ -72,19 +72,19 @@ test('NT-5：フィナは案内役として登録（Chapterボードには置か
   assert.deepEqual([f.name, f.role, f.board, f.defaultView, f.defaultExpr], ['フィナ', '案内役', false, 'closeup', 'normal']);
   assert.deepEqual(M.expressionsOf('fina', 'closeup'), ['normal', 'smile', 'happy', 'surprised', 'troubled', 'worried', 'serious', 'guide']);
   assert.deepEqual(M.expressionsOf('fina', 'fullbody'), []); assert.deepEqual(M.animationsOf('fina', 'closeup'), ['wave', 'wave_blink']);
-  const fb = M.imageOf('fina', 'fullbody', 'happy'); assert.deepEqual([fb.view, fb.expr, fb.fallback, fb.src], ['closeup', 'happy', true, 'assets/npc/fina/closeup/happy.png']);
-  for (const a of ['wave', 'wave_blink']) { const x = M.animOf('fina', 'closeup', a); assert.equal(x.frames.length, 6); assert.ok(x.loop); x.frames.forEach((s, i) => assert.equal(s, `assets/npc/fina/animations/${a}/${a}_0${i + 1}.png`)); }
+  const fb = M.imageOf('fina', 'fullbody', 'happy'); assert.deepEqual([fb.view, fb.expr, fb.fallback, fb.src], ['closeup', 'happy', true, 'assets/npc/fina/closeup/happy.webp']);
+  for (const a of ['wave', 'wave_blink']) { const x = M.animOf('fina', 'closeup', a); assert.equal(x.frames.length, 6); assert.ok(x.loop); x.frames.forEach((s, i) => assert.equal(s, `assets/npc/fina/animations/${a}/${a}_0${i + 1}.webp`)); }
   assert.equal(M.animOf('fina', 'closeup', 'dance'), null, '存在しないアニメーションは静止画のまま');
-  // 素材：すべて透過PNG（RGBA）で、四隅は透明
+  // 素材：すべて透過あり（2026-09-30：透過PNGから画素を変えずに可逆WebP（VP8L・透過あり）へ変換）
   const all = [...Object.values(f.views.closeup), ...Object.values(f.anims.closeup).flatMap((a) => a.frames)];
   assert.equal(all.length, 20);
   for (const src of all) {
-    const buf = readFileSync(path.join(ROOT, src));
-    assert.equal(buf.subarray(1, 4).toString(), 'PNG', src); assert.equal(buf[25], 6, `${src}：カラータイプ6（RGBA）`);
+    const buf = readFileSync(path.join(ROOT, src)), v = buf.readUInt32LE(21);
+    assert.deepEqual([buf.subarray(8, 12).toString(), buf.subarray(12, 16).toString(), buf[20], (v >>> 28) & 1], ['WEBP', 'VP8L', 0x2f, 1], `${src}：可逆WebP・透過あり`);
   }
   assert.match(rd('assets/npc/fina/README.md'), /背景（描き込まれた市松模様・緑背景）だけを透明にした透過PNG/);
   const c = clock(), T = M.createTalk([{ npc: 'fina', expression: 'happy', text: 'a' }, { anim: 'wave', text: 'b' }, { text: 'c' }], c).start();
-  assert.deepEqual([T.state().img, T.state().anim], ['assets/npc/fina/closeup/happy.png', null]); c.run(100); T.tap(); c.run(100);
+  assert.deepEqual([T.state().img, T.state().anim], ['assets/npc/fina/closeup/happy.webp', null]); c.run(100); T.tap(); c.run(100);
   const s2 = T.state(); assert.deepEqual([s2.idx, s2.anim, s2.frames.length, s2.fps], [1, 'wave', 6, 8]);
   T.tap(); c.run(100); assert.deepEqual([T.state().idx, T.state().anim], [2, null], 'アニメーションは行ごとの指定（次の行へは引き継がない）');
 });

@@ -23,15 +23,16 @@ test('KR-1：カレンは市場担当として、アップ画像（closeup）の
   const M = loadNpc(), k = M.get('karen');
   assert.deepEqual([k.name, k.role, k.board, k.defaultView, k.defaultExpr], ['カレン', '市場担当', false, 'closeup', 'normal']);
   assert.deepEqual([...M.expressionsOf('karen', 'closeup')], EXPR); assert.deepEqual([...M.expressionsOf('karen', 'fullbody')], []);
-  const fb = M.imageOf('karen', 'fullbody', 'happy'); assert.deepEqual([fb.view, fb.expr, fb.src], ['closeup', 'happy', 'assets/npc/karen/closeup/happy.png']);
+  const fb = M.imageOf('karen', 'fullbody', 'happy'); assert.deepEqual([fb.view, fb.expr, fb.src], ['closeup', 'happy', 'assets/npc/karen/closeup/happy.webp']);
   assert.equal(M.imageOf('karen', 'closeup', 'surprised').expr, 'normal', '無い表情は基本の表情で代わりに表示（勝手に参照しない）');
 });
 
-test('KR-2：素材は6枚とも透過PNG（RGBA）・高さ760px（表示の最大380pxの2倍）で、四隅は透明', () => {
+test('KR-2：素材は6枚とも透過あり（2026-09-30 に透過PNGから画素を変えずに可逆WebPへ変換）・高さ760px（表示の最大380pxの2倍）', () => {
   for (const e of EXPR) {
-    const f = path.join(ROOT, `assets/npc/karen/closeup/${e}.png`); assert.ok(existsSync(f), e);
-    const b = readFileSync(f); assert.equal(b.subarray(1, 4).toString(), 'PNG'); assert.equal(b[25], 6, `${e}：RGBA`);
-    assert.equal(b.readUInt32BE(20), 760, `${e}：高さ760`);
+    const f = path.join(ROOT, `assets/npc/karen/closeup/${e}.webp`); assert.ok(existsSync(f), e);
+    const b = readFileSync(f), v = b.readUInt32LE(21);
+    assert.deepEqual([b.subarray(8, 12).toString(), b.subarray(12, 16).toString(), (v >>> 28) & 1], ['WEBP', 'VP8L', 1], `${e}：可逆WebP・透過あり`);
+    assert.equal(((v >>> 14) & 0x3fff) + 1, 760, `${e}：高さ760`);
   }
   assert.match(readFileSync(path.join(ROOT, 'assets/npc/karen/README.md'), 'utf8'), /市松模様/);
 });
@@ -63,11 +64,11 @@ test('KR-4：NPC同士の会話：行ごとに npc を切り替えると、名�
     { npc: 'fina', expression: 'smile', text: 'a' }, { npc: 'karen', side: 'right', expression: 'happy', text: 'b' },
     { npc: 'fina', text: 'c' }, { npc: 'karen', text: 'd' }, { expression: 'troubled', text: 'e' }]);
   assert.deepEqual(L.map((l) => [l.npc, l.name, l.side, l.expr, l.img && l.img.src.split('/').slice(-3).join('/')]), [
-    ['fina', 'フィナ', 'left', 'smile', 'fina/closeup/smile.png'],
-    ['karen', 'カレン', 'right', 'happy', 'karen/closeup/happy.png'],
-    ['fina', 'フィナ', 'left', 'normal', 'fina/closeup/normal.png'],
-    ['karen', 'カレン', 'right', 'normal', 'karen/closeup/normal.png'],
-    ['karen', 'カレン', 'right', 'troubled', 'karen/closeup/troubled.png']]);
+    ['fina', 'フィナ', 'left', 'smile', 'fina/closeup/smile.webp'],
+    ['karen', 'カレン', 'right', 'happy', 'karen/closeup/happy.webp'],
+    ['fina', 'フィナ', 'left', 'normal', 'fina/closeup/normal.webp'],
+    ['karen', 'カレン', 'right', 'normal', 'karen/closeup/normal.webp'],
+    ['karen', 'カレン', 'right', 'troubled', 'karen/closeup/troubled.webp']]);
   // 進行役の状態にも話者と左右が出る
   let t = 0; const q = []; const c = M.createTalk(L.map((l) => ({ npc: l.npc, side: l.side, expression: l.expr, text: l.text })), { now: () => t, schedule: (fn) => { q.push(fn); return q.length; }, cancel() {} }).start();
   const seen = []; for (let i = 0; i < 5; i++) { const s = c.state(); seen.push([s.name, s.side]); t += 1000; c.tap(); t += 1000; c.tap(); }
@@ -111,12 +112,12 @@ test('KR-B1：入店：初回はカレンのアップ画像で説明2行（smile
   await toMarket(p);
   await pg.waitForSelector('.mmtalk'); await pg.waitForTimeout(260);
   let s = await talkState(pg);
-  assert.equal(s.name, 'カレン'); assert.match(s.img, /karen\/closeup\/smile\.png$/); assert.equal(s.n, 1);
+  assert.equal(s.name, 'カレン'); assert.match(s.img, /karen\/closeup\/smile\.webp$/); assert.equal(s.n, 1);
   assert.ok(s.text.length < 'いらっしゃい。気になる子を見ていってね。'.length && !s.next, '1文字ずつ表示中は▼なし');
   await pg.click('.mmtalk'); s = await talkState(pg);
   assert.deepEqual([s.text, s.next], ['いらっしゃい。気になる子を見ていってね。', true], '途中タップで全文・▼');
   await pg.waitForTimeout(120); await pg.click('.mmtalk'); await pg.waitForTimeout(30);
-  s = await talkState(pg); assert.match(s.img, /guide\.png$/); assert.equal(s.next, false);
+  s = await talkState(pg); assert.match(s.img, /guide\.webp$/); assert.equal(s.next, false);
   assert.equal(await H.finishTalk(pg) > 0, true);
   assert.equal(await pg.evaluate(() => document.querySelectorAll('.mmtalk, .mmtalk-fig').length), 0, 'アップ画像は消える');
   assert.equal((await H.storedSave(pg)).npcFlags.karenIntro, 1);
@@ -125,7 +126,7 @@ test('KR-B1：入店：初回はカレンのアップ画像で説明2行（smile
   await pg.click('.p10back'); await pg.waitForSelector('.map.town'); await pg.click('.hz[onclick="market()"]'); await pg.waitForSelector('#p10car');
   // 2回目：説明はくり返さず、アップ画像で1行だけ
   await pg.waitForSelector('.mmtalk'); await pg.waitForTimeout(260); await pg.click('.mmtalk');
-  let s2 = await talkState(pg); assert.ok(AGAIN.includes(s2.text), `再訪は1行のあいさつ：${s2.text}`); assert.match(s2.img, /karen\/closeup\/smile\.png$/); assert.equal(s2.next, true);
+  let s2 = await talkState(pg); assert.ok(AGAIN.includes(s2.text), `再訪は1行のあいさつ：${s2.text}`); assert.match(s2.img, /karen\/closeup\/smile\.webp$/); assert.equal(s2.next, true);
   await pg.waitForTimeout(120); await pg.click('.mmtalk'); await pg.waitForTimeout(60);
   assert.equal(await talkState(pg), null, '1行で終わる'); assert.equal(await pg.evaluate(() => document.querySelector('.p10mk').classList.contains('talk')), false, '終わると通常の閲覧へ');
   await pg.reload(); await pg.waitForFunction(() => typeof S === 'object'); await pg.evaluate(() => market()); await pg.waitForSelector('.mmtalk'); await pg.waitForTimeout(260); await pg.click('.mmtalk');
@@ -141,10 +142,10 @@ test('KR-B2：購入確認：カレンのアップ画像（normal）と一言。
   await H.marketDetail(pg); await pg.click('.p10buy'); await pg.waitForSelector('#p10ov .kup');
   const kl = await pg.evaluate(() => ({ t: document.querySelector('#p10ov .kupw').innerText, img: document.querySelector('#p10ov .kupf').getAttribute('src'), h: document.querySelector('#p10ov .kupf').getBoundingClientRect().height, title: document.querySelector('.p10sht').textContent }));
   assert.ok(kl.h >= 120, `購入確認ではカレンのアップ画像をしっかり見せる（高さ${kl.h}px）`);
-  assert.match(kl.t, /カレン\s*この子を迎えるのね？/); assert.match(kl.img, /karen\/closeup\/normal\.png$/); assert.equal(kl.title, 'ソラモを連れて帰りますか？');
+  assert.match(kl.t, /カレン\s*この子を迎えるのね？/); assert.match(kl.img, /karen\/closeup\/normal\.webp$/); assert.equal(kl.title, 'ソラモを連れて帰りますか？');
   await pg.waitForTimeout(500); await pg.click('#p10ov .p10ok');
   await pg.waitForSelector('.mmtalk'); await pg.waitForTimeout(260); await pg.click('.mmtalk');
-  const s = await talkState(pg); assert.deepEqual([s.name, s.text], ['カレン', 'ありがとう。大切に育ててあげてね。']); assert.match(s.img, /happy\.png$/);
+  const s = await talkState(pg); assert.deepEqual([s.name, s.text], ['カレン', 'ありがとう。大切に育ててあげてね。']); assert.match(s.img, /happy\.webp$/);
   const st = await H.storedSave(pg); assert.deepEqual([st.g, st.cnt, st.m.sp], [500, 1, 0], '会話の前に購入・保存は済んでいる');
   await H.finishTalk(pg); await pg.waitForSelector('.map.town');
   assert.match(await pg.evaluate(() => document.querySelector('#msg').textContent), /をつれて帰った！/);
@@ -156,18 +157,18 @@ test('KR-B3：通常閲覧：カレンは画面下の案内欄（小さい顔＋
   const p = await L.open({ karen: true }); const pg = p.page;
   await toMarket(p, 1000); await H.finishTalk(pg); await pg.waitForFunction(() => !P10_ANIM);
   const hint = () => pg.evaluate(() => [document.getElementById('p10kt').textContent, document.querySelector('#p10kbar img').getAttribute('src').split('/').pop(), document.querySelectorAll('.mmtalk').length]);
-  assert.deepEqual(await hint(), ['ソラモね。バランスのいい子よ。', 'smile.png', 0]);
+  assert.deepEqual(await hint(), ['ソラモね。バランスのいい子よ。', 'smile.webp', 0]);
   await pg.click('#p10car .p10arw.next'); await pg.waitForFunction(() => !P10_ANIM);
-  assert.deepEqual(await hint(), ['ガウルね。素早さが魅力の子よ。', 'smile.png', 0], '切り替えても会話ウィンドウは開かない');
+  assert.deepEqual(await hint(), ['ガウルね。素早さが魅力の子よ。', 'smile.webp', 0], '切り替えても会話ウィンドウは開かない');
   await pg.click('#p10car .p10arw.next'); await pg.waitForFunction(() => !P10_ANIM);
-  assert.deepEqual(await hint(), ['この子は、まだ市場には来ていないの。', 'guide.png', 0]);
+  assert.deepEqual(await hint(), ['この子は、まだ市場には来ていないの。', 'guide.webp', 0]);
   await pg.click('#p10car .p10arw.next'); await pg.waitForFunction(() => !P10_ANIM);
   await pg.click('.p10karen');
-  assert.deepEqual(await hint(), ['気になったら、この子をタップして詳しく見てみてね。', 'smile.png', 0], '顔のボタン：選択中の子を詳しく見る方法を一言');
+  assert.deepEqual(await hint(), ['気になったら、この子をタップして詳しく見てみてね。', 'smile.webp', 0], '顔のボタン：選択中の子を詳しく見る方法を一言');
   // 所持金不足（救済の条件に当たらない：未育成の個体を連れている）
   await pg.evaluate(() => { S.m = mk(0); S.g = 100; save(); market(null, 'solamo'); }); await H.finishTalk(pg); await pg.waitForFunction(() => !P10_ANIM);   // 入り直すと再訪のあいさつ（1行）
   const dis = await pg.evaluate(() => document.querySelector('.p10buy').disabled);
-  assert.deepEqual(await hint(), ['今の所持金では、まだ迎えられないみたい。', 'troubled.png', 0]);
+  assert.deepEqual(await hint(), ['今の所持金では、まだ迎えられないみたい。', 'troubled.webp', 0]);
   await pg.click('.p10karen'); assert.deepEqual((await hint())[0], '今の所持金では、まだ迎えられないみたい。');
   assert.equal(await pg.evaluate(() => document.querySelector('.p10buy').disabled), dis, '購入ボタンの状態は変えない');
   assert.equal((await H.getS(pg)).g, 100);

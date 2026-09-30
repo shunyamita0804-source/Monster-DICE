@@ -94,3 +94,14 @@
 - 旧 Chapter 1 のフィールド試作（js/phase13/field.js）は残してあるが、Chapter 1 では表示されない。
 - 旧セーブの互換：旧 Chapter 1 ボード（地点 S・p1…）の途中で保存したセーブは、読み込み後にフィールドを開いた時点で Chapter 1 の開始地点・0ターン・新しい配置から始める（旧ボードの地点は新しいフィールドに無いため。大会の途中ならゴールのまま大会を続ける）。セーブ version 6・キー mr4v6 はそのまま。
 - 同じ作業で直したこと：街のモンスターカード廃止（fb731f5）のあと、合体の演出 fx() が街に無い表示先（#m0・#f0）を探して止まり、「新しいモンスター ○○ が生まれた！」が出なかった（合体と保存は済んでいた）。表示先が無いときは演出を飛ばすだけにした（cls・pop・fx。fight() は変更なし）。あわせて、街の変更に合わせていなかった古いテスト（街の7コマンド・プロフィールの育成完了・カードの名前）を更新した。
+
+## リポジトリの軽量化・不要ファイル監査（2026-09-30）
+- NPC の画像68枚（フィナ20・ほかのNPCのアップ画像42・face 6）を、画素を1つも変えずに可逆WebP（VP8L・透過あり）へ変換した（32.9MB→20.3MB）。パスは拡張子だけ変更（js/npc/npc.js・index.html・tools/public-check.mjs・テスト・各 README）。
+- 完全に同じ中身のファイルは battle_wild／battle_rival の1組だけ（asset key を分ける正式仕様のため統合しない）。一時ファイル・バックアップ・スクリーンショットの残骸・ZIP は作業ツリーにも履歴にも無かった。
+- 使っていないが残したもの（削除はユーザーの判断待ち。どれも実行時には読み込まない）：
+  - 元データ：assets/farm/original（PNG 3.07MB）・town/original（2.97MB）・ranch/original（2.28MB）・fields/ch1a/original（2.47MB）。計10.8MB。コードからはコメントだけ。元画像はユーザーが別に保管している前提（§6）なので、手元の保管を確認できれば削除してよい候補。
+  - 完成図：assets/reference（PNG 5枚 11.8MB）。旧 PHASE 1 の素材台帳 data/assets.json が「基準画像（ゲーム画面には出さない）」として登録。
+  - 旧プロフィール画像：assets/monsters/soramo/profile.png・gauru/profile.png（4.6MB。ユーザー判断で残す）。
+  - 旧素材（互換のため残す）：town/previous（0.33MB）、scenes/farm_interval.jpg（0.81MB）、embedded の FARMIMG・TRIMG2・NPI.b（0.41MB）、fields/ch1_meadow.jpg（0.71MB、旧 Chapter 1 試作 js/phase13/field.js が参照。今は表示されない）、dice/branch（0.48MB、1〜6のサイコロ。振る場面は未実装）、ui/provisional（0.14MB、data/assets.json が登録）。
+  - 旧 PHASE 1 の土台（js/core・js/dev・js/ui・js/main.js・css/*.css・data/*.json、計約0.25MB）：index.html は読み込まないが、テスト（rules.test など）と Phase 6 側のコメント・参照がある。
+- Git 履歴（書き換えはしていない）：全168コミットで約132MB（圧縮後）。大半は過去の大きなフィナの画像（縮小前の約3MBのPNG×20枚、約65MB）と index.html の履歴（約7MB）。書き換えの価値は「後回しでよい」。

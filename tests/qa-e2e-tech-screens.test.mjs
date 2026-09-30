@@ -49,7 +49,7 @@ function existsExact(rel) {
  *  テスト用のサーバはキャッシュさせない（no-store）ため、テストを並べて動かして重いときは、前のコマの読み込み中に次のコマへ切り替わり
  *  取り消し（ERR_ABORTED）が記録されることがある。ゲームの不具合ではない（本番のキャッシュありでは起きないことを監査で確認済み）。
  */
-const FRAME = /^(assets\/(?:dice\/(?:std|branch)\/\d\d\.webp|npc\/fina\/animations\/\w+\/\w+\.png))$/;
+const FRAME = /^(assets\/(?:dice\/(?:std|branch)\/\d\d\.webp|npc\/fina\/animations\/\w+\/\w+\.webp))$/;
 const realBad = (bad) => bad.filter((b) => { const m = /^failed (.*)$/.exec(b); return !(m && FRAME.test(m[1]) && existsExact(m[1])); });
 /** 要素が出るまで待つ */
 const waitSel = (pg, sel, timeout = 15000) => pg.waitForFunction((s) => !!document.querySelector(s), sel, { timeout });

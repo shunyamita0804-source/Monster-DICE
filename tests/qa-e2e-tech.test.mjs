@@ -146,7 +146,7 @@ const waitSel = (pg, sel, timeout = 15000) => pg.waitForFunction((s) => !!docume
  *  取り消し（ERR_ABORTED）が記録されることがある。ゲームの不具合ではない（本番のキャッシュありでは起きないことを監査で確認済み）。
  *  404 などの応答と、ほかのファイルの失敗はそのまま失敗にする。
  */
-const realBad = (bad) => bad.filter((b) => { const m = /^failed (assets\/(?:dice\/(?:std|branch)\/\d\d\.webp|npc\/fina\/animations\/\w+\/\w+\.png))$/.exec(b); return !(m && existsExact(m[1])); });
+const realBad = (bad) => bad.filter((b) => { const m = /^failed (assets\/(?:dice\/(?:std|branch)\/\d\d\.webp|npc\/fina\/animations\/\w+\/\w+\.webp))$/.exec(b); return !(m && existsExact(m[1])); });
 /** ページの読み込みで出たエラー・読み込めなかったファイルが無いこと */
 function noErrors(p) {
   assert.deepEqual(p.errors, [], 'pageerror / console.error が出ていない');
@@ -394,7 +394,7 @@ B('QA-TN1：名前登録直後のフィナのあいさつ：開いた瞬間は�
   await pg.waitForFunction(() => !!window.__talkOpen);
   const o = await pg.evaluate(() => window.__talkOpen);
   delete o.npcTo; delete o.keydown;   // タイマー・リスナーの数は長い行で確かめる（QA-TN2）
-  assert.deepEqual(o, { n: 1, name: 'フィナ', img: 'assets/npc/fina/closeup/smile.png', idx: 0, typing: true, text: '', nextShown: false }, '開いた瞬間の会話（1文字目の前・▼なし）');
+  assert.deepEqual(o, { n: 1, name: 'フィナ', img: 'assets/npc/fina/closeup/smile.webp', idx: 0, typing: true, text: '', nextShown: false }, '開いた瞬間の会話（1文字目の前・▼なし）');
   const st = await H.storedSave(pg);
   assert.equal(st.npcFlags && st.npcFlags.finaIntro, 1, '会話を出す前に「表示済み」を保存している');
   await H.finishTalk(pg);
@@ -422,14 +422,14 @@ B('QA-TN2：文字送り中のタップで全文・▼表示・タイマー0、�
   let t = await talkSnap(pg);
   assert.equal(t.state.typing, true, 'まだ文字送り中');
   assert.ok(t.text.length >= 1 && t.text.length < LONG.length && LONG.startsWith(t.text), '1文字ずつ・順番どおり：' + t.text);
-  assert.deepEqual([t.next, t.npcTo, t.keydown, t.img], [false, 1, keydown0 + 1, 'assets/npc/fina/closeup/normal.png']);
+  assert.deepEqual([t.next, t.npcTo, t.keydown, t.img], [false, 1, keydown0 + 1, 'assets/npc/fina/closeup/normal.webp']);
   await pg.click('.mmtalk', { force: true });
   t = await talkSnap(pg);
   assert.deepEqual([t.text, t.state.typing, t.next, t.npcTo, t.state.idx], [LONG, false, true, 0, 0], 'タップで全文表示・▼表示・文字送りのタイマーなし');
   await pg.waitForTimeout(150);
   await pg.click('.mmtalk', { force: true });
   t = await talkSnap(pg);
-  assert.deepEqual([t.state.idx, t.state.expr, t.img, t.state.typing, t.next], [1, 'happy', 'assets/npc/fina/closeup/happy.png', true, false], '次のタップで次の行（表情も切り替わる）');
+  assert.deepEqual([t.state.idx, t.state.expr, t.img, t.state.typing, t.next], [1, 'happy', 'assets/npc/fina/closeup/happy.webp', true, false], '次のタップで次の行（表情も切り替わる）');
   // 同時に5回押しても1回分（全文表示）だけ
   await pg.waitForTimeout(150);
   await pg.evaluate(() => { const ov = document.querySelector('.mmtalk'); for (let i = 0; i < 5; i++) ov.click(); });
@@ -512,10 +512,10 @@ B('QA-TN4：立ち絵アニメ：wave／wave_blink の行では npc.js の inter
   assert.ok(seen.length >= 3 && seen.every((s) => frames.blink.includes(s)), 'wave_blink のコマが切り替わる：' + seen);
   await advance(2);
   t = await talkSnap(pg);
-  assert.deepEqual([t.state.anim, t.npcIv, t.anim, t.img], [null, 0, false, 'assets/npc/fina/closeup/normal.png'], '3行目：静止画・interval なし');
+  assert.deepEqual([t.state.anim, t.npcIv, t.anim, t.img], [null, 0, false, 'assets/npc/fina/closeup/normal.webp'], '3行目：静止画・interval なし');
   await advance(3);
   t = await talkSnap(pg);
-  assert.deepEqual([t.fig, t.img, t.state.fallback, t.npcIv], ['mmtalk-fig closeup', 'assets/npc/fina/closeup/happy.png', true, 0], '全身（未着）の指定は上半身で代わりに表示');
+  assert.deepEqual([t.fig, t.img, t.state.fallback, t.npcIv], ['mmtalk-fig closeup', 'assets/npc/fina/closeup/happy.webp', true, 0], '全身（未着）の指定は上半身で代わりに表示');
   await pg.evaluate(() => MMNPC.close());
   await assertTalkGone(pg, keydown0, '閉じた後');
   noErrors(p);

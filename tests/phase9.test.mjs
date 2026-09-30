@@ -330,7 +330,7 @@ test('T4-2：ファームのコマンド：主要4つ（特訓・ステータス
 test('T4-3：正式背景・ダン（正式アップ画像）が寄り添い、育成中の個体（正式画像）が主役。情報パネルは名前・種族／大会ランク・特訓チケット／育成状態・Chapter だけ（所持金・6能力は出さない）', () => {
   const f = between('function fmScr(msg){', '\n// ---- Phase 8：育成中の画面遷移');
   assert.match(HTML, /const FARM_BG="assets\/farm\/farm_main\.jpg";/); assert.ok(existsSync(path.join(ROOT, 'assets/farm/farm_main.jpg')));
-  assert.match(HTML, /const DAN_FIG="assets\/npc\/dan\/closeup\/smile\.png";/); assert.ok(existsSync(path.join(ROOT, 'assets/npc/dan/closeup/smile.png')));
+  assert.match(HTML, /const DAN_FIG="assets\/npc\/dan\/closeup\/smile\.webp";/); assert.ok(existsSync(path.join(ROOT, 'assets/npc/dan/closeup/smile.webp')));
   assert.match(f, /<img class="fmdan" src="\$\{DAN_FIG\}" alt="" aria-hidden="true"><div class="fmmon mon">\$\{msv\(m\)\}<\/div>/, '育成中の個体は msv（正式画像）で表示。種族は固定しない');
   for (const w of ['${p11Esc(m.name)}', '${sp?sp.kind:""}', '<dt>大会ランク</dt><dd>${MMP8.rankLabel(m)}</dd>', '<dt>特訓チケット</dt><dd>${S.trainTix}枚</dd>', '<span class="fmbadge">${state}</span>']) assert.ok(f.includes(w), w);
   assert.match(f, /const state=st=="none"\?"育成準備中":done\?"育成完了":fin\?"最終ルート前":`Chapter \$\{last\?last\.ch:Math\.max\(1,k-1\)\} 終了`;/, '育成状態はセーブから判断（新しいデータは持たない）');

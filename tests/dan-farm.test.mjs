@@ -1,6 +1,6 @@
 // =========================================================
 // ファームNPC「ダン」（旧「コウ」の表示を置き換え）
-//  ・アップ画像のみ（closeup の6表情：normal・smile・guide・serious・troubled・happy）。小さい顔は立ち絵 normal から切り出した face.png
+//  ・アップ画像のみ（closeup の6表情：normal・smile・guide・serious・troubled・happy）。小さい顔は立ち絵 normal から切り出した face.webp
 //  ・会話は「フィナ ↔ ダン」が基本（ダンはプレイヤーへ直接語りかけない）。育成開始：フィナがプレイヤーへ確認 → 選択肢「始める／まだやめておく」→「始める」のときだけ同じ会話でフィナ→ダン → 出発
 //  ・ファームの吹き出し・Chapter間ファームのダンの一言は、顔と名前をダンへ。システム通知（画面に渡す msg）には NPC の顔・名前を付けない
 //  ・旧コウのデータ（NP.b・NPI.b・npi_b_kou.png）は互換のため残す
@@ -20,23 +20,24 @@ const EXPR = ['normal', 'smile', 'guide', 'serious', 'troubled', 'happy'];
 function loadNpc() { const ctx = { console }; ctx.window = ctx; vm.createContext(ctx); vm.runInContext(readFileSync(path.join(ROOT, 'js/npc/npc.js'), 'utf8'), ctx); return ctx.MMNPC; }
 const lineOf = (s) => HTML.split('\n').find((l) => l.startsWith(s));
 const danTalk = () => { const i = HTML.indexOf('const DAN_TALK={'); return new Function(`return ${HTML.slice(i + 'const DAN_TALK='.length, HTML.indexOf('};', i) + 1)}`)(); };
-const png = (p) => { const b = readFileSync(path.join(ROOT, p)); return { sig: b.subarray(1, 4).toString(), w: b.readUInt32BE(16), h: b.readUInt32BE(20), type: b[25] }; };
+/** 可逆WebP（VP8L）の見出しを読む：形式・幅・高さ・透過の有無（2026-09-30：透過PNGから画素を変えずに変換） */
+const webp = (p) => { const b = readFileSync(path.join(ROOT, p)); const v = b.readUInt32LE(21); return { sig: b.subarray(8, 12).toString(), type: b.subarray(12, 16).toString() + (b[20] === 0x2f && (v >>> 28) & 1 ? '+alpha' : ''), w: (v & 0x3fff) + 1, h: ((v >>> 14) & 0x3fff) + 1 }; };
 
 test('DAN-1：ダンはファーム担当として、アップ画像（closeup）の6表情で登録。Chapterボードには置かない', () => {
   const M = loadNpc(), d = M.get('dan');
   assert.deepEqual([d.name, d.role, d.board, d.defaultView, d.defaultExpr], ['ダン', 'ファーム担当', false, 'closeup', 'normal']);
   assert.deepEqual([...M.expressionsOf('dan', 'closeup')], EXPR);
-  assert.equal(M.imageOf('dan', 'closeup', 'smile').src, 'assets/npc/dan/closeup/smile.png');
+  assert.equal(M.imageOf('dan', 'closeup', 'smile').src, 'assets/npc/dan/closeup/smile.webp');
 });
 
 test('DAN-2：素材は透過PNG（RGBA）。立ち絵6枚は高さ760px（表示の最大380pxの2倍）、小さい顔は正方形。README に元画像との対応', () => {
-  for (const e of EXPR) { const i = png(`assets/npc/dan/closeup/${e}.png`); assert.deepEqual([i.sig, i.type, i.w, i.h], ['PNG', 6, 573, 760], e); }
-  const f = png('assets/npc/dan/face.png'); assert.deepEqual([f.sig, f.type, f.w, f.h], ['PNG', 6, 256, 256]);
-  assert.match(readFileSync(path.join(ROOT, 'assets/npc/dan/README.md'), 'utf8'), /face\.png/);
+  for (const e of EXPR) { const i = webp(`assets/npc/dan/closeup/${e}.webp`); assert.deepEqual([i.sig, i.type, i.w, i.h], ['WEBP', 'VP8L+alpha', 573, 760], e); }
+  const f = webp('assets/npc/dan/face.webp'); assert.deepEqual([f.sig, f.type, f.w, f.h], ['WEBP', 'VP8L+alpha', 256, 256]);
+  assert.match(readFileSync(path.join(ROOT, 'assets/npc/dan/README.md'), 'utf8'), /face\.webp/);
 });
 
 test('DAN-3：ダンの顔はダンが話す一言（ファームの吹き出し・Chapter間ファーム）だけ。メッセージ欄（ステータス・わざ・修行・準備・ショップ）はシステム通知なので顔なし', () => {
-  assert.match(lineOf('const DAN_FACE='), /^const DAN_FACE="assets\/npc\/dan\/face\.png";/);
+  assert.match(lineOf('const DAN_FACE='), /^const DAN_FACE="assets\/npc\/dan\/face\.webp";/);
   assert.equal((HTML.match(/\$\{DAN_FACE\}/g) || []).length, 2);
   assert.equal((HTML.match(/\$\{msg\?`<div class="dmsg"><span>\$\{msg\}<\/span><\/div>`:""\}/g) || []).length, 2, 'dscr・p7Shell のメッセージ欄は文字だけ');
   assert.doesNotMatch(HTML, /class="dmsg"><img/);
@@ -121,7 +122,7 @@ test('DAN-B1：ファーム：ダンの吹き出し（名前ダン・顔）。�
   await pg.evaluate(() => hall('t')); await pg.waitForSelector('.kdan'); await pg.waitForTimeout(300);
   assert.equal(await pg.evaluate(() => document.querySelector('.kdan b').textContent), 'ダン');
   assert.equal(await pg.evaluate(() => document.querySelectorAll('.ksys').length), 0, '通知が無ければダンの吹き出しだけ');
-  assert.deepEqual(await imgOk(pg, '.kav img'), [['assets/npc/dan/face.png', true]]);
+  assert.deepEqual(await imgOk(pg, '.kav img'), [['assets/npc/dan/face.webp', true]]);
   assert.equal(await pg.evaluate(() => document.querySelector('.kav').getAttribute('aria-label')), 'ダンのコメントを見る');
   assert.doesNotMatch(await H.text(pg), /コウ/);
   // 通知つき：名前なしの通知トースト。ダンの吹き出しは出していない。顔を押すと通知を消してダンの吹き出し
@@ -162,7 +163,7 @@ test('DAN-B2：育成開始：フィナの確認と選択肢。「まだやめ�
     await pg.waitForTimeout(120); await pg.click('.mmtalk');
   }
   assert.deepEqual(seen.map((x) => x.slice(0, 3)), [['フィナ', 'left', 'ダン、この子のことお願いしてもいい？'], ['ダン', 'right', 'ああ。こっちは任せてくれ。']]);
-  assert.match(seen[1][3], /assets\/npc\/dan\/closeup\/smile\.png$/);
+  assert.match(seen[1][3], /assets\/npc\/dan\/closeup\/smile\.webp$/);
   await pg.waitForSelector('#brollbtn');
   assert.equal(await pg.evaluate(() => S.m.raise.state), 'board', '掛け合いのあと出発');
   assert.equal(await pg.evaluate(() => document.querySelectorAll('.mmtalk, .mmtalk-fig, .mmtalk-choice').length), 0, '会話のDOMは残らない');

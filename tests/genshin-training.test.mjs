@@ -1,6 +1,6 @@
 // =========================================================
 // 特訓NPC「ゲンシン」（5種類すべての特訓を1人で担当する指導役）
-//  ・アップ画像のみ（closeup の6表情：normal・smile・guide・serious・strict・praise）。小さい顔は立ち絵 normal から切り出した face.png
+//  ・アップ画像のみ（closeup の6表情：normal・smile・guide・serious・strict・praise）。小さい顔は立ち絵 normal から切り出した face.webp
 //  ・特訓メニューの一言（.gssay）、特訓ボードの開始（出目を振る前）とゴールの一言（.gssay.over＝特訓場の背景の上。ボードの位置は動かさない）
 //  ・チケット・能力の上昇・技・回数・条件・ゴールの処理の文はシステム表示のまま（顔・名前なし）。特訓のロジックは変えない
 //  実ブラウザのテストは QA_E2E=1 のときだけ実行する（tests/e2e/harness.mjs）。
@@ -20,22 +20,23 @@ const KINDS = ['po', 'in', 'hi', 'ev', 'de'];
 function loadNpc() { const ctx = { console }; ctx.window = ctx; vm.createContext(ctx); vm.runInContext(readFileSync(path.join(ROOT, 'js/npc/npc.js'), 'utf8'), ctx); return ctx.MMNPC; }
 const lineOf = (s) => HTML.split('\n').find((l) => l.startsWith(s));
 const talk = () => { const i = HTML.indexOf('const GENSHIN_TALK={'); return new Function(`return ${HTML.slice(i + 'const GENSHIN_TALK='.length, HTML.indexOf('};', i) + 1)}`)(); };
-const png = (p) => { const b = readFileSync(path.join(ROOT, p)); return { sig: b.subarray(1, 4).toString(), w: b.readUInt32BE(16), h: b.readUInt32BE(20), type: b[25] }; };
+/** 可逆WebP（VP8L）の見出しを読む：形式・幅・高さ・透過の有無（2026-09-30：透過PNGから画素を変えずに変換） */
+const webp = (p) => { const b = readFileSync(path.join(ROOT, p)); const v = b.readUInt32LE(21); return { sig: b.subarray(8, 12).toString(), type: b.subarray(12, 16).toString() + (b[20] === 0x2f && (v >>> 28) & 1 ? '+alpha' : ''), w: (v & 0x3fff) + 1, h: ((v >>> 14) & 0x3fff) + 1 }; };
 
 test('GEN-1：ゲンシンは特訓の指導役として、アップ画像（closeup）の6表情で登録。ほかのNPCはそのまま', () => {
   const M = loadNpc(), g = M.get('genshin');
   assert.deepEqual([g.name, g.role, g.board, g.defaultView, g.defaultExpr], ['ゲンシン', '特訓の指導役', false, 'closeup', 'normal']);
   assert.deepEqual([...M.expressionsOf('genshin', 'closeup')], EXPR);
-  assert.equal(M.imageOf('genshin', 'closeup', 'praise').src, 'assets/npc/genshin/closeup/praise.png');
+  assert.equal(M.imageOf('genshin', 'closeup', 'praise').src, 'assets/npc/genshin/closeup/praise.webp');
   assert.deepEqual(['dan', 'nick', 'karen', 'cedric', 'elliot', 'vargas', 'fina'].map((k) => M.get(k).name), ['ダン', 'ニック', 'カレン', 'セドリック', 'エリオット', 'ヴァルガス', 'フィナ']);
 });
 
 test('GEN-2：素材は透過PNG（RGBA）。立ち絵6枚は 573×760、小さい顔は 256×256。README に元画像との対応・透明化の方法・表情名が仮であること', () => {
-  for (const e of EXPR) { const i = png(`assets/npc/genshin/closeup/${e}.png`); assert.deepEqual([i.sig, i.type, i.w, i.h], ['PNG', 6, 573, 760], e); }
-  const f = png('assets/npc/genshin/face.png'); assert.deepEqual([f.sig, f.type, f.w, f.h], ['PNG', 6, 256, 256]);
+  for (const e of EXPR) { const i = webp(`assets/npc/genshin/closeup/${e}.webp`); assert.deepEqual([i.sig, i.type, i.w, i.h], ['WEBP', 'VP8L+alpha', 573, 760], e); }
+  const f = webp('assets/npc/genshin/face.webp'); assert.deepEqual([f.sig, f.type, f.w, f.h], ['WEBP', 'VP8L+alpha', 256, 256]);
   const md = readFileSync(path.join(ROOT, 'assets/npc/genshin/README.md'), 'utf8');
   assert.match(md, /画像内容から決めた仮名・要確認/); assert.match(md, /市松模様/);
-  for (const e of EXPR) assert.ok(md.includes(`closeup/${e}.png`), e);
+  for (const e of EXPR) assert.ok(md.includes(`closeup/${e}.webp`), e);
 });
 
 test('GEN-3：一言は GENSHIN_TALK（メニュー・5種類それぞれの開始・ゴール）。短く落ち着いた口調。怒鳴り・熱血・軽い言い方・古風な武人語・大げさな褒め方はしない。システムの内容（チケット・上昇量・技）を話さない', () => {
@@ -47,7 +48,7 @@ test('GEN-3：一言は GENSHIN_TALK（メニュー・5種類それぞれの開�
     assert.ok(s.length <= 20, `短く：${s}`);
     assert.doesNotMatch(s, /！|根性|だぜ|ぜ。|でござる|拙者|じゃ。|なのだ|すごい|最高|チケット|上がった|覚えた|[0-9０-９]/, s);
   }
-  assert.match(lineOf('const GENSHIN_FACE='), /^const GENSHIN_FACE="assets\/npc\/genshin\/face\.png";/);
+  assert.match(lineOf('const GENSHIN_FACE='), /^const GENSHIN_FACE="assets\/npc\/genshin\/face\.webp";/);
 });
 
 test('GEN-4：表示場所は特訓メニューと特訓ボード（開始・ゴール）だけ。システム表示（開始・上昇・ゴールの文）は変えず、ゲンシンの顔・名前を付けない。特訓のロジックには入れない', () => {
@@ -96,7 +97,7 @@ test('GEN-B1：5種類すべて（丈夫さは2回）で、特訓メニュー・
   for (const [n, k] of [...KINDS, 'de'].entries()) {
     await pg.evaluate(() => hall('s')); await pg.waitForSelector('.gssay'); await waitImg(pg);
     let g = await gs(pg);
-    assert.equal(g.length, 1); assert.deepEqual([g[0].over, g[0].name, g[0].ok, g[0].src], [false, 'ゲンシン', true, 'assets/npc/genshin/face.png']);
+    assert.equal(g.length, 1); assert.deepEqual([g[0].over, g[0].name, g[0].ok, g[0].src], [false, 'ゲンシン', true, 'assets/npc/genshin/face.webp']);
     assert.ok(T.menu.includes(g[0].text), g[0].text);
     assert.equal(await pg.evaluate(() => /ゲンシン/.test(document.querySelector('.dnote').textContent)), false, 'メニューの説明はシステム表示のまま');
     const tix0 = await pg.evaluate(() => S.trainTix);

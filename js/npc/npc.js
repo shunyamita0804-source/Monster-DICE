@@ -204,45 +204,45 @@
   // ---------------------------------------------------------
   // フィナ：主要な案内役（Chapterボードには置かない）。正式素材（上半身の透過PNG）を assets/npc/fina/ に置いている（README.md に元画像との対応）。
   //  全身（fullbody）は正式素材が未着のため空。fullbody を指定しても上半身（closeup）で代わりに表示する。
-  const FINA = 'assets/npc/fina/', FE = ['normal', 'smile', 'happy', 'surprised', 'troubled', 'worried', 'serious', 'guide'], fr = (a) => [1, 2, 3, 4, 5, 6].map((i) => `${FINA}animations/${a}/${a}_0${i}.png`);
+  const FINA = 'assets/npc/fina/', FE = ['normal', 'smile', 'happy', 'surprised', 'troubled', 'worried', 'serious', 'guide'], fr = (a) => [1, 2, 3, 4, 5, 6].map((i) => `${FINA}animations/${a}/${a}_0${i}.webp`);
   register('fina', { name: 'フィナ', role: '案内役', board: false, defaultView: 'closeup', defaultExpr: 'normal',
-    views: { closeup: Object.fromEntries(FE.map((e) => [e, `${FINA}closeup/${e}.png`])), fullbody: {} },
+    views: { closeup: Object.fromEntries(FE.map((e) => [e, `${FINA}closeup/${e}.webp`])), fullbody: {} },
     anims: { closeup: { wave: { frames: fr('wave'), fps: 8, loop: true }, wave_blink: { frames: fr('wave_blink'), fps: 6, loop: true } } } });
 
   // カレン：市場担当（アップ画像のみで運用。全身は使わない）。正式素材（背景を透明にした透過PNG）を assets/npc/karen/closeup/ に置いている（README.md に元画像との対応）
   const KAREN = 'assets/npc/karen/closeup/', KE = ['normal', 'smile', 'guide', 'troubled', 'happy', 'serious'];
   register('karen', { name: 'カレン', role: '市場担当', board: false, defaultView: 'closeup', defaultExpr: 'normal',
-    views: { closeup: Object.fromEntries(KE.map((e) => [e, `${KAREN}${e}.png`])) } });
+    views: { closeup: Object.fromEntries(KE.map((e) => [e, `${KAREN}${e}.webp`])) } });
 
   // ダン：ファーム担当（旧「コウ」の表示を置き換え。アップ画像のみで運用）。正式素材（透過PNG）を assets/npc/dan/closeup/ に置いている（README.md に元画像との対応）
   const DAN = 'assets/npc/dan/closeup/', DE = ['normal', 'smile', 'guide', 'serious', 'troubled', 'happy'];
   register('dan', { name: 'ダン', role: 'ファーム担当', board: false, defaultView: 'closeup', defaultExpr: 'normal',
-    views: { closeup: Object.fromEntries(DE.map((e) => [e, `${DAN}${e}.png`])) } });
+    views: { closeup: Object.fromEntries(DE.map((e) => [e, `${DAN}${e}.webp`])) } });
 
   // ニック：牧場の管理者（アップ画像のみで運用）。正式素材（描き込まれた市松模様の背景を透明にした透過PNG）を assets/npc/nick/closeup/ に置いている（README.md に元画像との対応）
   const NICK = 'assets/npc/nick/closeup/', NE = ['normal', 'smile', 'guide', 'troubled', 'happy', 'serious'];
   register('nick', { name: 'ニック', role: '牧場の管理者', board: false, defaultView: 'closeup', defaultExpr: 'normal',
-    views: { closeup: Object.fromEntries(NE.map((e) => [e, `${NICK}${e}.png`])) } });
+    views: { closeup: Object.fromEntries(NE.map((e) => [e, `${NICK}${e}.webp`])) } });
 
   // セドリック：公式ランク大会の進行役（アップ画像のみで運用）。正式素材（描き込まれた市松模様の背景を透明にした透過PNG）を assets/npc/cedric/closeup/ に置いている（README.md に元画像との対応）
   const CEDRIC = 'assets/npc/cedric/closeup/', CE = ['normal', 'smile', 'guide', 'happy', 'surprised', 'serious'];
   register('cedric', { name: 'セドリック', role: '公式ランク大会の進行役', board: false, defaultView: 'closeup', defaultExpr: 'normal',
-    views: { closeup: Object.fromEntries(CE.map((e) => [e, `${CEDRIC}${e}.png`])) } });
+    views: { closeup: Object.fromEntries(CE.map((e) => [e, `${CEDRIC}${e}.webp`])) } });
 
   // エリオット：研究所の案内・研究・解析を担当する研究者（アップ画像のみで運用）。正式素材（背景の無地の灰色を透明にした透過PNG）を assets/npc/elliot/closeup/ に置いている（README.md に元画像との対応）
   const ELLIOT = 'assets/npc/elliot/closeup/', EE = ['normal', 'smile', 'guide', 'thinking', 'curious', 'serious'];
   register('elliot', { name: 'エリオット', role: '研究所の研究者', board: false, defaultView: 'closeup', defaultExpr: 'normal',
-    views: { closeup: Object.fromEntries(EE.map((e) => [e, `${ELLIOT}${e}.png`])) } });
+    views: { closeup: Object.fromEntries(EE.map((e) => [e, `${ELLIOT}${e}.webp`])) } });
 
   // ヴァルガス：闘技場の管理者（アップ画像のみで運用）。正式素材（描き込まれた市松模様の背景を透明にした透過PNG）を assets/npc/vargas/closeup/ に置いている（README.md に元画像との対応）
   const VARGAS = 'assets/npc/vargas/closeup/', VE = ['normal', 'guide', 'stern', 'approval', 'surprised', 'respect'];
   register('vargas', { name: 'ヴァルガス', role: '闘技場の管理者', board: false, defaultView: 'closeup', defaultExpr: 'normal',
-    views: { closeup: Object.fromEntries(VE.map((e) => [e, `${VARGAS}${e}.png`])) } });
+    views: { closeup: Object.fromEntries(VE.map((e) => [e, `${VARGAS}${e}.webp`])) } });
 
   // ゲンシン：特訓の指導役（5種類すべての特訓を担当。アップ画像のみで運用）。正式素材（描き込まれた市松模様の背景を透明にした透過PNG）を assets/npc/genshin/closeup/ に置いている（README.md に元画像との対応）
   const GENSHIN = 'assets/npc/genshin/closeup/', GE = ['normal', 'smile', 'guide', 'serious', 'strict', 'praise'];
   register('genshin', { name: 'ゲンシン', role: '特訓の指導役', board: false, defaultView: 'closeup', defaultExpr: 'normal',
-    views: { closeup: Object.fromEntries(GE.map((e) => [e, `${GENSHIN}${e}.png`])) } });
+    views: { closeup: Object.fromEntries(GE.map((e) => [e, `${GENSHIN}${e}.webp`])) } });
 
   root.MMNPC = Object.freeze({ TYPE_MS, MIN_TAP_MS, register, get, list, expressionsOf, animationsOf, imageOf, animOf, preload, splitChars, resolveLines, createTalk, talk, close, state, animState, fromLegacy });
 })(typeof window !== 'undefined' ? window : globalThis);

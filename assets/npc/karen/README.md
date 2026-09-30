@@ -1,5 +1,7 @@
 # カレン（市場担当NPC）の正式素材
 
+> 2026-09-30：ゲームで使う画像を、画素を1つも変えずに**可逆WebP（.webp、透過あり）**へ変換しました（透過PNGより約39%小さい。見た目は同じ）。下の説明の「透過PNG」は変換前の形式、表の容量（KB）がある場合は変換前の値です。
+
 - アップ画像（closeup）のみで運用します。全身（fullbody）は使いません。
 - ユーザー提供のPNG（1248×1872、透過なし）は、背景の市松模様が絵として描き込まれていました。その市松模様だけを透明にした透過PNG（RGBA）です。
   - 縁につながる無彩色の部分と、腕と体の間などに囲まれた市松模様の部分を透明にしました。
@@ -9,9 +11,9 @@
 
 | 素材 | 元の画像（受け取った順） | 絵の内容 |
 |---|---|---|
-| closeup/normal.png | 1枚目 | 穏やかな笑顔 |
-| closeup/smile.png | 2枚目 | 指を立ててにっこり |
-| closeup/guide.png | 3枚目 | 指を立てて明るく話す |
-| closeup/troubled.png | 4枚目 | 困り顔 |
-| closeup/happy.png | 5枚目 | ピースで笑顔 |
-| closeup/serious.png | 6枚目 | 真剣な顔 |
+| closeup/normal.webp | 1枚目 | 穏やかな笑顔 |
+| closeup/smile.webp | 2枚目 | 指を立ててにっこり |
+| closeup/guide.webp | 3枚目 | 指を立てて明るく話す |
+| closeup/troubled.webp | 4枚目 | 困り顔 |
+| closeup/happy.webp | 5枚目 | ピースで笑顔 |
+| closeup/serious.webp | 6枚目 | 真剣な顔 |

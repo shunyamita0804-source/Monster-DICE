@@ -147,8 +147,13 @@ test('CH1-B8：ゴール（大会門）→ 公式ランク大会の選択 → �
   await rollAs(pg, 3); await pg.waitForSelector('.chgoal .p9rank'); await idle(pg);
   assert.deepEqual(await pg.evaluate(() => [S.m.raise.node, S.m.raise.goal, S.m.raise.turnsUsed]), ['f3_13', true, 21], '出目がゴールを超えてもゴールで止まる');
   const f0 = (await st(pg)).f;
-  await pg.click('.chgoal .p9rank'); await pg.waitForTimeout(500); await pg.click('.chgoal .p9rank');
-  await pg.waitForSelector('[onclick="p9VsScr()"]');
+  // 画面が出た直後（0.35秒）の押下は無視・2度押しの2回目は0.4秒以上あける作りなので、他の育成テストと同じ間隔で押す
+  await pg.evaluate(() => { window.__clk = []; document.addEventListener('click', (e) => window.__clk.push([Math.round(performance.now()), e.target.className || e.target.tagName, e.target.closest('.p9rank') ? e.target.closest('.p9rank').dataset.a : '-', bBusy]), true); });
+  // 押す前に見えていることを確かめ、force で押す（負荷が高いと Playwright の「動きが止まるまで待つ」が数秒かかり、2度押しの確認（3秒で取り消し）が切れるため。他の実ブラウザテストの tap と同じ）
+  await pg.waitForSelector('.chgoal .p9rank', { state: 'visible' });
+  await pg.waitForTimeout(550); await pg.click('.chgoal .p9rank', { force: true }); await pg.waitForTimeout(700); await pg.click('.chgoal .p9rank', { force: true });
+  const ok = await pg.waitForSelector('[onclick="p9VsScr()"]', { timeout: 15000 }).then(() => true, () => false);
+  if (!ok) assert.fail('大会へ進まない：' + JSON.stringify(await pg.evaluate(() => ({ tour: S.m.raise.tour, goal: S.m.raise.goal, pend: S.m.raise.pend, busy: bBusy, clk: window.__clk, now: Math.round(performance.now()), armed: [...document.querySelectorAll('.p9rank')].map((b) => [b.dataset.a, b.textContent.slice(0, 20)]), app: document.querySelector('#app').innerText.slice(0, 300) }))));
   assert.equal(await pg.evaluate(() => MMCH.fatigue(S.m)), f0, '大会に入っても疲れは変わらない');
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
 });
