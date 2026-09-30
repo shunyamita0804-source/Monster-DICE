@@ -237,7 +237,7 @@ test('QA-RF-B2：牧場の表示：連れている個体・牧場の個体の名
     await seed(pg, [{ sp: 0, name: 'ソラA' }, { sp: 1, name: 'ガウB' }, { sp: 0, name: 'ソラC' }], 1000);
     await toRanch(pg);
     // タブ・ボタンの並び（預ける／受け取る／合体、売る）
-    assert.deepEqual(await pg.evaluate(() => [...document.querySelectorAll('.ftile')].map((b) => b.getAttribute('onclick'))), ["farm('','a')", "farm('','b')", "farm('','c')"]);
+    assert.deepEqual(await pg.evaluate(() => [...document.querySelectorAll('.ftile')].map((b) => b.getAttribute('onclick'))), ["farm('','a')", "farm('','b')", "rnView=null;farm('','e')"]);
     assert.equal(await pg.getAttribute('.fsell', 'onclick'), "farm('','d')");
     assert.equal(await pg.evaluate(() => ft), 'a');
     assert.match(await txt(pg, '.wpanel'), /ソラA.*ライフ 100.*ちから 100.*かしこさ 100.*命中 100.*回避 100.*丈夫さ 100/);
@@ -508,7 +508,7 @@ test('QA-RF-B9：売却・合体・入れ替えができない：最後の1体�
     const r = await pg.evaluate(() => { const g = S.g, m = S.m; pfSellUid = S.m.uid; pfSellGo(document.createElement('button')); return [S.g - g, S.m === m, pfSellUid, document.querySelector('.fbub').innerText]; });
     assert.equal(r[0], 0); assert.equal(r[1], true); assert.equal(r[2], null); assert.match(r[3], /最後の1体は売却できません。/);
     // 合体タブ：1体では選べない
-    await tap(pg, `.ftile[onclick="farm('','c')"]`);
+    await pg.evaluate(() => farm('', 'c'));   // 合体は研究所へ移す（牧場のコマンドには無い）。合体の処理・選択画面は内部に残しているので直接開く
     assert.match(await txt(pg, '.wpanel'), /合体には2体以上必要です。/);
     assert.equal(await pg.$('.wpanel button[onclick^="selm("]'), null);
     await invariants(p);
@@ -555,7 +555,7 @@ test('QA-RF-B17：小さい画面（375×667・360×800、タッチ端末）で�
       await tap(pg, '.wpanel button[onclick="wd(6)"]');
       await pg.waitForFunction((u) => S.m && S.m.uid === u, uids[7]);
       // 合体：一覧の下のほうの2体
-      await tap(pg, `.ftile[onclick="farm('','c')"]`);
+      await pg.evaluate(() => farm('', 'c'));   // 合体は研究所へ移す（牧場のコマンドには無い）。合体の処理・選択画面は内部に残しているので直接開く
       await tap(pg, '.wpanel button[onclick="selm(7)"]');
       await tap(pg, '.wpanel button[onclick="selm(6)"]');
       await noHScroll('合体');

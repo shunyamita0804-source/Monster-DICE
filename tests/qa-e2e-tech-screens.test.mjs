@@ -221,7 +221,7 @@ describe('QA-TS：390×844 の通し（JS エラー・読み込み・壊れた�
     assert.equal(s.m && s.m.sp, 0, 'ソラモを連れて帰った');
   });
 
-  T('QA-TS4：2体目（ガウル）→ 牧場の4つのタブ（預ける・受け取る・合体・売る）', async () => {
+  T('QA-TS4：2体目（ガウル）→ 牧場の4つのタブ（預ける・受け取る・様子を見る・売る）', async () => {
     await pg.evaluate(() => { S.g = 5000; save(); market(null, 'gauru'); });
     await settled(pg);
     await buyCenter(pg);
@@ -231,9 +231,9 @@ describe('QA-TS：390×844 の通し（JS エラー・読み込み・壊れた�
     await pg.click('.ftile[onclick*="\'b\'"]');
     await waitSel(pg, '.ftile.on[onclick*="\'b\'"]');
     await check(pg, '牧場（受け取る）', SEL.ranch);
-    await pg.click('.ftile[onclick*="\'c\'"]');
-    await waitSel(pg, '.ftile.on[onclick*="\'c\'"]');
-    await check(pg, '牧場（合体）', SEL.ranch);
+    await pg.click('.ftile[onclick*="\'e\'"]');   // 合体は研究所へ移すため牧場のコマンドから外した（2026-09-30）。代わりに「様子を見る」
+    await waitSel(pg, '.ftile.on[onclick*="\'e\'"]');
+    await check(pg, '牧場（様子を見る）', SEL.ranch);
     await pg.click('.fsell');
     await waitSel(pg, '.fsell.on');
     await check(pg, '牧場（売る）', SEL.ranch);

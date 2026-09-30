@@ -182,7 +182,7 @@ test('QA-G4-B1：実ブラウザ：新規開始→市場で「<!--」「<b>X</b>
   assert.deepEqual(await txt(pg, '.wpanel .card .info b'), [CM]); assert.equal(await count(pg, '.wpanel button[onclick="dep()"]'), 1, '「このモンスターを預ける」が残る');
   await pg.click(`.ftile[onclick="farm('','b')"]`);
   assert.deepEqual(await txt(pg, '.wpanel .row .info b'), [BOLD, XSS8]); assert.equal(await count(pg, '.wpanel button[onclick^="wd("]'), 2, '「受け取る」が2つ');
-  await pg.click(`.ftile[onclick="farm('','c')"]`);
+  await pg.evaluate(() => farm('', 'c'));   // 合体は研究所へ移す（牧場のコマンドには無い）。合体の処理・選択画面は内部に残しているので直接開く
   assert.equal(await count(pg, '.wpanel button[onclick^="selm("]'), 3);
   await pg.click('.wpanel button[onclick="selm(0)"]'); await pg.click('.wpanel button[onclick="selm(1)"]');
   assert.deepEqual(await txt(pg, '.wpanel .fz .slot b'), [CM, BOLD], '合体の枠');

@@ -84,6 +84,7 @@ async function toRanch(pg, tab) {
   await tap(pg, '.hz[onclick="farm()"]');
   await pg.waitForSelector('#app .wpanel');
   if (tab === 'd') await tap(pg, '.fsell');
+  else if (tab === 'c') await pg.evaluate(() => farm('', 'c'));   // 合体は研究所へ移す（牧場のコマンドには無い）。合体の処理・選択画面は内部に残しているので直接開く
   else if (tab) await tap(pg, `.ftile[onclick="farm('','${tab}')"]`);
   await pg.waitForFunction((t) => typeof ft === 'string' && (!t || ft === t), tab || null);
 }
@@ -314,7 +315,7 @@ test('QA-RF-B15：預ける・受け取る・売却・合体・購入を決ま�
     const done = [];
     async function openTab(tab) {
       if (!(await pg.$('.ftile'))) { await pg.waitForSelector('#app .map'); await tap(pg, '.hz[onclick="farm()"]'); await pg.waitForSelector('.ftile'); }
-      await tap(pg, tab === 'd' ? '.fsell' : `.ftile[onclick="farm('','${tab}')"]`);
+      if (tab === 'c') await pg.evaluate(() => farm('', 'c')); else await tap(pg, tab === 'd' ? '.fsell' : `.ftile[onclick="farm('','${tab}')"]`);   // 合体は内部の選択画面を直接開く
       await pg.waitForFunction((t) => ft === t, tab);
     }
     async function toTown() { if (!(await pg.$('#app .map'))) { await tap(pg, '.back'); await pg.waitForSelector('#app .map'); } }
