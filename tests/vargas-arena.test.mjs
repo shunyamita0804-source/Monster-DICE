@@ -50,7 +50,7 @@ test('VAR-3：一言は VARGAS_TALK.locked。短く重い口調（〜だ／〜�
 
 test('VAR-4：闘技場はロック表示のまま。押すと案内文（システム表示）と、ヴァルガスの一言だけ。画面遷移・セーブ・バトル・開放条件は無い。Phase 6 には入れない', () => {
   assert.match(lineOf('const TOWN_CMDS='), /\["闘技場","未開放","#tic-arena","townArena\(\)","lock"\]/, '街のボタンはロックのまま');
-  assert.ok(lineOf('function townArena(').startsWith('function townArena(){const e=$("#msg");if(e)e.textContent="闘技場は、まだ利用できません。";vgSay()}'));
+  assert.ok(lineOf('function townArena(').startsWith('function townArena(){const e=$("#msg");if(e)e.textContent="闘技場は、まだ利用できません。";const t=$("#app>.tlow");if(t)t.classList.add("on");vgSay()}'), '案内文とヴァルガスの一言を背景の上に出す（2026-09-30：街は1画面で固定）');
   const vg = lineOf('function vgSay(');
   assert.doesNotThrow(() => new Function(vg), 'vgSay は構文として正しい');
   assert.ok(vg.endsWith('</div></div>`);try{document.getElementById("vgsay").scrollIntoView({block:"nearest"})}catch(e){}}'), '出したら画面内へ（小さい画面で案内欄の下に隠れないように）');

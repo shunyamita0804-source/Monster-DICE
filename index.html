@@ -1323,9 +1323,9 @@ main:has(>#app>.map.town) h1{display:none}
    中央寄せに transform を使わない（#app>* の登場アニメ scr が transform を上書きし、その間ボタンが右へずれて押し間違えるため） */
 #app:has(>.map.town){padding-bottom:calc(var(--tbar) + env(safe-area-inset-bottom,0px))}
 #app:has(>.map.town) #msg,#app:has(>.map.town) .vgsay{scroll-margin-bottom:calc(var(--tbar) + env(safe-area-inset-bottom,0px) + 8px)}
-.tbar{position:fixed;z-index:15;left:0;right:0;bottom:0;margin:0 auto;max-width:460px;box-sizing:border-box;height:calc(var(--tbar) + env(safe-area-inset-bottom,0px));padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));display:grid;grid-template-columns:repeat(20,minmax(0,1fr));grid-template-rows:var(--tbr1) var(--tbr2);gap:5px 4px;background:linear-gradient(180deg,#1c3268,#0a1636 60%,#070f28);border-top:2px solid #d9b465;box-shadow:0 -1px 0 rgba(20,12,0,.6),0 -6px 14px rgba(0,0,0,.35)}
+.tbar{position:fixed;z-index:15;left:0;right:0;bottom:0;margin:0 auto;max-width:460px;box-sizing:border-box;height:calc(var(--tbar) + env(safe-area-inset-bottom,0px));padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));display:grid;grid-template-columns:repeat(40,minmax(0,1fr));grid-template-rows:var(--tbr1) var(--tbr2);gap:5px 4px;background:linear-gradient(180deg,#1c3268,#0a1636 60%,#070f28);border-top:2px solid #d9b465;box-shadow:0 -1px 0 rgba(20,12,0,.6),0 -6px 14px rgba(0,0,0,.35)}
 .tbar::before{content:"";position:absolute;left:0;right:0;top:3px;border-top:1px solid rgba(217,180,101,.55);pointer-events:none}
-button.hz.tcmd{position:relative;left:auto;top:auto;grid-column:span 5;width:100%;height:100%;min-height:44px;margin:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:4px 0 3px;color:#fff;border:1.5px solid #d9b465;border-radius:11px;background:linear-gradient(180deg,rgba(34,58,118,.97),rgba(12,26,62,.97));box-shadow:0 0 0 1px rgba(20,12,0,.55),inset 0 1px 0 rgba(255,236,180,.28);text-align:center;font-weight:800;line-height:1.1;letter-spacing:0;text-shadow:0 1px 0 rgba(0,0,0,.5);animation:none}
+button.hz.tcmd{position:relative;left:auto;top:auto;grid-column:span 10;width:100%;height:100%;min-height:44px;margin:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:4px 0 3px;color:#fff;border:1.5px solid #d9b465;border-radius:11px;background:linear-gradient(180deg,rgba(34,58,118,.97),rgba(12,26,62,.97));box-shadow:0 0 0 1px rgba(20,12,0,.55),inset 0 1px 0 rgba(255,236,180,.28);text-align:center;font-weight:800;line-height:1.1;letter-spacing:0;text-shadow:0 1px 0 rgba(0,0,0,.5);animation:none}
 button.hz.tcmd::before{content:"";position:absolute;inset:2.5px;border:1px solid rgba(217,180,101,.45);border-radius:8px;pointer-events:none}
 button.hz.tcmd .ti{position:relative;flex:none;width:50px;height:50px;border-radius:50%;border:1.5px solid #f6e1a0;box-shadow:0 0 0 1.5px #9c7430,inset 0 0 8px rgba(0,0,0,.45);background:radial-gradient(circle at 45% 35%,#223d7e,#0b1636);display:flex;align-items:center;justify-content:center;font-size:1.2rem;line-height:1}
 button.hz.tcmd .ti svg{width:34px;height:34px}
@@ -1333,7 +1333,7 @@ button.hz.tcmd .ti img{display:block;width:70%;height:70%;object-fit:contain}
 button.hz.tcmd b{display:block;max-width:100%;font-family:var(--mm-font-head);font-weight:800;font-size:16px;letter-spacing:.04em;white-space:nowrap}
 /* 2段目（ファーム・プロフィール）：アイコンの横に施設名 */
 button.hz.tcmd.tsub{flex-direction:row;gap:8px;padding:0 6px}button.hz.tcmd.tsub .ti{width:40px;height:40px}button.hz.tcmd.tsub .ti svg{width:28px;height:28px}button.hz.tcmd.tsub b{font-size:16px}
-button.hz.tcmd.tfarm{grid-column:span 11}button.hz.tcmd.tprof{grid-column:span 9}
+button.hz.tcmd.tfarm{grid-column:span 22}button.hz.tcmd.tprof{grid-column:span 9}
 @media (max-width:374px){button.hz.tcmd.tsub b{font-size:15px}}
 button.hz.tcmd:active{background:linear-gradient(180deg,rgba(46,80,160,.97),rgba(18,36,86,.97))}
 /* 未開放（闘技場）・今は行けない（ファーム）：少し沈めた色。未開放は小さな錠の印 */
@@ -1557,10 +1557,23 @@ main>h1{flex:none}
 #app>.rn>*{flex:none}
 #app>.rn>.wpanel{flex:0 1 auto;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
 @media (max-height:740px){#app>.rn>.fscene{flex:0 1 auto;min-height:250px}}   /* 低い画面：一覧が見える高さを残すため、背景は少しだけ低くなってよい */
-/* 街：背景（.map）は枠の上に止めたまま。下の欄（大会・案内欄・連れているモンスター・セーブ）は、スクロールすると背景の上に重なって出てくる */
-#app>.map.town{position:sticky;top:-16px;z-index:0}   /* 止める位置は #app の余白（16px）の内側から数えるので -16px ＝画面の上端 */
-#app:has(>.map.town){padding-bottom:0}   /* 下のバーの分の余白は .tlow の中へ（背景を最後まで止めておくため） */
-#app>.tlow{position:relative;z-index:1;display:flow-root;margin:-12px -16px 0;padding:12px 16px calc(16px + var(--tbar) + env(safe-area-inset-bottom,0px));background-color:var(--bg);background-image:radial-gradient(rgba(140,100,50,.09) 1px,transparent 1.5px);background-size:14px 14px}
+/* 街（2026-09-30 最終）：1画面で固定（スクロールしない）。案内文（#msg）・ヴァルガスの一言は、知らせることがあるときだけ背景の上（下のバーのすぐ上）に重ねる */
+#app:has(>.map.town){position:relative;overflow:hidden;padding-bottom:0}
+#app>.tlow{display:none}
+#app>.tlow.on{display:block;position:absolute;z-index:2;left:0;right:0;bottom:calc(var(--tbar) + env(safe-area-inset-bottom,0px) + 6px);padding:0 12px;pointer-events:none}
+#app>.tlow.on>*{pointer-events:auto}
+#app>.tlow .dlg{margin:0 0 6px}
+#app>.tlow .vgsay{margin:0}
+/* 下のバー：2段目は ファーム 55%・プロフィール 22.5%・セーブ・ロード 22.5%（40列のグリッド：1段目 10・10・10・10／2段目 22・9・9。外から見た大きさ・すき間は従来どおり） */
+.tbar button.hz.tcmd.tprof,.tbar button.hz.tcmd.tsave{grid-column:span 9;gap:2px;padding:2px}
+.tbar button.hz.tcmd.tprof{flex-direction:column}
+.tbar button.hz.tcmd.tprof .ti,.tbar button.hz.tcmd.tsave .ti{width:26px;height:26px}
+.tbar button.hz.tcmd.tprof .ti svg,.tbar button.hz.tcmd.tsave .ti svg{width:19px;height:19px}
+.tbar button.hz.tcmd.tprof b{font-size:min(11.5px,3vw);letter-spacing:-.02em}
+.tbar button.hz.tcmd.tsave b{font-size:13px;line-height:1.25;letter-spacing:0;white-space:nowrap;text-align:left}
+.tbar button.hz.tcmd.svb{margin:0;border:1.5px solid #d9b465;border-radius:11px;background:linear-gradient(180deg,rgba(34,58,118,.97),rgba(12,26,62,.97));color:#fff}   /* 旧「▶ セーブ・ロード」ボタン（button.svb）の見た目を打ち消す */
+.tbar button.hz.tcmd.svb:active{background:linear-gradient(180deg,rgba(46,80,160,.97),rgba(18,36,86,.97))}
+@media (max-height:720px){.tbar button.hz.tcmd.tprof .ti,.tbar button.hz.tcmd.tsave .ti{width:23px;height:23px}.tbar button.hz.tcmd.tprof{gap:1px}}
 </style></head><body><main>
 <h1>ミスティックモンスターズ</h1>
 <div id="app"></div>
@@ -1837,7 +1850,7 @@ function wd(j){if(p8Blocked())return;if(MMP7.trainRunOf(S.m))return farm("特訓
 const TOWN_BG="assets/town/town_main.jpg";
 // 街の施設コマンド［表示名, 補足, アイコン, 押したとき, 状態］。状態：ok＝行ける／dis＝今は行けない（ボタンを無効）／lock＝未開放（押すと案内だけ）
 // アイコンは金色の線画（下の TOWN_SVG の #tic-*）。画像ファイルのパス（.png／.webp／.jpg／.svg）を書けば、その画像で表示する
-const TOWN_CMDS=m=>[["市場","モンスター市場","#tic-market","market()","ok"],["牧場","ぽかぽか牧場","#tic-ranch","farm()","ok"],["研究所","モンスター研究所","#tic-lab","museum()","ok"],["闘技場","未開放","#tic-arena","townArena()","lock"],["ファーム","育成","#tic-farm","hall()",m?"ok":"dis"],["プロフィール","プレイヤーの記録","#tic-profile","profileScr()","ok"]];
+const TOWN_CMDS=m=>[["市場","モンスター市場","#tic-market","market()","ok"],["牧場","ぽかぽか牧場","#tic-ranch","farm()","ok"],["研究所","モンスター研究所","#tic-lab","museum()","ok"],["闘技場","未開放","#tic-arena","townArena()","lock"],["ファーム","育成","#tic-farm","hall()",m?"ok":"dis"],["プロフィール","プレイヤーの記録","#tic-profile","profileScr()","ok"],["セーブ・ロード","セーブ・ロード","#tic-save","savescr()","ok","セーブ<br>ロード"]];
 const townIcon=v=>v[0]=="#"?`<svg viewBox="0 0 32 32" aria-hidden="true"><use href="${v}"/></svg>`:/\.(png|webp|jpe?g|svg)$/i.test(v)?`<img src="${v}" alt="">`:v;
 // 背景上の建物ラベル（地図上の案内。押せない）［表示名, 背景画像上の x, y（ラベルの下の点が指す場所）］。ファームは街の建物ではないので付けない
 const TOWN_LABELS=[["闘技場",578,540],["研究所",300,1010],["牧場",770,930],["市場",400,1650]];
@@ -1849,16 +1862,16 @@ const TOWN_SVG=`<svg width="0" height="0" style="position:absolute" aria-hidden=
 <symbol id="tic-lab" viewBox="0 0 32 32"><g fill="none" stroke="url(#tg-gold)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12.5 4h7M13.5 4v8L6.5 24.5A2.3 2.3 0 0 0 8.5 28h15a2.3 2.3 0 0 0 2-3.5L18.5 12V4"/><path d="M9.2 20h13.6"/><circle cx="14" cy="23.5" r="1.1"/><circle cx="18.5" cy="22" r=".8"/><path d="M24.5 5.5l.8 1.8 1.8.8-1.8.8-.8 1.8-.8-1.8-1.8-.8 1.8-.8z"/></g></symbol>
 <symbol id="tic-arena" viewBox="0 0 32 32"><g fill="none" stroke="url(#tg-gold)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="16" cy="11" rx="12" ry="4"/><path d="M4 11v13c0 2.2 5.4 4 12 4s12-1.8 12-4V11"/><path d="M8 14.2v5.5a2 2 0 0 1 4 0v6.8M14 15.2v5a2 2 0 0 1 4 0v6.8M20 15.2v4.5a2 2 0 0 1 4 0v5.3"/><path d="M16 7V2.5l4 1.5-4 1.5"/></g></symbol>
 <symbol id="tic-farm" viewBox="0 0 32 32"><g fill="none" stroke="url(#tg-gold)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 10.5L5 4.5l6.2 3.2M24 10.5l3-6-6.2 3.2"/><path d="M6 17.5c0-6 4.5-10 10-10s10 4 10 10-4.5 9.5-10 9.5S6 23.5 6 17.5z"/><circle cx="12" cy="16.5" r="1.3" fill="url(#tg-gold)"/><circle cx="20" cy="16.5" r="1.3" fill="url(#tg-gold)"/><path d="M13 21c1.8 1.6 4.2 1.6 6 0"/><path d="M9 20.5h1.6M21.4 20.5H23"/></g></symbol>
-<symbol id="tic-profile" viewBox="0 0 32 32"><g fill="none" stroke="url(#tg-gold)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="7" width="25" height="19" rx="2.5"/><circle cx="11.5" cy="14.5" r="3"/><path d="M6.8 22.5c.7-2.6 2.5-4 4.7-4s4 1.4 4.7 4"/><path d="M19 13h6M19 17h6M19 21h4"/><path d="M13 7V4.5h6V7"/></g></symbol>
+<symbol id="tic-save" viewBox="0 0 32 32"><g fill="none" stroke="url(#tg-gold)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4.5h15.5a1.5 1.5 0 0 1 1.5 1.5v20a1.5 1.5 0 0 1-1.5 1.5H8a2 2 0 0 1-2-2V6.5a2 2 0 0 1 2-2z"/><path d="M10 4.5v23"/><path d="M17 4.5v8l2.5-2 2.5 2v-8"/><path d="M13.5 18h7M13.5 22h5"/></g></symbol><symbol id="tic-profile" viewBox="0 0 32 32"><g fill="none" stroke="url(#tg-gold)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="7" width="25" height="19" rx="2.5"/><circle cx="11.5" cy="14.5" r="3"/><path d="M6.8 22.5c.7-2.6 2.5-4 4.7-4s4 1.4 4.7 4"/><path d="M19 13h6M19 17h6M19 21h4"/><path d="M13 7V4.5h6V7"/></g></symbol>
 <symbol id="tic-news" viewBox="0 0 32 32"><g fill="none" stroke="url(#tg-gold)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4.5v2"/><path d="M9 21.5v-7a7 7 0 0 1 14 0v7l2.5 3h-19z"/><path d="M13.2 24.5a2.8 2.8 0 0 0 5.6 0"/></g></symbol>
 <symbol id="tic-conf" viewBox="0 0 32 32"><g fill="none" stroke="url(#tg-gold)" stroke-width="1.9" stroke-linejoin="round"><path d="M13.9 3.5h4.2l.7 3.4 2.4 1.4 3.3-1.1 2.1 3.6-2.6 2.3v2.8l2.6 2.3-2.1 3.6-3.3-1.1-2.4 1.4-.7 3.4h-4.2l-.7-3.4-2.4-1.4-3.3 1.1-2.1-3.6 2.6-2.3v-2.8L5.2 10.8l2.1-3.6 3.3 1.1 2.4-1.4z"/><circle cx="16" cy="16" r="4.2"/></g></symbol>
 <symbol id="tic-player" viewBox="0 0 34 34"><g fill="url(#tg-gold)"><path d="M17 5.5c4.4 0 7.5 3.2 7.5 7.6 0 1.4-.3 2.7-.8 3.8.6.3.8 1 .6 1.8-.3 1-1 1.6-1.7 1.6-1.2 2.4-3.3 4-5.6 4s-4.4-1.6-5.6-4c-.7 0-1.4-.6-1.7-1.6-.2-.8 0-1.5.6-1.8-.5-1.1-.8-2.4-.8-3.8 0-4.4 3.1-7.6 7.5-7.6z"/><path d="M5.5 33c.8-5.4 5.2-8.4 11.5-8.4S27.7 27.6 28.5 33z"/></g><path d="M10.5 11.5c1.8-3.4 5-4.8 8.8-3.6 2.3.7 3.8 2.4 4.3 4.6-2.4-1.6-5.6-2.4-8.8-1.6-1.6.4-3.1.6-4.3.6z" fill="#fff5cc" opacity=".55"/></symbol>
 <symbol id="tic-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="url(#tg-gold)" stroke="#8a611f" stroke-width="1"/><circle cx="12" cy="12" r="7.6" fill="none" stroke="#9c7430" stroke-width="1"/><path d="M12 7.2l1.4 3 3.2.3-2.4 2.1.7 3.2L12 14.2l-2.9 1.6.7-3.2-2.4-2.1 3.2-.3z" fill="#fff4c4" stroke="#9c7430" stroke-width=".6"/></symbol></defs></svg>`;
 const townCorners=()=>["tl","tr","bl","br"].map(c=>`<span class="cn ${c}"><svg viewBox="0 0 14 14"><use href="#tic-corner"/></svg></span>`).join("");
-function townArena(){const e=$("#msg");if(e)e.textContent="闘技場は、まだ利用できません。";vgSay()} // ロック表示のまま（開放条件・内容は未決）。案内文はシステム表示、ヴァルガスは一言だけ
+function townArena(){const e=$("#msg");if(e)e.textContent="闘技場は、まだ利用できません。";const t=$("#app>.tlow");if(t)t.classList.add("on");vgSay()} // ロック表示のまま（開放条件・内容は未決）。案内文はシステム表示、ヴァルガスは一言だけ
 /** プロフィール（暫定の器）：顔（仮の金色の人の形。正式な顔の素材は後日）・プレイヤー名・所持金・最高到達ランク・獲得トロフィー（正式データが無いので枠だけ）。
  * 行は PROFILE_ROWS に［見出し, 値のHTMLを返す関数］で足していく（大会戦績・育成記録・実績など）。セーブには何も足さない */
-const PROFILE_ROWS=[["所持金",()=>`<svg viewBox="0 0 24 24" aria-hidden="true"><use href="#tic-coin"/></svg>${S.g}<small>G</small>`],["最高到達ランク",()=>(S.br??-1)>=0?RN[S.br]:"ー"],["獲得トロフィー",()=>null]];
+const PROFILE_ROWS=[["所持金",()=>`<svg viewBox="0 0 24 24" aria-hidden="true"><use href="#tic-coin"/></svg>${S.g}<small>G</small>`],["最高到達ランク",()=>(S.br??-1)>=0?RN[S.br]:"ー"],["育成完了",()=>`${MMP8.raiseDoneCount(S)}<small>回</small>`],["大会の勝利",()=>`${S.wins||0}<small>勝</small>`],["獲得トロフィー",()=>null]];
 function profileScr(){if(p8Blocked())return;bgm("town");$("#app").innerHTML=`<div class="ds pfds">${TOWN_SVG}<div class="dtop"><button class="dback" onclick="lobby()">◀ 街にもどる</button></div><div class="dtitle" style="--dc:#d9b465"><div class="mico"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="#tic-profile"/></svg></div><div><b>プロフィール</b><small>プレイヤーの記録</small></div></div><div class="tplate">${townCorners()}<div class="pfhead"><div class="tav"><svg viewBox="0 0 34 34" aria-hidden="true"><use href="#tic-player"/></svg></div><div class="pfn"><small>プレイヤー</small><b class="p115pn">${p11Esc(S.playerName||MMP11P.DEFAULT_NAME)}</b></div></div><dl class="pfrows">${PROFILE_ROWS.map(r=>{const v=r[1]();return `<div class="pfrow"><dt>${r[0]}</dt>${v==null?`<dd class="pfnone">準備中</dd>`:`<dd>${v}</dd>`}</div>`}).join("")}</dl></div></div>`;try{window.scrollTo(0,0)}catch(e){}}
 /** お知らせ（仮の画面）：正式なお知らせ機能は未決。配信・データ・セーブは作らず「準備中」だけ */
 function newsScr(){if(p8Blocked())return;$("#app").innerHTML=`<div class="ds pfds tnewsscr">${TOWN_SVG}<div class="dtop"><button class="dback" onclick="lobby()">◀ 街にもどる</button></div><div class="dtitle" style="--dc:#d9b465"><div class="mico"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="#tic-news"/></svg></div><div><b>お知らせ</b><small>ミスティックモンスターズからのお知らせ</small></div></div><div class="tplate">${townCorners()}<p class="pfnote">お知らせは準備中です。</p></div></div>`;try{window.scrollTo(0,0)}catch(e){}}
@@ -1872,9 +1885,8 @@ function confScr(){if(p8Blocked())return;$("#app").innerHTML=`<div class="ds pfd
 function gameScroller(){const a=document.getElementById("app");if(!a)return null;return [a.querySelector(":scope>.ds>.dbody"),a.querySelector(":scope>.ds,:scope>.mk2,:scope>.p9tour,:scope>.p9vs,:scope>.rn"),a].find(e=>e&&e.scrollHeight>e.clientHeight+1)||a}
 function lobby(msg,open){if(p8Blocked())return;if(S.playerNamePending)return p11NameScr(msg); // Phase 11：新規ゲームは最初にプレイヤー名を決める
  const h1=$("h1");if(h1)h1.style.display="";bgm("town");const m=S.m; // 街では見出し（h1）を CSS で隠す（main:has(>#app>.map.town)）。ほかの画面へ移れば元どおり
- $("#app").innerHTML=`<div class="map town" style="--town-bg:url(${TOWN_BG})"><div class="tbg" aria-hidden="true"></div>${TOWN_SVG}<button class="tround tnews" onclick="newsScr()" aria-label="お知らせ" title="お知らせ"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="#tic-news"/></svg></button><button class="tround tconf" onclick="confScr()" aria-label="設定" title="設定"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="#tic-conf"/></svg></button>${TOWN_LABELS.map(l=>`<div class="tlbl" style="--x:${l[1]};--y:${l[2]}"><span>${l[0]}</span><i></i></div>`).join("")}</div><nav class="tcmds tbar" aria-label="街の施設">${TOWN_CMDS(m).map((c,i)=>`<button class="hz tcmd ${c[4]=="ok"?"":c[4]}${i==4?" tsub tfarm":i==5?" tsub tprof":""}" ${c[4]=="dis"?"disabled":""} onclick="${c[3]}" aria-label="${c[0]}${c[4]=="lock"?"（未開放）":""}" title="${c[1]}"><span class="ti">${townIcon(c[2])}</span><b>${c[0]}</b></button>`).join("")}</nav>
- <div class="tlow">${bprof()}<div class="dlg"><div class="mon dm">${svg(0,0)}</div><div class="dbub" id="msg">${msg||(m?"行きたい場所をタップしよう！":"モンスターがいません。まずは市場で選ぼう。")}</div></div>${m?mcard(m):""}
- <button class="svb" onclick="savescr()">▶ セーブ・ロード</button></div>`;try{window.scrollTo(0,0)}catch(e){}
+ $("#app").innerHTML=`<div class="map town" style="--town-bg:url(${TOWN_BG})"><div class="tbg" aria-hidden="true"></div>${TOWN_SVG}<button class="tround tnews" onclick="newsScr()" aria-label="お知らせ" title="お知らせ"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="#tic-news"/></svg></button><button class="tround tconf" onclick="confScr()" aria-label="設定" title="設定"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="#tic-conf"/></svg></button>${TOWN_LABELS.map(l=>`<div class="tlbl" style="--x:${l[1]};--y:${l[2]}"><span>${l[0]}</span><i></i></div>`).join("")}</div><nav class="tcmds tbar" aria-label="街の施設">${TOWN_CMDS(m).map((c,i)=>`<button class="hz tcmd ${c[4]=="ok"?"":c[4]}${i==4?" tsub tfarm":i==5?" tsub tprof":i==6?" tsub tsave svb":""}" ${c[4]=="dis"?"disabled":""} onclick="${c[3]}" aria-label="${c[0]}${c[4]=="lock"?"（未開放）":""}" title="${c[1]}"><span class="ti">${townIcon(c[2])}</span><b>${c[5]||c[0]}</b></button>`).join("")}</nav>
+ <div class="tlow${msg||!m?" on":""}"><div class="dlg"><div class="mon dm">${svg(0,0)}</div><div class="dbub" id="msg">${msg||(m?"行きたい場所をタップしよう！":"モンスターがいません。まずは市場で選ぼう。")}</div></div></div>`;try{window.scrollTo(0,0)}catch(e){} // 街は1画面で固定（2026-09-30）：案内文は知らせることがあるときだけ背景の上に出す。セーブ・ロードは下のバー、大会・育成完了の回数はプロフィールへ
 }
 // ---- Phase 11：プレイヤー名（新規ゲームの最初に決める。空欄なら「アルト」） ----
 function p11Esc(t){return String(t).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}

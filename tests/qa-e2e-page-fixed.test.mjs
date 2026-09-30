@@ -20,8 +20,8 @@ test('PF-1：CSS：html・body はスクロールしない（バウンスも抑�
   assert.match(HTML, /\n#app\{flex:1 1 auto;min-height:0;margin:-16px -16px 0;padding:16px;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;/);
   assert.match(HTML, /#app>\.ds>\.dbody\{flex:1 1 auto;min-height:0;[^}]*overflow-y:auto;overscroll-behavior:contain/, '一覧（.dbody）だけスクロール');
   assert.match(HTML, /#app>\.rn>\.wpanel\{[^}]*overflow-y:auto;overscroll-behavior:contain/, '牧場は選んだ機能の中身だけスクロール');
-  assert.match(HTML, /#app>\.map\.town\{position:sticky;top:-16px;z-index:0\}/, '街の背景は止めたまま');
-  assert.match(HTML, /<div class="tlow">\$\{bprof\(\)\}/, '街の下の欄は .tlow（背景の上に重なる）');
+  assert.match(HTML, /#app:has\(>\.map\.town\)\{position:relative;overflow:hidden;padding-bottom:0\}/, '街は1画面で固定（スクロールしない）');
+  assert.match(HTML, /<div class="tlow\$\{msg\|\|!m\?" on":""\}"><div class="dlg">/, '案内文は知らせることがあるときだけ背景の上に出す');
   assert.match(HTML, /<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">/, 'viewport は従来どおり（safe-area を使う）');
   assert.match(HTML, /window\.scrollTo=function\(a,b\)\{try\{const y=a&&typeof a=="object"\?a\.top:b,app=document\.getElementById\("app"\);if\(app&&typeof y=="number"\)app\.scrollTop=y\}catch\(e\)\{\}return f\.apply\(window,arguments\)\}/, '既存の「一番上から表示」は #app にも効く');
 });
@@ -40,7 +40,7 @@ async function setup(p) {
 const SCREENS = [
   ['街', 'lobby()', '.tbg'], ['市場', 'market()', '.p10mk'], ['牧場（預ける）', "farm('','a')", '.fscene'], ['牧場（様子を見る）', "rnView=null;farm('','e')", '.fscene'], ['牧場（売る）', "farm('','d')", '.fscene'],
   ['ファーム', "hall('t')", '.fm'], ['ステータス', "hall('st')", '.dbg'], ['技管理', "hall('w')", '.dbg'], ['特訓メニュー', "hall('s')", '.dbg'], ['出発準備', 'prepScr()', '.dbg'], ['アイテム', 'shopScr()', '.dbg'],
-  ['プロフィール', 'profileScr()', '.dtitle'], ['お知らせ', 'newsScr()', '.dtitle'], ['設定', 'confScr()', '.dtitle'], ['セーブ', 'savescr()', 'main'], ['研究所', 'museum()', '.dbg'], ['図鑑の詳細', 'musd(0)', '.mk2'],
+  ['プロフィール', 'profileScr()', '#app>.ds'], ['お知らせ', 'newsScr()', '#app>.ds'], ['設定', 'confScr()', '#app>.ds'], ['セーブ', 'savescr()', 'main'], ['研究所', 'museum()', '.dbg'], ['図鑑の詳細', 'musd(0)', '.mk2'],
 ];
 /** 画面の登場アニメ（#app>* の scr：12px 下から0.3秒）など、終わりのあるアニメが止まるまで待つ（背景の位置を正しく測るため） */
 const settle = (pg) => pg.waitForFunction(() => document.getAnimations().every((a) => a.playState !== 'running' || !Number.isFinite(a.effect && a.effect.getComputedTiming().endTime)), null, { timeout: 10000 }).then(() => pg.waitForTimeout(60));
@@ -117,22 +117,28 @@ test('PF-B3（375×667・タッチ）：スワイプ（指で上へ払う）で�
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
 });
 
-test('PF-B4（390×844）：街：下の欄までスクロールしても背景は止まったまま。案内欄・セーブ・ロードはバーの裏に隠れずに押せる。他の画面へ行って戻ると一番上から', { skip: SKIP }, async () => {
-  const p = await L.open(); const pg = p.page;
-  await setup(p);
-  await pg.evaluate(() => lobby()); await pg.waitForTimeout(450);
-  const bg0 = await pg.evaluate(() => document.querySelector('.tbg').getBoundingClientRect().top);
-  await pg.evaluate(() => { const a = document.getElementById('app'); a.scrollTop = a.scrollHeight; }); await pg.waitForTimeout(200);
-  const r = await pg.evaluate(() => { const a = document.getElementById('app'), sv = document.querySelector('.svb').getBoundingClientRect(), bar = document.querySelector('.tbar').getBoundingClientRect(), hit = document.elementFromPoint(sv.left + sv.width / 2, sv.top + sv.height / 2);
-    return { st: a.scrollTop, bg: document.querySelector('.tbg').getBoundingClientRect().top, svb: sv.bottom, bar: bar.top, hit: !!hit && hit.closest('.svb') != null, y: scrollY }; });
-  assert.ok(r.st > 0 && r.y === 0, '街の枠（#app）の中だけがスクロールした');
-  assert.equal(r.bg, bg0, '背景は止まったまま');
-  assert.ok(r.svb <= r.bar && r.hit, `セーブ・ロードはバーの裏に隠れず押せる（${JSON.stringify(r)}）`);
-  await pg.click('.svb'); await pg.waitForSelector('#sc', { state: 'attached' });
-  await pg.evaluate(() => lobby()); await pg.waitForTimeout(300);
-  assert.equal(await pg.evaluate(() => document.getElementById('app').scrollTop), 0, '街へ戻ると一番上から');
-  // 闘技場（ロック中）：案内欄とヴァルガスの一言が見える位置まで送る（従来どおり）
-  await pg.click('.tbar .hz[onclick="townArena()"]'); await pg.waitForSelector('#vgsay');
-  assert.ok(await pg.evaluate(() => { const v = document.getElementById('vgsay').getBoundingClientRect(), bar = document.querySelector('.tbar').getBoundingClientRect(); return v.top >= 0 && v.bottom <= bar.top + 1; }), 'ヴァルガスの一言がバーの上に見える');
-  assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
+test('PF-B4（4サイズ）：街は1画面で固定（スクロールしない）。セーブ・ロードは下のバー（ファーム 55%・プロフィール・セーブ・ロード）から押せる。案内文・ヴァルガスの一言はバーの上に見える', { skip: SKIP }, async () => {
+  for (const size of Object.values(H.SIZES)) {
+    const p = await L.open({ size }); const pg = p.page;
+    await setup(p);
+    await pg.evaluate(() => lobby()); await pg.waitForTimeout(300); await settle(pg);
+    const bg0 = await pg.evaluate(() => document.querySelector('.tbg').getBoundingClientRect().top);
+    await pg.mouse.move(size[0] / 2, size[1] / 3); await pg.mouse.wheel(0, 1500); await pg.waitForTimeout(300);
+    const r = await pg.evaluate(() => { const a = document.getElementById('app'), sv = document.querySelector('.tbar .tsave.svb').getBoundingClientRect(), hit = document.elementFromPoint(sv.left + sv.width / 2, sv.top + sv.height / 2),
+      cells = [...document.querySelectorAll('.tbar .tcmd')].slice(4).map((b) => Math.round(b.getBoundingClientRect().width));
+      return { st: a.scrollTop, can: a.scrollHeight > a.clientHeight, y: scrollY, bg: document.querySelector('.tbg').getBoundingClientRect().top, hit: !!hit && hit.closest('.svb') != null, lab: document.querySelector('.tbar .tsave b').innerText.split('\n'), cells, tlow: getComputedStyle(document.querySelector('#app>.tlow')).display }; });
+    const tag = size.join('×');
+    assert.deepEqual([r.st, r.can, r.y], [0, false, 0], `${tag}：街はスクロールしない`);
+    assert.equal(r.bg, bg0, `${tag}：背景は動かない`);
+    assert.ok(r.hit, `${tag}：セーブ・ロードは押せる`); assert.deepEqual(r.lab, ['セーブ', 'ロード'], `${tag}：セーブ・ロードは2行`);
+    const all = r.cells.reduce((a, b) => a + b, 0); assert.ok(Math.abs(r.cells[0] / all - 0.55) < 0.03 && Math.abs(r.cells[1] - r.cells[2]) <= 1, `${tag}：2段目は ファーム 55%・プロフィールとセーブ・ロードが半分ずつ（${r.cells}）`);
+    assert.equal(r.tlow, 'none', `${tag}：知らせることが無いときは案内文を背景に重ねない`);
+    await pg.click('.tbar .svb'); await pg.waitForSelector('#sc', { state: 'attached' });
+    await pg.evaluate(() => lobby()); await pg.waitForTimeout(300); await settle(pg);
+    await pg.click('.tbar .hz[onclick="townArena()"]'); await pg.waitForSelector('#vgsay'); await settle(pg);
+    const v = await pg.evaluate(() => { const bar = document.querySelector('.tbar').getBoundingClientRect(), g = document.getElementById('vgsay').getBoundingClientRect(), m = document.getElementById('msg').getBoundingClientRect(); return { ok: m.top >= 0 && g.bottom <= bar.top + 1, msg: document.getElementById('msg').textContent }; });
+    assert.ok(v.ok && v.msg === '闘技場は、まだ利用できません。', `${tag}：案内文とヴァルガスの一言がバーの上に見える`);
+    assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
+    await p.ctx.close();
+  }
 });
