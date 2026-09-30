@@ -444,7 +444,7 @@
       const from = df ? (() => { const b = df.getBoundingClientRect(); return { x: b.left + b.width / 2 - hr.left, y: b.top + b.height / 2 - hr.top }; })() : null;
       if (df) df.hidden = true;
       const fv = $('#chf'), fr = fv ? fv.getBoundingClientRect() : hr;
-      await MMCHD.play(r.value, { host, from, land: { x: fr.left + fr.width / 2 - hr.left, y: fr.top + fr.height * 0.6 - hr.top } });
+      await MMCHD.play(r.value, { host, from, land: { x: fr.left + fr.width / 2 - hr.left, y: fr.top + fr.height * 0.44 - hr.top } });   // 着地はモンスターの頭より上（モンスターを隠さない）
       setMsg(`出目 <b>${r.value}</b>　${DIST[r.value] || ''}　<small>疲れ +${m.raise.pend ? m.raise.pend.fatigueAdded || 0 : 0}</small>`);
     } finally { busySet(false); }
     chfContinue();
