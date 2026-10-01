@@ -1241,6 +1241,43 @@ button.mkc b{font-size:.9rem}button.mkc small{font-size:.66rem;color:#ffe9b0}
 .chdf[hidden]{display:none}
 @keyframes chdffloat{50%{transform:translate(-50%,-9px)}}
 @keyframes chdfspin{to{transform:rotate(360deg)}}
+/* 2026-10-01 リアル巨大ボード方式：画像の操作欄（START／STOP の2状態の正式画像。押せる領域は透明なボタン）・宙で回るサイコロ・Chapter開始の俯瞰図・フィナの一言 */
+.chdeck-img{padding-bottom:calc(2px + env(safe-area-inset-bottom,0px))}
+.chcmd-img{position:relative;height:auto;width:min(100%,calc(var(--chcmd) * var(--deckar,3.116)));aspect-ratio:var(--deckar,3.116);margin:0 auto;max-height:var(--chcmd)}
+.chdeck-bg{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:contain;pointer-events:none;user-select:none;-webkit-user-select:none;filter:drop-shadow(0 3px 6px rgba(0,0,0,.45))}
+.chwing.chwing-img{position:absolute;max-width:none;height:auto;margin:0;padding:0;border:0;border-radius:10px;background:transparent;box-shadow:none;transform:none;color:transparent;font-size:0;z-index:2}
+.chwing.chwing-img b,.chwing.chwing-img small{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.chwing.chwing-img:disabled{opacity:1;filter:none;background:rgba(5,10,30,.55)}
+.chwing.chwing-img.must{border:0;box-shadow:inset 0 0 0 2px rgba(255,214,106,.85),0 0 14px rgba(255,214,106,.5);background:rgba(255,214,106,.08)}
+.chstopw.chstopw-img{position:absolute;transform:none;width:auto;height:auto;z-index:3}
+.chstop.chstop-img{position:absolute;inset:0;width:100%;height:100%;border-radius:50%;background:transparent;filter:none;color:transparent}
+.chstop.chstop-img b{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.chstop.chstop-img:disabled{filter:none;background:rgba(5,10,30,.5)}
+.chstop.chstop-img.spinning:not(:disabled),.chstop.chstop-img.wait{background:transparent}
+.chstop.chstop-img.wait{background:rgba(5,10,30,.35)}
+.chstopw-img .chdf{top:-104px}
+.chstopw.chstopw-img.on::after{content:"";position:absolute;left:18%;top:14%;width:64%;height:72%;border-radius:50%;box-shadow:0 0 22px 6px rgba(255,200,90,.8);opacity:0;pointer-events:none;animation:chstopglow 1.6s ease-in-out infinite}
+.chstop.spinning:not(.chstop-img) .chstop-dome{background:radial-gradient(circle at 50% 30%,#ffd27a 0,#e0541c 36%,#7a1a0a 76%,#3a0808 100%)}
+@media (max-height:720px){.chstopw-img .chdf{top:-88px}}
+.chdz-img.spin{animation:chdzspin .9s linear infinite}
+@keyframes chdzspin{to{transform:rotate(360deg)}}
+.chintro{position:absolute;inset:0;z-index:40;overflow:hidden;background:#0b1636;opacity:0;transition:opacity .35s ease;cursor:pointer}
+.chintro.on{opacity:1}
+.chintro.out{opacity:0;transition:opacity .7s ease}
+.chintro-cam{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform}
+.chintro-img{display:block;width:100%;height:100%;user-select:none;-webkit-user-select:none;pointer-events:none}
+.chintro-title{position:absolute;left:0;right:0;top:18%;text-align:center;color:#fff6d8;opacity:0;transform:translateY(8px);transition:opacity .6s ease,transform .6s ease;text-shadow:0 2px 0 rgba(20,10,0,.7),0 0 14px rgba(0,0,0,.6);pointer-events:none}
+.chintro-title.on{opacity:1;transform:none}
+.chintro-title small{display:block;font:800 13px/1 var(--mm-font-head);letter-spacing:.3em;color:#f3d98e}
+.chintro-title b{display:block;margin-top:8px;font:900 30px/1.2 var(--mm-font-head);letter-spacing:.08em}
+.chintro-title i{display:block;margin-top:10px;font:600 12.5px/1 var(--mm-font-body);font-style:normal;color:#e8cf8e;letter-spacing:.2em}
+.chintro-tap{position:absolute;left:0;right:0;bottom:calc(var(--chdeck) + 14px);margin:0;text-align:center;font:600 11px/1 var(--mm-font-body);color:rgba(255,246,216,.8);letter-spacing:.1em;text-shadow:0 1px 2px rgba(0,0,0,.7);pointer-events:none}
+.chf-fina{position:absolute;left:10px;right:10px;bottom:calc(var(--chdeck) + 10px);z-index:9;display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:14px;border:1.5px solid #d9b465;background:linear-gradient(180deg,rgba(20,36,82,.96),rgba(8,18,46,.97));color:#fff;box-shadow:0 6px 18px rgba(0,0,0,.45);animation:chsheet .26s ease-out;pointer-events:none}
+.chf-fina img{flex:none;width:40px;height:40px;border-radius:50%;object-fit:cover;object-position:50% 12%;border:1.5px solid #d9b465;background:#0b1636}
+.chf-fina b{display:block;font:800 11px/1 var(--mm-font-head);color:#f3d98e;margin-bottom:3px}
+.chf-fina span{font-size:12.5px;line-height:1.35}
+.chf-fina.out{opacity:0;transition:opacity .22s}
+@media (prefers-reduced-motion:reduce){.chdz-img.spin,.chstopw.chstopw-img.on::after{animation:none}}
 /* シート（分岐・バトル・大会門・ターン終了・アイテム）：フィールドの下端（操作欄のすぐ上）に重ねる */
 .chsheet{position:absolute;left:10px;right:10px;bottom:calc(var(--chdeck) + 8px);margin:0;padding:10px 12px 12px;border-radius:16px;background:linear-gradient(180deg,rgba(20,36,82,.96),rgba(8,18,46,.97));border:1.5px solid #d9b465;color:#fff;box-shadow:0 6px 18px rgba(0,0,0,.45);max-height:calc(100% - var(--chdeck) - 84px);overflow:auto;overscroll-behavior:contain;box-sizing:border-box;animation:chsheet .26s ease-out}
 @keyframes chsheet{from{opacity:0;transform:translateY(12px)}}
@@ -1902,6 +1939,7 @@ main>h1{flex:none}
 <script src="./js/chapter/configs/ch1a.js"></script>
 <script src="./js/chapter/dice-renderer.js"></script>
 <script src="./js/chapter/field-view.js"></script>
+<script src="./js/chapter/intro.js"></script>
 <!-- バトル画面の表示だけの補正（fight()・.bt 系 CSS は変えない）：モンスターの絵を HUD と技UIの間に収める -->
 <script src="./js/battle/fit.js"></script>
 <script>

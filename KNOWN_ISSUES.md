@@ -133,3 +133,19 @@
 - 変えたもの：js/phase7/progression.js（rollDie）・js/phase8/raising.js（diceSides・強制停止 node.stop・通過 onPass・onTurnsExhausted）・js/chapter/engine.js（rules.diceSides／onTimeUp・forceStop・special・NODE_TYPES・turnInfo・registerPassHandler・companionReaction・sceneNodes／nextFields／sceneOrder／routeLengths・stepsToMerge の固定上限撤廃）・js/chapter/dice-renderer.js（sides・missingSprites）・js/chapter/field-view.js（次の背景の先読みをつながりから・fieldScenes[].camera・registerReactionRenderer）・tests/chapter-next.test.mjs（新規16件）・tests/chapter-sim.mjs（ループ上限を config から）・tests/qa-static-guards.test.mjs（QA-C9）。詳細は CLAUDE.md §3「次期Chapter」。
 - 【暫定・未決】出目 4〜6 の移動疲れ（今は表の最大＝+7。config の fatigueRules.roll で置き換え）、サイコロの停止画像 dice_stop_4〜6（今は数字の輪）、総マス数（100〜200）・背景の枚数（コードに固定していない）、フィナのリアクションの本文と会話UI（フックだけ）、現行 Chapter 1 のライバル（f3_4）を強制停止にするか（今は従来どおり通過できる）。
 - 同行者の監査：Chapter へ行くのはプレイヤー・フィナ・育成中のモンスター（ダンは同行しない）。Chapter フィールド（engine・field-view・ch1a）にダンは出ない。出発時の掛け合い DAN_TALK.handoff（index.html：フィナ「ダン、この子のことお願いしてもいい？」→ダン「ああ。こっちは任せてくれ。」）は、ダンへモンスターを預けて旅立つように読めるため、文面の見直しは仕様側の判断待ち（コードは変えていない）。DAN_TALK.chapter「残りNターンか…」は Chapter間ファームの一言で、同行ではない。
+
+## Chapter 1 リアル巨大ボード方式（背景15枚・俯瞰図・START／STOP・6面、2026-10-01）
+- Chapter 1 のボード背景を新素材（巨大街道15枚）へ差し替え、Chapter開始時の俯瞰図（演出専用の画像。Pattern A／B／C）→ スタート地点へズーム／パン → 実プレイ画面の導入を足した（js/chapter/intro.js）。操作欄は START／STOP の正式画像（押せる領域は透明なボタン）。サイコロは 1〜6（停止面 dice_stop_1〜6 は正式画像を透過化）。詳細は CLAUDE.md §3「リアル巨大ボード方式」、素材の加工は assets/fields/ch1a/road/README.md。
+- 【暫定】周回数（総マス数）：共通2周・橋1周・森2周・会場2周＝橋59／森79マス。tests/chapter-balance.mjs の比較（各600回・休む方針＝疲れ86以上で休む）：
+  - A 1/1/1/1（39／39）：到達100%・平均12ターン（短すぎ。寄り道の意味が無い）
+  - B 1/1/2/1（39／59）：急ぐ 平均12・育成重視 平均19・到達100%
+  - C 2/1/2/1（55／75）：急ぐ 平均18（100%）・育成重視 平均24（98%）・自由 平均21（99%）
+  - D 2/1/2/2（59／79）＝今の既定：急ぐ 平均19（100%）・育成重視 平均25（97%。休む3回以上で約92%）・自由 平均22（98%）
+  - E 2/2/2/2（79／79）：どちらも 平均26・到達96%（差が出ない）
+  - F 2/2/3/2（79／99）：急ぐ 94%・育成重視 25%（森が厳しすぎる）
+  - 出目 4〜6 の疲れが +7【暫定】のため、6面では平均2回ほど休む。疲れの正式値が決まれば到達率は変わる。最終確定は比較結果を見てからの判断。
+- 【未決】フィナのリアクションの本文（差し込み口と吹き出しの描画だけ。config.companion.reactions は空）、フィナの会話UI、イベント・宝箱の中身、新アイテム。
+- 【要確認】大会ランクの上限：今回のプロンプトは「クリア最高ランクの1つ上」、現行コード・CLAUDE.md §3 は「＋2（Chapter 1 は D まで）」。既存の大会関連を壊さないため現行のまま。
+- 【要確認】ダンの出発時の掛け合い DAN_TALK.handoff（index.html）：「ダン、この子のことお願いしてもいい？／ああ。こっちは任せてくれ。」はダンへ預けて旅立つように読める。最小修正案：フィナ「ダン、この子と一緒に行ってくるね。」→ダン「ああ。気をつけてな。ファームで待ってる。」（セリフは仕様側の判断。コードは変えていない）。Chapter フィールドにダンは出ない。
+- 既知の見た目：dice_stop_2 の側面（1の面）は公式の紋章ではなく通常の目（ZIP の README に記載。上面＝出目だけを使う）。石板の輪の位置（y≈0.84・0.60・0.47・0.38）は15枚共通の目安で、絵によって数px ずれる。
+- 旧素材（journey/13枚・dice_stop_1〜3.svg・dice_rolling.webp）は削除していない（新デザイン正式採用後に別作業）。

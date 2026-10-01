@@ -138,8 +138,8 @@ T('QA-SR3：サイコロ演出中に再読み込み → 出目・使用ターン
   await setupTown(pg);
   await departDirect(pg);
   await pg.waitForTimeout(500);
-  // 出目を3に固定（押した瞬間の1回だけ）。Chapter 1 はChapterフィールド：f1_0 → f1_1 → f1_2 → f1_3
-  await pg.evaluate(() => { window.__rnd = Math.random; Math.random = () => 0.99; });
+  // 出目を3に固定（押した瞬間の1回だけ。6面：0.4 → 3）。Chapter 1 はChapterフィールド：f1_0 → f1_1 → f1_2 → f1_3
+  await pg.evaluate(() => { window.__rnd = Math.random; Math.random = () => 0.4; });
   await pg.click('#brollbtn');
   await pg.evaluate(() => { Math.random = window.__rnd; });
   const st = JSON.parse(await stored(pg));

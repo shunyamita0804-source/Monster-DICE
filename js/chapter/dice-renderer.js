@@ -13,8 +13,10 @@
 (function (root) {
   'use strict';
   // sides：面の数（config.dice.sides。省略時は 3）。resultSprites に無い出目（例：6面で 4〜6 の停止画像が未着）は、数字の輪で出す（fallback。エンジン・演出は止まらない）
-  const C = { rollingSprite: './assets/fields/ch1a/dice/dice_rolling.webp', resultSprites: {}, min: 1, max: 3, sides: 3, ms: 920, resultMs: 480, settleMs: 180 };
-  let locked = false, cache = null;
+  //  START／STOP（2026-10-01）：play に manualStop:true を渡すと、サイコロは宙に浮いて回り続け（spin）、requestStop()（STOP ボタン）か autoStopMs の経過で落ちて止まる（land）。
+  //  出目は play を呼ぶ前に決まっている（STOP は確率を変えない。止める表示のきっかけだけ）
+  const C = { rollingSprite: './assets/fields/ch1a/dice/dice_rolling.webp', resultSprites: {}, min: 1, max: 3, sides: 3, ms: 920, resultMs: 480, settleMs: 180, upMs: 360, landMs: 640, autoStopMs: 3000 };
+  let locked = false, cache = null, phase = null, stopResolve = null;
   function configure(o) {
     if (o && typeof o === 'object') {
       Object.assign(C, o); if (o.resultSprites) C.resultSprites = { ...o.resultSprites }; cache = null;
@@ -37,13 +39,14 @@
    * 回転の時間割（0〜1）：速く回る → 減速 → 着地でほぼ止まる → 跳ねと転がりで少し進む → 最後に正式の角度へ収束。
    *  final は 360 の倍数（見た目は 0°）。settle は最後の収束にかける割合
    */
-  function spinFrames(dir, spin, settle) {
-    const fin = Math.round((spin + 140) / 360) * 360, s = 1 - settle;
+  function spinFrames(dir, spin, settle, startDeg = 0) {
+    // startDeg：今の角度から続ける（STOP の瞬間の角度）。収束の区間（settle）は最後の 26% まで（手前の keyframe 0.72 より後ろ）
+    const b = startDeg, fin = Math.round((b + spin + 140) / 360) * 360, s = Math.max(0.74, 1 - settle);
     return [
-      { transform: 'rotate(0deg)', offset: 0, easing: 'cubic-bezier(.2,0,.4,1)' },
-      { transform: `rotate(${dir * spin * 0.62}deg)`, offset: 0.34, easing: 'cubic-bezier(.3,0,.6,1)' },
-      { transform: `rotate(${dir * spin}deg)`, offset: 0.6, easing: 'ease-out' },
-      { transform: `rotate(${dir * (spin + 70)}deg)`, offset: 0.72, easing: 'ease-out' },
+      { transform: `rotate(${dir * b}deg)`, offset: 0, easing: 'cubic-bezier(.2,0,.4,1)' },
+      { transform: `rotate(${dir * (b + spin * 0.62)}deg)`, offset: 0.34, easing: 'cubic-bezier(.3,0,.6,1)' },
+      { transform: `rotate(${dir * (b + spin)}deg)`, offset: 0.6, easing: 'ease-out' },
+      { transform: `rotate(${dir * (b + spin + 70)}deg)`, offset: 0.72, easing: 'ease-out' },
       { transform: `rotate(${dir * (fin - 34)}deg)`, offset: s, easing: 'cubic-bezier(.25,.1,.25,1)' },
       { transform: `rotate(${dir * fin}deg)`, offset: 1 },
     ];
@@ -63,7 +66,35 @@
     host.appendChild(ov);
     try {
       const mv = ov.querySelector('.chdz-mv'), img = ov.querySelector('.chdz-img'), sh = ov.querySelector('.chdz-sh'), T = calm ? 260 : C.ms, settle = Math.min(0.3, C.settleMs / T);
-      if (!calm && mv.animate) {
+      if (opts.manualStop) {
+        // START → 宙で回り続ける（spin）→ STOP（requestStop）または autoStopMs で落ちて止まる（land）。回転は止めた瞬間の角度から正式の角度へ収束
+        const ax = lx * 0.5, ay = ly - 110;   // 宙に浮く位置（着地点の上）
+        phase = 'spin'; ov.dataset.phase = 'spin';
+        const stopP = new Promise((ok) => { stopResolve = ok; });
+        if (!calm && mv.animate) {
+          mv.animate([{ transform: 'translate(-50%,-50%) translate(0px,0px) scale(.9)', easing: 'cubic-bezier(.2,.6,.4,1)' }, { transform: `translate(-50%,-50%) translate(${ax.toFixed(1)}px,${ay.toFixed(1)}px) scale(1.16)` }], { duration: C.upMs, fill: 'forwards' });
+          sh.animate([{ transform: 'translate(-50%,-50%) scale(.3)', opacity: 0 }, { transform: 'translate(-50%,-50%) scale(.5)', opacity: 0.2 }], { duration: C.upMs, fill: 'forwards' });
+          img.classList.add('spin');
+        } else { mv.style.transform = `translate(-50%,-50%) translate(${ax.toFixed(1)}px,${ay.toFixed(1)}px)`; }
+        const t0 = performance.now();
+        await Promise.race([stopP, wait(Number.isFinite(opts.autoStopMs) ? opts.autoStopMs : C.autoStopMs)]);
+        stopResolve = null; phase = 'land'; ov.dataset.phase = 'land';
+        const T2 = calm ? 200 : C.landMs, settle2 = Math.min(0.3, C.settleMs / T2);
+        if (!calm && mv.animate) {
+          const deg = ((performance.now() - t0) / 900 * 360) % 360;   // CSS の回転（0.9秒で1回転）の今の角度から続ける
+          img.classList.remove('spin'); img.style.transform = `rotate(${(dir * deg).toFixed(1)}deg)`;
+          const a2 = mv.animate([
+            { transform: `translate(-50%,-50%) translate(${ax.toFixed(1)}px,${ay.toFixed(1)}px) scale(1.16)`, offset: 0, easing: 'cubic-bezier(.4,0,.8,.6)' },
+            { transform: `translate(-50%,-50%) translate(${lx.toFixed(1)}px,${ly.toFixed(1)}px) scale(1)`, offset: 0.42, easing: 'cubic-bezier(0,0,.5,1)' },
+            { transform: `translate(-50%,-50%) translate(${(lx + dir * 6).toFixed(1)}px,${(ly - 22).toFixed(1)}px) scale(1)`, offset: 0.6, easing: 'cubic-bezier(.5,0,1,1)' },
+            { transform: `translate(-50%,-50%) translate(${(lx + dir * 12).toFixed(1)}px,${ly.toFixed(1)}px) scale(1)`, offset: 0.75, easing: 'ease-out' },
+            { transform: `translate(-50%,-50%) translate(${(lx + dir * 22).toFixed(1)}px,${ly.toFixed(1)}px) scale(1)`, offset: 1 },
+          ], { duration: T2, easing: 'linear', fill: 'forwards' });
+          img.animate(spinFrames(dir, 420, settle2, deg), { duration: T2, easing: 'linear', fill: 'forwards' });
+          sh.animate([{ transform: 'translate(-50%,-50%) scale(.5)', opacity: 0.2 }, { transform: 'translate(-50%,-50%) scale(1)', opacity: 0.55, offset: 0.42 }, { transform: `translate(calc(-50% + ${dir * 22}px),-50%) scale(1)`, opacity: 0.55, offset: 1 }], { duration: T2, easing: 'linear', fill: 'forwards' });
+          await Promise.race([a2.finished.catch(() => {}), wait(T2 + 200)]);
+        } else { mv.style.transform = `translate(-50%,-50%) translate(${lx.toFixed(1)}px,${ly.toFixed(1)}px)`; await wait(T2); }
+      } else if (!calm && mv.animate) {
         const a1 = mv.animate([
           { transform: 'translate(-50%,-50%) translate(0px,0px) scale(.9)', opacity: 1, offset: 0, easing: 'cubic-bezier(.2,.6,.4,1)' },
           { transform: `translate(-50%,-50%) translate(${(lx * 0.45).toFixed(1)}px,${(ly - 70).toFixed(1)}px) scale(1.18)`, offset: 0.34, easing: 'cubic-bezier(.4,0,.8,.6)' },   // 飛び上がって速く回る
@@ -91,9 +122,11 @@
       await wait(opts.fast ? 120 : C.resultMs);
       ov.classList.add('out'); await wait(160);
       return true;
-    } catch (e) { return false; } finally { ov.remove(); locked = false; }
+    } catch (e) { if (root.MM_QA_DEBUG) console.warn('MMCHD.play', e); return false; } finally { ov.remove(); locked = false; phase = null; stopResolve = null; }
   }
+  /** STOP：宙で回っているサイコロを止める（出目は既に決まっている）。回っていなければ false */
+  function requestStop() { if (!stopResolve) return false; const f = stopResolve; stopResolve = null; f(); return true; }
   /** 停止面が登録されていない出目（数字で出す出目）。正式な停止画像が届く前の確認用 */
   const missingSprites = () => { const out = []; for (let v = C.min; v <= C.max; v++) if (!resultSprite(v)) out.push(v); return out; };
-  root.MMCHD = Object.freeze({ configure, roll, rollDice, play, preload, resultSprite, missingSprites, spinFrames, isLocked: () => locked });
+  root.MMCHD = Object.freeze({ configure, roll, rollDice, play, preload, resultSprite, missingSprites, spinFrames, requestStop, isLocked: () => locked, phase: () => phase });
 })(typeof window !== 'undefined' ? window : globalThis);

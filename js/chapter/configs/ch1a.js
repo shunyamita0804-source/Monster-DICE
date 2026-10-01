@@ -1,179 +1,170 @@
 // =========================================================
 // Chapter 1「はじまりの草原」Pattern A「大橋と清流の草原」の config（Chapterフィールドエンジン js/chapter/engine.js 用）
 //  このファイルはデータだけ。Chapter 2 以降は同じ形の config を作って MMCH.registerConfig するだけで動く。
-//  2026-09-30：正式背景13枚（assets/fields/ch1a/journey/。出どころ・並び順は assets/fields/ch1a/README.md）による「旅」。
-//  背景1枚＝旅の一区間（FIELD）。1枚の道に 3〜6 地点を置き、1地点進むだけでも画面上では長い距離を歩く（1マス＝旅の一区間）。
+//  2026-10-01：「リアル巨大ボード方式」。正式背景15枚（assets/fields/ch1a/road/。出どころは assets/fields/ch1a/README.md）＝世界の中の巨大な古代街道。
+//   背景1枚に輪の刻まれた石板が4つ（手前→奥）。石板1つ＝1マス（モンスターは輪の上に止まる）。カメラは低く、近景の石板2〜3枚だけが見える。
+//   旅の順：01 旅立ちの街道 → 02 花の草原 → 03 清流の道 → 04 草原の遺跡（分岐）
+//          橋ルート（短め）：05A 風の高原 → 06A 大橋への道 → 07A 古代橋の入口 → 08A 古代橋の中央（強敵）→ 09A 橋の出口
+//          森ルート（長め）：05B 森の入口 → 06B 木漏れ日の道 → 07B 森の小川 → 08B 深い古代の森 → 09B 森の出口
+//          合流：10 大会会場への道（ライバル＝強制停止・大会門）
+//   同じ背景を「周回」として何度か通る（LAPS：背景ごとの周回数。総マス数＝周回数の表だけで変えられる＝【暫定・最終確定はシミュレーションの比較を見てから】）。
+//   周回の切り替えは既存の背景の切り替え（端まで歩く → 短い暗転 → 入口から入る）。
 //  座標は各背景画像に対する割合（x・y とも 0〜1。y は下ほど手前）。ノードは通常見えない（?chdebug=1 のときだけ表示）。
-//  旅の順（開始 → 大会会場）：
-//    共通  ：01 旅立ちの草原 → 02 大橋の見える草原 → 03 清流のほとり → 04 小さな石橋 → 05 分かれ道の丘（ここで分岐）
-//    大橋  ：06 橋のたもとの集落 → 07 大橋を望む道 → 08 大橋（強敵）
-//    森    ：09 古い石柱の道 → 10 森の小道 → 11 森の出口
-//    合流  ：12 大会へ続く丘 → 13 大会会場の高原（ライバル・大会門）
+//  旧13枚の旅（journey/）・暫定の停止面（dice_stop_1〜3.svg）はファイルを残すが参照しない。
 // =========================================================
 (function (root) {
   'use strict';
-  const A = './assets/fields/ch1a/', J = A + 'journey/';
-  // 13枚に共通の奥行き（道は画面下の手前から、上の 0.35〜0.45 付近で遠ざかる構図）。y → その場所の大きさ（手前＝1）
-  const DEPTH = [[0.98, 1], [0.86, 0.86], [0.74, 0.7], [0.64, 0.56], [0.55, 0.45], [0.47, 0.36], [0.4, 0.29], [0.33, 0.24]];
-  const scene = (id, name, file, w, h, extra) => ({ id, name, bg: J + file + '.webp', w, h, exit: 'up', farBand: { to: 0.3, k: 0.94 }, depth: DEPTH, zoom: { near: 1.28, far: 1.44 }, ...(extra || {}) });
-  // 各フィールドの手前の草（視差の前景）と、手前を横切る草（数地点に1つ）。背景に描かれている物には素材を重ねない
-  const front = (flip) => [{ asset: 'grass_front', x: 0.5, y: 0.992, w: 940, layer: 'front', haze: 0, sink: 0, flip: !!flip }];
-  const fg = (x, y, slice, flip) => ({ asset: 'grass_front', x, y, w: 220, h: 72, slice, flip: !!flip });
+  const A = './assets/fields/ch1a/', R = A + 'road/', I = A + 'intro/', U = A + 'ui/', D = A + 'dice/';
+  // 石板の輪（マス）の y（手前→奥）。15枚とも同じ構図（同じ街道の続き）
+  const RINGS = [0.84, 0.6, 0.47, 0.38];
+  // 奥行き：y → その場所の大きさ（輪の間隔から。隣の輪どうしが同じ距離に見えるように）
+  const DEPTH = [[0.98, 1.22], [0.9, 1.1], [0.84, 1], [0.72, 0.84], [0.6, 0.62], [0.535, 0.5], [0.47, 0.4], [0.425, 0.34], [0.38, 0.28], [0.3, 0.2]];
+  // 背景：キー → [ファイル名, 表示名, 道の x（輪の y ごと：0.84・0.6・0.47・0.38 の順。道のカーブ）]
+  const BG = {
+    '01': ['01_journey_road', '旅立ちの街道', [0.5, 0.5, 0.5, 0.5]],
+    '02': ['02_flower_meadow', '花の草原', [0.5, 0.54, 0.6, 0.66]],
+    '03': ['03_stream_road', '清流の道', [0.5, 0.55, 0.62, 0.68]],
+    '04': ['04_grassland_ruins', '草原の遺跡', [0.5, 0.5, 0.52, 0.55]],
+    '05a': ['05a_windy_highland', '風の高原', [0.5, 0.5, 0.52, 0.54]],
+    '06a': ['06a_bridge_approach', '大橋への道', [0.5, 0.53, 0.58, 0.63]],
+    '07a': ['07a_ancient_bridge_entrance', '古代橋の入口', [0.5, 0.5, 0.5, 0.5]],
+    '08a': ['08a_ancient_bridge_center', '古代橋の中央', [0.5, 0.47, 0.42, 0.37]],
+    '09a': ['09a_bridge_exit', '橋の出口', [0.5, 0.53, 0.58, 0.62]],
+    '05b': ['05b_forest_entrance', '森の入口', [0.5, 0.49, 0.46, 0.43]],
+    '06b': ['06b_sunlit_forest_road', '木漏れ日の道', [0.5, 0.52, 0.57, 0.62]],
+    '07b': ['07b_forest_stream', '森の小川', [0.5, 0.48, 0.45, 0.42]],
+    '08b': ['08b_deep_ancient_forest', '深い古代の森', [0.5, 0.52, 0.55, 0.58]],
+    '09b': ['09b_forest_exit', '森の出口', [0.5, 0.52, 0.56, 0.6]],
+    '10': ['10_tournament_approach', '大会会場への道', [0.5, 0.5, 0.5, 0.5]],
+  };
+  // 周回数【暫定】：共通2周・橋1周・森2周・会場2周＝橋ルート 59マス／森ルート 79マス。1周＝石板4つ。
+  //  tests/chapter-balance.mjs の比較（2026-10-01、各600回）：急ぐ（橋）＝到達100%・平均19ターン、育成重視（森）＝到達97%・平均25ターン。最終確定は比較結果を見てからの判断
+  const LAPS = root.MMCH_CH1A_LAPS || { '01': 2, '02': 2, '03': 2, '04': 2, '05a': 1, '06a': 1, '07a': 1, '08a': 1, '09a': 1, '05b': 2, '06b': 2, '07b': 2, '08b': 2, '09b': 2, '10': 2 };
+  // 旅の順とルート（path id の頭：共通 f1_／g1_／g2_／f2_、橋 a…、森 b…、合流 f3_。周回は b_／c_ を足す）
+  const ORDER = { shared: [['01', 'f1_'], ['02', 'g1_'], ['03', 'g2_'], ['04', 'f2_']], bridge: [['05a', 'a'], ['06a', 'a2_'], ['07a', 'a3_'], ['08a', 'a4_'], ['09a', 'a5_']], forest: [['05b', 'b'], ['06b', 'b2_'], ['07b', 'b3_'], ['08b', 'b4_'], ['09b', 'b5_']], goal: [['10', 'f3_']] };
+  const terrainOf = (k) => (/^0[5-9]b/.test(k) ? 'forest' : /^0[7-8]a/.test(k) ? 'bridge' : k === '05a' || k === '10' ? 'highland' : 'grass');
+  const lapId = (base, j) => (j === 0 ? base : base.replace(/_?$/, '') + 'bcdefgh'[j - 1] + '_');
+  const fieldScenes = [], paths = [], landmarks = {}, foreground = {};
+  let sceneNo = 0;
+  /** 背景 k を laps 回通る道を作る。prev は前の道の id（つなぐ）。戻り値＝この背景の最初と最後の道の id */
+  function build(k, base, branch, chain) {
+    const [file, name, xs] = BG[k], ids = [];
+    for (let j = 0; j < LAPS[k]; j++) {
+      const sid = ++sceneNo;
+      fieldScenes.push({ id: sid, name, bg: R + file + '.webp', w: 768, h: 1360, bgKey: k, lap: j + 1, exit: 'up', farBand: { to: 0.26, k: 0.95 }, depth: DEPTH, zoom: { near: 1.32, far: 1.95 } });
+      landmarks[sid] = []; foreground[sid] = [];
+      const id = lapId(base, j);
+      paths.push({ id, field: sid, n: RINGS.length, curve: 'linear', terrain: terrainOf(k), next: [], ...(branch ? { branch } : {}), pts: RINGS.map((y, i) => [xs[i], y]) });
+      ids.push(id);
+    }
+    for (let j = 0; j < ids.length - 1; j++) paths.find((p) => p.id === ids[j]).next = [ids[j + 1]];
+    if (chain.length) paths.find((p) => p.id === chain[chain.length - 1]).next.push(ids[0]);
+    chain.push(...ids);
+    return ids;
+  }
+  const shared = []; for (const [k, base] of ORDER.shared) build(k, base, null, shared);
+  const bridge = [shared[shared.length - 1]]; for (const [k, base] of ORDER.bridge) build(k, base, 'bridge', bridge);
+  const forest = [shared[shared.length - 1]]; for (const [k, base] of ORDER.forest) build(k, base, 'forest', forest);
+  const goal = []; for (const [k, base] of ORDER.goal) build(k, base, null, goal);
+  const P = (id) => paths.find((p) => p.id === id), last = (ids) => ids[ids.length - 1];
+  P(last(bridge)).next = [goal[0]]; P(last(forest)).next = [goal[0]];
+  // 固定の骨格：スタート・分岐（共通の最後）・強敵（橋の中央の最初の周の真ん中）・合流・ライバル（会場の道の最後の周のゴール2つ手前。強制停止）・ゴール
+  P(shared[0]).start = true; P(shared[0]).fixed = { 0: 'start' };
+  P(last(shared)).fixed = { [RINGS.length - 1]: 'branch' };
+  P(lapId('a4_', 0)).fixed = { 1: 'strong' };
+  P(goal[0]).fixed = { 0: 'merge' };
+  const gl = P(last(goal)); gl.goal = true; gl.fixed = { ...(gl.fixed || {}), [RINGS.length - 3]: 'rival', [RINGS.length - 1]: 'goal' };
+  const branchAt = `${last(shared)}${RINGS.length - 1}`, bridgeFirst = `${lapId('a', 0)}0`, forestFirst = `${lapId('b', 0)}0`;
+
   const cfg = {
     chapterId: 1,
     patternId: 'A',
     title: 'はじまりの草原',
     patternTitle: '大橋と清流の草原',
     playable: true,
-    rules: { turnLimit: 30 },   // 疲れ・能力の確率・上昇量は MMCH.DEFAULT_RULES（正式仕様）のまま
-    tournamentDestination: 'official',   // ゴール（大会門）→ 公式ランク大会（MMP8 の既存の大会）
-    backgroundTransition: { type: 'forward', ms: 760 },
+    // 通常Chapter：サイコロ 1〜6・30ターン。ターンを使い切ったら大会なしで Chapter 終了（能力・持ち物は保持 → ファーム → 次の Chapter）
+    rules: { turnLimit: 30, diceSides: 6 },
+    forceStopKinds: ['rival'],   // ライバルは出目が残っていても必ず止まる（必須イベント）
+    tournamentDestination: 'official',
+    backgroundTransition: { type: 'forward', ms: 700 },
+    laps: LAPS, rings: RINGS,
 
-    // ---- 背景13枚（1つながりの旅）。depth：y（下ほど手前）ごとの大きさ。zoom：カメラの寄り（手前 near → 奥 far）。farBand：空・山の帯を遠景として少し遅く動かす ----
-    fieldScenes: [
-      scene(1, '旅立ちの草原', 'ch1_01_grassland_start', 768, 1360),
-      scene(2, '大橋の見える草原', 'ch1_02_grassland_bridge_view', 864, 1536),
-      scene(3, '清流のほとり', 'ch1_03_stream_side', 864, 1536),
-      scene(4, '小さな石橋', 'ch1_04_small_stone_bridge', 768, 1360),
-      scene(5, '分かれ道の丘', 'ch1_05_fork_hill', 864, 1536),
-      scene(6, '橋のたもとの集落', 'ch1_06_bridge_village', 864, 1536),
-      scene(7, '大橋を望む道', 'ch1_07_bridge_approach', 864, 1536),
-      scene(8, '大橋', 'ch1_08_great_bridge', 864, 1536),
-      scene(9, '古い石柱の道', 'ch1_09_old_pillars', 864, 1536),
-      scene(10, '森の小道', 'ch1_10_forest_path', 864, 1536, { farBand: { to: 0.22, k: 0.96 } }),
-      scene(11, '森の出口', 'ch1_11_forest_exit', 864, 1536, { farBand: { to: 0.22, k: 0.96 } }),
-      scene(12, '大会へ続く丘', 'ch1_12_hill_to_arena', 768, 1360),
-      scene(13, '大会会場の高原', 'ch1_13_highland_arena', 864, 1536),
-    ],
-    // ---- カメラ・歩き・視差（省略した項目は js/chapter/field-view.js の既定。Pattern・Chapter ごとにここで変えられる） ----
-    //  1地点＝旅の一区間：1地点の距離が長いので、1地点 0.32〜0.62秒（画面上の距離と地形で変わる。3地点でも約1.6秒）
-    camera: { anchorY: 0.64, lookAhead: 0.11, followDelay: 110, zoom: { idle: 1, move: 0.98, stop: 1.02, branch: 0.93, focus: 1.03 } },
-    motion: { stepMs: 430, minMs: 320, maxMs: 620, baseLen: 150, terrain: { grass: { speed: 1 }, slope: { speed: 0.88 }, bridge: { speed: 1, fixed: true }, forest: { speed: 0.92 }, highland: { speed: 0.94 }, stream: { speed: 0.96 } } },
-    parallax: { far: 0.94, back: 0.97, road: 1, front: 1.14, canopy: 0.6 },
-
-    // ---- 道筋（各背景に描かれた土の道に沿ったノード）。fixed：固定の骨格（それ以外は候補ノード＝配置で種類が決まる） ----
-    //  歩数（スタート→ゴール）：大橋ルート 44・森の小道 48（1000回のシミュレーションで平均22〜25ターン）
-    //  pts は道の折れ線。エンジンが滑らかな曲線（Catmull-Rom）にしてノードを置き、モンスターは曲線に沿って歩く（curve:'linear' で折れ線のまま）
-    paths: [
-      { id: 'f1_', field: 1, n: 6, start: true, next: ['g1_'], noSlot: [1], terrain: 'grass',
-        pts: [[0.44, 0.915], [0.43, 0.86], [0.45, 0.76], [0.48, 0.66], [0.46, 0.575], [0.41, 0.5], [0.37, 0.445]], fixed: { 0: 'start' } },
-      { id: 'g1_', field: 2, n: 4, next: ['g2_'], terrain: 'grass',
-        pts: [[0.5, 0.915], [0.49, 0.86], [0.52, 0.76], [0.54, 0.66], [0.5, 0.58], [0.44, 0.51], [0.39, 0.45]] },
-      { id: 'g2_', field: 3, n: 4, next: ['g3_'], terrain: 'stream',
-        pts: [[0.62, 0.915], [0.62, 0.86], [0.63, 0.76], [0.6, 0.66], [0.56, 0.58], [0.5, 0.51], [0.45, 0.45]] },
-      { id: 'g3_', field: 4, n: 3, next: ['f2_'], terrain: 'stream',
-        pts: [[0.56, 0.915], [0.56, 0.86], [0.58, 0.76], [0.58, 0.66], [0.54, 0.57], [0.5, 0.5], [0.48, 0.44]] },
-      { id: 'f2_', field: 5, n: 4, next: ['a', 'b'], terrain: 'grass',
-        pts: [[0.45, 0.915], [0.45, 0.86], [0.5, 0.76], [0.55, 0.66], [0.55, 0.58], [0.5, 0.51], [0.45, 0.45]], fixed: { 3: 'branch' } },
-      // 大橋ルート：橋のたもとの集落 → 大橋を望む道 → 大橋（強敵）
-      { id: 'a', field: 6, n: 4, branch: 'bridge', next: ['a2_'], terrain: 'grass',
-        pts: [[0.5, 0.915], [0.5, 0.86], [0.5, 0.76], [0.5, 0.66], [0.52, 0.58], [0.55, 0.51], [0.58, 0.45], [0.6, 0.4]] },
-      { id: 'a2_', field: 7, n: 4, branch: 'bridge', next: ['a3_'], terrain: 'grass',
-        pts: [[0.55, 0.915], [0.55, 0.86], [0.6, 0.76], [0.65, 0.66], [0.65, 0.58], [0.62, 0.51], [0.6, 0.45]] },
-      { id: 'a3_', field: 8, n: 5, branch: 'bridge', next: ['g4_'], terrain: 'bridge', landmark: { side: -1, gapScale: 0.7 },
-        pts: [[0.6, 0.915], [0.59, 0.86], [0.6, 0.76], [0.62, 0.66], [0.62, 0.58], [0.6, 0.52]], fixed: { 2: 'strong' } },
-      // 森の小道：古い石柱の道 → 森の小道 → 森の出口
-      { id: 'b', field: 9, n: 5, branch: 'forest', next: ['b2_'], terrain: 'forest',
-        pts: [[0.55, 0.915], [0.55, 0.86], [0.58, 0.76], [0.6, 0.66], [0.62, 0.58], [0.63, 0.51], [0.62, 0.45]] },
-      { id: 'b2_', field: 10, n: 6, branch: 'forest', next: ['b3_'], terrain: 'forest',
-        pts: [[0.5, 0.915], [0.48, 0.86], [0.5, 0.76], [0.55, 0.66], [0.6, 0.58], [0.62, 0.51], [0.63, 0.45]] },
-      { id: 'b3_', field: 11, n: 6, branch: 'forest', next: ['g4_'], terrain: 'forest',
-        pts: [[0.5, 0.915], [0.5, 0.86], [0.52, 0.76], [0.55, 0.66], [0.58, 0.58], [0.6, 0.51], [0.6, 0.45]] },
-      // 合流：大会へ続く丘 → 大会会場の高原（ライバル → 大会門）
-      { id: 'g4_', field: 12, n: 5, next: ['f3_'], terrain: 'slope',
-        pts: [[0.5, 0.915], [0.5, 0.86], [0.58, 0.76], [0.62, 0.66], [0.56, 0.58], [0.52, 0.51], [0.58, 0.44], [0.64, 0.37], [0.68, 0.32]], fixed: { 0: 'merge' } },
-      { id: 'f3_', field: 13, n: 6, goal: true, next: [], terrain: 'highland',
-        pts: [[0.5, 0.915], [0.5, 0.86], [0.55, 0.76], [0.6, 0.66], [0.55, 0.58], [0.5, 0.51], [0.55, 0.44], [0.6, 0.38], [0.62, 0.33]], fixed: { 4: 'rival', 5: 'goal' } },
-    ],
-    // 別の道へ移る歩き方（分岐・合流）：'from>to' の中間点（背景の割合）。無ければ直線。背景をまたぐ移動は画面側の切り替え
-    edges: {},
-    // 地点ごとの上書き（構造の見本。monster＝止まる位置、landmark＝目印の位置・大きさ・透明度、camera＝カメラの寄り、terrain＝地形、side＝目印を置く側）
-    nodeOverrides: {},
-    branches: [{ at: 'f2_3', options: [
-      { id: 'bridge', to: 'a0', label: '大橋ルート', desc: '集落を抜けて石造りの大橋を渡る、少し短い道。バトルが多め', lean: { battle: 1, stat: -1 } },
-      { id: 'forest', to: 'b0', label: '森の小道', desc: '古い石柱の道から木立を抜ける、少し長い道。能力・イベント・宝箱が多め', lean: { stat: 1, event: 1, treasure: 1, battle: -1 } },
+    fieldScenes, paths, edges: {}, nodeOverrides: {},
+    branches: [{ at: branchAt, options: [
+      { id: 'bridge', to: bridgeFirst, label: '橋ルート', desc: '風の高原から古代橋を渡る、少し短い道。大会へ急ぐならこちら', lean: { battle: 1, stat: -1 } },
+      { id: 'forest', to: forestFirst, label: '森ルート', desc: '古代の森を抜ける、少し長い道。能力・イベント・宝箱が多め', lean: { stat: 1, event: 1, treasure: 1, battle: -1 } },
     ] }],
 
-    // ---- 配置の規則（固定骨格＋候補ノードへのランダムな割り当て）。counts はスタート→ゴールの1ルートあたり ----
+    // ---- カメラ・歩き・視差：低いカメラでモンスターと一緒に前へ（近景の石板だけが見える） ----
+    camera: { anchorY: 0.66, lookAhead: 0.08, followDelay: 110, zoom: { idle: 1, move: 0.985, stop: 1.015, branch: 0.93, focus: 1.02 } },
+    motion: { stepMs: 520, minMs: 380, maxMs: 760, baseLen: 170, terrain: { grass: { speed: 1 }, highland: { speed: 0.96 }, bridge: { speed: 1, fixed: true }, forest: { speed: 0.94 } } },
+    parallax: { far: 0.95, back: 0.97, road: 1, front: 1.12, canopy: 0.6 },
+
+    // ---- Chapter開始の演出：旅路全体の俯瞰図（演出専用。プレイの背景とは別の画像）→ スタート地点へズーム／パン → 01 の実プレイ画面へ ----
+    //  overviews：Pattern（A／B／C）ごとの俯瞰図。startFocus＝俯瞰図の中のスタート付近（割合）。goalFocus＝会場（最初に見せる）
+    intro: { overviews: { A: I + 'ch1_intro_overview_pattern1.webp', B: I + 'ch1_intro_overview_pattern2.webp', C: I + 'ch1_intro_overview_pattern3.webp' },
+      goalFocus: { x: 0.5, y: 0.28 }, startFocus: { x: 0.5, y: 0.93 }, zoom: { from: 1.0, to: 2.3 }, holdMs: 1500, moveMs: 2200, fadeMs: 700, titleMs: 2200 },
+
+    // ---- 操作欄：START／STOP の2状態の正式画像（4コマンド＋中央の球）。hit＝画像に対する割合（押せる領域） ----
+    deck: { start: U + 'deck_start.webp', stop: U + 'deck_stop.webp', aspect: 1100 / 353,
+      hit: { center: { x: 0.385, y: 0.03, w: 0.23, h: 0.94 }, tl: { x: 0.012, y: 0.05, w: 0.37, h: 0.42 }, tr: { x: 0.618, y: 0.05, w: 0.37, h: 0.42 }, bl: { x: 0.012, y: 0.53, w: 0.37, h: 0.42 }, br: { x: 0.618, y: 0.53, w: 0.37, h: 0.42 } } },
+
+    // ---- 配置の規則（固定骨格＋候補ノードへのランダムな割り当て）。counts はスタート→ゴールの1ルートあたり【暫定：総マス数と一緒に見直す】 ----
     layoutRules: {
-      counts: { stat: [11, 13], event: [6, 8], battle: [4, 6], treasure: [2, 3] },
-      maxPerStat: 3,             // 6能力はすべて1回以上、同じ能力は3回まで
-      recoveryEvents: [1, 3],    // 疲れ回復イベントはChapter全体で1〜3個
-      recoveryPerRoute: true,    // どちらのルートにも1個以上
-      noBattleFirst: 5,          // 序盤5地点はバトルなし
-      maxBattlesFirst: [15, 1],  // 最初の15地点のバトルは1回まで
-      noEventLast: 5,            // ゴール直前の5地点はイベントなし
-      maxFieldShare: 0.3, minFieldShare: 0,   // 背景13枚：1枚に特殊地点が集中しない（下限は無し＝分岐の反対側の背景は0）
+      counts: { stat: [12, 15], event: [6, 9], battle: [4, 6], treasure: [3, 4] },   // 短いほうのルート（59マス）の 20〜25%・11〜15%・7.5〜11%・5〜7.5%
+      maxPerStat: 4, recoveryEvents: [2, 4], recoveryPerRoute: true,
+      noBattleFirst: 5, maxBattlesFirst: [12, 1], noEventLast: 4,
+      maxFieldShare: 0.25, minFieldShare: 0,
       eventTierWeights: { normal: 70, rare: 25, special: 5 },
     },
 
-    // ---- イベント（handler は MMCH のイベント処理の名前。値は旧Chapterの暫定イベントと同じ【暫定】。疲れ回復は正式仕様） ----
-    //  asset：道端に置く自然物（内容に応じた物。イベントの印は並べない）。look：その物の大きさ・置き方（nodeLook.eventNature の上書き）。asset が無いものは tier の祠を小さく置く【暫定：泉・祠の正式素材は未着】
+    // ---- イベント（値は旧Chapterの暫定イベントと同じ【暫定】。疲れ回復は正式仕様）。目印は tier の祠を石板の脇に小さく置く（街道の上に木・岩は置かない） ----
     eventPool: [
-      { id: 'shade', tier: 'normal', recovery: true, weight: 4, handler: 'fatigue', params: { amount: 10 }, text: '木陰でひと休みした。', asset: 'ancient_tree', look: { w: 168, gap: 200, sink: 0.08 } },
-      { id: 'break', tier: 'normal', recovery: true, weight: 3, handler: 'fatigue', params: { amount: 20 }, text: '小川のそばで小休憩をとった。', asset: 'rock_strip_b', look: { w: 176, gap: 190, sink: 0.14 } },
+      { id: 'shade', tier: 'normal', recovery: true, weight: 4, handler: 'fatigue', params: { amount: 10 }, text: '石板の木陰でひと休みした。', look: { h: 104 } },
+      { id: 'break', tier: 'normal', recovery: true, weight: 3, handler: 'fatigue', params: { amount: 20 }, text: '街道のそばで小休憩をとった。', look: { h: 104 } },
       { id: 'spring', tier: 'rare', recovery: true, weight: 2, handler: 'fatigue', params: { amount: 30 }, text: '澄んだ泉で体を休めた。', look: { h: 118 } },
       { id: 'holy_spring', tier: 'special', recovery: true, weight: 1, handler: 'fatigue', params: { full: true }, text: '不思議な泉の力で、疲れがすっかり取れた！', look: { h: 132 } },
-      { id: 'herb', tier: 'normal', weight: 3, handler: 'stat_random', params: { amount: 6 }, text: '珍しい草を見つけた！', asset: 'flower_path', look: { w: 160, gap: 190, sink: 0.16 } },
-      { id: 'trip', tier: 'normal', weight: 2, handler: 'stat_random', params: { amount: -4 }, text: '石につまずいて転んでしまった…', asset: 'rock_strip_long', look: { w: 150, gap: 180, sink: 0.14 } },
+      { id: 'herb', tier: 'normal', weight: 3, handler: 'stat_random', params: { amount: 6 }, text: '珍しい草を見つけた！', look: { h: 104 } },
+      { id: 'trip', tier: 'normal', weight: 2, handler: 'stat_random', params: { amount: -4 }, text: '石につまずいて転んでしまった…', look: { h: 104 } },
       { id: 'coin', tier: 'normal', weight: 3, handler: 'gold', params: { amount: 50 }, text: '道端でお金を見つけた！', look: { h: 104 } },
       { id: 'sage', tier: 'rare', weight: 2, handler: 'stat_random', params: { amount: 20 }, text: '旅の賢者に教えを受けた！', look: { h: 118 } },
       { id: 'charm', tier: 'rare', weight: 2, handler: 'gold', params: { amount: 150 }, text: '幸運のお守りを見つけた！', look: { h: 118 } },
       { id: 'legend_spring', tier: 'special', weight: 1, handler: 'stat_all', params: { amount: 8 }, text: '伝説の泉の力で、ライフ以外の能力がそれぞれ上がった！', look: { h: 132 } },
     ],
-    // ---- 宝箱：tier ごとの絵と出る割合。中身は【暫定】既存の宝箱マスと同じ（所持金 50G／150G、4：1）。正式な中身が決まったら byTier で分ける ----
-    treasurePool: {
-      tierWeights: { normal: 70, rare: 25, special: 5 },
-      contents: { handler: 'gold_table', params: { table: [{ w: 4, gold: 50 }, { w: 1, gold: 150 }] } },
-    },
-    // ---- バトル：type ごとの名前と絵（asset key は type ごとに分ける。wild と rival は今は同じ絵、strong も同じ絵を仮に使う。figure：ライバル本人の立ち姿の asset key＝素材待ち） ----
+    treasurePool: { tierWeights: { normal: 70, rare: 25, special: 5 }, contents: { handler: 'gold_table', params: { table: [{ w: 4, gold: 50 }, { w: 1, gold: 150 }] } } },
     battleTypes: {
       wild: { label: '野生のモンスター', asset: 'battle_wild' },
       strong: { label: '強敵', asset: 'battle_strong' },
       rival: { label: 'ライバル', asset: 'battle_rival', figure: null },
     },
+    // 同行者（フィナ）のリアクション：本文は未決（空＝何も出さない）。例：gold: ['50G拾ったよ。ラッキーだね。']。key は MMCH.REACTION_KEYS
+    companion: { npc: 'fina', reactions: {} },
 
-    // ---- サイコロ：回転中の正式画像1枚と、出目ごとの停止面（1・2・3 が上の面）。停止面は【暫定】正式の停止画像（dice_stop_1〜3）が届いたらファイルを差し替えるだけ ----
-    dice: { rollingSprite: A + 'dice/dice_rolling.webp', resultSprites: { 1: A + 'dice/dice_stop_1.svg', 2: A + 'dice/dice_stop_2.svg', 3: A + 'dice/dice_stop_3.svg' } },
+    // ---- サイコロ：回転中は無地の正式サイコロ（dice_blank）、停止面は正式の dice_stop_1〜6（上面＝出目） ----
+    dice: { rollingSprite: D + 'dice_blank.webp', resultSprites: { 1: D + 'dice_stop_1.webp', 2: D + 'dice_stop_2.webp', 3: D + 'dice_stop_3.webp', 4: D + 'dice_stop_4.webp', 5: D + 'dice_stop_5.webp', 6: D + 'dice_stop_6.webp' }, autoStopMs: 3000 },
 
-    // ---- 絵（asset key → ファイル）。差し替えはここだけ ----
     assets: {
       stat_li: A + 'nodes/stat_life.webp', stat_po: A + 'nodes/stat_power.webp', stat_in: A + 'nodes/stat_intelligence.webp',
       stat_hi: A + 'nodes/stat_accuracy.webp', stat_ev: A + 'nodes/stat_evasion.webp', stat_de: A + 'nodes/stat_toughness.webp',
       event_normal: A + 'nodes/event_normal.webp', event_rare: A + 'nodes/event_rare.webp', event_special: A + 'nodes/event_special.webp',
       treasure_normal: A + 'nodes/treasure_normal.webp', treasure_rare: A + 'nodes/treasure_rare.webp', treasure_special: A + 'nodes/treasure_special.webp',
       battle_wild: A + 'nodes/battle_wild.webp', battle_rival: A + 'nodes/battle_rival.webp', battle_strong: A + 'nodes/battle_wild.webp',
-      grass_front: A + 'env/grass_flower_border.webp', leaf_canopy: A + 'env/leaf_canopy_frame.webp', rock_strip_long: A + 'env/rock_strip_long.webp',
-      rock_strip_b: A + 'env/rock_strip_b.webp', flower_path: A + 'env/flower_path.webp', forest_path_b: A + 'env/forest_path_b.webp',
-      ancient_tree: A + 'env/ancient_tree_large.webp', ancient_pillar: A + 'env/ancient_pillar.webp',
+      grass_front: A + 'env/grass_flower_border.webp',
     },
-    // 停止地点の目印の見た目：大きさは背景の画素（手前＝大きさ1のとき）。モンスターは道の上に止まり、目印は道の脇（gap＝道からの距離。side は 1＝ノードの側、-1＝反対側、0＝足元）
-    //  stat＝古代の石碑（少し埋めて草で足元を隠す）、treasure＝草むらの脇の宝箱、eventNature＝内容に応じた自然物、event＝tier の祠（自然物が無いイベントだけ）
-    //  battle は目印を置かない（battleMarkers: true にすると旧来の石碑を常設）。tuft＝足元の草に使う素材
+    // 目印：石板の脇（道の中央の輪にモンスター、目印は輪の横）。足元の草は置かない（石の道）
     nodeLook: {
-      stat: { w: 112, side: 1, gap: 196, sink: 0.14 },
-      event: { h: 118, side: 1, gap: 196, sink: 0.06 },
-      eventNature: { w: 160, side: 1, gap: 210, sink: 0.1 },
-      treasure: { w: 92, side: -1, gap: 190, sink: 0.1 },
-      battle: { h: 150, side: 1, gap: 196, sink: 0.04 },
-      figure: { h: 190, side: 1, gap: 170, sink: 0.02, tuft: false },
+      stat: { w: 104, side: 1, gap: 170, sink: 0.1, tuft: false },
+      event: { h: 110, side: 1, gap: 170, sink: 0.06, tuft: false },
+      eventNature: { w: 140, side: 1, gap: 170, sink: 0.08, tuft: false },
+      treasure: { w: 88, side: -1, gap: 160, sink: 0.08, tuft: false },
+      battle: { h: 140, side: 1, gap: 170, sink: 0.04, tuft: false },
+      figure: { h: 190, side: 1, gap: 150, sink: 0.02, tuft: false },
       tuft: 'grass_front',
     },
     battleMarkers: false,
-    // 目印の見せ方：stat・event は着いたときに初めて現れる（通常時の画面はすっきり）。treasure は最初から自然に置く
     landmarkVisibility: { stat: 'arrive', event: 'arrive', treasure: 'always' },
-    monster: { h: 176 },   // 手前（大きさ1）でのモンスターの高さ（背景の画素）
-
-    // ---- 環境：背景に描かれている物（大橋・集落・石柱・木立・大会門）には素材を重ねない。各背景とも手前の草の帯だけを視差の前景に置く ----
-    landmarks: { 1: front(), 2: front(true), 3: front(), 4: front(true), 5: front(), 6: front(true), 7: front(), 8: front(true), 9: front(), 10: front(true), 11: front(), 12: front(true), 13: front() },
-    // 手前を横切る草（道の少し手前に置く。モンスターが通り過ぎるとき一瞬だけ手前になる。1枚に1〜2つ）
-    foreground: {
-      1: [fg(0.36, 0.79, 0.15), fg(0.55, 0.61, 0.55, true)], 2: [fg(0.6, 0.78, 0.3)], 3: [fg(0.5, 0.79, 0.7, true)], 4: [fg(0.46, 0.8, 0.45)],
-      5: [fg(0.6, 0.79, 0.05, true), fg(0.42, 0.6, 0.35)], 6: [fg(0.4, 0.8, 0.5)], 7: [fg(0.45, 0.79, 0.2, true)], 8: [fg(0.48, 0.79, 0.6)],
-      9: [fg(0.44, 0.8, 0.1, true)], 10: [fg(0.62, 0.79, 0.4)], 11: [fg(0.4, 0.8, 0.75, true)], 12: [fg(0.4, 0.79, 0.25), fg(0.66, 0.6, 0.5, true)], 13: [fg(0.4, 0.8, 0.65)],
-    },
-    // 分岐ごとの手前の飾り（森の小道を進んでいる間だけ、画面の上に木の葉を重ねる）
-    branchOverlays: { forest: { asset: 'leaf_canopy', field: 10, opacity: 0.92 } },
+    monster: { h: 180 },
+    landmarks, foreground, branchOverlays: {},
   };
   if (root.MMCH) root.MMCH.registerConfig(cfg);
   root.MMCH_CONFIG_CH1A = cfg;

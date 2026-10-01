@@ -377,25 +377,43 @@
     { k: 'status', cls: 'chstatus', pos: 'br', on: 'chfOpen(\'st\')', label: 'ステータス' },
   ];
   const DIST = { 1: 'すぐ先まで進む', 2: '少し先まで進む', 3: 'ずっと先まで進む' };
+  /**
+   * 下の操作欄。中央は START（サイコロを振る前）／STOP（宙で回っている間＝押すと既に決まった出目で止まる）。
+   *  config.deck（START／STOP の2状態の正式画像と押せる領域）があれば画像の操作欄、無ければ CSS の操作欄（Pattern・Chapter ごとに config だけで変えられる）
+   */
   function deckHtml(m, ph, msg) {
     const r = m.raise, cfg = V.cfg;
     const canRoll = P8().canRoll(m), canRest = P8().canRest(m), tired = ph === 'roll' && !canRoll && MMCH.fatigue(m) >= 100, R = MMCH.rulesOf(cfg).fatigueRules;
     let def = '';
-    if (ph === 'roll') def = r.turnsUsed === 0 ? `<b>${esc(cfg.title)}</b>　旅のはじまり。サイコロで進む距離が決まる。` : tired ? '疲れがたまって動けない…休もう。' : 'サイコロを振るか、休むかを選ぼう。';
+    if (ph === 'roll') def = r.turnsUsed === 0 ? `<b>${esc(cfg.title)}</b>　旅のはじまり。START でサイコロを振ろう。` : tired ? '疲れがたまって動けない…休もう。' : 'START でサイコロを振る。休むこともできる。';
     else if (ph === 'move' || ph === 'resolve') def = '移動中…';
     else if (ph === 'branch') def = `分かれ道だ。どちらへ進む？（のこり${r.pend.left}）`;
     else if (ph === 'battle') { const fx = r.pend.fx || {}, bt = (cfg.battleTypes || {})[fx.battleType || 'wild'] || { label: 'モンスター' }; def = `${esc(bt.label)}が現れた！`; }
-    else if (ph === 'goal') def = '大会門に着いた！'; else if (ph === 'timeup') def = `${r.turnLimit}ターンを使い切った…`;
-    const rollOn = ph === 'roll' && canRoll, dice = root.MMCHD ? MMCHD.configure().rollingSprite : '';
-    const center = ph === 'roll'
-      ? `<div class="chstopw${rollOn ? ' on' : ''}"><div class="chdf" aria-hidden="true"${rollOn ? '' : ' hidden'}><img src="${esc(dice)}" alt=""></div>
-          <button class="chstop" id="brollbtn" onclick="chfRoll()"${canRoll ? '' : ' disabled'} aria-label="サイコロを止める（サイコロを振る）"><span class="chstop-rim"></span><span class="chstop-dome"></span><b>STOP</b></button><small class="chstop-cap">サイコロを止める</small></div>`
+    else if (ph === 'goal') def = '大会会場に着いた！'; else if (ph === 'timeup') def = `${r.turnLimit}ターンを使い切った…`;
+    const rollOn = ph === 'roll' && canRoll, dice = root.MMCHD ? MMCHD.configure().rollingSprite : '', idle = ph === 'roll';
+    const spinning = V.spinning, label = spinning ? 'STOP' : 'START';
+    const D = cfg.deck;
+    if (D && D.start && D.stop) {
+      // 画像の操作欄：画像は飾り、押せる領域は透明なボタン（文字は読み上げ・テスト用に残し、見た目は画像）。回っている間は STOP の画像に切り替える
+      const H = D.hit || {}, box = (k) => { const h = H[k] || {}; return `style="left:${(h.x * 100).toFixed(1)}%;top:${(h.y * 100).toFixed(1)}%;width:${(h.w * 100).toFixed(1)}%;height:${(h.h * 100).toFixed(1)}%"`; };
+      const center = ph === 'roll' || spinning
+        ? `<div class="chstopw chstopw-img${rollOn ? ' on' : ''}" ${box('center')}><div class="chdf" aria-hidden="true"${rollOn && !spinning ? '' : ' hidden'}><img src="${esc(dice)}" alt=""></div>
+            <button class="chstop chstop-img${spinning ? ' spinning' : ''}" id="brollbtn" onclick="${spinning ? 'chfStop()' : 'chfRoll()'}"${canRoll || spinning ? '' : ' disabled'} aria-label="${spinning ? 'STOP（サイコロを止める）' : 'START（サイコロを振る）'}"><b>${label}</b></button></div>`
+        : `<div class="chstopw chstopw-img" ${box('center')}><button class="chstop chstop-img wait" disabled aria-label="移動中"><b>${ph === 'move' || ph === 'resolve' ? r.pend.roll : '…'}</b></button></div>`;
+      const wing = (c) => { const on = c.k === 'rest' ? canRest : idle; return `<button class="chwing chwing-img ${c.cls} chw-${c.pos}${c.k === 'rest' && tired ? ' must' : ''}" ${box(c.pos)} onclick="${c.on}"${on && !spinning ? '' : ' disabled'}><b>${c.label}</b>${c.k === 'rest' ? `<small>疲れ −${R.rest}</small>` : ''}</button>`; };
+      const ctl = `<div class="chcmd chcmd-img" style="--deckar:${D.aspect || 3.116}"><img class="chdeck-bg" src="${esc(spinning ? D.stop : D.start)}" alt="" draggable="false">${CMDS.map(wing).join('')}${center}</div>`;
+      return `<div class="chdeck chdeck-img" id="chdock"><p class="chmsg" id="bmsg">${msg || def}</p>${ctl}</div>`;
+    }
+    const center = ph === 'roll' || spinning
+      ? `<div class="chstopw${rollOn ? ' on' : ''}"><div class="chdf" aria-hidden="true"${rollOn && !spinning ? '' : ' hidden'}><img src="${esc(dice)}" alt=""></div>
+          <button class="chstop${spinning ? ' spinning' : ''}" id="brollbtn" onclick="${spinning ? 'chfStop()' : 'chfRoll()'}"${canRoll || spinning ? '' : ' disabled'} aria-label="${spinning ? 'STOP（サイコロを止める）' : 'START（サイコロを振る）'}"><span class="chstop-rim"></span><span class="chstop-dome"></span><b>${label}</b></button><small class="chstop-cap">${spinning ? 'サイコロを止める' : 'サイコロを振る'}</small></div>`
       : `<div class="chstopw"><button class="chstop wait" disabled aria-label="移動中"><span class="chstop-rim"></span><span class="chstop-dome"></span><b>${ph === 'move' || ph === 'resolve' ? r.pend.roll : '…'}</b></button></div>`;
-    const idle = ph === 'roll';
-    const wing = (c) => { const on = c.k === 'rest' ? canRest : idle; return `<button class="chwing ${c.cls} chw-${c.pos}${c.k === 'rest' && tired ? ' must' : ''}" onclick="${c.on}"${on ? '' : ' disabled'}>${ICON[c.k]}<b>${c.label}</b>${c.k === 'rest' ? `<small>疲れ −${R.rest}</small>` : ''}</button>`; };
+    const wing = (c) => { const on = c.k === 'rest' ? canRest : idle; return `<button class="chwing ${c.cls} chw-${c.pos}${c.k === 'rest' && tired ? ' must' : ''}" onclick="${c.on}"${on && !spinning ? '' : ' disabled'}>${ICON[c.k]}<b>${c.label}</b>${c.k === 'rest' ? `<small>疲れ −${R.rest}</small>` : ''}</button>`; };
     const ctl = `<div class="chcmd">${CMDS.filter((c) => c.pos[0] === 't').map(wing).join('')}${center}${CMDS.filter((c) => c.pos[0] === 'b').map(wing).join('')}</div>`;
     return `<div class="chdeck" id="chdock"><p class="chmsg" id="bmsg">${msg || def}</p>${ctl}</div>`;
   }
+  /** 操作欄だけを描き直す（START ↔ STOP） */
+  function refreshDeck(m, msg) { const d = $('#chdock'); if (d) d.outerHTML = deckHtml(m, P8().boardPhase(m), msg); }
   function sheetHtml(m, ph) {
     const r = m.raise, cfg = V.cfg;
     if (ph === 'branch') {
@@ -433,9 +451,18 @@
     document.querySelectorAll('#chf .chf-obj').forEach((e) => { const id = e.dataset.id; e.classList.toggle('used', f.consumedEvents.includes(id) || f.openedTreasures.includes(id) || f.clearedStats.includes(id)); });
     $('#chf-ui').innerHTML = hudHtml(m) + sheetHtml(m, ph) + deckHtml(m, ph, msg);
     if (ph === 'branch') branchCamera(m); else if (V.focus && ph === 'roll') camFocus(null);
+    // Chapter に入った直後（出発してまだ何もしていない）：旅路全体の俯瞰図 → スタート地点へ寄る演出（js/chapter/intro.js。1回だけ・セーブには持たない）
+    if (!same && ph === 'roll' && r.turnsUsed === 0 && r.node === V.g.start && root.MMCHI && V.cfg.intro && !MMCHI.shown(key) && !root.MM_QA_NO_INTRO) chfIntro(m, key);   // MM_QA_NO_INTRO：自動テスト専用（tests/e2e/harness.mjs）
     // 再開した移動・停止地点の処理は少し後で。その間に別の画面へ移ったら何もしない（次にフィールドを開いたとき1回だけ処理する）
     if (ph === 'move') setTimeout(() => { if (onField()) chfContinue(); }, 300); else if (ph === 'resolve') setTimeout(() => { if (onField()) chfResolve(); }, 300);
     return true;
+  }
+  async function chfIntro(m, key) {
+    if (busyGet()) return;
+    busySet(true); lockUi(true);
+    try { await MMCHI.play(V.cfg, { key, host: $('#chfw'), chapterId: V.cfg.chapterId, title: V.cfg.title, patternId: MMCH.fieldOf(m).patternId, calm: V.calm }); }
+    catch (e) {} finally { busySet(false); }
+    if (onField() && chfActive(m) && P8().boardPhase(m) === 'roll') refreshDeck(m);
   }
   /** 分岐：少し引いて、2つの道の入口が視界に入るようにする */
   function branchCamera(m) {
@@ -454,23 +481,32 @@
   }
   /** 技設定・ステータス（既存のファーム画面 hall('w')／hall('st')。Chapter中でも開ける従来どおりの画面。移動中は開かない） */
   function chfOpen(id) { const m = gS() && gS().m; if (!chfActive(m) || busyGet() || P8().boardPhase(m) !== 'roll') return; try { hall(id); } catch (e) {} }
-  function lockUi(on) { document.querySelectorAll('#chf-ui button').forEach((b) => { if (on) b.disabled = true; }); }
+  function lockUi(on, except) { document.querySelectorAll('#chf-ui button').forEach((b) => { if (on && !(except && b.matches(except))) b.disabled = true; }); }
 
+  /**
+   * START：出目・ターン消費・疲れを確定して保存（演出の前。中断・再読み込みで振り直せない）→ サイコロが宙で回り続ける → 操作欄は STOP に。
+   *  STOP（chfStop）か config.dice.autoStopMs で落ちて止まり、停止面（dice_stop_N）→ 1地点ずつ移動 → 停止処理 → START に戻る
+   */
   async function chfRoll() {
     const m = gS() && gS().m; if (!chfActive(m) || busyGet() || !P8().canRoll(m)) return;
     busySet(true); lockUi(true);
     try {
-      const r = P8().roll(gS(), m); doSave();   // 出目・ターン消費・疲れは演出の前に確定・保存（中断・再読み込みで振り直せない）
+      const r = P8().roll(gS(), m); doSave();
       refreshHud(m); if (root.sfx) root.sfx(7);
       const df = $('#chf-ui .chdf'), host = $('#chfw') || $('#chf-ui') || document.body, hr = host.getBoundingClientRect();
       const from = df ? (() => { const b = df.getBoundingClientRect(); return { x: b.left + b.width / 2 - hr.left, y: b.top + b.height / 2 - hr.top }; })() : null;
       if (df) df.hidden = true;
       const fv = $('#chf'), fr = fv ? fv.getBoundingClientRect() : hr;
-      await MMCHD.play(r.value, { host, from, land: { x: fr.left + fr.width / 2 - hr.left, y: fr.top + fr.height * 0.44 - hr.top } });   // 着地はモンスターの頭より上（モンスターを隠さない）
-      rollToast(r.value, m.raise.pend ? m.raise.pend.fatigueAdded || 0 : 0); setMsg('');
-    } finally { busySet(false); }
+      V.spinning = true; refreshDeck(m, 'STOP でサイコロを止めよう。'); lockUi(true, '#brollbtn');
+      const auto = (V.cfg.dice && V.cfg.dice.autoStopMs) || undefined;
+      await MMCHD.play(r.value, { host, from, land: { x: fr.left + fr.width / 2 - hr.left, y: fr.top + fr.height * 0.44 - hr.top }, manualStop: true, autoStopMs: auto });   // 着地はモンスターの頭より上（モンスターを隠さない）
+      V.spinning = false;
+      rollToast(r.value, m.raise.pend ? m.raise.pend.fatigueAdded || 0 : 0); refreshDeck(m, ''); lockUi(true);
+    } finally { V.spinning = false; busySet(false); }
     chfContinue();
   }
+  /** STOP：宙で回っているサイコロを止める（出目は START の時点で決まっている。確率は変わらない） */
+  function chfStop() { if (!V.spinning || !root.MMCHD) return; if (MMCHD.requestStop()) { const b = $('#brollbtn'); if (b) b.disabled = true; } }
   async function chfContinue() {
     const m = gS() && gS().m; if (!chfActive(m) || busyGet() || !m.raise.pend) return;
     busySet(true);
@@ -567,13 +603,23 @@
         camFocus(null);
         tail = T ? T.t : '';
       } else if (fx.kind === 'battle') await encounter(m, fx.battleType);
-      if (r.goal) tail = `${tail}　大会門に着いた！`.trim(); else if (r.timeUp) tail = `${tail}　ターンを使い切った…`.trim();
+      if (r.goal) tail = `${tail}　大会会場に着いた！`.trim(); else if (r.timeUp) tail = `${tail}　ターンを使い切った…`.trim();
       await showReaction(m, fx);
     } finally { busySet(false); }
     if (onField()) chfBoard(tail || undefined);
   }
   // ---- 同行者（フィナ）のリアクションの差し込み口：停止地点の結果 → MMCH.companionReaction（config.companion.reactions）→ 登録した描画（既定は何も出さない。会話UIは未決） ----
-  let reactionRenderer = null;
+  //  既定の描画：フィナの小さな吹き出し（.chf-fina：顔・名前・一言。約1.6秒で消える。config.companion.reactions に本文があるときだけ出る＝本文は未決）
+  const FINA_FACE = './assets/npc/fina/closeup/';
+  async function finaBubble(rx) {
+    const ui = $('#chf-ui'); if (!ui || !rx || !rx.text) return;
+    const old = ui.querySelector('.chf-fina'); if (old) old.remove();
+    const d = document.createElement('div'); d.className = 'chf-fina'; d.setAttribute('aria-live', 'polite');
+    d.innerHTML = `<img src="${FINA_FACE}${esc(rx.expression || 'normal')}.webp" alt=""><div><b>フィナ</b><span>${esc(rx.text)}</span></div>`;
+    ui.appendChild(d);
+    await wait(V.calm ? 900 : 1600); d.classList.add('out'); await wait(220); d.remove();
+  }
+  let reactionRenderer = (rx) => finaBubble(rx);
   function registerReactionRenderer(fn) { reactionRenderer = typeof fn === 'function' ? fn : null; }
   async function showReaction(m, fx) {
     if (!reactionRenderer) return;
@@ -594,9 +640,9 @@
   function busySet(v) { try { bBusy = v; } catch (e) {} }
   root.addEventListener && root.addEventListener('resize', () => { const m = gS() && gS().m; if ($('#chf') && chfActive(m) && V.monPos && !V.moving) { V.par0 = null; camTarget(V.monPos.x, V.monPos.y, V.monPos.d, true); } });
 
-  Object.assign(root, { chfActive, chfBoard, chfRoll, chfRest, chfPick, chfContinue, chfResolve, chfItems, chfItemsClose, chfItemUse, chfOpen });
+  Object.assign(root, { chfActive, chfBoard, chfRoll, chfStop, chfRest, chfPick, chfContinue, chfResolve, chfItems, chfItemsClose, chfItemUse, chfOpen });
   root.MMCHV = Object.freeze({ STEP_MS, FACING, DEFAULTS: DEF,
-    state: () => ({ field: V.field, cam: { ...V.cam }, target: { ...V.tgt }, key: V.key, moving: V.moving, look: [...V.look], focus: V.focus ? { ...V.focus } : null, monster: V.monPos ? { ...V.monPos } : null, animator: (V.animator || DEFAULT_ANIMATOR).id }),
+    state: () => ({ field: V.field, cam: { ...V.cam }, target: { ...V.tgt }, key: V.key, moving: V.moving, spinning: !!V.spinning, look: [...V.look], focus: V.focus ? { ...V.focus } : null, monster: V.monPos ? { ...V.monPos } : null, animator: (V.animator || DEFAULT_ANIMATOR).id }),
     lookOf, sideOffset, landmarkPos: (id) => { const n = V.g && V.g.nodes[id]; if (!n) return null; const m = gS() && gS().m, a = MMCH.fieldOf(m).nodeAssignments[id] || (['strong', 'rival'].includes(n.kind) ? { t: 'battle', bt: n.kind } : null), look = lookOf(V.cfg, a); return look ? landmarkPos(V.cfg, V.g, V.sc, id, look) : null; },
     zoomAt, registerMonsterAnimator, registerReactionRenderer, focusPoint, stepDuration: (from, to) => { const r = MMCH.routeBetween(V.g, from, to).map((p) => [p[0] * V.sc.w, p[1] * V.sc.h]); return stepDuration(r, to); } });
 })(typeof window !== 'undefined' ? window : globalThis);

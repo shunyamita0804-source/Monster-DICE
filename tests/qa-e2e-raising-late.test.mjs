@@ -72,7 +72,7 @@ const DICE_HOOK = () => {
   Math.random = function () {
     if (window.__dice.length || window.__seedTour) {
       const st = new Error().stack || '';
-      if (window.__dice.length && /rollDic?e/.test(st)) { const n = window.__dice.shift(); return (n - 1) / 3 + 0.01; }
+      if (window.__dice.length && /rollDic?e/.test(st)) { const n = window.__dice.shift(); const sides = (window.MMP8 && typeof S === 'object' && S && S.m) ? MMP8.diceSides(S.m) : 3; return (n - 0.5) / sides; }
       if (window.__seedTour && st.includes('startTournament')) { window.__seedTour = false; return 0.25; }
     }
     return R0();

@@ -94,15 +94,15 @@ test('NX-01：サイコロの面の数は config（rules.diceSides）。6面な�
   assert.throws(() => P7.rollDie(0)); assert.throws(() => P7.rollDie(6, () => 1));
   assert.equal(CH.rulesOf({ rules: { diceSides: 6 } }).diceSides, 6); assert.equal(CH.rulesOf({}).diceSides, 3, '既定は 1〜3');
   assert.deepEqual(CH.rulesOf({ rules: { dice: { min: 1, max: 6 } } }).dice, { min: 1, max: 6 }, '旧形式');
-  assert.equal(CH.rulesOf(CH.getConfig(1)).diceSides, 3, '現行 Chapter 1 は 1〜3 のまま');
+  assert.equal(CH.rulesOf(CH.getConfig(1)).diceSides, 6, 'Chapter 1（リアル巨大ボード方式）は 1〜6');
 });
 
-test('NX-02：MMP8.roll は面の数をドライバから受け取る。6面の Chapter で出目6は6地点進む（出目＝移動距離）。1〜3の Chapter 1 は変わらない', () => {
+test('NX-02：MMP8.roll は面の数をドライバから受け取る。6面の Chapter で出目6は6地点進む（出目＝移動距離）。エンジンを使わない Chapter は 1〜3', () => {
   const E = onNext(); const { P8, m } = E;
   assert.equal(P8.diceSides(m), 6);
   for (const v of [1, 2, 3, 4, 5, 6]) { const E2 = onNext({}, 3); const t = turn(E2, v); assert.equal(t.length, v, `出目${v}で${v}地点`); assert.equal(E2.m.raise.node, `s1_${v}`); assert.equal(E2.m.raise.pend.roll, v); assert.equal(E2.m.raise.pend.left, 0); }
   const E1 = loadEngine(); const S = E1.P8.newSave(); S.m = mon(E1.P7, E1.P8, S); E1.P8.depart(S, S.m, lcg(1));
-  assert.equal(E1.P8.diceSides(S.m), 3); assert.equal(E1.P8.roll(S, S.m, () => 0.999).value, 3, 'Chapter 1 の最大は 3');
+  assert.equal(E1.P8.diceSides(S.m), 6); assert.equal(E1.P8.roll(S, S.m, () => 0.999).value, 6, 'Chapter 1 の最大は 6');
   assert.equal(E1.P8.diceSides({ raise: { ch: 2 } }), 3, 'エンジンを使わない Chapter は 1〜3');
 });
 
@@ -137,8 +137,8 @@ test('NX-04：強制停止（forceStop）：ライバルの地点は出目が残
   // 個別の指定：path.forceStop＝[index]・nodeOverrides[id].forceStop＝true・種類（forceStopKinds）は既定で無し
   const c2 = makeNextConfig({ chapterId: 3, forceStopKinds: [] }); c2.paths[0].forceStop = [4]; c2.nodeOverrides = { s2_3: { forceStop: true } }; const g2 = CH.registerConfig(c2);
   assert.deepEqual([g2.nodes.s1_4.forceStop, g2.nodes.s2_3.forceStop, g2.nodes[g2.order.find((id) => g2.nodes[id].kind === 'rival')].forceStop], [true, true, false]);
-  // 現行 Chapter 1：強制停止は無し（ライバル f3_4 を出目で通り過ぎてゴールできる。tests/chapter-engine.test.mjs CH1-19 と同じ）
-  const g1 = CH.buildGraph(CH.getConfig(1)); assert.ok(Object.values(g1.nodes).every((n) => !n.forceStop)); assert.ok(Object.values(P8.trackOf(1).nodes).every((n) => !n.stop));
+  // Chapter 1：強制停止はライバルだけ（config.forceStopKinds）
+  const g1 = CH.buildGraph(CH.getConfig(1)); assert.deepEqual(Object.values(g1.nodes).filter((n) => n.forceStop).map((n) => n.kind), ['rival']); assert.equal(Object.values(P8.trackOf(1).nodes).filter((n) => n.stop).length, 1);
   // 画面側・エンジンにライバル専用の分岐を書かない
   for (const f of ['js/chapter/engine.js', 'js/chapter/field-view.js', 'js/phase8/raising.js']) assert.doesNotMatch(rd(f).split('\n').map((l) => l.replace(/\/\/.*$/, '')).join('\n'), /kind\s*===\s*'rival'\s*(&&|\?)[^\n]*(left\s*=\s*0|stage\s*=\s*'resolve')/, `${f}：ライバル専用の停止処理を書かない`);
   assert.match(rd('js/phase8/raising.js'), /trk\.nodes\[id\]\.stop === true/, 'MMP8 はマップの node.stop だけを見る');
@@ -300,13 +300,13 @@ test('NX-15：同行者（フィナ）のリアクションの差し込み口：
   const view = rd('js/chapter/field-view.js'); assert.match(view, /registerReactionRenderer/); assert.match(view, /companionReaction\(m, fx\)/); assert.match(view, /if \(!reactionRenderer\) return;/, '描画が未登録なら何もしない（会話UIは未決）');
 });
 
-test('NX-16：現行の Chapter 1（1〜3・13枚・30ターン・大会なしの timeup）はこの基盤の追加で変わらない。ダンは Chapter に同行しない（同行者はフィナ＋育成中のモンスター）', () => {
+test('NX-16：Chapter 1（6面・背景15枚＋周回・30ターン・大会なしの timeup・ライバル強制停止）。ダンは Chapter に同行しない（同行者はフィナ＋育成中のモンスター）', () => {
   const E = loadEngine(); const { CH, P8 } = E, cfg = CH.getConfig(1), R = CH.rulesOf(cfg);
-  assert.deepEqual([R.diceSides, R.turnLimit, R.onTimeUp, cfg.fieldScenes.length, cfg.forceStopKinds], [3, 30, 'end', 13, undefined]);
+  assert.deepEqual([R.diceSides, R.turnLimit, R.onTimeUp, new Set(cfg.fieldScenes.map((s) => s.bg)).size, cfg.forceStopKinds], [6, 30, 'end', 15, ['rival']]);
   assert.deepEqual(CH.generateLayout(cfg, 12345).assign, CH.generateLayout(cfg, 12345).assign);
   // 同じ seed の配置は基盤の追加前後で変わらない（配置の乱数は layoutRules.counts に書いた種類だけ消費する）：代表的な seed の割り当て数
   const a = CH.generateLayout(cfg, 1).assign, cnt = {}; for (const x of Object.values(a)) cnt[x.t] = (cnt[x.t] || 0) + 1;
-  assert.ok(cnt.stat >= 11 && cnt.event >= 6 && cnt.battle >= 2 && cnt.treasure >= 2, JSON.stringify(cnt));
+  assert.ok(cnt.stat >= 12 && cnt.event >= 6 && cnt.battle >= 2 && cnt.treasure >= 3, JSON.stringify(cnt));
   // 同行者：ダンの台詞は Chapter フィールド（field-view・engine・config）に無い。出発時の掛け合い（DAN_TALK.handoff）は index.html の1か所だけ（内容の見直しは仕様側＝報告）
   for (const f of ['js/chapter/engine.js', 'js/chapter/field-view.js', 'js/chapter/configs/ch1a.js']) assert.doesNotMatch(rd(f), /DAN_TALK|npc:\s*['"]dan['"]|ダン/, `${f}：ダンは Chapter に出ない`);
   const html = rd('index.html'); assert.equal((html.match(/DAN_TALK\.handoff/g) || []).length, 1, '出発時の掛け合いは1か所');
