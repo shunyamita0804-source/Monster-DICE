@@ -27,7 +27,7 @@ async function start(p) {
 const idle = (pg) => pg.waitForFunction(() => !bBusy && !MMCHD.isLocked() && !document.querySelector('.chpop,.chdz') && document.getAnimations().every((a) => a.playState !== 'running' || !Number.isFinite(a.effect && a.effect.getComputedTiming().endTime)), null, { timeout: 20000 }).then(() => pg.waitForTimeout(80));
 /** 出目を決めて START を1回押す（1タップ：サイコロは自動で止まる。STOP の操作は無い）。Math.random は押した一瞬だけ固定（6面：1〜6） */
 async function rollAs(pg, v) {
-  await pg.evaluate((v) => { window.__mr = Math.random; Math.random = () => ({ 1: 0.05, 2: 0.2, 3: 0.4, 4: 0.55, 5: 0.75, 6: 0.95 }[v]); }, v);
+  await pg.evaluate((v) => { window.__mr = Math.random; Math.random = () => ({ 1: 0.1, 2: 0.5, 3: 0.9 }[v]); }, v);   // 2026-10-01 夜：Chapter 1 は 1〜3
   await pg.click('#brollbtn');
   await pg.evaluate(() => { Math.random = window.__mr; });
 }

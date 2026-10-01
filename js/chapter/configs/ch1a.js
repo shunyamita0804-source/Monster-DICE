@@ -34,7 +34,7 @@
   const at = (pts, y, k) => { const C = [...pts].sort((a, b) => a[0] - b[0]); if (y <= C[0][0]) return C[0][k]; for (let i = 1; i < C.length; i++) if (y <= C[i][0]) { const a = C[i - 1], b = C[i]; return +(a[k] + (b[k] - a[k]) * (y - a[0]) / (b[0] - a[0])).toFixed(4); } return C[C.length - 1][k]; };
   for (const k of ORDER) {
     const [file, name, terrain, far, road] = BG[k], sid = fieldScenes.length + 1, id = `f${+k}_`;
-    fieldScenes.push({ id: sid, name, bg: F + file + '.webp', w: W, h: H, bgKey: k, stage: k, exit: 'up', farBand: { to: 0.26, k: 0.95 }, depth: DEPTH, zoom: { near: 1.32, far: 1.95 }, road: { center: road, safe: 0.7 } });
+    fieldScenes.push({ id: sid, name, bg: F + file + '.webp', w: W, h: H, bgKey: k, stage: k, exit: 'up', farBand: { to: 0.26, k: 0.95 }, depth: DEPTH, zoom: { near: 1.45, far: 2.15 }, road: { center: road, safe: 0.7 } });
     landmarks[sid] = []; foreground[sid] = [];
     // 歩く道筋＝中央線（手前 NEAR → 奥 far）。マスはこの線の上に奥行きで等間隔（engine の alongPersp）。中間の点も道の上なので、歩きの途中も道から外れない
     const ys = [NEAR, ...road.map((p) => p[0]).filter((y) => y < NEAR && y > far).sort((a, b) => b - a), far];
@@ -52,7 +52,7 @@
     title: 'はじまりの草原',
     patternTitle: 'はじまりの草原',
     playable: true,
-    rules: { turnLimit: 30, diceSides: 6 },
+    rules: { turnLimit: 40, diceSides: 3 },   // 2026-10-01 夜：通常 Chapter のサイコロは 1〜3・40ターン（Chapter 2 と同じ。4〜6 の素材・共通の仕組みは残す）【試遊用の値】
     forceStopKinds: ['rival'],
     tournamentDestination: 'official',
     backgroundTransition: { type: 'forward', ms: 700 },

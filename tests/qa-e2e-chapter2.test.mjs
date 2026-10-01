@@ -112,3 +112,33 @@ test('CH2-B4：分岐（06 の分かれ道）：選ぶ前はどちらの道の�
     assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
   }
 });
+
+test('CH2-B5：Chapter 3 の解放条件（公式Cランク大会クリア）：届かない個体は Chapter 2 のあとファームで「Chapter 3 解放条件／公式Cランク大会クリア／このモンスターの育成はここまでです」→「育成を完了して街へ戻る」（2度押し）→ 育成完了画面 → 牧場へ。個体・能力・所持金はそのまま。条件を満たせば「Chapter 3へ進む」（390×844・375×667）', { skip: SKIP }, async () => {
+  for (const size of [[390, 844], [375, 667]]) {
+    const p = await open({ size }); const pg = p.page;
+    await toFarm(pg); await departUI(pg); await idle(pg);
+    // 40ターン目に会場へ届かない → ターン切れ → Chapter を終えてファームへ（既存の流れ）
+    await place(pg, 's9_1', { fatigue: 0, turnsUsed: 39 }); await idle(pg); await rollAs(pg, 1); await idle(pg);
+    await pg.waitForSelector('.chsheet button[onclick="p8EndChapter()"]', { timeout: 20000 }); await pg.waitForTimeout(300); await pg.click('.chsheet button[onclick="p8EndChapter()"]');
+    await pg.waitForSelector('.fm .fmgo', { timeout: 20000 }); await pg.waitForTimeout(400);
+    const before = await pg.evaluate(() => ({ uid: S.m.uid, name: S.m.name, po: S.m.po, li: S.m.li, g: S.g, sk: JSON.stringify(S.m.sk) }));
+    const a = await pg.evaluate(() => { const b = document.querySelector('.fm .fmgo'), r = b.getBoundingClientRect(); return { state: S.m.raise.state, ch: S.m.raise.ch, reason: MMP8.canDepart(S, S.m).reason, go: b.querySelector('b').textContent, sub: (b.querySelector('small') || {}).textContent || '', note: (document.querySelector('.fm .ksys') || {}).textContent || '', inView: r.top >= 0 && r.bottom <= innerHeight, sw: document.documentElement.scrollWidth, iw: innerWidth }; });
+    assert.deepEqual([a.state, a.ch, a.reason, a.go], ['farm', 3, 'rank_gate', '育成を完了して街へ戻る'], `${size}`);
+    assert.match(a.sub, /Chapter 3 解放条件：公式Cランク大会クリア/); assert.match(a.note, /Chapter 3 解放条件.*公式Cランク大会クリア.*このモンスターの育成はここまでです/);
+    assert.ok(a.inView, '進行ボタンは画面の中'); assert.equal(a.sw, a.iw, '横にはみ出さない');
+    await pg.click('.fm .fmgo'); await pg.waitForTimeout(500); await pg.click('.fm .fmgo');   // 2度押し
+    await pg.waitForSelector('.p9done', { timeout: 20000 }); await H.finishTalk(pg);
+    const d = await pg.evaluate(() => ({ state: S.m.raise.state, txt: document.querySelector('.p9done').textContent, done: MMP8.raiseDoneCount(S), saved: JSON.parse(localStorage.getItem('mr4v6')).m.raise.state }));
+    assert.deepEqual([d.state, d.done, d.saved], ['done', 1, 'done']); assert.match(d.txt, /Chapter 3 の解放条件（公式Cランク大会クリア）に届かなかったため/); assert.match(d.txt, /解放条件（公式Cランク大会クリア）に届かず（ここで育成完了）/);
+    const after = await pg.evaluate(() => ({ uid: S.m.uid, name: S.m.name, po: S.m.po, li: S.m.li, g: S.g, sk: JSON.stringify(S.m.sk) }));
+    assert.deepEqual(after, before, '個体・能力・技・所持金はそのまま');
+    await pg.click('.p9done .p9btn'); await pg.waitForSelector('.rn', { timeout: 20000 });
+    assert.equal(await pg.evaluate(() => S.box.length + (S.m ? 1 : 0) >= 1 && MMP7.raiseState(S.m || S.box[S.box.length - 1]) === 'done'), true, '牧場へ（育成完了の個体として）');
+    // 条件を満たした個体（公式C大会クリア済み）は Chapter 3 へ進める
+    const q = await open({ size }); const pq = q.page; await toFarm(pq);
+    await pq.evaluate(() => { Object.assign(S.m.raise, { ch: 3, log: [{ ch: 1, reachedGoal: true }, { ch: 2, reachedGoal: true }] }); S.m.prog.rankClr = [true, true, true, false, false, false]; save(); hall('t'); });
+    await pq.waitForSelector('.fm .fmgo'); const ok = await pq.evaluate(() => [MMP8.canDepart(S, S.m).ok, document.querySelector('.fm .fmgo b').textContent, !!document.querySelector('.fm .ksys')]);
+    assert.deepEqual(ok, [true, 'Chapter 3へ進む', false]);
+    assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []); assert.deepEqual(q.errors, []);
+  }
+});

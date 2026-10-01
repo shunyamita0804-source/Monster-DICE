@@ -52,9 +52,12 @@ function reload(P8, S) {
 function departTo(ctx, no, { h = -1, over = {} } = {}) {
   const { P7, P8 } = ctx;
   const S = P8.newSave(); S.m = P8.initIndividual(S, mon(P7, over));
-  S.m.prog.rankClr = clr(h);
+  // 2026-10-01 夜：Chapter 3＝公式C・Chapter 4＝公式B 以上のクリアが出発の条件（MMP8.CHAPTER_RANK_GATE。条件そのものは QA-RL39〜40 で確かめる）。
+  //  このヘルパーは大会・ボードの規則を見るためのもの：出発のときだけ条件を満たした実績にし、出発後に指定の実績（h）へ戻す
+  S.m.prog.rankClr = clr(Math.max(h, (P8.CHAPTER_RANK_GATE || {})[no] ?? -1));
   if (no > 1) Object.assign(S.m.raise, { state: 'farm', ch: no, log: Array.from({ length: no - 1 }, (_, i) => ({ ch: i + 1 })) });
   assert.equal(P8.depart(S, S.m).ok, true);
+  S.m.prog.rankClr = clr(h);
   return S;
 }
 /** 移動を最後まで進める（分岐では pick で選ぶ）。通ったノードを返す */
@@ -414,7 +417,7 @@ test('QA-RL12：途中の状態（出目・残り移動・分岐待ち・マス�
 
 test('QA-RL13：Chapter間ファーム：Chapter 1〜3を終えると次のChapterのファームへ。そこから次のChapterへ1回だけ出発でき、位置・ターン・ゴール・大会は初期化', () => {
   const ctx = load(); const { P7, P8 } = ctx;
-  const S = P8.newSave(); S.m = P8.initIndividual(S, mon(P7)); P8.depart(S, S.m);
+  const S = P8.newSave(); S.m = P8.initIndividual(S, mon(P7)); S.m.prog.rankClr = clr(3); P8.depart(S, S.m);   // Chapter 3・4 の条件（公式C・B大会クリア）を満たした個体（条件そのものは QA-RL39〜40）
   const r = S.m.raise;
   for (const no of [1, 2, 3]) {
     reachGoal(P8, S);
@@ -506,7 +509,7 @@ test('QA-RL15：修行はChapter 1を終えたChapter間ファームからだけ
 });
 
 test('QA-RL16：修行を始めた時にチケットを1枚だけ使う（進行中・ゴール・終了では使わない）。修行中は出発・育成放棄できず、復帰先は修行ボード', () => {
-  const ctx = load(); const { P7, P8 } = ctx; const S = farmAfter(ctx, 2); S.trainTix = 3;
+  const ctx = load(); const { P7, P8 } = ctx; const S = farmAfter(ctx, 2); S.trainTix = 3; S.m.prog.rankClr = clr(2);   // Chapter 3 の条件（公式C大会クリア）を満たした個体
   assert.deepEqual(P7.startTraining(S, S.m, 'hi'), { ok: true });
   assert.equal(S.trainTix, 2);
   assert.deepEqual(S.m.raise.trainRun, { kind: 'hi', pos: 0 });
@@ -791,7 +794,9 @@ test('QA-RL28：上位ランクの優勝で下位ランクもクリア扱いに�
   assert.deepEqual(S.m.prog.rankClr, [true, true, false, false, false, false], 'E もクリア扱い');
   assert.deepEqual(S.rankRec.cleared, [true, true, false, false, false, false]);
   assert.equal(P8.endChapter(S, S.m).next, 3);
-  P8.depart(S, S.m); reachGoal(P8, S);
+  assert.equal(P8.depart(S, S.m).reason, 'rank_gate', '2026-10-01 夜：D クリアだけでは Chapter 3（公式C大会クリアが条件）へ出発できない');
+  { const keep = [...S.m.prog.rankClr]; S.m.prog.rankClr = clr(2); P8.depart(S, S.m); S.m.prog.rankClr = keep; }   // 賞金の規則を見るため、出発のときだけ条件を満たした実績にする
+  reachGoal(P8, S);
   assert.deepEqual(P8.eligibleRanks(S.m, 3), [0, 1, 2], 'D クリアで C まで（＋1）');
   const g1 = S.g, t1 = S.trainTix;
   P8.startTournament(S, S.m, 0, 9);
@@ -981,8 +986,8 @@ test('QA-RL36：Chapter 4終了時にA以上なら最終ルートへ。マップ
     assert.equal(P8.raiseDoneCount(S), 1);
     assert.equal(reload(P8, S).raiseRec.done, 1);
   }
-  // 最終ルート以外のChapter間ファームでは代替処理は使えない
-  const ctx = load(); const S = farmAfter(ctx, 2);
+  // 最終ルート以外のChapter間ファームでは代替処理は使えない（次の Chapter の解放条件を満たしているとき。満たしていないときは QA-RL41）
+  const ctx = load(); const S = farmAfter(ctx, 2); S.m.prog.rankClr = clr(2);
   assert.deepEqual(ctx.P8.canFinishWithoutFinal(S, S.m), { ok: false, reason: 'not_final_farm' });
 });
 
@@ -1008,6 +1013,7 @@ test('QA-RL38：育成完了回数は育成完了1回につき1回だけ（購�
   assert.deepEqual(S.raiseRec, { done: 0, fromStart: true });
   S.m = P8.initIndividual(S, mon(P7));
   assert.equal(P8.raiseDoneCount(S), 0, '購入（個体の作成）では増えない');
+  S.m.prog.rankClr = clr(3);   // Chapter 3・4 の条件を満たした個体（B クリア。A 未満なので Chapter 4 の終わりで育成完了）
   P8.depart(S, S.m);
   for (let no = 1; no <= 3; no++) { reachGoal(P8, S); P8.declineTournament(S, S.m); assert.equal(P8.raiseDoneCount(S), 0, `Chapter ${no} の終了`); P8.depart(S, S.m); }
   reachGoal(P8, S);
@@ -1095,4 +1101,52 @@ test('QA-RL40：新規開始から育成完了まで通し（正式マップ・�
   assert.equal(S.trainTix - t0, boardTix + 1 + 2 + 2 + 2);
   assert.deepEqual(S.m.prog.rankClr, clr(4));
   assert.equal(P8.rankLabel(S.m), 'A');
+});
+
+// =========================================================
+// Chapter の解放条件（2026-10-01 夜・正式）：Chapter 3＝公式Cランク大会クリア以上、Chapter 4＝公式Bランク大会クリア以上（その個体の大会クリア実績 m.prog.rankClr）
+// =========================================================
+test('QA-RL39：Chapter 3 の条件＝公式C大会クリア以上。C 未クリアは出発できず（rank_gate）、C・B・A・S クリアなら出発できる。Chapter 1・2 は条件なし', () => {
+  const ctx = load(); const { P7, P8 } = ctx;
+  assert.deepEqual([P8.chapterGate(mon(P7), 1).ok, P8.chapterGate(mon(P7), 2).ok], [true, true], 'Chapter 1・2 は条件なし');
+  for (const h of [-1, 0, 1, 2, 3, 4, 5]) {
+    const S = P8.newSave(); S.m = P8.initIndividual(S, mon(P7)); S.m.prog.rankClr = clr(h);
+    Object.assign(S.m.raise, { state: 'farm', ch: 3, log: [{ ch: 1 }, { ch: 2 }] });
+    const c = P8.canDepart(S, S.m);
+    if (h >= 2) assert.deepEqual(c, { ok: true, key: 3 }, `クリア最高 ${h}`);
+    else { assert.deepEqual(c, { ok: false, reason: 'rank_gate', key: 3, need: 2, have: h }, `クリア最高 ${h}`); assert.equal(P8.depart(S, S.m).ok, false); assert.equal(S.m.raise.state, 'farm', '出発しない'); }
+  }
+  // Chapter 2 を終えた時点（大会なし・辞退・D 優勝）でも Chapter3 の条件は同じ
+  const S = P8.newSave(); S.m = P8.initIndividual(S, mon(P7)); S.m.prog.rankClr = clr(1); Object.assign(S.m.raise, { state: 'farm', ch: 2, log: [{ ch: 1 }] });
+  P8.depart(S, S.m); reachGoal(P8, S); assert.equal(P8.declineTournament(S, S.m).next, 3); assert.equal(P8.canDepart(S, S.m).reason, 'rank_gate');
+});
+
+test('QA-RL40：Chapter 4 の条件＝公式B大会クリア以上。B 未クリア（C まで）は出発できず、B・A・S クリアなら出発できる', () => {
+  const ctx = load(); const { P7, P8 } = ctx;
+  for (const h of [-1, 1, 2, 3, 4, 5]) {
+    const S = P8.newSave(); S.m = P8.initIndividual(S, mon(P7)); S.m.prog.rankClr = clr(h);
+    Object.assign(S.m.raise, { state: 'farm', ch: 4, log: [{ ch: 1 }, { ch: 2 }, { ch: 3 }] });
+    const c = P8.canDepart(S, S.m);
+    if (h >= 3) assert.deepEqual(c, { ok: true, key: 4 }, `クリア最高 ${h}`);
+    else assert.deepEqual(c, { ok: false, reason: 'rank_gate', key: 4, need: 3, have: h }, `クリア最高 ${h}`);
+  }
+});
+
+test('QA-RL41：条件に届かないときは、その個体の今回の育成はここまで（育成完了。失敗ではない）：個体・能力・技・名前・所持金・バッグ・大会の実績・記録はそのまま、育成完了回数は1回だけ。牧場へ預けて売却・次の育成もできる', () => {
+  const ctx = load(); const { P7, P8 } = ctx;
+  const S = P8.newSave(); S.m = P8.initIndividual(S, mon(P7, { name: 'ソラ', po: 140, sk: [0, 1, 2, 3, 7], eq: [0, 1, 2, 3, 7, -1] })); S.m.prog.rankClr = clr(1); S.g = 777; S.trainTix = 2;
+  Object.assign(S.m.raise, { state: 'farm', ch: 3, log: [{ ch: 1, reachedGoal: true }, { ch: 2, reachedGoal: false }], startStats: { li: 100, po: 100, in: 100, hi: 100, ev: 100, de: 100 } });
+  const before = j(S.m);
+  assert.deepEqual(P8.canFinishWithoutFinal(S, S.m), { ok: true, reason: 'rank_gate', key: 3, need: 2, have: 1 });
+  const r = P8.finishWithoutFinal(S, S.m);
+  assert.equal(r.ok, true); assert.equal(r.reason, 'rank_gate'); assert.deepEqual(r.entry, { ch: 3, skipped: true, reason: 'rank_gate', need: 2 });
+  assert.equal(S.m.raise.state, 'done'); assert.equal(P8.raiseDoneCount(S), 1);
+  for (const k of ['uid', 'name', 'sp', 'li', 'po', 'in', 'hi', 'ev', 'de', 'sk', 'eq']) assert.deepEqual(S.m[k], before[k], k);
+  assert.deepEqual(S.m.prog.rankClr, before.prog.rankClr, '大会の実績はそのまま'); assert.deepEqual(S.m.raise.log.slice(0, 2), before.raise.log, 'Chapter の記録はそのまま');
+  assert.deepEqual([S.g, S.trainTix], [777, 2], '所持金・チケットはそのまま'); assert.deepEqual(S.m.raise.endStats, { li: 100, po: 140, in: 100, hi: 100, ev: 100, de: 100 }, '売却額用の完了時の能力');
+  assert.equal(P8.finishWithoutFinal(S, S.m).ok, false, '2回目はできない'); assert.equal(P8.raiseDoneCount(S), 1);
+  const T = reload(P8, S); assert.deepEqual([T.m.raise.state, T.m.name, T.m.po, T.g], ['done', 'ソラ', 140, 777], '保存・再読込しても同じ');
+  // 条件を満たしている個体は、この方法では終えられない（通常どおり出発する）
+  const S2 = P8.newSave(); S2.m = P8.initIndividual(S2, mon(P7)); S2.m.prog.rankClr = clr(2); Object.assign(S2.m.raise, { state: 'farm', ch: 3, log: [{ ch: 1 }, { ch: 2 }] });
+  assert.deepEqual(P8.canFinishWithoutFinal(S2, S2.m), { ok: false, reason: 'not_final_farm' });
 });

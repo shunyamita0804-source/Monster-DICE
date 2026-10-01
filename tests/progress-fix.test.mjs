@@ -143,7 +143,7 @@ test('F1-5：画面：未登録のときだけ案内と「育成を完了して�
   assert.match(lineOf('function p8AfterChapterEnd(r){'), /MMP8\.isPlayable\(MMP8\.FINAL\)\?"Aランク以上をクリアしたので、次は最終Chapterへ進みます！":"Aランク以上をクリアした！ 最終ルートは準備中のため/);
   assert.match(between('function prepScr(msg){', '\nconst P7_ERR='), /\(nx==MMP8\.FINAL&&!MMP8\.isPlayable\(MMP8\.FINAL\)\)\?`[^`]*最終ルートはまだ準備中です。[^`]*<button class="go" onclick="pfixFinishNoFinal\(this\)">育成を完了して街へ戻る<\/button>`:/, '「ボード」（出発準備）からも同じ完了ボタン（未登録のときだけ）');
   const done = lineOf('function p8DoneScr(msg){');
-  assert.match(done, /e\.skipped\?"準備中のため未実施（ここで育成完了）"/); assert.match(done, /\$\{msg\?`<div class="sub">\$\{msg\}<\/div>`:""\}/);
+  assert.match(done, /e\.skipped\?\(e\.reason=="rank_gate"\?`解放条件（公式\$\{MMP8\.RANK_LETTERS\[e\.need\]\|\|""\}ランク大会クリア）に届かず（ここで育成完了）`:"準備中のため未実施（ここで育成完了）"\)/, '解放条件に届かずに完了した記録も区別して出す'); assert.match(done, /\$\{msg\?`<div class="sub">\$\{msg\}<\/div>`:""\}/);
 });
 
 // ---------------------------------------------------------
@@ -180,6 +180,7 @@ test('F2-3：育成放棄・Chapter 1〜3の終了・大会辞退（Chapter 1〜
   const { P7, P8 } = load();
   for (const no of [1, 2, 3, 4]) P7.registerChapterBoard(no, line(1));
   const S = P8.newSave(); S.m = P8.initIndividual(S, mon(P7));
+  S.m.prog.rankClr = [true, true, true, true, false, false];   // Chapter 3・4 の条件（公式C・B大会クリア。2026-10-01 夜）を満たした個体
   for (let ch = 1; ch <= 3; ch++) { P8.depart(S, S.m); P8.roll(S, S.m, () => 0); runTurn(P8, S); assert.equal(P8.declineTournament(S, S.m).next, ch + 1); }
   assert.equal(P8.raiseDoneCount(S), 0);
   assert.equal(P8.abandon(S, S.m.uid).ok, true); assert.equal(P8.raiseDoneCount(S), 0, '育成放棄は育成完了ではない');

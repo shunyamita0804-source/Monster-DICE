@@ -33,7 +33,11 @@ function rng(seed) { let a = seed >>> 0; return () => { a = (a + 0x6d2b79f5) >>>
 function playChapter(P7, P8, no, kind, rnd) {
   const S = P8.newSave(); S.m = P8.initIndividual(S, mon(P7));
   Object.assign(S.m.raise, no === 1 ? {} : { state: 'farm', ch: no, log: Array.from({ length: no - 1 }, (_, i) => ({ ch: i + 1 })) });
+  // 2026-10-01 夜：Chapter 3・4 は公式C・B大会クリアが出発の条件（MMP8.CHAPTER_RANK_GATE）。ボードの規則を見るため、出発のときだけ条件を満たした実績にして戻す
+  const keep = [...S.m.prog.rankClr], need = (P8.CHAPTER_RANK_GATE || {})[no];
+  if (need != null) S.m.prog.rankClr = keep.map((v, i) => v || i <= need);
   assert.equal(P8.depart(S, S.m).ok, true);
+  S.m.prog.rankClr = keep;
   const trk = P8.boardOf(S.m);
   while (P8.canRoll(S.m)) {
     P8.roll(S, S.m, rnd);
@@ -383,6 +387,11 @@ test('T5-2：Chapter 4終了時にAランク未満なら育成完了（どのラ
     const S = P8.newSave(); S.m = P8.initIndividual(S, mon(P7));
     S.m.prog.rankClr = [0, 1, 2, 3, 4, 5].map((i) => i <= best);
     Object.assign(S.m.raise, { state: 'farm', ch: 4, log: [{ ch: 1 }, { ch: 2 }, { ch: 3 }] });
+    if (best < 3) {   // 2026-10-01 夜：Chapter 4 は公式B大会クリアが条件。届かなければ Chapter 4 の前のファームで育成完了（失敗ではない）
+      assert.equal(P8.depart(S, S.m).reason, 'rank_gate', `最高${best}`);
+      assert.equal(P8.finishWithoutFinal(S, S.m).next, 'done'); assert.equal(S.m.raise.state, 'done'); assert.ok(S.m, '個体は消えない');
+      assert.equal(P8.canVisitTown(S), true, '育成完了後は街へ'); continue;
+    }
     P8.depart(S, S.m); runBoard(P8, S);
     const e = P8.declineTournament(S, S.m);
     assert.equal(e.next, 'done', `最高${best}`); assert.equal(S.m.raise.state, 'done'); assert.ok(S.m, '個体は消えない');

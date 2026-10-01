@@ -35,7 +35,7 @@
   const FINAL = 'final';           // 最終Chapter（旧称：裏ボスChapter）
   const LAST_NORMAL_CHAPTER = 4;
   const RANK_LETTERS = Object.freeze(['E', 'D', 'C', 'B', 'A', 'S']);
-  const RANK_E = 0, RANK_D = 1, RANK_A = 4, RANK_S = 5;
+  const RANK_E = 0, RANK_D = 1, RANK_C = 2, RANK_B = 3, RANK_A = 4, RANK_S = 5;
   const CHAPTER_RULES = Object.freeze({
     1: Object.freeze({ turnLimit: DEFAULT_TURN_LIMIT, rankCap: RANK_D, tournament: true }),   // Chapter 1だけ挑戦上限D
     2: Object.freeze({ turnLimit: DEFAULT_TURN_LIMIT, rankCap: null, tournament: true }),
@@ -46,13 +46,19 @@
     [FINAL]: Object.freeze({ turnLimit: null, rankCap: null, tournament: false }),
   });
   const FINAL_CHAPTER_MIN_RANK = RANK_A;   // Chapter 4終了時にA以上をクリア済みなら最終Chapterへ強制進行
+  // Chapter へ入る条件（2026-10-01 夜・正式）：その個体が公式ランク大会をクリアした実績（m.prog.rankClr＝highestCleared）。
+  //  Chapter 1・2 は条件なし、Chapter 3＝公式Cランク大会クリア以上、Chapter 4＝公式Bランク大会クリア以上。
+  //  足りなければ Chapter間ファームから先へは出発できず、その個体の今回の育成はここまで（finishWithoutFinal で育成完了。失敗ではない）
+  const CHAPTER_RANK_GATE = Object.freeze({ 3: RANK_C, 4: RANK_B });
+  /** Chapter key へ入る条件を満たすか：{ ok, need（必要なランクの番号。条件なしは null）, have（クリア済みの最高ランク） } */
+  function chapterGate(m, key) { const need = CHAPTER_RANK_GATE[key]; const have = highestCleared(m); return need == null ? { ok: true, need: null, have } : { ok: have >= need, need, have }; }
   function chapterRule(key) { return CHAPTER_RULES[key] || null; }
   function chapterName(key) { if (key === FINAL) return '最終Chapter'; const d = P7.getChapterDef(key); return d ? d.name : ''; }
   function highestCleared(m) { if (!m) return -1; P7.ensureProg(m); let h = -1; m.prog.rankClr.forEach((v, i) => { if (v) h = i; }); return h; }
   /** 個体の表示ランク＝その個体がクリアした最高ランク（未クリアは「ー」） */
   function rankLabel(m) { const h = highestCleared(m); return h >= 0 ? RANK_LETTERS[h] : 'ー'; }
-  Object.assign(API, { DEFAULT_TURN_LIMIT, FINAL, LAST_NORMAL_CHAPTER, RANK_LETTERS, CHAPTER_RULES, FINAL_CHAPTER_MIN_RANK,
-    chapterRule, chapterName, highestCleared, rankLabel });
+  Object.assign(API, { DEFAULT_TURN_LIMIT, FINAL, LAST_NORMAL_CHAPTER, RANK_LETTERS, CHAPTER_RULES, FINAL_CHAPTER_MIN_RANK, CHAPTER_RANK_GATE,
+    chapterGate, chapterRule, chapterName, highestCleared, rankLabel });
 
   // =========================================================
   // 個体の育成状態（m.raise）と uid
@@ -277,6 +283,7 @@
     if (P7.trainRunOf(m)) return { ok: false, reason: 'training' };
     const key = nextChapterKey(m);
     if (!chapterRule(key)) return { ok: false, reason: 'finished' };
+    { const gt = chapterGate(m, key); if (!gt.ok) return { ok: false, reason: 'rank_gate', key, need: gt.need, have: gt.have }; }   // 公式ランク大会のクリア実績が足りない
     if (!isPlayable(key)) return { ok: false, reason: 'no_map', key };
     return { ok: true, key };
   }
@@ -716,18 +723,21 @@
     if (!S || !m || m !== S.m) return { ok: false, reason: 'no_monster' };
     ensureRaise(m);
     const r = m.raise;
-    if (r.state !== RAISE.FARM || r.ch !== FINAL) return { ok: false, reason: 'not_final_farm' };
-    if (isPlayable(FINAL)) return { ok: false, reason: 'final_available' };   // 登録済みなら代替処理は使わない
+    if (r.state !== RAISE.FARM) return { ok: false, reason: 'not_final_farm' };
     if (P7.trainRunOf(m)) return { ok: false, reason: 'training' };
+    // 次の Chapter の解放条件（公式ランク大会のクリア実績）に届かない：ここで育成完了（2026-10-01 夜）
+    if (r.ch !== FINAL) { const gt = chapterGate(m, r.ch); return gt.ok ? { ok: false, reason: 'not_final_farm' } : { ok: true, reason: 'rank_gate', key: r.ch, need: gt.need, have: gt.have }; }
+    if (isPlayable(FINAL)) return { ok: false, reason: 'final_available' };   // 登録済みなら代替処理は使わない
     return { ok: true };
   }
+  /** Chapter間ファームから育成を完了する（最終ルートが未登録のとき／次の Chapter の解放条件に届かないとき）。個体・能力・技・所持金・大会の記録はそのまま */
   function finishWithoutFinal(S, m) {
     const c = canFinishWithoutFinal(S, m); if (!c.ok) return c;
-    const r = m.raise, entry = { ch: FINAL, skipped: true, reason: 'final_unavailable' };
+    const r = m.raise, entry = c.reason === 'rank_gate' ? { ch: c.key, skipped: true, reason: 'rank_gate', need: c.need } : { ch: FINAL, skipped: true, reason: 'final_unavailable' };
     r.log.push(entry);
     Object.assign(r, { state: RAISE.DONE, ch: null, node: null, turnsUsed: 0, turnLimit: null, pend: null, goal: false, tour: null, battle: null });
     r.endStats = statSnap(m);
-    return { ok: true, next: 'done', entry, raiseDone: recordRaiseDone(S) };
+    return { ok: true, next: 'done', ...(c.reason ? { reason: c.reason } : {}), entry, raiseDone: recordRaiseDone(S) };
   }
   Object.assign(API, { raiseDoneCount, raiseCountFromStart, canFinishWithoutFinal, finishWithoutFinal });
 

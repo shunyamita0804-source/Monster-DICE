@@ -66,7 +66,7 @@ function ch1Field(assign = {}) {
 function seed(raise = {}, top = {}, assign = {}) {
   const s = clone(BASE);
   s.npcFlags = { ...s.npcFlags, raiseIntro: 1 };
-  Object.assign(s.m.raise, { state: 'board', ch: 1, node: 'f1_0', turnsUsed: 0, turnLimit: 30, pend: null, goal: false, tour: null, battle: null, trainRun: null, log: [], startStats: statsOf(s.m), fatigue: 0, field: ch1Field(assign) }, raise);
+  Object.assign(s.m.raise, { state: 'board', ch: 1, node: 'f1_0', turnsUsed: 0, turnLimit: 40, pend: null, goal: false, tour: null, battle: null, trainRun: null, log: [], startStats: statsOf(s.m), fatigue: 0, field: ch1Field(assign) }, raise);
   return Object.assign(s, top);
 }
 /** サイコロの出目だけを固定する仕掛け（window.__dice に入れた出目を MMP7.rollDie／rollDice の呼び出しで順に使う（面の数は今の個体の Chapter から：Chapter 1 は 6・旧ボードは 3）） */
@@ -224,7 +224,7 @@ T('QA-RB1：市場で購入 → ファーム → 出発準備：1回目の押下
   await pg.waitForSelector('#chf-ui #brollbtn');
   const r = await raiseOf(pg);
   const { startStats, field, ...rest } = r;
-  assert.deepEqual(rest, { state: 'board', ch: 1, node: 'f1_0', turnsUsed: 0, turnLimit: 30, pend: null, goal: false, tour: null, battle: null, trainRun: null, log: [], fatigue: 0 });
+  assert.deepEqual(rest, { state: 'board', ch: 1, node: 'f1_0', turnsUsed: 0, turnLimit: 40, pend: null, goal: false, tour: null, battle: null, trainRun: null, log: [], fatigue: 0 });
   assert.deepEqual([field.chapterId, field.patternId, field.fieldId, field.branch, field.consumedEvents, field.openedTreasures, field.clearedStats], [1, 'A', 1, null, [], [], []], 'Chapter 1 Pattern A の配置を出発時に確定');
   assert.ok(Number.isInteger(field.layoutSeed) && Object.keys(field.nodeAssignments).length >= 20, '配置（シードと割り当て）はセーブに入る');
   assert.deepEqual(startStats, statsOf(s0.m), '育成開始時の能力値を記録する');
@@ -456,7 +456,7 @@ T('QA-RB8：Chapter 1 のゴール（大会会場。残りの移動は消える�
   await pg.waitForSelector('.p9farm.p15f');
   r = await raiseOf(pg);
   assert.deepEqual([r.state, r.ch, r.node, r.turnsUsed, r.goal, r.field], ['farm', 2, null, 0, false, null], 'Chapter を閉じたら Chapter 1 の配置は消す');
-  assert.deepEqual(r.log.at(-1), { ch: 1, reachedGoal: true, turnsUsed: 21, turnLimit: 30, declined: true, tour: null });
+  assert.deepEqual(r.log.at(-1), { ch: 1, reachedGoal: true, turnsUsed: 21, turnLimit: 40, declined: true, tour: null });
   const farmText = await H.text(pg);
   assert.match(farmText, /Chapter 1 終了/, 'ファームの育成状態');
   assert.match(await pg.evaluate(() => document.querySelector('.ksys').textContent), /CHAPTER 1「はじまりの草原」が終わった。/, 'Chapterの結果は通知（名前・顔なし）');
@@ -476,7 +476,7 @@ T('QA-RB8：Chapter 1 のゴール（大会会場。残りの移動は消える�
   await pg.click(dep);
   await pg.waitForSelector('#chf-ui #brollbtn', { timeout: 20000 });   // 2026-10-01：Chapter 2 もエンジン（潮風の海岸。30ターン・6面）
   r = await raiseOf(pg);
-  assert.deepEqual([r.state, r.ch, r.node, r.turnsUsed, r.turnLimit, r.fatigue, r.field && r.field.chapterId, r.field && r.field.introSeen], ['board', 2, 's1_0', 0, 30, 21, 2, undefined], 'Chapter 2 はエンジン（潮風の海岸・30ターン）。疲れは max(0, 71−50)。導入演出は自動テストでは出さない');
+  assert.deepEqual([r.state, r.ch, r.node, r.turnsUsed, r.turnLimit, r.fatigue, r.field && r.field.chapterId, r.field && r.field.introSeen], ['board', 2, 's1_0', 0, 40, 21, 2, undefined], 'Chapter 2 はエンジン（潮風の海岸・40ターン）。疲れは max(0, 71−50)。導入演出は自動テストでは出さない');
   assert.deepEqual(r.startStats, ss0, 'Chapter移行では育成開始時の能力値を取り直さない');
   assert.equal(await pg.evaluate(() => window.__talkSeen), false, 'Chapter間ファームからの出発ではフィナの会話は出ない');
   assert.match(await bmsg(pg), /CHAPTER 2「潮風の海岸」に出発！/);

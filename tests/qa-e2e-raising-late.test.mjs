@@ -173,7 +173,7 @@ const myTable = (pg) => pg.evaluate(() => {
 // ターン切れ → Chapter間ファーム
 // ---------------------------------------------------------
 T('QA-RL1：Chapter 3（旧ボード）の20ターン目を使い切る → ターン終了の案内（育成失敗ではない）→ Chapter間ファームへ。ファームからは街へ行けず、中断して再開してもファームから', async () => {
-  const p = await boot(seed({ ch: 3, node: 'a2', turnsUsed: 19, log: [LOG1, LOG2D] }, { g: 120 }, 1), '.p9board #brollbtn', { calm: true }); const pg = p.page;
+  const p = await boot(seed({ ch: 3, node: 'a2', turnsUsed: 19, log: [LOG1, LOG2D] }, { g: 120 }, 3), '.p9board #brollbtn', { calm: true }); const pg = p.page;   // 2026-10-01 夜：Chapter 4 の条件（公式B大会クリア）を満たした個体（条件に届かない場合は CH2-B5）
   const before = await H.getS(pg);
   await setDice(pg, [1]);
   await pg.waitForTimeout(SETTLE);

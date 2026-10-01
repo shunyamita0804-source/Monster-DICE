@@ -20,16 +20,16 @@ async function toField(pg) {
 }
 /** 出目を決めて START を1回押す（1タップ：サイコロは自動で止まる） */
 async function rollAs(pg, v) {
-  await pg.evaluate((v) => { window.__mr = Math.random; Math.random = () => ({ 1: 0.05, 2: 0.2, 3: 0.4, 4: 0.55, 5: 0.75, 6: 0.95 }[v]); }, v);
+  await pg.evaluate((v) => { window.__mr = Math.random; Math.random = () => ({ 1: 0.1, 2: 0.5, 3: 0.9 }[v]); }, v);   // 2026-10-01 夜：Chapter 1 は 1〜3
   await pg.click('#brollbtn'); await pg.evaluate(() => { Math.random = window.__mr; });
 }
 const place = (pg, node, extra = {}) => pg.evaluate(([node, extra]) => { const r = S.m.raise; r.node = node; r.pend = null; Object.assign(r, extra);  save(); board(); }, [node, extra]);
 
 for (const size of [H.SIZES.base, H.SIZES.se]) {
-  test(`JR-1（${size.join('×')}）：サイコロの停止面：内部の出目 1〜6 と、止まったサイコロの面（dice_stop_1〜6）が必ず一致する。回転中の絵から停止面へ切り替わり、数字の輪は出さない。出目は右上の小さな表示`, { skip: SKIP }, async () => {
+  test(`JR-1（${size.join('×')}）：サイコロの停止面：内部の出目 1〜3（2026-10-01 夜）と、止まったサイコロの面（dice_stop_1〜3）が必ず一致する。回転中の絵から停止面へ切り替わり、数字の輪は出さない。出目は右上の小さな表示`, { skip: SKIP }, async () => {
     const p = await open({ size }); const pg = p.page;
     await toField(pg);
-    for (const v of [1, 3, 6]) {
+    for (const v of [1, 2, 3]) {
       await place(pg, 'f1_0', { turnsUsed: 0, fatigue: 0 }); await idle(pg);
       await pg.evaluate(() => { window.__face = null; new MutationObserver(() => { const s = document.querySelector('.chdz-stop.on'); if (s && !window.__face) window.__face = { src: s.getAttribute('src'), ring: getComputedStyle(document.querySelector('.chdz-res')).display, roll: S.m.raise.pend && S.m.raise.pend.roll }; }).observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['class'] }); });
       await rollAs(pg, v);
@@ -213,21 +213,21 @@ test('JR-10：START の1タップだけで、サイコロは自動で止まっ�
   const p = await open(); const pg = p.page;
   await toField(pg);
   assert.equal(await pg.evaluate(() => document.querySelectorAll('.chdz,.chdf,[onclick*="chfStop"],img[src*="deck_stop"]').length), 0, 'START の前：サイコロ・STOP は無い');
-  await rollAs(pg, 4);
+  await rollAs(pg, 3);
   const saved = await pg.evaluate(() => JSON.parse(localStorage.getItem('mr4v6')).m.raise.pend.roll);
   await pg.waitForSelector('.chdz'); const t0 = Date.now();
   await pg.waitForFunction(() => !document.querySelector('.chdz'), null, { timeout: 8000 }); const gone = Date.now() - t0;
   assert.ok(gone >= 1200 && gone <= 3500, `サイコロは自動で止まって消える（${gone}ms。設計 約1.7秒）`);
   assert.equal(await pg.evaluate(() => typeof window.chfStop), 'undefined', 'STOP の関数は無い');
   await idle(pg);
-  assert.deepEqual(await pg.evaluate(() => [S.m.raise.node, S.m.raise.turnsUsed, document.querySelector('#brollbtn').textContent.trim(), !document.querySelector('#brollbtn').disabled]), ['f1_4', 1, 'START', true], `保存済みの出目 ${saved} で4地点 → START に戻る`); assert.equal(saved, 4);
+  assert.deepEqual(await pg.evaluate(() => [S.m.raise.node, S.m.raise.turnsUsed, document.querySelector('#brollbtn').textContent.trim(), !document.querySelector('#brollbtn').disabled]), ['f1_3', 1, 'START', true], `保存済みの出目 ${saved} で3地点 → START に戻る`); assert.equal(saved, 4);
   assert.deepEqual(p.errors, []);
 });
 
-test('JR-11：30ターン目に大会会場へ着けなかった：大会なし・ランクは上がらない・Chapter は終了して能力と持ち物は保持 → ファーム → 次の Chapter へ進める', { skip: SKIP }, async () => {
+test('JR-11：40ターン目（2026-10-01 夜）に大会会場へ着けなかった：大会なし・ランクは上がらない・Chapter は終了して能力と持ち物は保持 → ファーム → 次の Chapter へ進める', { skip: SKIP }, async () => {
   const p = await open(); const pg = p.page;
   await toField(pg);
-  await pg.evaluate(() => { const r = S.m.raise; r.node = 'f2_0'; r.turnsUsed = 29; r.fatigue = 10; S.m.po = 160; S.g = 999; S.inv.bag.push({ id: 'herb' }); save(); board(); }); await idle(pg);
+  await pg.evaluate(() => { const r = S.m.raise; r.node = 'f2_0'; r.turnsUsed = 39; r.fatigue = 10; S.m.po = 160; S.g = 999; S.inv.bag.push({ id: 'herb' }); save(); board(); }); await idle(pg);
   await rollAs(pg, 2); await pg.waitForSelector('.chsheet [onclick="p8EndChapter()"]', { timeout: 20000 });
   const a = await pg.evaluate(() => ({ ph: MMP8.boardPhase(S.m), text: document.querySelector('.chsheet').innerText.replace(/\s+/g, ' '), tour: S.m.raise.tour, canRoll: MMP8.canRoll(S.m), ranks: document.querySelectorAll('.p9rank').length }));
   assert.equal(a.ph, 'timeup'); assert.match(a.text, /公式大会には参加できません/); assert.equal(a.tour, null); assert.equal(a.canRoll, false); assert.equal(a.ranks, 0, '大会の選択は出ない');

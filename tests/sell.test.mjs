@@ -74,7 +74,8 @@ test('SL-2：能力上昇は育成開始時→育成完了時の永続能力値�
   const t0 = total(S.m); P8.startTournament(S, S.m, 0, 7); let f; for (let i = 0; i < 5; i++) f = playLeague(P8, S, true);
   assert.equal(f.won, true); const bonus = total(S.m) - t0; assert.ok(bonus > 0, `優勝ボーナス +${bonus}`);
   P8.endChapter(S, S.m);
-  for (const ch of [3, 4]) { P8.depart(S, S.m); P8.roll(S, S.m, () => 0); runTurn(P8, S); P8.declineTournament(S, S.m); }
+  for (const ch of [3, 4]) { { const keep = [...S.m.prog.rankClr]; S.m.prog.rankClr = keep.map((v, i) => v || i <= 3); P8.depart(S, S.m); S.m.prog.rankClr = keep; }   // 2026-10-01 夜：Chapter 3・4 の条件は出発のときだけ満たす（売却額の最高ランクは変えない）
+    P8.roll(S, S.m, () => 0); runTurn(P8, S); P8.declineTournament(S, S.m); }
   assert.equal(S.m.raise.state, 'done'); assert.deepEqual(S.m.raise.startStats, start);
   assert.deepEqual(S.m.raise.endStats, Object.fromEntries(KS.map((k) => [k, S.m[k]])), '育成完了時に記録');
   const qq = M.sellQuote(S.m);

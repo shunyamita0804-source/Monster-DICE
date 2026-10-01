@@ -99,7 +99,7 @@
     title: '潮風の海岸',
     patternTitle: '海岸地方',
     playable: true,
-    rules: { turnLimit: root.MMCH_CH2A_TURN_LIMIT || 30, diceSides: 3 },   // 通常 Chapter のサイコロは 1〜3（2026-10-01 夜）。4〜6 の素材・共通の仕組みは残す。ターン上限は 30【暫定。MMCH_CH2A_TURN_LIMIT はシミュレーション用】
+    rules: { turnLimit: root.MMCH_CH2A_TURN_LIMIT || 40, diceSides: 3 },   // 通常 Chapter のサイコロは 1〜3・40ターン（2026-10-01 夜。試遊用の値）。4〜6 の素材・共通の仕組みは残す。MMCH_CH2A_TURN_LIMIT はシミュレーション用
     forceStopKinds: ['rival'],
     tournamentDestination: 'official',
     backgroundTransition: { type: 'forward', ms: 700 },

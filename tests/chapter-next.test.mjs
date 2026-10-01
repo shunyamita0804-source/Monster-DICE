@@ -68,7 +68,9 @@ function onNext(opts = {}, seed = 7) {
   const S = P8.newSave(); S.m = mon(P7, P8, S); const m = S.m;
   // 育成状態を「Chapter cfg.chapterId へ出発できる」形に（未育成の出発は Chapter 1 固定のため、Chapter間ファームから出発する）
   Object.assign(m.raise, { state: 'farm', ch: cfg.chapterId, log: [{ ch: 1, reachedGoal: true, turnsUsed: 20, turnLimit: 30, declined: true, tour: null }] });
-  const d = P8.depart(S, m, lcg(seed)); assert.equal(d.ok, true, `depart ${JSON.stringify(d)}`);
+  // 2026-10-01 夜：Chapter 3・4 は公式C・B大会クリアが出発の条件。ここでは基盤の規則を見るため、出発のときだけ条件を満たした実績にして戻す
+  const keep = [...m.prog.rankClr], need = (P8.CHAPTER_RANK_GATE || {})[cfg.chapterId]; if (need != null) m.prog.rankClr = keep.map((v, i) => v || i <= need);
+  const d = P8.depart(S, m, lcg(seed)); assert.equal(d.ok, true, `depart ${JSON.stringify(d)}`); m.prog.rankClr = keep;
   return { ...E, S, m, cfg, g: CH.buildGraph(cfg) };
 }
 /** 出目 v（面の数 sides）で1ターン：分岐は opt（'ra_0'／'rb_0'）。戻り値＝通った地点（通過＋停止）。停止処理はしない */
@@ -94,7 +96,7 @@ test('NX-01：サイコロの面の数は config（rules.diceSides）。6面な�
   assert.throws(() => P7.rollDie(0)); assert.throws(() => P7.rollDie(6, () => 1));
   assert.equal(CH.rulesOf({ rules: { diceSides: 6 } }).diceSides, 6); assert.equal(CH.rulesOf({}).diceSides, 3, '既定は 1〜3');
   assert.deepEqual(CH.rulesOf({ rules: { dice: { min: 1, max: 6 } } }).dice, { min: 1, max: 6 }, '旧形式');
-  assert.equal(CH.rulesOf(CH.getConfig(1)).diceSides, 6, 'Chapter 1（リアル巨大ボード方式）は 1〜6');
+  assert.equal(CH.rulesOf(CH.getConfig(1)).diceSides, 3, 'Chapter 1 は 1〜3（2026-10-01 夜。6面の仕組みは合成 config で確かめる）');
 });
 
 test('NX-02：MMP8.roll は面の数をドライバから受け取る。6面の Chapter で出目6は6地点進む（出目＝移動距離）。エンジンを使わない Chapter は 1〜3', () => {
@@ -102,7 +104,7 @@ test('NX-02：MMP8.roll は面の数をドライバから受け取る。6面の 
   assert.equal(P8.diceSides(m), 6);
   for (const v of [1, 2, 3, 4, 5, 6]) { const E2 = onNext({}, 3); const t = turn(E2, v); assert.equal(t.length, v, `出目${v}で${v}地点`); assert.equal(E2.m.raise.node, `s1_${v}`); assert.equal(E2.m.raise.pend.roll, v); assert.equal(E2.m.raise.pend.left, 0); }
   const E1 = loadEngine(); const S = E1.P8.newSave(); S.m = mon(E1.P7, E1.P8, S); E1.P8.depart(S, S.m, lcg(1));
-  assert.equal(E1.P8.diceSides(S.m), 6); assert.equal(E1.P8.roll(S, S.m, () => 0.999).value, 6, 'Chapter 1 の最大は 6');
+  assert.equal(E1.P8.diceSides(S.m), 3); assert.equal(E1.P8.roll(S, S.m, () => 0.999).value, 3, 'Chapter 1 の最大は 3（2026-10-01 夜）');
   assert.equal(E1.P8.diceSides({ raise: { ch: 4 } }), 3, 'エンジンを使わない Chapter は 1〜3');
 });
 
@@ -152,7 +154,7 @@ test('NX-05：分岐の直後に強制停止・ゴールの手前で強制停止
   turn(E, 6); assert.equal(m.raise.node, g.goal, 'ゴールで止まり残りは消える'); const r = land(E); assert.equal(r.goal, true); assert.equal(P8.boardPhase(m), 'goal');
   // 分岐で選んだ先が強制停止なら選んだ時点で止まる
   const c = makeNextConfig({ chapterId: 4 }); c.nodeOverrides = { ra_0: { forceStop: true } }; E.CH.registerConfig(c);
-  const E2 = (() => { const X = loadEngine(); X.CH.registerConfig(c); const S2 = X.P8.newSave(); S2.m = mon(X.P7, X.P8, S2); Object.assign(S2.m.raise, { state: 'farm', ch: 4, log: [{ ch: 1 }, { ch: 2 }, { ch: 3 }] }); X.P8.depart(S2, S2.m, lcg(2)); return { ...X, S: S2, m: S2.m, cfg: c, g: X.CH.buildGraph(c) }; })();
+  const E2 = (() => { const X = loadEngine(); X.CH.registerConfig(c); const S2 = X.P8.newSave(); S2.m = mon(X.P7, X.P8, S2); Object.assign(S2.m.raise, { state: 'farm', ch: 4, log: [{ ch: 1 }, { ch: 2 }, { ch: 3 }] }); S2.m.prog.rankClr = [true, true, true, true, false, false]; X.P8.depart(S2, S2.m, lcg(2)); return { ...X, S: S2, m: S2.m, cfg: c, g: X.CH.buildGraph(c) }; })();
   const br = E2.g.branchAt[0]; E2.m.raise.node = E2.g.order[E2.g.order.indexOf(br) - 1]; E2.m.raise.pend = null;
   const t = turn(E2, 6, 'ra_0'); assert.deepEqual(t, [br, 'ra_0']); assert.deepEqual([E2.m.raise.pend.stage, E2.m.raise.pend.left], ['resolve', 0]);
 });
@@ -300,9 +302,9 @@ test('NX-15：同行者（フィナ）のリアクションの差し込み口：
   const view = rd('js/chapter/field-view.js'); assert.match(view, /registerReactionRenderer/); assert.match(view, /companionReaction\(m, fx\)/); assert.match(view, /if \(!reactionRenderer\) return;/, '描画が未登録なら何もしない（会話UIは未決）');
 });
 
-test('NX-16：Chapter 1（6面・正式背景10枚・30ターン・大会なしの timeup・ライバル強制停止）。ダンは Chapter に同行しない（同行者はフィナ＋育成中のモンスター）', () => {
+test('NX-16：Chapter 1（1〜3・正式背景10枚・40ターン・大会なしの timeup・ライバル強制停止）。ダンは Chapter に同行しない（同行者はフィナ＋育成中のモンスター）', () => {
   const E = loadEngine(); const { CH, P8 } = E, cfg = CH.getConfig(1), R = CH.rulesOf(cfg);
-  assert.deepEqual([R.diceSides, R.turnLimit, R.onTimeUp, new Set(cfg.fieldScenes.map((s) => s.bg)).size, cfg.forceStopKinds], [6, 30, 'end', 10, ['rival']]);
+  assert.deepEqual([R.diceSides, R.turnLimit, R.onTimeUp, new Set(cfg.fieldScenes.map((s) => s.bg)).size, cfg.forceStopKinds], [3, 40, 'end', 10, ['rival']]);
   assert.deepEqual(CH.generateLayout(cfg, 12345).assign, CH.generateLayout(cfg, 12345).assign);
   // 同じ seed の配置は基盤の追加前後で変わらない（配置の乱数は layoutRules.counts に書いた種類だけ消費する）：代表的な seed の割り当て数
   const a = CH.generateLayout(cfg, 1).assign, cnt = {}; for (const x of Object.values(a)) cnt[x.t] = (cnt[x.t] || 0) + 1;
