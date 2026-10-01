@@ -231,7 +231,7 @@ T('QA-RB1：市場で購入 → ファーム → 出発準備：1回目の押下
   await assertSynced(pg);
   assert.equal(await bmsg(pg), 'CHAPTER 1「はじまりの草原」に出発！サイコロを振って進もう！');
   assert.equal(await pg.evaluate(() => document.querySelector('#chturn').textContent), '1');
-  assert.match(await pg.evaluate(() => document.querySelector('.chh-turn').textContent), /Turn\s*1\s*\/\s*30/);
+  assert.match(await pg.evaluate(() => document.querySelector('.chh-turn').textContent), /Turn\s*1\s*\/\s*40/);
   assert.equal(await pg.evaluate(() => document.querySelector('#chfat b').textContent), '0');
   assert.equal(await lobbyButtons(pg), 0, 'ボードに街へ戻る導線は無い');
   assert.equal(await pg.evaluate(() => MMP8.canVisitTown(S)), false);
@@ -296,7 +296,7 @@ T('QA-RB3：サイコロ（出目3）→ 1地点ずつ移動し1歩ごとに保�
   assert.deepEqual([after.g, after.trainTix], [before.g, before.trainTix]);
   assert.equal(after.m.raise.fatigue, 7, '出目3で疲れ +7');
   assert.equal(await bmsg(pg), 'START でサイコロを振る。休むこともできる。');
-  assert.match(await pg.evaluate(() => document.querySelector('.chh-turn').textContent), /Turn\s*2\s*\/\s*30/);
+  assert.match(await pg.evaluate(() => document.querySelector('.chh-turn').textContent), /Turn\s*2\s*\/\s*40/);
   assert.equal(await pg.evaluate(() => document.querySelector('#bmonw').dataset.node), 'f1_3', 'モンスターの表示位置も f1_3');
   assert.equal(await pg.evaluate(() => !document.querySelector('#brollbtn').disabled), true, '次のターンを振れる');
   await assertSynced(pg);
