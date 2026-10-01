@@ -484,13 +484,13 @@ T('QA-RB8：Chapter 1 のゴール（大会会場。残りの移動は消える�
   await pg.evaluate(() => { window.__talkSeen = false; new MutationObserver(() => { if (document.querySelector('.mmtalk')) window.__talkSeen = true; }).observe(document.body, { childList: true, subtree: true }); });
   await pg.waitForTimeout(SETTLE);
   await pg.click(dep);
-  await pg.waitForSelector('.p9board #brollbtn');
+  await pg.waitForSelector('#chf-ui #brollbtn', { timeout: 20000 });   // 2026-10-01：Chapter 2 もエンジン（潮風の海岸。30ターン・6面）
   r = await raiseOf(pg);
-  assert.deepEqual([r.state, r.ch, r.node, r.turnsUsed, r.turnLimit, r.fatigue, r.field], ['board', 2, 'S', 0, 20, 21, null], 'Chapter 2 は従来のボード（20ターン）。疲れは max(0, 71−50)');
+  assert.deepEqual([r.state, r.ch, r.node, r.turnsUsed, r.turnLimit, r.fatigue, r.field && r.field.chapterId, r.field && r.field.introSeen], ['board', 2, 'e1_0', 0, 30, 21, 2, undefined], 'Chapter 2 はエンジン（潮風の海岸・30ターン）。疲れは max(0, 71−50)。導入演出は自動テストでは出さない');
   assert.deepEqual(r.startStats, ss0, 'Chapter移行では育成開始時の能力値を取り直さない');
   assert.equal(await pg.evaluate(() => window.__talkSeen), false, 'Chapter間ファームからの出発ではフィナの会話は出ない');
   assert.match(await bmsg(pg), /CHAPTER 2「潮風の海岸」に出発！/);
-  assert.equal(await pg.evaluate(() => !!document.querySelector('#chf, #p13fd')), false, 'Chapter 2 は従来の地図表示');
+  assert.equal(await pg.evaluate(() => !!document.querySelector('#chf .chf-bg') && document.querySelector('#chf .chf-bg').getAttribute('src').includes('/ch2a/road/ch2_01_early_a')), true, 'Chapter 2 はエンジンのフィールド（序盤a の背景）');
   await assertSynced(pg);
   noErrors(p);
 });

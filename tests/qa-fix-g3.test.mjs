@@ -378,10 +378,10 @@ test('QA-G3-B5：実ブラウザ：ボードの ☰ のダブルタップでメ�
 test('QA-G3-B6：実ブラウザ：ボードを出してすぐ別の画面へ移ったら、0.35秒後の着地処理はしない（画面を戻さない）。次にボードを開いたとき1回だけ処理（従来のボード・Chapterフィールドとも）', { skip: H.skipReason() }, async () => {
   // 守ること：以前は着地処理のタイマーがボードを離れたあとも動き、ステータス画面・開始画面の上にボードを描き直していた
   const M = load(), E = loadEngine();
-  const board2 = j(onBoard(M)); Object.assign(board2.m.raise, { ch: 2, node: 'S' });
+  const board2 = j(onBoard(M)); Object.assign(board2.m.raise, { ch: 3, node: 'S', log: [{ ch: 1, reachedGoal: true, turnsUsed: 14, turnLimit: 30, declined: true, tour: null }, { ch: 2, reachedGoal: true, turnsUsed: 16, turnLimit: 30, declined: true, tour: null }] });   // 2026-10-01：従来のボードは Chapter 3 で確認（Chapter 2 はエンジン）
   const field = j(onBoard(M)); E.CH.initRun(field.m, E.CH.getConfig(1, 'A'), chLcg(3), 516106998);
   field.m.raise.field.nodeAssignments.f1_2 = { t: 'stat', k: 'po' }; Object.assign(field.m.raise, { node: 'f1_0', turnLimit: 30, fatigue: 5 });
-  for (const [label, save0, sel, node] of [['Chapter 2（従来のボード）', board2, '.p9board #brollbtn', null], ['Chapter 1（Chapterフィールド）', field, '#chf-ui #brollbtn', 'f1_2']]) {
+  for (const [label, save0, sel, node] of [['Chapter 3（従来のボード）', board2, '.p9board #brollbtn', null], ['Chapter 1（Chapterフィールド）', field, '#chf-ui #brollbtn', 'f1_2']]) {
     const p = await L.open({ save: save0 }); const pg = p.page;
     await start(p, sel);
     const s0 = await pg.evaluate((node) => { const m = S.m; if (node) m.raise.node = node; m.raise.pend = { roll: 1, left: 0, stage: 'resolve' }; save(); const c = JSON.parse(JSON.stringify(S)); board(); hall('st'); return c; }, node);

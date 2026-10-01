@@ -343,12 +343,12 @@ function onField(M, assign = {}) {
   return S;
 }
 /** 従来のボード（Chapter 2）の途中 */
-function onBoard2(M) { const S = onBoard(M); Object.assign(S.m.raise, { ch: 2, node: 'S' }); return S; }
+function onBoard2(M) { const S = onBoard(M); Object.assign(S.m.raise, { ch: 3, node: 'S', log: [{ ch: 1, reachedGoal: true, turnsUsed: 14, turnLimit: 30, declined: true, tour: null }, { ch: 2, reachedGoal: true, turnsUsed: 16, turnLimit: 30, declined: true, tour: null }] }); return S; }   // 2026-10-01：Chapter 2 もエンジンになったため、従来のボードは Chapter 3 で確認する
 
 test('QA-G1-B2：分岐待ち（pend）が壊れたChapter途中のセーブでも再開でき、サイコロを振れる（従来のボード・Chapterフィールドとも）', { skip: H.skipReason() }, async () => {
   // 守ること：以前は p9BranchHtml が opts を読めず、開始画面から先へ進めなかった
   const M = load();
-  for (const [label, S0, sel] of [['Chapter 2（従来のボード）', j(onBoard2(M)), '.p9board #brollbtn'], ['Chapter 1（Chapterフィールド）', j(onField(M)), '#chf-ui #brollbtn']]) {
+  for (const [label, S0, sel] of [['Chapter 3（従来のボード）', j(onBoard2(M)), '.p9board #brollbtn'], ['Chapter 1（Chapterフィールド）', j(onField(M)), '#chf-ui #brollbtn']]) {
     S0.m.raise.pend = { stage: 'branch' };
     const p = await L.open({ save: S0 });
     await start(p, sel);
@@ -373,7 +373,7 @@ test('QA-G1-B3：修行の種類が壊れたセーブでも再開でき、Chapte
 test('QA-G1-B4：戦闘前状態（battle）の snap が無いセーブでも再開でき、バトルマスの選択に戻る（従来のボード・Chapterフィールドとも）', { skip: H.skipReason() }, async () => {
   // 守ること：以前は finishBattle が snap.wins を読めず、開始画面から先へ進めなかった
   const M = load();
-  for (const [label, S0, fx] of [['Chapter 2（従来のボード）', j(onBoard2(M)), { kind: 'battle' }], ['Chapter 1（Chapterフィールド）', j(onField(M, { f1_3: { t: 'battle', bt: 'wild' } })), { kind: 'battle', battleType: 'wild' }]]) {
+  for (const [label, S0, fx] of [['Chapter 3（従来のボード）', j(onBoard2(M)), { kind: 'battle' }], ['Chapter 1（Chapterフィールド）', j(onField(M, { f1_3: { t: 'battle', bt: 'wild' } })), { kind: 'battle', battleType: 'wild' }]]) {
     S0.m.raise.pend = { roll: 1, left: 0, stage: 'battle', fx }; S0.m.raise.battle = { kind: 'practice', done: true };
     const p = await L.open({ save: S0 });
     await start(p, '[onclick="bBattleGo()"]');
