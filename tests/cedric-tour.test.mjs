@@ -91,7 +91,7 @@ test.before(async () => {
   await p.ctx.close();
 });
 test.after(async () => { if (L) await L.close(); });
-/** Chapter 2 のゴールに着いた状態（クリア最高ランク E） */
+/** Chapter 2 のゴールに着いた状態（クリア最高ランク E。挑戦上限は最高クリア＋1＝D） */
 function goalSave() {
   const s = JSON.parse(JSON.stringify(BASE));
   s.npcFlags = { ...s.npcFlags, raiseIntro: 1 };
@@ -133,7 +133,7 @@ test('CED-B1：ゴールのランク選択 → 順位表 → 試合後 → VS画
   assert.deepEqual(await ceds(pg), [{ name: 'フィナ', src: 'assets/npc/fina/closeup/smile.webp', ok: true, text: 'フィナ' + (await pg.evaluate(() => FINA_RANK_TALK.pick)) }]);
   assert.equal(await pg.evaluate(() => document.querySelectorAll('.p9ced:not(.p9fina)').length), 0, 'ランク選択にセドリックは出さない');
   assert.ok(await sysClean(pg));
-  assert.equal(await pg.evaluate(() => document.querySelectorAll('.p9rank').length), 3, 'ランクの選択肢は従来どおり（E・D・C）');
+  assert.equal(await pg.evaluate(() => document.querySelectorAll('.p9rank').length), 2, 'ランクの選択肢（E クリア＋1＝E・D）');
   // 参加 → 順位表（最初の試合の前）
   await joinD(pg); await waitImg(pg);
   assert.deepEqual((await ceds(pg)).map((c) => [c.name, c.ok, c.text]), [['セドリック', true, T.first]]);
