@@ -462,6 +462,9 @@
     } else { const w = $('#bmonw'); if (w && w.dataset.node !== r.node) placeMon(r.node, true); }
     // 停止地点の状態（開けた宝箱・使ったイベント）を反映
     document.querySelectorAll('#chf .chf-obj').forEach((e) => { const id = e.dataset.id; e.classList.toggle('used', f.consumedEvents.includes(id) || f.openedTreasures.includes(id) || f.clearedStats.includes(id)); });
+    // ゴールに着いたあと：config.arrival があれば到着イベント（専用の背景・フィナの会話）→ 大会受付。マス・サイコロ・操作欄は出さない
+    if (ph === 'goal' && V.cfg.arrival) { chfArrive(m, same); return true; }
+    $('#chfw').classList.remove('arrive'); { const o = $('#chfarr'); if (o) o.remove(); }
     $('#chf-ui').innerHTML = hudHtml(m) + sheetHtml(m, ph) + deckHtml(m, ph, msg);
     if (ph === 'branch') branchCamera(m); else if (V.focus && ph === 'roll') camFocus(null);
     // Chapter に入った直後（出発してまだ何もしていない）：旅路全体の俯瞰図 → スタート地点へ寄る演出（js/chapter/intro.js）。
@@ -481,6 +484,36 @@
     try { await MMCHI.play(V.cfg, { key, host: $('#chfw'), chapterId: V.cfg.chapterId, title: V.cfg.title, patternId: MMCH.fieldOf(m).patternId, calm: V.calm }); }
     catch (e) {} finally { busySet(false); }
     if (onField() && chfActive(m) && P8().boardPhase(m) === 'roll') refreshDeck(m);
+  }
+  // ---------------------------------------------------------
+  // 大会会場への到着（config.arrival）：最後のマス（ゴール）に着いたら、通常のフィールド進行を終える。
+  //  到着イベント専用の背景（マスもサイコロも無い）へクロスフェード → フィナの短い会話（この個体のこの Chapter で1回＝m.raise.field.arrivalSeen）
+  //  → 大会受付（index.html の p9ReceptionHtml：ランク選択 → 参加 → 開始演出 → セドリックの進行）。再読み込みでは会話を見たなら受付から
+  // ---------------------------------------------------------
+  function arrivalLines(A) {
+    const S = gS() || {}, nm = root.MMP11P ? MMP11P.sanitize(S.playerName) : (S.playerName || 'アルト');
+    return (A.talk || []).map((l) => ({ ...l, text: String(l.text || '').split('{name}').join(nm) }));
+  }
+  function receptionHtml(m) { return `<div class="chrcv" id="chrcv">${root.p9ReceptionHtml ? root.p9ReceptionHtml(m) : (root.p8GoalHtml ? root.p8GoalHtml(m) : '')}</div>`; }
+  async function chfArrive(m, fromField) {
+    const A = V.cfg.arrival, f = MMCH.fieldOf(m), w = $('#chfw'), ui = $('#chf-ui'); if (!w || !ui) return;
+    if (busyGet() && $('#chfarr')) return;   // 演出・会話の途中で呼ばれた：続きはそのまま
+    let ov = $('#chfarr');
+    if (!ov) { w.insertAdjacentHTML('beforeend', `<div class="chf-arrive" id="chfarr" style="--fade:${V.calm ? 0 : (A.fadeMs || 900)}ms"><img class="chf-arrive-bg" src="${esc(A.bg)}" alt="" draggable="false"><div class="chf-arrive-name"><small>CHAPTER ${esc(V.cfg.chapterId)}　到着</small><b>${esc(A.name || '')}</b></div></div>`); ov = $('#chfarr'); }
+    ui.innerHTML = '';   // HUD・操作欄（START・4コマンド）・マスの UI を消す
+    w.classList.add('arrive');
+    if (f.arrivalSeen) { ov.classList.add('now', 'on'); ui.innerHTML = receptionHtml(m); return; }
+    busySet(true);
+    try {
+      if (fromField && !V.calm) await wait(500);   // ゴールに着いた姿を少し見せてから
+      if (!fromField) ov.classList.add('now');
+      ov.classList.add('on');
+      await wait(V.calm || !fromField ? 0 : (A.fadeMs || 900) + 200);
+      if (!$('#chfarr')) return;
+      if (root.MMNPC && !root.MM_QA_NO_ARRIVAL && (A.talk || []).length) await MMNPC.talk(arrivalLines(A));
+      f.arrivalSeen = true; doSave();
+    } finally { busySet(false); }
+    const u2 = $('#chf-ui'); if ($('#chfarr') && u2 && chfActive(m) && P8().boardPhase(m) === 'goal') u2.innerHTML = receptionHtml(m);
   }
   /** 分岐：少し引いて、2つの道の入口が視界に入るようにする */
   /** 分かれ道：それぞれの道の入口（最初の1地点）だけに小さな光の印と道の名前を出す（その先の地点は出さない。画像は使わない） */

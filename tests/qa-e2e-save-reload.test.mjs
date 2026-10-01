@@ -86,7 +86,7 @@ async function reloadKeepsS(pg, sel, label) {
 // ---------------------------------------------------------
 // 育成中の各画面での再読み込み
 // ---------------------------------------------------------
-T('QA-SR1：ボード（待機）・ゴール（大会の選択）・大会の順位表・VS画面で再読み込みしても S は完全に同じ', async () => {
+T('QA-SR1：ボード（待機）・ゴール（大会受付）・大会の順位表・VS画面で再読み込みしても S は完全に同じ', async () => {
   const p = await openPage(); const pg = p.page;
   await setupTown(pg);
   await departDirect(pg);
@@ -94,13 +94,13 @@ T('QA-SR1：ボード（待機）・ゴール（大会の選択）・大会の�
   assert.equal(m0.m.raise.state, 'board'); assert.equal(m0.m.raise.ch, 1);
   // ゴールに着いた状態（大会の選択）
   await pg.evaluate(() => { const t = MMP8.trackOf(1); Object.assign(S.m.raise, { node: t.goal, goal: true, pend: null }); save(); board(); });
-  await pg.waitForSelector('[onclick^="p8TourStart(0"]');
-  const ranks0 = await pg.evaluate(() => [...document.querySelectorAll('[onclick^="p8TourStart"]')].map((b) => b.getAttribute('onclick')));
-  await reloadKeepsS(pg, '[onclick^="p8TourStart(0"]', 'ゴール');
-  assert.deepEqual(await pg.evaluate(() => [...document.querySelectorAll('[onclick^="p8TourStart"]')].map((b) => b.getAttribute('onclick'))), ranks0, '選べる大会ランクも同じ');
-  // ランクE大会に参加（2度押し）→ 順位表
+  await pg.waitForSelector('#chrcv .rcv-row.ok[data-rank="0"]');
+  const ranks0 = await pg.evaluate(() => [...document.querySelectorAll('.rcv-row.ok')].map((b) => b.dataset.rank));
+  await reloadKeepsS(pg, '#chrcv .rcv-row.ok[data-rank="0"]', 'ゴール（大会受付）');
+  assert.deepEqual(await pg.evaluate(() => [...document.querySelectorAll('.rcv-row.ok')].map((b) => b.dataset.rank)), ranks0, '選べる大会ランクも同じ');
+  // ランクE を選んで「この大会に参加する」→ 開始演出 → 順位表
   await pg.waitForTimeout(600);
-  await pg.click('[onclick^="p8TourStart(0"]'); await pg.waitForTimeout(700); await pg.click('[onclick^="p8TourStart(0"]');
+  await pg.click('.rcv-row.ok[data-rank="0"]'); await pg.waitForTimeout(450); await pg.click('#p9join');
   await pg.waitForSelector('.p9tour');
   const t1 = await reloadKeepsS(pg, '.p9tour', '大会の順位表');
   assert.equal(t1.m.raise.tour.status, 'league'); assert.equal(t1.m.raise.tour.league.round, 0);
@@ -144,13 +144,13 @@ T('QA-SR3：サイコロ演出中に再読み込み → 出目・使用ターン
   await pg.evaluate(() => { Math.random = window.__rnd; });
   const st = JSON.parse(await stored(pg));
   assert.deepEqual(st.m.raise.pend, { roll: 3, left: 3, stage: 'move', fatigueAdded: 7 }, '出目（と疲れ +7）は演出の前に保存済み');
-  assert.equal(st.m.raise.turnsUsed, 1); assert.equal(st.m.raise.node, 'f1_0'); assert.equal(st.m.raise.fatigue, 7);
+  assert.equal(st.m.raise.turnsUsed, 1); assert.equal(st.m.raise.node, 'w1_0'); assert.equal(st.m.raise.fatigue, 7);
   const { boot } = await reloadResume(pg, '#chf');
   assert.deepEqual(boot, st, '起動直後の S は保存された途中状態と同じ（振り直しなし）');
   await pg.waitForFunction(() => S.m.raise.pend == null && !bBusy && !document.querySelector('.chpop'), null, { timeout: 15000 });
   await pg.waitForSelector('#brollbtn, #chf-ui .chsheet');
   const after = await H.getS(pg);
-  assert.equal(after.m.raise.node, 'f1_3', '出目3の分だけ進んだ');
+  assert.equal(after.m.raise.node, 'w1_3', '出目3の分だけ進んだ');
   assert.equal(after.m.raise.turnsUsed, 1, 'ターンは1回分だけ（二重に使っていない）'); assert.equal(after.m.raise.fatigue, 7, '疲れも1回分だけ');
   assert.deepEqual(after, JSON.parse(await stored(pg)), '進んだ結果も保存済み');
   noErrors(p);

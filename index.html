@@ -1381,6 +1381,62 @@ button.mkc b{font-size:.9rem}button.mkc small{font-size:.66rem;color:#ffe9b0}
 @keyframes p9iemout{to{opacity:0;transform:scale(1.15)}}
 @keyframes p9iced{from{opacity:0;transform:translateX(60px)}to{opacity:1;transform:none}}
 @keyframes p9icedout{to{opacity:0;transform:translateX(-40px)}}
+/* 大会開始の演出：ランクのロゴ（光の輪・月桂樹・RANK の帯。E〜S 共通） */
+.p9intro .p9iem-w{position:relative;width:170px;height:170px;display:flex;align-items:center;justify-content:center}
+.p9intro .p9iem-rays{position:absolute;inset:-60px;border-radius:50%;background:repeating-conic-gradient(from 0deg,rgba(255,214,120,.22) 0 7deg,rgba(255,214,120,0) 7deg 22deg);-webkit-mask:radial-gradient(circle,#000 30%,transparent 70%);mask:radial-gradient(circle,#000 30%,transparent 70%);animation:p9rays 9s linear infinite}
+.p9intro .p9iem-lau{position:absolute;inset:-14px;width:calc(100% + 28px);height:calc(100% + 28px);fill:none;stroke:#e8c86a;stroke-width:3;stroke-linecap:round;filter:drop-shadow(0 0 6px rgba(255,200,90,.55))}
+.p9intro .p9iem-w .p9iem-l{width:142px;height:142px;font-size:84px}
+.p9intro .p9iem-r{margin-top:-8px;position:relative;padding:3px 22px 4px;font:900 17px/1 var(--mm-font-head);letter-spacing:.38em;text-indent:.38em;color:#1a1230;background:linear-gradient(#fff1b8,#e2b54e 55%,#b17f22);border:1.5px solid #fff3c8;border-radius:3px;box-shadow:0 3px 0 #6b4510,0 0 18px rgba(255,200,90,.5)}
+@keyframes p9rays{to{transform:rotate(360deg)}}
+@media (max-height:720px){.p9intro .p9iem-w{width:140px;height:140px}.p9intro .p9iem-w .p9iem-l{width:118px;height:118px;font-size:68px}}
+/* 大会会場への到着（config.arrival）：到着イベント専用の背景をフィールドの上に重ねる（マス・サイコロ・操作欄は出さない） */
+.chf-arrive{position:absolute;inset:0;z-index:4;opacity:0;pointer-events:none;background:#0b1636;transition:opacity var(--fade,900ms) ease;overflow:hidden}
+.chf-arrive.now{transition:none}
+.chf-arrive.on{opacity:1;pointer-events:auto}
+.chf-arrive-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 62%;transform:scale(1.06);transition:transform 2.6s cubic-bezier(.2,.7,.3,1)}
+.chf-arrive.on .chf-arrive-bg{transform:scale(1)}
+.chf-arrive.now .chf-arrive-bg{transition:none}
+.chf-arrive-name{position:absolute;left:0;right:0;top:calc(env(safe-area-inset-top,0px) + 18px);display:flex;flex-direction:column;align-items:center;gap:3px;color:#fff;text-shadow:0 2px 6px rgba(0,0,0,.7);opacity:0;transition:opacity .6s .5s}
+.chf-arrive.on .chf-arrive-name{opacity:1}
+.chf-arrive-name small{font:700 11px/1 var(--mm-font-body);letter-spacing:.2em;color:#f3d98e}
+.chf-arrive-name b{font:800 21px/1.25 var(--mm-font-head);letter-spacing:.08em;padding:4px 18px;background:linear-gradient(90deg,rgba(10,18,48,0),rgba(10,18,48,.72) 18%,rgba(10,18,48,.72) 82%,rgba(10,18,48,0));border-top:1px solid rgba(232,200,106,.7);border-bottom:1px solid rgba(232,200,106,.7)}
+.chfw.arrive .chf-arrive-name{transition-delay:.5s}
+.chfw.arrive:has(.chrcv) .chf-arrive-name{opacity:0;transition-delay:0s}
+/* 大会受付（ランク選択）：上にランクの高い S、下に E（参加できるランクは押せる・参加できないランクは鎖と錠）。選んでから「この大会に参加する」で確定 */
+.chrcv{position:absolute;inset:0;display:flex;flex-direction:column;background:linear-gradient(rgba(6,12,34,.55),rgba(6,12,34,.35) 40%,rgba(6,12,34,.7));animation:p9ifade .3s ease-out}
+.rcv{display:flex;flex-direction:column;height:100%;padding:calc(env(safe-area-inset-top,0px) + 8px) 12px calc(env(safe-area-inset-bottom,0px) + 10px);box-sizing:border-box;gap:8px;color:#f6e7c1}
+.rcv-ban{position:relative;flex:none;margin:0 auto;width:min(86%,320px);padding:10px 0 14px;text-align:center;background:linear-gradient(#a3192b,#6e0d1b);border:2px solid #e8c86a;border-top-width:3px;border-radius:4px 4px 0 0;box-shadow:0 0 0 2px #3a0710,0 6px 14px rgba(0,0,0,.5);clip-path:polygon(0 0,100% 0,100% 82%,50% 100%,0 82%)}
+.rcv-ban small{display:block;font:700 10.5px/1 var(--mm-font-body);letter-spacing:.18em;color:#f3d98e;margin-bottom:4px}
+.rcv-ban b{display:block;font:900 30px/1.1 var(--mm-font-head);letter-spacing:.14em;color:#fff2c6;text-shadow:0 2px 0 #3a0710,0 0 12px rgba(255,210,120,.55)}
+.rcv-list{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;gap:clamp(5px,1.2vh,10px)}
+.rcv-row{position:relative;display:flex;align-items:center;gap:0;width:100%;min-height:0;flex:0 1 72px;max-height:76px;padding:0;margin:0;text-align:left;background:none;border:0;color:inherit;font:inherit;-webkit-tap-highlight-color:transparent}
+.rcv-em{position:relative;z-index:1;flex:none;width:clamp(52px,7.6vh,64px);height:clamp(52px,7.6vh,64px);border-radius:50%;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 30%,#2f4a9c,#142259 70%);border:3px solid #e8c86a;box-shadow:0 0 0 2px #0b1230,0 3px 6px rgba(0,0,0,.5)}
+.rcv-em b{font:900 clamp(26px,4vh,34px)/1 var(--mm-font-head);color:#ffe9a8;text-shadow:0 2px 0 #0a1030}
+.rcv-gem{position:absolute;top:-7px;left:50%;width:13px;height:13px;margin-left:-6.5px;transform:rotate(45deg);background:var(--gem);border:1.5px solid #fff3c8;box-shadow:0 0 6px var(--gem)}
+.rcv-plate{position:relative;flex:1;align-self:stretch;margin-left:-18px;padding:6px 12px 6px 28px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:2px;background:linear-gradient(#22346f,#121d48);border:2px solid #c9a24d;border-radius:10px;box-shadow:inset 0 0 0 1px rgba(255,230,160,.18),0 3px 0 #070c22;overflow:hidden}
+.rcv-st{display:inline-block;padding:3px 16px;font:800 15px/1.2 var(--mm-font-head);letter-spacing:.12em;color:#ffe9a8;border:1px solid rgba(232,200,106,.8);border-radius:999px;background:rgba(10,16,44,.55)}
+.rcv-plate small{font-size:10.5px;line-height:1.25;color:#d9cfae}
+.rcv-row.ok{cursor:pointer}
+.rcv-row.ok:active .rcv-plate{transform:translateY(1px)}
+.rcv-row.ok.sel .rcv-plate{background:linear-gradient(#34509e,#1b2b66);border-color:#ffe08a;box-shadow:inset 0 0 0 1px rgba(255,236,170,.5),0 0 0 2px rgba(255,214,110,.55),0 0 18px rgba(255,200,90,.55)}
+.rcv-row.ok.sel .rcv-em{border-color:#fff1b8;box-shadow:0 0 0 2px #0b1230,0 0 14px rgba(255,214,110,.8)}
+.rcv-row.lk .rcv-em{background:radial-gradient(circle at 50% 30%,#2b3150,#161a2e 70%);border-color:#8d7a4c}
+.rcv-row.lk .rcv-em b{color:#8f8a78}
+.rcv-row.lk .rcv-plate{background:linear-gradient(#1c2340,#10152c);border-color:#6f5f3a}
+.rcv-row.lk .rcv-st{position:relative;z-index:1;color:#a39d88;border-color:rgba(140,120,80,.6);background:rgba(10,14,32,.85)}
+.rcv-chain{position:absolute;left:4%;right:4%;top:50%;height:8px;margin-top:-4px;background:repeating-linear-gradient(90deg,#c9ccda 0 11px,transparent 11px 16px);border-radius:4px;opacity:.75;transform:rotate(-8deg);box-shadow:0 1px 0 rgba(0,0,0,.6)}
+.rcv-chain::after{content:"";position:absolute;inset:0;background:inherit;transform:rotate(16deg)}
+.rcv-pad{position:absolute;right:14%;top:50%;width:30px;height:30px;margin:-15px 0 0 0;border-radius:7px;background:linear-gradient(#e7c15a,#a6741c);border:1.5px solid #fff0b8;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 4px rgba(0,0,0,.6)}
+.rcv-pad svg{width:18px;height:18px;fill:none;stroke:#5a1010;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.rcv-note{flex:none;margin:0;font-size:10.5px;line-height:1.4;text-align:center;color:#e9ddba;text-shadow:0 1px 2px #000}
+.rcv-foot{flex:none;display:flex;flex-direction:column;gap:6px;padding:8px;background:linear-gradient(#1a2a62,#0d1640);border:2px solid #c9a24d;border-radius:12px;box-shadow:0 -2px 10px rgba(0,0,0,.4)}
+.rcv-say .p9ced{margin:0}
+.rcv-acts{display:flex;gap:8px;align-items:stretch}
+.rcv-join{flex:1;padding:12px 8px;border-radius:999px;border:2px solid #fff3c8;background:linear-gradient(#5c8cff,#1f48c9 55%,#163596);color:#fff;font:800 16px/1.2 var(--mm-font-head);letter-spacing:.06em;box-shadow:0 0 0 2px #c9a24d,0 3px 0 #0a1a55,0 0 14px rgba(110,160,255,.5)}
+.rcv-join small{display:block;font:700 10.5px/1.2 var(--mm-font-body);letter-spacing:0;color:#e3ecff}
+.rcv-join:disabled{background:linear-gradient(#3b4466,#262c48);border-color:#7a7f99;box-shadow:0 0 0 2px #6f5f3a;color:#a9adc4}
+.rcv-dec{flex:none;padding:8px 10px;border-radius:10px;border:1px solid #8d7a4c;background:rgba(10,16,44,.6);color:#d9cfae;font:700 11.5px/1.25 var(--mm-font-body);max-width:34%}
+@media (max-height:720px){.rcv-ban{padding:6px 0 10px}.rcv-ban b{font-size:24px}.rcv-plate small{display:none}.rcv-row{flex-basis:56px}.rcv-join{padding:9px 8px}}
 .p9st.p9enter .p9r:not(.hd){animation:p9rin .42s cubic-bezier(.2,.9,.3,1.05) both}
 @keyframes p9rin{from{opacity:0;transform:translateX(60px)}to{opacity:1;transform:none}}
 .p9st .p9r.nxt{background:linear-gradient(90deg,rgba(255,255,255,.22),rgba(255,214,102,.12));outline:1.5px solid #ffe7a8;box-shadow:0 0 0 1px rgba(255,231,168,.35),0 0 16px rgba(255,236,190,.55);animation:p9nxt 1.8s ease-in-out infinite}
@@ -2952,11 +3008,25 @@ function finaRankSay(k){const box=$("#p9fsay");if(!box||!S.m)return;const j=p9Ra
 // 2度押しの確認（中の見た目を保ったまま戻す版。既存の arm() は文字だけのボタン用）
 function p9arm(b,t){if(b.dataset.a!="1"){const o=b.innerHTML;b.dataset.a="1";tapAt(b);b.classList.add("arm");b.innerHTML=`<span class="p9tx"><b>${t}</b></span>`;setTimeout(()=>{b.dataset.a="";b.classList.remove("arm");b.innerHTML=o},3000);return false}return !tapSoon(b,400)}
 function p8TourStart(k,b){if(bBusy)return;if(!p9arm(b,`もう一度押すとランク${RN[k]}大会に参加`)){finaRankSay(k);return}const r=MMP8.startTournament(S,S.m,k);if(!r.ok)return board();save();p9TourIntro(k).then(()=>{P9_ENTER=true;board()})}
+// ---- 大会受付（Chapter の config.arrival があるとき：到着イベントのあと、会場の受付でランクを選ぶ）----
+//  上にランクの高い S、下に E（参考デザインのとおり。参加できる下位ランクが「参加する」ボタンの近くに来る）。参加できるかは既存の MMP8.eligibleRanks（解放条件はそのまま）。
+//  ランクを決めるのはプレイヤー：ランクを選ぶ（フィナは見立てを短く話すだけ）→「この大会に参加する」で確定 → 既存の startTournament → 開始演出 → セドリックの進行
+const P9_RCV_GEM=["#4a8cff","#b9e23c","#3ccf72","#f2a428","#e8364a","#ffd25a"];
+function p9ReceptionHtml(m){const r=m.raise,rule=MMP8.chapterRule(r.ch);if(!rule||!rule.tournament)return p8GoalHtml(m);
+ const el=MMP8.eligibleRanks(m,r.ch),row=k=>{const L=RN[k],ok=el.includes(k),sz=MMP8L.LEAGUE_SIZE[k],cl=m.prog.rankClr[k],em=`<span class="rcv-em" style="--gem:${P9_RCV_GEM[k]}"><i class="rcv-gem"></i><b>${L}</b></span>`;
+  return ok?`<button class="rcv-row ok" data-rank="${k}" onclick="p9RcvPick(${k},this)" aria-pressed="false" aria-label="ランク${L}大会（参加可能）">${em}<span class="rcv-plate"><span class="rcv-st">参加可能</span><small>${sz}体の総当たり（${sz-1}試合）　${cl?"クリア済み":`初回優勝 ${MMP8.PRIZE[k]}G`}</small></span></button>`
+   :`<div class="rcv-row lk" data-rank="${k}" aria-disabled="true" aria-label="ランク${L}大会（参加不可）">${em}<span class="rcv-plate"><span class="rcv-st">参加不可</span><i class="rcv-chain"></i><i class="rcv-pad">${P9_PADLOCK}</i></span></div>`};
+ return `<div class="rcv"><header class="rcv-ban"><small>CHAPTER ${r.ch}　大会受付</small><b>公式大会</b></header><div class="rcv-list">${[5,4,3,2,1,0].map(row).join("")}</div><p class="rcv-note">挑戦できるのは1回だけ。総当たりで最終1位になった時だけ報酬があります。</p><footer class="rcv-foot"><div class="rcv-say" id="p9fsay">${p9Fina(FINA_RANK_TALK.pick)}</div><div class="rcv-acts"><button class="rcv-join" id="p9join" onclick="p9RcvJoin(this)" disabled>この大会に参加する<small>ランクを選んでください</small></button><button class="rcv-dec" onclick="p8TourDecline(this)">大会に参加しない</button></div></footer></div>`}
+function p9RcvPick(k,b){const m=S.m;if(bBusy||!m||!b||!MMP8.eligibleRanks(m,m.raise.ch).includes(k))return;
+ document.querySelectorAll(".rcv-row.ok").forEach(x=>{const on=x===b;x.classList.toggle("sel",on);x.setAttribute("aria-pressed",on?"true":"false")});
+ finaRankSay(k);const j=$("#p9join");if(j){j.disabled=false;j.dataset.rank=k;j.innerHTML=`この大会に参加する<small>公式ランク${RN[k]}大会</small>`;tapAt(j)}} // 選んだ直後（0.35秒）の押下は無視（連打で確定しない）
+function p9RcvJoin(b){const m=S.m;if(bBusy||!m||!b||b.disabled||tapSoon(b,350))return;const k=+b.dataset.rank;if(!Number.isInteger(k)||!MMP8.eligibleRanks(m,m.raise.ch).includes(k))return;
+ b.disabled=true;const r=MMP8.startTournament(S,m,k);if(!r.ok)return board();save();p9TourIntro(k).then(()=>{P9_ENTER=true;board()})}
 // ---- 大会開始の演出（E〜S 共通）：暗転 → ランクのエンブレム「公式ランクE大会」→ セドリックの一言 → 順位表（参加者が右から順に入る）。タップで飛ばせる。視差効果を減らす設定では短く ----
 let P9_ENTER=false;
 function p9TourIntro(k){return new Promise(res=>{const calm=!!(window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches),im=window.MMNPC&&MMNPC.imageOf("cedric","closeup","smile");
  const d=document.createElement("div");d.className="p9intro";d.id="p9intro";
- d.innerHTML=`<div class="p9ibg"></div><div class="p9iem"><span class="p9iem-l">${RN[k]}</span><b>公式ランク${RN[k]}大会</b></div><div class="p9iced"><img src="${im?im.src:CEDRIC_FACE}" alt=""><div class="tx"><b>セドリック</b>${CEDRIC_TALK.open.replace("{R}",RN[k])}</div></div><small class="p9iskip">タップで飛ばす</small>`;
+ d.innerHTML=`<div class="p9ibg"></div><div class="p9iem"><span class="p9iem-w"><i class="p9iem-rays"></i><svg class="p9iem-lau" viewBox="0 0 200 200" aria-hidden="true"><path d="M58 168C22 140 14 92 34 52M142 168c36-28 44-76 24-116"/><path d="M40 140l-14 2M32 118l-14-2M30 96l-13-5M34 74l-11-8M46 150l-8 12M154 150l8 12M160 140l14 2M168 118l14-2M170 96l13-5M166 74l11-8"/></svg><span class="p9iem-l">${RN[k]}</span></span><span class="p9iem-r">RANK</span><b>公式ランク${RN[k]}大会</b></div><div class="p9iced"><img src="${im?im.src:CEDRIC_FACE}" alt=""><div class="tx"><b>セドリック</b>${CEDRIC_TALK.open.replace("{R}",RN[k])}</div></div><small class="p9iskip">タップで飛ばす</small>`;
  document.body.appendChild(d);let done=false;const T=[];const fin=()=>{if(done)return;done=true;T.forEach(clearTimeout);d.classList.add("out");setTimeout(()=>{d.remove();res()},calm?0:240)};d.onclick=fin;
  if(calm){setTimeout(fin,80);return}
  T.push(setTimeout(()=>d.classList.add("em"),60),setTimeout(()=>{if(window.sfx)sfx(6)},120),setTimeout(()=>d.classList.add("em-out"),1350),setTimeout(()=>d.classList.add("ced"),1650),setTimeout(()=>d.classList.add("ced-out"),3150),setTimeout(fin,3450))})}

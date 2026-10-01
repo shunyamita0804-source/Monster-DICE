@@ -31,22 +31,35 @@ function turn(E, v, opt, die = DIE3) {   // 2026-10-01 夜：Chapter 1・2 と�
 }
 function finishTurnAnyway(E) { const { P8, S, m } = E; if (m.raise.pend && m.raise.pend.stage === 'resolve') { const x = P8.resolveLanding(S, m, lcg(1)); if (m.raise.pend && m.raise.pend.stage === 'battle') P8.skipBattleSquare(S, m); return x; } return null; }
 
-test('CH-ENGINE-01：config からフィールド（正式背景10枚を 01→10 の順に1回ずつ。1本道）・ノード・つながり・ルートを作る。Chapter 1 は MMP8 のトラックとして登録される', () => {
+test('CH-ENGINE-01：config からフィールド（正式背景14枚 ch1_bg_01→14 を1回ずつ。1本道）・ノード・つながり・ルートを作る。マス数は背景ごと（合計64）。Chapter 1 は MMP8 のトラックとして登録される', () => {
   const { CH, P8 } = loadEngine(), cfg = CH.getConfig(1), g = CH.buildGraph(cfg);
   assert.equal(cfg.patternId, 'A'); assert.deepEqual(CH.patterns(1), ['A'], '今は Pattern A だけ（存在しない B・C はプレイヤーに出さない）');
-  assert.equal(cfg.fieldScenes.length, 10); assert.equal(new Set(cfg.fieldScenes.map((s) => s.bg)).size, 10, '背景はどれも1回だけ');
-  for (const [i, s] of cfg.fieldScenes.entries()) { assert.equal(s.bg, `./assets/fields/ch1a/field/ch1_field_${String(i + 1).padStart(2, '0')}.webp`, '01→10 の順'); assert.ok(existsSync(path.join(ROOT, s.bg)), s.bg); assert.deepEqual([s.w, s.h], [864, 1536]); assert.ok(s.road && s.road.center.length >= 8 && s.road.center.every((c) => c.length === 3), `${s.name}：道の中央線（点ごとの半幅つき）`); }
-  const L = CH.routeLengths(g); assert.deepEqual([L.min, L.max, L.nodes], [59, 59, 60], '59歩（ノード60）【暫定】');
-  assert.equal(g.routes.length, 1, '1本道（橋／森の分岐は廃止）'); assert.deepEqual(g.branchAt, []); assert.deepEqual(cfg.branches, []);
-  assert.equal(g.start, 'f1_0'); assert.equal(g.goal, 'f10_5');
-  for (const p of cfg.paths) assert.equal(p.n, 6, `${p.id}：1枚の中のマス数【暫定】`);
-  assert.equal(cfg.paths.length, 10); const fields = g.routes[0].seq.map((id) => g.nodes[id].field).filter((v, i, a) => i === 0 || a[i - 1] !== v); assert.deepEqual(fields, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], '背景は 01→10 の順に1回ずつ');
+  assert.equal(cfg.fieldScenes.length, 14, '進行する背景は 01〜14 の14枚だけ（15 は到着イベント専用）'); assert.equal(new Set(cfg.fieldScenes.map((s) => s.bg)).size, 14, '背景はどれも1回だけ');
+  for (const [i, s] of cfg.fieldScenes.entries()) { const k = String(i + 1).padStart(2, '0'); assert.equal(s.bg, `./assets/fields/ch1a/final/field/ch1_bg_${k}.webp`, '01→14 の順'); assert.equal(s.bgKey, k); assert.ok(existsSync(path.join(ROOT, s.bg)), s.bg); assert.deepEqual([s.w, s.h], [762, 1536]); assert.ok(s.road && s.road.center.length >= 6 && s.road.center.every((c) => c.length === 3), `${s.name}：道の中央線（点ごとの半幅つき）`); }
+  // マス数：背景ごとに画像の道の長さに合わせて個別（同じ数にしない）。01〜14 の合計＝64（2026-10-02 ユーザー判断：40ターン・1〜3）
+  const want = { '01': 6, '02': 5, '03': 5, '04': 5, '05': 4, '06': 4, '07': 4, '08': 4, '09': 6, '10': 5, '11': 5, '12': 4, '13': 4, '14': 3 };
+  assert.deepEqual(cfg.nodesPerBackground, want); assert.equal(Object.values(want).reduce((a, b) => a + b, 0), 64); assert.equal(cfg.totalNodes, 64);
+  assert.ok(new Set(Object.values(want)).size > 1, '背景ごとに違うマス数');
+  const L = CH.routeLengths(g); assert.deepEqual([L.min, L.max, L.nodes], [63, 63, 64], '64マス（63歩）');
+  assert.equal(g.routes.length, 1, '1本道'); assert.deepEqual(g.branchAt, []); assert.deepEqual(cfg.branches, []);
+  assert.equal(g.start, 'w1_0'); assert.equal(g.goal, 'w14_2');
+  // マスの座標はデータ（path.nodePts＝背景ごとの nodes）。そのままノードの位置になり、道の安全域の中・手前から奥へ（y が小さくなる）
+  for (const [i, p] of cfg.paths.entries()) {
+    const sc = cfg.fieldScenes[i]; assert.equal(p.n, want[sc.bgKey]); assert.equal(p.nodePts.length, p.n, `${p.id}：座標の数＝マス数`);
+    for (let k = 0; k < p.n; k++) { const n = g.nodes[`${p.id}${k}`], r = CH.roadAt(sc, n.y); assert.deepEqual([n.x, n.y], p.nodePts[k]); assert.ok(n.mx >= r.safeLeft && n.mx <= r.safeRight, `${n.id} は道の安全域の中`); if (k) assert.ok(n.y < g.nodes[`${p.id}${k - 1}`].y && n.s > g.nodes[`${p.id}${k - 1}`].s, `${n.id}：奥へ進む`); }
+    assert.ok(p.nodePts[0][1] >= 0.85 && p.nodePts[p.n - 1][1] >= 0.45, `${p.id}：手前から、道の最奥までは置かない`);
+  }
+  assert.equal(cfg.paths.length, 14); const fields = g.routes[0].seq.map((id) => g.nodes[id].field).filter((v, i, a) => i === 0 || a[i - 1] !== v); assert.deepEqual(fields, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14], '背景は 01→14 の順に1回ずつ');
   for (const n of Object.values(g.nodes)) { assert.ok(n.x >= 0 && n.x <= 1 && n.y >= 0 && n.y <= 1, `${n.id} は背景に対する割合`); assert.ok(n.d > 0 && n.d <= 1.3); }
   const kinds = {}; for (const n of Object.values(g.nodes)) if (n.kind !== 'slot' && n.kind !== 'normal') kinds[n.id] = n.kind;
-  assert.deepEqual(kinds, { f1_0: 'start', f6_3: 'strong', f10_3: 'rival', f10_5: 'goal' }, '骨格：スタート・強敵（天空の大橋）・ライバル（強制停止）・ゴール（大会会場）');
-  assert.equal(g.nodes.f10_3.forceStop, true); assert.equal(P8.trackOf(1).nodes.f10_3.stop, true);
-  assert.deepEqual([CH.rulesOf(cfg).diceSides, CH.rulesOf(cfg).turnLimit, CH.rulesOf(cfg).onTimeUp], [3, 40, 'end'], '1〜3・40ターン（2026-10-01 夜）・間に合わなければ大会なしで終了'); assert.equal(Object.keys(cfg.dice.resultSprites).length, 6, '4〜6 の停止画像は残す');
-  const t = P8.trackOf(1); assert.equal(t.start, 'f1_0'); assert.equal(t.engine, '1:A'); assert.equal(P8.isPlayable(1), true);
+  assert.deepEqual(kinds, { w1_0: 'start', w9_3: 'strong', w14_0: 'rival', w14_2: 'goal' }, '骨格：スタート・強敵（天空の大橋）・ライバル（強制停止）・ゴール（大会会場の門前）');
+  assert.equal(g.nodes.w14_0.forceStop, true); assert.equal(P8.trackOf(1).nodes.w14_0.stop, true);
+  assert.deepEqual([CH.rulesOf(cfg).diceSides, CH.rulesOf(cfg).turnLimit, CH.rulesOf(cfg).onTimeUp], [3, 40, 'end'], '1〜3・40ターン・間に合わなければ大会なしで終了'); assert.equal(Object.keys(cfg.dice.resultSprites).length, 6, '4〜6 の停止画像は残す');
+  // 15 枚目は到着イベント専用（マスの背景には入れない）
+  assert.equal(cfg.arrival.bg, './assets/fields/ch1a/final/event/ch1_bg_15_event.webp'); assert.ok(existsSync(path.join(ROOT, cfg.arrival.bg)));
+  assert.ok(!cfg.fieldScenes.some((s) => s.bg === cfg.arrival.bg), '15 はフィールドの背景ではない');
+  assert.deepEqual(cfg.arrival.talk.map((l) => l.text), ['やっと着いたね、{name}さん！', 'ここが公式大会の会場だよ。', 'さあ、早速受付に行こう！']); assert.equal(cfg.arrival.talk[0].npc, 'fina');
+  const t = P8.trackOf(1); assert.equal(t.start, 'w1_0'); assert.equal(t.engine, '1:A'); assert.equal(P8.isPlayable(1), true);
   assert.equal(P8.trackOf(2).engine, '2:A', 'Chapter 2 もエンジン（ch2a.js）'); assert.equal(P8.trackOf(3).engine, undefined, 'Chapter 3〜4 は従来のマップのまま（config を登録するまで）');
 });
 
@@ -67,22 +80,22 @@ test('CH-ENGINE-02：Chapter を差し替えられる（config を登録する�
   assert.doesNotMatch(code, /はじまりの草原|大橋|f1_|f3_/, 'Chapter 1 固有の値をエンジンに書かない');
 });
 
-test('CH1-01〜03：出目1〜3の数だけ1地点ずつ進む（瞬間移動しない。2026-10-01 夜から 1〜3）。01 の奥のマスの先は次の背景（f2_）', () => {
+test('CH1-01〜03：出目1〜3の数だけ1地点ずつ進む（瞬間移動しない。2026-10-01 夜から 1〜3）。01 の奥のマスの先は次の背景（w2_）', () => {
   for (const v of [1, 2, 3]) {
     const E = onCh1(); const path = turn(E, v);
-    assert.equal(path.length, v, `出目${v}`); assert.equal(E.m.raise.node, `f1_${v}`); assert.equal(E.m.raise.turnsUsed, 1);
+    assert.equal(path.length, v, `出目${v}`); assert.equal(E.m.raise.node, `w1_${v}`); assert.equal(E.m.raise.turnsUsed, 1);
   }
   const E = onCh1(); assert.equal(E.P8.diceSides(E.m), 3); assert.equal(E.P8.roll(E.S, E.m, () => 0.999).value, 3);
   const seen = new Set(); for (let i = 0; i < 3000; i++) seen.add(E.P7.rollDie(E.P8.diceSides(E.m), Math.random)); assert.deepEqual([...seen].sort(), [1, 2, 3], '4〜6 は出ない');
-  const E2 = onCh1(); E2.m.raise.node = 'f1_4'; assert.deepEqual(turn(E2, 3), ['f1_5', 'f2_0', 'f2_1'], '背景をまたいで1地点ずつ');
+  const E2 = onCh1(); E2.m.raise.node = 'w1_4'; assert.deepEqual(turn(E2, 3), ['w1_5', 'w2_0', 'w2_1'], '背景をまたいで1地点ずつ');
 });
 
 test('CH1-04：途中の地点を順番に通る（止まった地点だけ効果）', () => {
   const E = onCh1(); const g = E.CH.graphFor(E.m);
-  const path = turn(E, 3); assert.deepEqual(path, ['f1_1', 'f1_2', 'f1_3']);
+  const path = turn(E, 3); assert.deepEqual(path, ['w1_1', 'w1_2', 'w1_3']);
   for (let i = 1; i < path.length; i++) assert.ok(g.conn[path[i - 1]].includes(path[i]), 'つながった地点だけを通る');
   const before = j(E.m); finishTurnAnyway(E);
-  for (const k of ['li', 'po', 'in', 'hi', 'ev', 'de']) if (E.m[k] !== before[k]) assert.ok(E.CH.typeAt(E.m, 'f1_3').t !== 'normal', '変化は停止地点の効果だけ');
+  for (const k of ['li', 'po', 'in', 'hi', 'ev', 'de']) if (E.m[k] !== before[k]) assert.ok(E.CH.typeAt(E.m, 'w1_3').t !== 'normal', '変化は停止地点の効果だけ');
 });
 
 test('CH1-05：移動疲れ：出目1 +3・出目2 +5・出目3 +7（出目が決まった時点で加算）。4〜6 は表の最大 +7【暫定・未決】', () => {
@@ -148,13 +161,13 @@ test('CH1-11：再読み込み（セーブ→読み込み）・Chapter再開で�
   assert.deepEqual(E.P8.ensureBoardPosition(S2, m2), { changed: false }, 'ボードを開いても作り直さない');
   // 壊れた配置は（引き直しではなく）Chapterの開始地点から作り直す
   const bad = j(saved); bad.m.raise.field.nodeAssignments = { nope: { t: 'stat' } }; const S3 = E.P8.migrateSave(bad);
-  assert.equal(S3.m.raise.field, null); E.P8.ensureBoardPosition(S3, S3.m); assert.deepEqual([S3.m.raise.node, S3.m.raise.turnsUsed], ['f1_0', 0]);
+  assert.equal(S3.m.raise.field, null); E.P8.ensureBoardPosition(S3, S3.m); assert.deepEqual([S3.m.raise.node, S3.m.raise.turnsUsed], ['w1_0', 0]);
 });
 
-test('CH1-12〜13：1本道（橋／森の分岐は廃止）。分岐の選択は出ず、背景の切り替えをまたいでそのまま進む。強敵は天空の大橋（06）の真ん中', () => {
-  const E = onCh1(); E.m.raise.node = 'f5_4'; E.m.raise.pend = null;
-  const t = turn(E, 3); assert.deepEqual(t, ['f5_5', 'f6_0', 'f6_1'], '05 → 06 へそのまま'); assert.equal(E.m.raise.field.branch, null);
-  const g = E.CH.graphFor(E.m); assert.equal(g.nodes.f6_3.kind, 'strong'); assert.equal(g.nodes.f6_3.terrain, 'bridge');
+test('CH1-12〜13：1本道（橋／森の分岐は廃止）。分岐の選択は出ず、背景の切り替えをまたいでそのまま進む。強敵は天空の大橋（09）の真ん中', () => {
+  const E = onCh1(); E.m.raise.node = 'w5_2'; E.m.raise.pend = null;
+  const t = turn(E, 3); assert.deepEqual(t, ['w5_3', 'w6_0', 'w6_1'], '05 → 06 へそのまま'); assert.equal(E.m.raise.field.branch, null);
+  const g = E.CH.graphFor(E.m); assert.equal(g.nodes.w9_3.kind, 'strong'); assert.equal(g.nodes.w9_3.terrain, 'bridge');
 });
 
 
@@ -210,24 +223,24 @@ test('配置の制約（300シード）：各ルートの数・6能力すべて�
       for (const t of ['stat', 'event', 'battle', 'treasure']) { const [lo, hi] = cfg.layoutRules.counts[t]; assert.ok(c(t) >= lo && c(t) <= hi, `${s} ${rt.branch} ${t}=${c(t)}`); }
     }
   }
-  const bad = { f1_2: { t: 'battle', bt: 'wild' } }; assert.ok(CH.validateLayout(cfg, g, bad).some((e) => /early battle/.test(e)), '違反を見つける');
+  const bad = { w1_2: { t: 'battle', bt: 'wild' } }; assert.ok(CH.validateLayout(cfg, g, bad).some((e) => /early battle/.test(e)), '違反を見つける');
 });
 
 test('CH1-19〜21：40ターン目にゴール＝成功。40ターン使い切ってゴールしていなければChapter終了（大会なし・育成失敗ではない・能力は保持）。出目がゴールを超えてもゴールで止まる。ライバルは強制停止', () => {
   const E = onCh1(51); const { P8, S, m } = E;
-  m.raise.node = 'f10_4'; m.raise.turnsUsed = 39; m.raise.fatigue = 0;
-  const path = turn(E, 3); assert.deepEqual(path, ['f10_5'], '3でも1地点でゴールに止まる（残りの移動は消える）');
+  m.raise.node = 'w14_1'; m.raise.turnsUsed = 39; m.raise.fatigue = 0;
+  const path = turn(E, 3); assert.deepEqual(path, ['w14_2'], '3でも1地点でゴールに止まる（残りの移動は消える）');
   finishTurnAnyway(E); assert.deepEqual([m.raise.turnsUsed, m.raise.goal, P8.boardPhase(m)], [40, true, 'goal'], '40ターン目のゴールは成功');
   assert.equal(P8.canStartTournament(S, m, 0).ok, true, '公式大会へ');
-  const E2 = onCh1(52); E2.m.raise.node = 'f1_1'; E2.m.raise.turnsUsed = 39; E2.m.po = 150; turn(E2, 1); finishTurnAnyway(E2);
+  const E2 = onCh1(52); E2.m.raise.node = 'w1_1'; E2.m.raise.turnsUsed = 39; E2.m.po = 150; turn(E2, 1); finishTurnAnyway(E2);
   assert.equal(E2.P8.boardPhase(E2.m), 'timeup'); assert.equal(E2.P8.canRoll(E2.m), false); assert.equal(E2.P8.canRest(E2.m), false);
   const end = E2.P8.endChapter(E2.S, E2.m); assert.equal(end.ok, true); assert.equal(end.entry.reachedGoal, false); assert.equal(end.entry.tour, null);
   assert.deepEqual([E2.m.raise.state, E2.m.raise.ch, E2.m.po >= 150], ['farm', 2, true], '次のChapterへ（育成失敗ではない。獲得した能力は保持）');
-  const E3 = onCh1(53); E3.m.raise.node = 'f1_0'; E3.m.raise.turnsUsed = 39; E3.P8.rest(E3.S, E3.m); assert.equal(E3.P8.boardPhase(E3.m), 'timeup', '40ターン目に休んでも終わり（大会なし）');
-  // ライバル（f10_3）は強制停止：f10_1 から 3 が出ても f10_2 → f10_3 で止まり、残りの歩数は消える。次のターンで f10_4 → ゴール
-  const E4 = onCh1(54); E4.m.raise.node = 'f10_1'; E4.m.raise.fatigue = 0; const t4 = turn(E4, 3); assert.deepEqual(t4, ['f10_2', 'f10_3']); assert.equal(E4.m.raise.pend.left, 0);
+  const E3 = onCh1(53); E3.m.raise.node = 'w1_0'; E3.m.raise.turnsUsed = 39; E3.P8.rest(E3.S, E3.m); assert.equal(E3.P8.boardPhase(E3.m), 'timeup', '40ターン目に休んでも終わり（大会なし）');
+  // ライバル（w14_0）は強制停止：w13_2 から 3 が出ても w13_3 → w14_0 で止まり、残りの歩数は消える。次のターンで w14_1 → ゴール
+  const E4 = onCh1(54); E4.m.raise.node = 'w13_2'; E4.m.raise.fatigue = 0; const t4 = turn(E4, 3); assert.deepEqual(t4, ['w13_3', 'w14_0']); assert.equal(E4.m.raise.pend.left, 0);
   const r4 = E4.P8.resolveLanding(E4.S, E4.m, lcg(1)); assert.deepEqual([r4.fx.kind, r4.fx.battleType], ['battle', 'rival']); E4.P8.skipBattleSquare(E4.S, E4.m);
-  turn(E4, 2); assert.equal(E4.m.raise.node, 'f10_5'); assert.equal(E4.m.raise.pend.left, 0, 'ゴールで止まる');
+  turn(E4, 3); assert.equal(E4.m.raise.node, 'w14_2'); assert.equal(E4.m.raise.pend.left, 0, 'ゴールで止まる');
 });
 
 test('CH1-22：次のChapterの開始時の疲れ＝max(0, 前Chapterの疲れ − 50)。大会・Chapterの終了では疲れは変わらない', () => {
@@ -283,34 +296,34 @@ test('CH1-25：道の曲線（Catmull-Rom）の仕組みは残す。巨大街道
   assert.ok(c[2][1] > 0.4 && c[2][1] < 1, '中間は通る点の間を滑らかにつなぐ');
   assert.deepEqual(CH.smoothCurve([[0, 0], [1, 1]]), [[0, 0], [1, 1]], '点が2つなら折れ線のまま');
   for (const p of cfg.paths) { const cv = g.curves[p.id]; assert.ok(cv && cv.pts.length === p.pts.length && cv.pts.length >= 4, `${p.id}：道の中央線の折れ線（${cv.pts.length}点）`); assert.equal(cv.terrain, p.terrain); }
-  const r = CH.routeBetween(g, 'f1_1', 'f1_2');
-  assert.ok(r.length >= 2, `道筋（${r.length}）`); assert.deepEqual(r[0], [g.nodes.f1_1.mx, g.nodes.f1_1.my]); assert.deepEqual(r[r.length - 1], [g.nodes.f1_2.mx, g.nodes.f1_2.my]);
+  const r = CH.routeBetween(g, 'w1_1', 'w1_2');
+  assert.ok(r.length >= 2, `道筋（${r.length}）`); assert.deepEqual(r[0], [g.nodes.w1_1.mx, g.nodes.w1_1.my]); assert.deepEqual(r[r.length - 1], [g.nodes.w1_2.mx, g.nodes.w1_2.my]);
   for (let i = 1; i < r.length; i++) assert.ok(r[i][1] <= r[i - 1][1] + 0.01, '奥へ向かって進む（戻らない）');
-  const ids = g.order.filter((id) => g.nodes[id].path === 'f1_');
+  const ids = g.order.filter((id) => g.nodes[id].path === 'w1_');
   for (let i = 1; i < ids.length; i++) assert.ok(g.nodes[ids[i]].s > g.nodes[ids[i - 1]].s);
   // 道の中央線の上に、奥行き補正で等間隔（手前 0.87 → 奥＝背景ごとの道が細くなる手前。奥ほど画面上の間隔が縮む）
-  assert.deepEqual([g.nodes[ids[0]].y, g.nodes[ids[ids.length - 1]].y], [0.87, 0.47]);
+  assert.deepEqual([g.nodes[ids[0]].y, g.nodes[ids[ids.length - 1]].y], [0.87, 0.49]);
   for (let i = 2; i < ids.length; i++) assert.ok(g.nodes[ids[i - 1]].y - g.nodes[ids[i]].y < g.nodes[ids[i - 2]].y - g.nodes[ids[i - 1]].y + 1e-9, `${ids[i]}：奥ほど詰まる`);
-  // 曲がった道（08 古代遺跡の S字）：隣の地点へ歩く点列の途中も、すべて道の安全域の中
-  for (const k of ['f8_', 'f9_', 'f3_']) { const sc = cfg.fieldScenes.find((x) => x.id === g.curves[k].field), ns = g.order.filter((id) => g.nodes[id].path === k); for (let i = 1; i < ns.length; i++) for (const [x, y] of CH.routeBetween(g, ns[i - 1], ns[i])) { const rd2 = CH.roadAt(sc, y); assert.ok(x >= rd2.safeLeft - 1e-6 && x <= rd2.safeRight + 1e-6, `${k}：歩く途中 (${x}, ${y}) は道の中`); } }
+  // 曲がった道（01 小道・08 水道橋の見える道・13 城へ続く道）：隣の地点へ歩く点列の途中も、すべて道の安全域の中（全背景）
+  for (const k of cfg.paths.map((p) => p.id)) { const sc = cfg.fieldScenes.find((x) => x.id === g.curves[k].field), ns = g.order.filter((id) => g.nodes[id].path === k); for (let i = 1; i < ns.length; i++) for (const [x, y] of CH.routeBetween(g, ns[i - 1], ns[i])) { const rd2 = CH.roadAt(sc, y); assert.ok(x >= rd2.safeLeft - 1e-6 && x <= rd2.safeRight + 1e-6, `${k}：歩く途中 (${x}, ${y}) は道の中`); } }
   // 別のフィールド（次の背景）へ：空（画面側が背景の切り替えをする）
-  assert.deepEqual(CH.routeBetween(g, 'f1_5', 'f2_0'), []);
+  assert.deepEqual(CH.routeBetween(g, 'w1_5', 'w2_0'), []);
 });
 
 test('CH1-26：別の道へ移るときは config.edges の中間点（曲線化）を通る。無い組み合わせは直線。止まる位置（mx/my）と目印は config.nodeOverrides で分けられる', () => {
   const { CH } = loadEngine(), cfg = CH.getConfig(1), g = CH.buildGraph(cfg);
-  assert.deepEqual(CH.routeBetween(g, 'f5_5', 'f6_0'), [], '次の背景へは切り替え');
-  const ce = j(cfg); ce.chapterId = 5; ce.patternId = 'E'; ce.paths.find((p) => p.id === 'f6_').field = ce.paths.find((p) => p.id === 'f5_').field; ce.edges = { 'f5_5>f6_0': [[0.5, 0.8]] }; const ge = CH.registerConfig(ce);
-  const ra = CH.routeBetween(ge, 'f5_5', 'f6_0'); assert.ok(ra.length > 3, `同じ背景の中で別の道へ移るときは中間点を曲線化（${ra.length}）`);
-  assert.deepEqual(ra[0], [ge.nodes.f5_5.mx, ge.nodes.f5_5.my]); assert.deepEqual(ra[ra.length - 1], [ge.nodes.f6_0.mx, ge.nodes.f6_0.my]);
-  const c2 = j(cfg); c2.chapterId = 3; c2.patternId = 'T'; c2.nodeOverrides = { f1_1: { monster: [0.5, 0.65], landmark: { x: 0.3, y: 0.6, scale: 1.2, opacity: 0.8, anchor: 'foot' }, camera: { zoom: 1.02 }, terrain: 'slope', side: -1 } };
-  const g2 = CH.registerConfig(c2), n = g2.nodes.f1_1;
+  assert.deepEqual(CH.routeBetween(g, 'w5_3', 'w6_0'), [], '次の背景へは切り替え');
+  const ce = j(cfg); ce.chapterId = 5; ce.patternId = 'E'; ce.paths.find((p) => p.id === 'w6_').field = ce.paths.find((p) => p.id === 'w5_').field; ce.edges = { 'w5_3>w6_0': [[0.5, 0.8]] }; const ge = CH.registerConfig(ce);
+  const ra = CH.routeBetween(ge, 'w5_3', 'w6_0'); assert.ok(ra.length > 3, `同じ背景の中で別の道へ移るときは中間点を曲線化（${ra.length}）`);
+  assert.deepEqual(ra[0], [ge.nodes.w5_3.mx, ge.nodes.w5_3.my]); assert.deepEqual(ra[ra.length - 1], [ge.nodes.w6_0.mx, ge.nodes.w6_0.my]);
+  const c2 = j(cfg); c2.chapterId = 3; c2.patternId = 'T'; c2.nodeOverrides = { w1_1: { monster: [0.5, 0.65], landmark: { x: 0.3, y: 0.6, scale: 1.2, opacity: 0.8, anchor: 'foot' }, camera: { zoom: 1.02 }, terrain: 'slope', side: -1 } };
+  const g2 = CH.registerConfig(c2), n = g2.nodes.w1_1;
   assert.deepEqual([n.mx, n.my], [0.5, 0.65], '止まる位置は道の点と別に持てる'); assert.notDeepEqual([n.x, n.y], [n.mx, n.my]);
   assert.deepEqual(n.lm, { x: 0.3, y: 0.6, scale: 1.2, opacity: 0.8, anchor: 'foot' }); assert.deepEqual(n.cam, { zoom: 1.02 }); assert.equal(n.terrain, 'slope'); assert.equal(n.side, -1);
-  const r = CH.routeBetween(g2, 'f1_0', 'f1_1'); assert.deepEqual(r[r.length - 1], [0.5, 0.65], '歩く道筋の終点は止まる位置');
-  assert.deepEqual(['f1_1', 'f3_1', 'f6_3', 'f8_1'].map((id) => g.nodes[id].terrain), ['grass', 'forest', 'bridge', 'highland']);
+  const r = CH.routeBetween(g2, 'w1_0', 'w1_1'); assert.deepEqual(r[r.length - 1], [0.5, 0.65], '歩く道筋の終点は止まる位置');
+  assert.deepEqual(['w1_1', 'w2_1', 'w9_3', 'w8_1'].map((id) => g.nodes[id].terrain), ['grass', 'forest', 'bridge', 'highland']);
   const c3 = j(cfg); c3.chapterId = 4; c3.patternId = 'L'; delete c3.paths[0].curve; const g3 = CH.registerConfig(c3);
-  assert.ok(g3.curves.f1_.pts.length > cfg.paths[0].pts.length, 'curve を省けば滑らかな曲線');
+  assert.ok(g3.curves.w1_.pts.length > cfg.paths[0].pts.length, 'curve を省けば滑らかな曲線');
 });
 
 
@@ -340,20 +353,34 @@ test('CH1-27：見せ方の config：バトルの目印は常設しない、背�
   assert.match(view, /clampToRoad/, 'モンスターの x は道の安全域に収める');
 });
 
+test('CH1-29：大会会場への到着（config.arrival）と大会受付：到着は config だけで決まる（画面に Chapter 番号の分岐なし）。受付は既存の解放条件（MMP8.eligibleRanks）と既存の大会開始（startTournament → p9TourIntro → セドリック）を使い、決めるのはプレイヤー', () => {
+  const FV = rd('js/chapter/field-view.js'), HTML = rd('index.html');
+  assert.match(FV, /if \(ph === 'goal' && V\.cfg\.arrival\) \{ chfArrive\(m, same\); return true; \}/, 'ゴールで config.arrival があるときだけ到着イベント');
+  assert.ok(!/chapterId\s*===\s*1|ch\s*===\s*1/.test(FV), '画面に Chapter 番号の分岐を書かない');
+  assert.match(FV, /f\.arrivalSeen = true; doSave\(\);/, '会話はこの個体のこの Chapter で1回（配置と一緒に消える任意項目）');
+  assert.match(FV, /MMP11P\.sanitize\(S\.playerName\)/, 'プレイヤー名（初期名アルト）を {name} に入れる');
+  const fn = (name) => { const i = HTML.indexOf(`function ${name}(`); assert.ok(i >= 0, name); const j = HTML.indexOf('\nfunction ', i + 1); return HTML.slice(i, j); };
+  assert.match(fn('p9ReceptionHtml'), /MMP8\.eligibleRanks\(m,r\.ch\)/); assert.match(fn('p9ReceptionHtml'), /\[5,4,3,2,1,0\]\.map\(row\)/, '上から S→E');
+  assert.match(fn('p9RcvPick'), /MMP8\.eligibleRanks\(m,m\.raise\.ch\)\.includes\(k\)\)return;/, '参加できないランクは選べない'); assert.match(fn('p9RcvPick'), /finaRankSay\(k\)/, 'フィナは見立てを話すだけ');
+  const join = HTML.slice(HTML.indexOf('function p9RcvJoin('), HTML.indexOf('// ---- 大会開始の演出'));
+  assert.match(join, /MMP8\.startTournament\(S,m,k\);if\(!r\.ok\)return board\(\);save\(\);p9TourIntro\(k\)\.then\(\(\)=>\{P9_ENTER=true;board\(\)\}\)/, '既存の大会開始 → 開始演出 → セドリックの進行');
+  const { CH } = loadEngine(); assert.ok(CH.getConfig(1).arrival); assert.equal(CH.getConfig(2).arrival, undefined, 'Chapter 2 は従来どおり（ゴールのシートでランク選択）');
+});
+
 test('CH1-28：道の安全域（fieldScenes[].road）：中央線と半幅は点ごと（曲がった細い道）。すべての止まる位置は安全域の中。clampToRoad は端に寄った x を戻し、体の半幅ぶん内側にする。半幅を書かない背景は従来の消失点のモデル', () => {
   const { CH } = loadEngine(), cfg = CH.getConfig(1), g = CH.buildGraph(cfg);
   const sc = cfg.fieldScenes[0], far = CH.roadAt(sc, 0.47), near = CH.roadAt(sc, 0.87);
-  assert.ok(far.half < near.half && far.half < 0.06 && near.half > 0.2, `奥ほど細い（${far.half} → ${near.half}）`);
+  assert.ok(far.half < near.half && far.half < 0.09 && near.half > 0.2, `奥ほど細い（${far.half} → ${near.half}）`);
   assert.ok(far.safeRight - far.safeLeft < far.right - far.left, '安全域は絵の道より内側');
-  const s8 = cfg.fieldScenes.find((s) => s.bgKey === '08'); assert.ok(CH.roadAt(s8, 0.35).x > 0.65 && CH.roadAt(s8, 0.5).x < 0.5 && CH.roadAt(s8, 0.6).x > 0.55, '08 古代遺跡：S字の中央線');
+  const s8 = cfg.fieldScenes.find((s) => s.bgKey === '08'); assert.ok(CH.roadAt(s8, 0.9).x < 0.52 && CH.roadAt(s8, 0.55).x > 0.58, '08 水道橋の見える道：奥で右へ曲がる中央線');
   assert.equal(CH.roadAt({}, 0.5), null, 'road の無い背景は制限なし'); assert.deepEqual(CH.clampToRoad({}, 0.1, 0.5), { x: 0.1, clamped: false, road: null });
   let n = 0;
   for (const id of g.order) { const nd = g.nodes[id], s = cfg.fieldScenes.find((x) => x.id === nd.field), r = CH.roadAt(s, nd.my); assert.ok(nd.mx >= r.safeLeft && nd.mx <= r.safeRight, `${id}：安全域の中（${nd.mx} in ${r.safeLeft}〜${r.safeRight}）`); assert.ok(Math.abs(nd.mx - r.x) < 0.012, `${id}：中央線の上（${nd.mx} vs ${r.x}）`); n++; }
-  assert.equal(n, 60);
+  assert.equal(n, 64);
   const c = CH.clampToRoad(sc, 0.05, 0.7, 0.03); assert.equal(c.clamped, true); assert.ok(c.x >= c.road.safeLeft + 0.03 - 1e-9 && c.x < 0.55, `端に寄った x は安全域へ（${c.x}）`);
   assert.deepEqual(CH.clampToRoad(sc, 0.5, 0.47, 0.2).x, CH.roadAt(sc, 0.47).x, '安全域が体より狭ければ中央');
-  const c2 = j(cfg); c2.chapterId = 3; c2.patternId = 'R'; c2.nodeOverrides = { f1_1: { monster: [0.02, 0.7] } }; const g2 = CH.registerConfig(c2);
-  assert.ok(g2.nodes.f1_1.mx > 0.3, `nodeOverrides の止まる位置も安全域に収める（${g2.nodes.f1_1.mx}）`);
+  const c2 = j(cfg); c2.chapterId = 3; c2.patternId = 'R'; c2.nodeOverrides = { w1_1: { monster: [0.02, 0.7] } }; const g2 = CH.registerConfig(c2);
+  { const rr = CH.roadAt(c2.fieldScenes[0], 0.7); assert.ok(g2.nodes.w1_1.mx >= rr.safeLeft - 1e-9 && g2.nodes.w1_1.mx > 0.2, `nodeOverrides の止まる位置も安全域に収める（${g2.nodes.w1_1.mx} ≥ ${rr.safeLeft}）`); }
   const vm = { road: { center: [[0.3, 0.5], [0.97, 0.5]], vanish: 0.245, slope: 0.95, maxHalf: 0.5, safe: 0.7 } }; assert.equal(CH.roadAt(vm, 0.87).half, 0.5, '半幅を書かない背景は従来の消失点のモデル（2026-10-01 夜から Chapter 2 も半幅つき）');
 });
 

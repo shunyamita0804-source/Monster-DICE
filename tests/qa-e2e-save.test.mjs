@@ -496,10 +496,10 @@ T('QA-SV12：育成中は、街・牧場・市場・セーブ画面の操作を�
 T('QA-SV13：育成中の状態が牧場の個体に付いたセーブを読み込むと、育成中の個体は S.m の1体だけにそろう（進行は保たれる）', async () => {
   const p = await openPage(); const pg = p.page;
   await setupTown(pg, { box: 2 });
-  // (a) 連れている個体は未育成、牧場の1体目が Chapter 1（Chapterフィールド）の途中（f1_2・3ターン使用・配置あり）
+  // (a) 連れている個体は未育成、牧場の1体目が Chapter 1（Chapterフィールド）の途中（w1_2・3ターン使用・配置あり）
   const ids = await pg.evaluate(() => {
     const c = JSON.parse(JSON.stringify(S)), x = c.box[0];
-    Object.assign(x.raise, { state: 'board', ch: 1, node: 'f1_2', turnsUsed: 3, turnLimit: 30, fatigue: 12 });
+    Object.assign(x.raise, { state: 'board', ch: 1, node: 'w1_2', turnsUsed: 3, turnLimit: 30, fatigue: 12 });
     MMCH.initRun(x, MMCH.getConfig(1, 'A'), Math.random);
     localStorage.setItem('mr4v6', JSON.stringify(c));
     return { m: c.m.uid, x: x.uid, y: c.box[1].uid };
@@ -508,12 +508,12 @@ T('QA-SV13：育成中の状態が牧場の個体に付いたセーブを読み�
   await pg.waitForFunction(() => typeof S === 'object');
   let s = await H.getS(pg);
   assert.equal(s.m.uid, ids.x, '育成中の個体が連れている個体になる');
-  assert.deepEqual([s.m.raise.state, s.m.raise.ch, s.m.raise.node, s.m.raise.turnsUsed, s.m.raise.fatigue], ['board', 1, 'f1_2', 3, 12], '進行はそのまま');
+  assert.deepEqual([s.m.raise.state, s.m.raise.ch, s.m.raise.node, s.m.raise.turnsUsed, s.m.raise.fatigue], ['board', 1, 'w1_2', 3, 12], '進行はそのまま');
   assert.deepEqual(s.box.map((x) => x.uid).sort(), [ids.m, ids.y].sort(), '元の連れている個体は牧場へ（個体数は変わらない）');
   assertProgressOnlyOnM(s, '読み込み(a)');
   await pg.click('.p15start');
   await pg.waitForSelector('#brollbtn');
-  assert.equal(await pg.evaluate(() => S.m.raise.node), 'f1_2', 'ボードの同じ位置から再開');
+  assert.equal(await pg.evaluate(() => S.m.raise.node), 'w1_2', 'ボードの同じ位置から再開');
   // (b) 連れている個体も牧場の個体も育成中 → 牧場の個体の進行は外れる（連れている個体の進行は保つ）
   await pg.evaluate(() => {
     const c = JSON.parse(JSON.stringify(S)), x = c.box[0];

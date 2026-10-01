@@ -30,7 +30,7 @@ for (const size of [H.SIZES.base, H.SIZES.se]) {
     const p = await open({ size }); const pg = p.page;
     await toField(pg);
     for (const v of [1, 2, 3]) {
-      await place(pg, 'f1_0', { turnsUsed: 0, fatigue: 0 }); await idle(pg);
+      await place(pg, 'w1_0', { turnsUsed: 0, fatigue: 0 }); await idle(pg);
       await pg.evaluate(() => { window.__face = null; new MutationObserver(() => { const s = document.querySelector('.chdz-stop.on'); if (s && !window.__face) window.__face = { src: s.getAttribute('src'), ring: getComputedStyle(document.querySelector('.chdz-res')).display, roll: S.m.raise.pend && S.m.raise.pend.roll }; }).observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['class'] }); });
       await rollAs(pg, v);
       await pg.waitForFunction(() => !!window.__face, null, { timeout: 15000 });
@@ -49,9 +49,9 @@ test('JR-2：1地点進むだけでも画面上ではっきり歩き（カメラ
   await toField(pg);
   const pos = () => pg.evaluate(() => { const r = document.querySelector('#bmonw .mon img').getBoundingClientRect(), f = document.querySelector('#chf').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.bottom, w: f.width, h: f.height, node: S.m.raise.node, field: MMCHV.state().field, cam: MMCHV.state().cam.ty }; });
   const a = await pos(); await rollAs(pg, 1); await idle(pg); const b = await pos();
-  assert.equal(b.node, 'f1_1'); assert.ok(Math.abs(b.cam - a.cam) + Math.hypot(b.x - a.x, b.y - a.y) >= 40, `1地点＝手前のマスから次のマスへ（2026-10-01：新しい背景は1枚に6マス＝間隔が旧構成より短い）（カメラ ${Math.abs(b.cam - a.cam).toFixed(0)}px・画面 ${Math.hypot(b.x - a.x, b.y - a.y).toFixed(0)}px）`);
-  await place(pg, 'f1_3'); await idle(pg); await rollAs(pg, 3); await idle(pg); const c = await pos();
-  assert.deepEqual([c.node, c.field], ['f2_0', 2], '3地点：f1_4 → f1_5 → 背景の切り替え → f2_0');
+  assert.equal(b.node, 'w1_1'); assert.ok(Math.abs(b.cam - a.cam) + Math.hypot(b.x - a.x, b.y - a.y) >= 40, `1地点＝手前のマスから次のマスへ（2026-10-01：01 は6マス）（カメラ ${Math.abs(b.cam - a.cam).toFixed(0)}px・画面 ${Math.hypot(b.x - a.x, b.y - a.y).toFixed(0)}px）`);
+  await place(pg, 'w1_3'); await idle(pg); await rollAs(pg, 3); await idle(pg); const c = await pos();
+  assert.deepEqual([c.node, c.field], ['w2_0', 2], '3地点：w1_4 → w1_5 → 背景の切り替え → w2_0');
   assert.ok(c.y > c.h * 0.35 && c.y < c.h * 0.85 && c.x > 0 && c.x < c.w, `切り替え後も画面の中央より少し下（${c.y.toFixed(0)} / ${c.h}）`);
   const cams = await pg.evaluate(() => document.querySelectorAll('.chf-cam').length); assert.equal(cams, 1);
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
@@ -116,33 +116,33 @@ test('JR-5：街：名前登録の直後の案内はフィナの台詞（顔・�
 async function toGoal(pg, { rk = 0, stats } = {}) {
   await H.newGame(pg, 'テスト');
   await pg.evaluate(([rk, stats]) => { const m = mk(0); m.name = 'ソラ'; if (stats) Object.assign(m, stats); MMP7.ensureProg(m); m.rk = rk; S.m = m; save(); MMP8.depart(S, m, () => 0.37); const t = MMP8.trackOf(1); Object.assign(m.raise, { node: t.goal, goal: true, pend: null, turnsUsed: 20 }); save(); board(); }, [rk, stats || null]);
-  await pg.waitForSelector('.chgoal .p9rank'); await pg.waitForTimeout(450);
+  await pg.waitForSelector('#chrcv .rcv-row'); await pg.waitForTimeout(450);
 }
-test('JR-6：大会のランク選択：挑戦できるランク（既存の解放条件）だけ押せるカード、それ以外は鎖と錠で封印（押せない）。セドリックは出さず、フィナが案内。ランクをタップするとフィナの見立て（余裕／互角／厳しい）', { skip: SKIP }, async () => {
+test('JR-6：大会受付のランク選択：上から S→E。参加できるランク（既存の解放条件）だけ選べ、それ以外は鎖と錠（参加不可・押せない）。セドリックは出さず、フィナが案内。ランクを選ぶとフィナの見立て（余裕／互角／厳しい）。参加はプレイヤーが「この大会に参加する」で決める', { skip: SKIP }, async () => {
   const p = await open(); const pg = p.page;
   await toGoal(pg);
-  const r = await pg.evaluate(() => ({ open: [...document.querySelectorAll('.p9rank')].map((b) => b.getAttribute('onclick')), locked: [...document.querySelectorAll('.p9rlock')].map((d) => [d.dataset.rank, !!d.querySelector('.p9chain'), !!d.querySelector('.p9pad svg'), d.getAttribute('onclick')]), ced: document.querySelectorAll('.p9ced:not(.p9fina)').length, fina: document.querySelector('#p9fsay .p9fina .tx b').textContent, text: document.querySelector('#p9fsay').textContent }));
-  assert.deepEqual(r.open, ['p8TourStart(0,this)', 'p8TourStart(1,this)'], 'Chapter 1・未クリア：E・D だけ');
-  assert.deepEqual(r.locked, [['2', true, true, null], ['3', true, true, null], ['4', true, true, null], ['5', true, true, null]], 'C〜S は鎖と錠。押せない');
-  assert.equal(r.ced, 0, 'ランク選択にセドリックは出さない'); assert.equal(r.fina, 'フィナ'); assert.match(r.text, /どのランクに挑戦する？/);
-  await pg.click('button.p9rank[onclick^="p8TourStart(0,"]', { force: true }); await pg.waitForTimeout(120);
-  const s1 = await pg.evaluate(() => ({ j: document.querySelector('#p9fsay').dataset.judge, t: document.querySelector('#p9fsay').textContent, started: !!S.m.raise.tour }));
-  assert.equal(s1.j, 'easy', '能力100 vs ランクE（70）＝余裕'); assert.match(s1.t, /ランクE/); assert.equal(s1.started, false, '1回目のタップでは参加しない（見立てだけ）');
-  await pg.waitForTimeout(3200);   // 2度押しの確認は3秒で戻る
-  await pg.evaluate(() => { S.m.li = S.m.po = S.m.in = S.m.hi = S.m.ev = S.m.de = 60; board(); }); await pg.waitForSelector('.chgoal .p9rank'); await pg.waitForTimeout(450);
-  await pg.click('button.p9rank[onclick^="p8TourStart(1,"]', { force: true }); await pg.waitForTimeout(120);
+  const r = await pg.evaluate(() => ({ open: [...document.querySelectorAll('.rcv-row.ok')].map((b) => b.dataset.rank), locked: [...document.querySelectorAll('.rcv-row.lk')].map((d) => [d.dataset.rank, !!d.querySelector('.rcv-chain'), !!d.querySelector('.rcv-pad svg'), d.tagName, d.textContent.includes('参加不可')]), order: [...document.querySelectorAll('.rcv-row')].map((x) => x.querySelector('.rcv-em b').textContent).join(''), ban: document.querySelector('.rcv-ban b').textContent, ced: document.querySelectorAll('.p9ced:not(.p9fina)').length, fina: document.querySelector('#p9fsay .p9fina .tx b').textContent, text: document.querySelector('#p9fsay').textContent, join: [document.querySelector('#p9join').disabled, document.querySelector('#p9join').textContent] }));
+  assert.deepEqual(r.open, ['1', '0'], 'Chapter 1・未クリア：E・D だけ'); assert.equal(r.order, 'SABCDE'); assert.equal(r.ban, '公式大会');
+  assert.deepEqual(r.locked, [['5', true, true, 'DIV', true], ['4', true, true, 'DIV', true], ['3', true, true, 'DIV', true], ['2', true, true, 'DIV', true]], 'C〜S は鎖と錠・参加不可（押せない）');
+  assert.equal(r.ced, 0, 'ランク選択にセドリックは出さない'); assert.equal(r.fina, 'フィナ'); assert.match(r.text, /どのランクに挑戦する？/); assert.equal(r.join[0], true, 'ランクを選ぶまで参加できない'); assert.match(r.join[1], /この大会に参加する/);
+  await pg.click('.rcv-row.ok[data-rank="0"]', { force: true }); await pg.waitForTimeout(120);
+  const s1 = await pg.evaluate(() => ({ j: document.querySelector('#p9fsay').dataset.judge, t: document.querySelector('#p9fsay').textContent, started: !!S.m.raise.tour, sel: [...document.querySelectorAll('.rcv-row.sel')].map((x) => x.dataset.rank), join: !document.querySelector('#p9join').disabled }));
+  assert.equal(s1.j, 'easy', '能力100 vs ランクE（70）＝余裕'); assert.match(s1.t, /ランクE/); assert.equal(s1.started, false, '選ぶだけでは参加しない（見立てだけ）'); assert.deepEqual(s1.sel, ['0']); assert.equal(s1.join, true);
+  await pg.evaluate(() => { S.m.li = S.m.po = S.m.in = S.m.hi = S.m.ev = S.m.de = 60; board(); }); await pg.waitForSelector('#chrcv .rcv-row'); await pg.waitForTimeout(450);
+  await pg.click('.rcv-row.ok[data-rank="1"]', { force: true }); await pg.waitForTimeout(120);
   assert.equal(await pg.evaluate(() => document.querySelector('#p9fsay').dataset.judge), 'hard', '能力60 vs ランクD（90）＝厳しい');
+  await pg.click('.rcv-row.lk[data-rank="2"]', { force: true }); assert.deepEqual(await pg.evaluate(() => [...document.querySelectorAll('.rcv-row.sel')].map((x) => x.dataset.rank)), ['1'], '参加不可のランクは選べない');
   assert.deepEqual(p.errors, []);
 });
 
-test('JR-7：大会開始：2度押しで参加 → 暗転 → ランクのエンブレム「公式ランクE大会」→ セドリックの一言 → 順位表（参加者が右から順に入り、そのあと通常の表示）。次の対戦相手の行だけ光る', { skip: SKIP }, async () => {
+test('JR-7：大会開始：ランクを選んで「この大会に参加する」→ 暗転 → ランクのロゴ（E・RANK・「公式ランクE大会」）→ セドリックの一言 → 順位表（参加者が右から順に入り、そのあと通常の表示）。次の対戦相手の行だけ光る', { skip: SKIP }, async () => {
   const p = await open(); const pg = p.page;
   await toGoal(pg);
   await pg.evaluate(() => { window.__seq = []; new MutationObserver(() => { const d = document.querySelector('#p9intro'); const k = !d ? 'none' : d.classList.contains('ced') ? 'cedric' : d.classList.contains('em') ? 'emblem' : 'dark'; if (window.__seq[window.__seq.length - 1] !== k) window.__seq.push(k); if (document.querySelector('.p9tour') && !window.__seq.includes('tour')) window.__seq.push('tour'); }).observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['class'] }); });
-  await pg.click('button.p9rank[onclick^="p8TourStart(0,"]', { force: true }); await pg.waitForTimeout(600); await pg.click('button.p9rank[onclick^="p8TourStart(0,"]', { force: true });
+  await pg.click('.rcv-row.ok[data-rank="0"]', { force: true }); await pg.waitForTimeout(450); await pg.click('#p9join', { force: true });
   await pg.waitForSelector('#p9intro.em');
-  const em = await pg.evaluate(() => ({ l: document.querySelector('.p9iem-l').textContent, t: document.querySelector('.p9iem b').textContent, tour: !!S.m.raise.tour }));
-  assert.deepEqual(em, { l: 'E', t: '公式ランクE大会', tour: true }, 'ランクのエンブレム（参加は確定済み）');
+  const em = await pg.evaluate(() => ({ l: document.querySelector('.p9iem-l').textContent, r: document.querySelector('.p9iem-r').textContent, t: document.querySelector('.p9iem b').textContent, tour: !!S.m.raise.tour, w: Math.round(document.querySelector('.p9iem-l').getBoundingClientRect().width) }));
+  assert.deepEqual({ ...em, w: em.w >= 110 }, { l: 'E', r: 'RANK', t: '公式ランクE大会', tour: true, w: true }, 'ランクのロゴを大きく（参加は確定済み）');
   await pg.waitForSelector('#p9intro.ced');
   assert.deepEqual(await pg.evaluate(() => [document.querySelector('.p9iced .tx b').textContent, document.querySelector('.p9iced .tx').textContent.replace('セドリック', '')]), ['セドリック', '公式ランクE大会を開始します。参加者を紹介しましょう。']);
   await pg.waitForFunction(() => !document.querySelector('#p9intro') && !!document.querySelector('.p9tour'), null, { timeout: 15000 });
@@ -197,7 +197,7 @@ test('JR-9：Chapter に入った瞬間、旅路全体の俯瞰図（演出専�
   assert.ok(tf.length >= 10 && Math.max(...tf) > tf[0] * 1.5, `俯瞰（引き）からスタート地点へ寄る（倍率 ${tf[0] && tf[0].toFixed(3)} → 最大 ${Math.max(...tf).toFixed(3)}）`);
   await idle(pg);
   const b = await pg.evaluate(() => ({ bg: document.querySelector('#chf .chf-bg').getAttribute('src'), node: S.m.raise.node, start: document.querySelector('#brollbtn').textContent.trim(), on: !document.querySelector('#brollbtn').disabled, busy: bBusy }));
-  assert.deepEqual(b, { bg: './assets/fields/ch1a/field/ch1_field_01.webp', node: 'f1_0', start: 'START', on: true, busy: false }, '俯瞰図のあとは 01 の実プレイ画面で START が押せる');
+  assert.deepEqual(b, { bg: './assets/fields/ch1a/final/field/ch1_bg_01.webp', node: 'w1_0', start: 'START', on: true, busy: false }, '俯瞰図のあとは 01 の実プレイ画面で START が押せる');
   // 再読み込みでは出ない：「見た」はこの個体のこの Chapter の配置（m.raise.field.introSeen）に保存（セーブ全体の項目や sessionStorage では判定しない）
   assert.equal(await pg.evaluate(() => { const s = JSON.parse(localStorage.getItem('mr4v6')); return s.m.raise.field.introSeen === true && !Object.keys(s).some((k) => /intro/i.test(k)) && !Object.keys(s.m.raise).some((k) => /intro/i.test(k)); }), true, '見たかどうかは個体の Chapter の配置に持つ');
   await pg.reload(); await pg.waitForFunction(() => typeof MMP8 === 'object'); await pg.click('.p15start'); await pg.waitForSelector('#chf .chf-bg'); await pg.waitForTimeout(600);
@@ -220,14 +220,14 @@ test('JR-10：START の1タップだけで、サイコロは自動で止まっ�
   assert.ok(gone >= 1200 && gone <= 3500, `サイコロは自動で止まって消える（${gone}ms。設計 約1.7秒）`);
   assert.equal(await pg.evaluate(() => typeof window.chfStop), 'undefined', 'STOP の関数は無い');
   await idle(pg);
-  assert.deepEqual(await pg.evaluate(() => [S.m.raise.node, S.m.raise.turnsUsed, document.querySelector('#brollbtn').textContent.trim(), !document.querySelector('#brollbtn').disabled]), ['f1_3', 1, 'START', true], `保存済みの出目 ${saved} で3地点 → START に戻る`); assert.equal(saved, 3);
+  assert.deepEqual(await pg.evaluate(() => [S.m.raise.node, S.m.raise.turnsUsed, document.querySelector('#brollbtn').textContent.trim(), !document.querySelector('#brollbtn').disabled]), ['w1_3', 1, 'START', true], `保存済みの出目 ${saved} で3地点 → START に戻る`); assert.equal(saved, 3);
   assert.deepEqual(p.errors, []);
 });
 
 test('JR-11：40ターン目（2026-10-01 夜）に大会会場へ着けなかった：大会なし・ランクは上がらない・Chapter は終了して能力と持ち物は保持 → ファーム → 次の Chapter へ進める', { skip: SKIP }, async () => {
   const p = await open(); const pg = p.page;
   await toField(pg);
-  await pg.evaluate(() => { const r = S.m.raise; r.node = 'f2_0'; r.turnsUsed = 39; r.fatigue = 10; S.m.po = 160; S.g = 999; S.inv.bag.push({ id: 'herb' }); save(); board(); }); await idle(pg);
+  await pg.evaluate(() => { const r = S.m.raise; r.node = 'w2_0'; r.turnsUsed = 39; r.fatigue = 10; S.m.po = 160; S.g = 999; S.inv.bag.push({ id: 'herb' }); save(); board(); }); await idle(pg);
   await rollAs(pg, 2); await pg.waitForSelector('.chsheet [onclick="p8EndChapter()"]', { timeout: 20000 });
   const a = await pg.evaluate(() => ({ ph: MMP8.boardPhase(S.m), text: document.querySelector('.chsheet').innerText.replace(/\s+/g, ' '), tour: S.m.raise.tour, canRoll: MMP8.canRoll(S.m), ranks: document.querySelectorAll('.p9rank').length }));
   assert.equal(a.ph, 'timeup'); assert.match(a.text, /公式大会には参加できません/); assert.equal(a.tour, null); assert.equal(a.canRoll, false); assert.equal(a.ranks, 0, '大会の選択は出ない');
@@ -266,7 +266,7 @@ test('JR-13：導入演出は「育成個体 × Chapter の初回」に1回：�
   const st = () => pg.evaluate(() => ({ intro: !!document.querySelector('.chintro'), uid: S.m.uid, node: S.m.raise.node, seen: S.m.raise.field.introSeen === true }));
   const settle = () => pg.waitForFunction(() => !document.querySelector('.chintro') && !bBusy && !MMCHD.isLocked() && !document.querySelector('.chpop,.chdz'), null, { timeout: 30000 });
   await buy('ソラ'); await depart();
-  const a = await st(); assert.deepEqual([a.intro, a.node, a.seen], [true, 'f1_0', true], '1体目：Chapter 1 の初突入で導入演出'); await settle();
+  const a = await st(); assert.deepEqual([a.intro, a.node, a.seen], [true, 'w1_0', true], '1体目：Chapter 1 の初突入で導入演出'); await settle();
   await pg.click('#brollbtn'); await settle();   // プレイ中（1ターン進めた）
   await pg.reload(); await pg.waitForFunction(() => typeof MMP8 === 'object'); await pg.click('.p15start'); await pg.waitForSelector('#chf .chf-bg'); await pg.waitForTimeout(700);
   const b = await st(); assert.deepEqual([b.intro, b.uid, b.seen], [false, a.uid, true], '同じ育成の再読み込み：導入演出なし・続きから');
@@ -276,8 +276,31 @@ test('JR-13：導入演出は「育成個体 × Chapter の初回」に1回：�
   await pg.waitForFunction(() => { const b = document.querySelector('#p8abgo'); return b && !b.disabled; }, null, { timeout: 8000 }); await pg.click('#p8abgo');
   await pg.waitForSelector('.tbar .tcmd'); assert.equal(await pg.evaluate(() => S.m), null, '放棄で育成中の個体は消える');
   await buy('ガウ'); await depart();
-  const c = await st(); assert.deepEqual([c.intro, c.node, c.seen], [true, 'f1_0', true], '2体目：Chapter 1 の初突入で導入演出が再び出る'); assert.notEqual(c.uid, a.uid);
+  const c = await st(); assert.deepEqual([c.intro, c.node, c.seen], [true, 'w1_0', true], '2体目：Chapter 1 の初突入で導入演出が再び出る'); assert.notEqual(c.uid, a.uid);
   await settle();
-  assert.deepEqual(await pg.evaluate(() => ({ on: !document.querySelector('#brollbtn').disabled, bg: document.querySelector('#chf .chf-bg').getAttribute('src') })), { on: true, bg: './assets/fields/ch1a/field/ch1_field_01.webp' });
+  assert.deepEqual(await pg.evaluate(() => ({ on: !document.querySelector('#brollbtn').disabled, bg: document.querySelector('#chf .chf-bg').getAttribute('src') })), { on: true, bg: './assets/fields/ch1a/final/field/ch1_bg_01.webp' });
+  assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
+});
+
+test('JR-13：大会会場への到着：14 の最後のマス（ゴール）に着くと、到着イベント専用の背景（15）へ切り替わり、マス・サイコロ・操作欄が消える → フィナの短い会話（プレイヤー名入り）→ 大会受付。再読み込みでは会話を繰り返さず受付から', { skip: SKIP }, async () => {
+  const p = await open({ arrival: true }); const pg = p.page;
+  await H.newGame(pg, 'ユウ');
+  await pg.evaluate(() => { const m = mk(0); m.name = 'ソラ'; MMP7.ensureProg(m); S.m = m; save(); MMP8.depart(S, m, () => 0.37); save(); board(); });
+  await pg.waitForSelector('#chf .chf-bg'); await idle(pg);
+  await place(pg, 'w14_1', { turnsUsed: 30 }); await idle(pg);
+  assert.equal(await pg.evaluate(() => document.querySelector('#chf .chf-bg').getAttribute('src')), './assets/fields/ch1a/final/field/ch1_bg_14.webp');
+  await rollAs(pg, 1);
+  await pg.waitForSelector('#chfarr.on', { timeout: 20000 });
+  const a = await pg.evaluate(() => ({ node: S.m.raise.node, goal: S.m.raise.goal, bg: document.querySelector('#chfarr img').getAttribute('src'), name: document.querySelector('.chf-arrive-name b').textContent, deck: !!document.querySelector('#chdock,#brollbtn,.chh,.chsheet') }));
+  assert.deepEqual(a, { node: 'w14_2', goal: true, bg: './assets/fields/ch1a/final/event/ch1_bg_15_event.webp', name: '公式大会会場・正門前', deck: false }, '15 の背景へ。HUD・操作欄・マスの UI は出さない');
+  await pg.waitForSelector('.mmtalk:not(.mmtalk-out)', { timeout: 15000 });
+  const lines = []; for (let i = 0; i < 12 && await pg.$('.mmtalk:not(.mmtalk-out)'); i++) { await pg.waitForTimeout(450); const t = await pg.evaluate(() => { const e = document.querySelector('.mmtalk:not(.mmtalk-out)'); return e ? [e.querySelector('.mmtalk-name').textContent, e.getAttribute('aria-label') || '', e.querySelector('.mmtalk-text').textContent] : null; }); if (t && !lines.some((x) => x[2] === t[2])) lines.push(t); await pg.click('.mmtalk', { force: true }).catch(() => {}); }
+  await pg.waitForSelector('#chrcv .rcv-row', { timeout: 15000 });
+  const said = [...new Set(lines.map((l) => l[2]))].filter((t) => ['やっと着いたね、ユウさん！', 'ここが公式大会の会場だよ。', 'さあ、早速受付に行こう！'].includes(t));
+  assert.deepEqual(said, ['やっと着いたね、ユウさん！', 'ここが公式大会の会場だよ。', 'さあ、早速受付に行こう！'], `フィナの3行（プレイヤー名）：${JSON.stringify(lines)}`); assert.ok(lines.every((l) => l[0] === 'フィナ'));
+  assert.equal(await pg.evaluate(() => S.m.raise.field.arrivalSeen), true);
+  await pg.reload(); await pg.waitForFunction(() => typeof S === 'object' && S.m); await pg.evaluate(() => board());
+  await pg.waitForSelector('#chrcv .rcv-row', { timeout: 20000 }); await pg.waitForTimeout(400);
+  assert.deepEqual(await pg.evaluate(() => ({ talk: !!document.querySelector('.mmtalk'), on: document.querySelector('#chfarr').classList.contains('on'), rows: document.querySelectorAll('.rcv-row.ok').length })), { talk: false, on: true, rows: 2 }, '再読み込み：会話は繰り返さず受付から');
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
 });

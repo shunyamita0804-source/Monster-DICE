@@ -266,7 +266,7 @@ test('NX-12：既存セーブとの互換：version 6・キー mr4v6・checkpoin
   const old = j(S); delete old.m.raise.fatigue; delete old.m.raise.field; const S2 = P8.migrateSave(old); assert.deepEqual([S2.v, S2.m.raise.fatigue, S2.m.raise.field], [6, 0, null]);
   const E1 = loadEngine(); const S1 = E1.P8.newSave(); S1.m = mon(E1.P7, E1.P8, S1); E1.P8.depart(S1, S1.m, lcg(1));
   const legacy = j(S1); legacy.m.raise.node = 'p7'; legacy.m.raise.field = null; const S3 = E1.P8.migrateSave(legacy); E1.P8.ensureBoardPosition(S3, S3.m);
-  assert.deepEqual([S3.m.raise.node, S3.m.raise.turnsUsed, S3.m.raise.field.chapterId], ['f1_0', 0, 1], '旧 Chapter 1 の地点は開始地点から（従来どおり）');
+  assert.deepEqual([S3.m.raise.node, S3.m.raise.turnsUsed, S3.m.raise.field.chapterId], ['w1_0', 0, 1], '旧 Chapter 1 の地点は開始地点から（従来どおり）');
 });
 
 test('NX-13：疲れ：出目 1〜3 は正式値（+3/+5/+7）。4〜6 は表の最大（+7）【暫定・未決。config の fatigueRules.roll に書けば置き換わる】', () => {
@@ -302,9 +302,9 @@ test('NX-15：同行者（フィナ）のリアクションの差し込み口：
   const view = rd('js/chapter/field-view.js'); assert.match(view, /registerReactionRenderer/); assert.match(view, /companionReaction\(m, fx\)/); assert.match(view, /if \(!reactionRenderer\) return;/, '描画が未登録なら何もしない（会話UIは未決）');
 });
 
-test('NX-16：Chapter 1（1〜3・正式背景10枚・40ターン・大会なしの timeup・ライバル強制停止）。ダンは Chapter に同行しない（同行者はフィナ＋育成中のモンスター）', () => {
+test('NX-16：Chapter 1（1〜3・正式背景14枚・40ターン・大会なしの timeup・ライバル強制停止）。ダンは Chapter に同行しない（同行者はフィナ＋育成中のモンスター）', () => {
   const E = loadEngine(); const { CH, P8 } = E, cfg = CH.getConfig(1), R = CH.rulesOf(cfg);
-  assert.deepEqual([R.diceSides, R.turnLimit, R.onTimeUp, new Set(cfg.fieldScenes.map((s) => s.bg)).size, cfg.forceStopKinds], [3, 40, 'end', 10, ['rival']]);
+  assert.deepEqual([R.diceSides, R.turnLimit, R.onTimeUp, new Set(cfg.fieldScenes.map((s) => s.bg)).size, cfg.forceStopKinds], [3, 40, 'end', 14, ['rival']]);
   assert.deepEqual(CH.generateLayout(cfg, 12345).assign, CH.generateLayout(cfg, 12345).assign);
   // 同じ seed の配置は基盤の追加前後で変わらない（配置の乱数は layoutRules.counts に書いた種類だけ消費する）：代表的な seed の割り当て数
   const a = CH.generateLayout(cfg, 1).assign, cnt = {}; for (const x of Object.values(a)) cnt[x.t] = (cnt[x.t] || 0) + 1;

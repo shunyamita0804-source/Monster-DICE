@@ -201,8 +201,8 @@ test('QA-G3-7：ガードは指定した場所だけ（全体には掛けない�
   assert.equal(uses('tapHold'), 3, '定義＋市場の購入確認シート＋修行メニューだけ');
   assert.match(lineOf(' <div class="p10shb">'), /onclick="mkgo\(\$\{s\.id\}\);p10Close\(\)">連れて帰る（\$\{c\.price\}G）<\/button><\/div><\/div>`;document\.body\.appendChild\(d\);tapHold\(d\.querySelector\("\.p10shb"\),350\)\}$/);
   assert.match(lineOf(' if(id=="s")tapHold('), /^ if\(id=="s"\)tapHold\(\$\("#app \.dbody"\),350\);/, '修行メニュー（カードだけが入る .dbody）');
-  assert.equal(uses('tapSoon'), 7, '定義＋tapHold・arm・p9arm・reset・ボードのメニューの背景・Battle 開始前の BATTLE START');
-  assert.equal(uses('tapAt'), 9, '定義＋tapSoon（数え直し）・tapHold・arm・p9arm・reset・セーブ・ロード画面・ボードのメニュー・Battle 開始前');
+  assert.equal(uses('tapSoon'), 8, '定義＋tapHold・arm・p9arm・reset・ボードのメニューの背景・Battle 開始前の BATTLE START・大会受付の参加ボタン');
+  assert.equal(uses('tapAt'), 10, '定義＋tapSoon（数え直し）・tapHold・arm・p9arm・reset・セーブ・ロード画面・ボードのメニュー・Battle 開始前・大会受付（ランクを選んだ直後）');
   assert.match(lineOf('function p9Menu(){'), /tapAt\(d\);d\.onclick=e=>\{if\(e\.target===d&&!tapSoon\(d,350\)\)p9MenuClose\(\)\};/, 'ボードのメニューは背景タップ（閉じる）だけ。中のボタンは従来どおり');
   assert.match(between('function board(msg){', '\n/** 分岐'), /else if\(ph=="resolve"\)setTimeout\(\(\)=>\{if\(document\.getElementById\("bmonw"\)\)p8Resolve\(\)\},350\);/, 'ボードを離れていたら着地処理をしない');
   assert.match(lineOf('function p8Resolve('), /^function p8Resolve\(\)\{const m=S\.m;if\(bBusy\|\|!m\|\|!m\.raise\.pend\|\|m\.raise\.pend\.stage!="resolve"\)return;const r=MMP8\.resolveLanding\(S,m\);save\(\);/, 'p8Resolve 自体は変えていない');

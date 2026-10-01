@@ -126,6 +126,17 @@
     for (let i = 1; i < pts.length; i++) if (s <= S.s[i]) { const a = pts[i - 1], b = pts[i], L = S.s[i] - S.s[i - 1], r = L ? (s - S.s[i - 1]) / L : 0; return [+(a[0] + (b[0] - a[0]) * r).toFixed(4), +(a[1] + (b[1] - a[1]) * r).toFixed(4)]; }
     const e = pts[pts.length - 1]; return [e[0], e[1]];
   }
+  /** 点 q を折れ線 pts へ投影したときの、曲線に沿った距離 s（背景の画素で測る。nodePts で座標を直接書いたマス用） */
+  function sOfPoint(pts, S, q, W = 1, H = 1) {
+    let best = Infinity, bs = 0;
+    for (let i = 1; i < pts.length; i++) {
+      const a = pts[i - 1], b = pts[i], dx = (b[0] - a[0]) * W, dy = (b[1] - a[1]) * H, L2 = dx * dx + dy * dy;
+      const r = L2 ? Math.max(0, Math.min(1, (((q[0] - a[0]) * W) * dx + ((q[1] - a[1]) * H) * dy) / L2)) : 0;
+      const d = Math.hypot((a[0] + (b[0] - a[0]) * r - q[0]) * W, (a[1] + (b[1] - a[1]) * r - q[1]) * H);
+      if (d < best - 1e-9) { best = d; bs = S.s[i - 1] + (S.s[i] - S.s[i - 1]) * r; }
+    }
+    return bs;
+  }
   function alongPersp(pts, n, depthAt, W = 1, H = 1) {
     // 同じ歩幅で奥へ進むほど画面上の間隔が縮むよう、画面上の長さを「その場所の大きさ」で割った長さで等分する
     const S = measure(pts, depthAt, W, H), out = [];
@@ -173,8 +184,11 @@
       const pts = p.curve === 'linear' ? p.pts.map((q) => [q[0], q[1]]) : smoothCurve(p.pts, p.curveSegments || 10);
       const depthAt = (y) => depthOf(sc, y), M = measure(pts, depthAt, sc.w || 1, sc.h || 1);
       curves[p.id] = { pts, s: M.s, total: M.total, field: p.field, terrain: p.terrain || 'grass', speed: p.speed || 1 };
+      // マスの座標：path.nodePts（[x, y] を n 個）があればその点（背景ごとに画像を見て決めた座標）。無ければ曲線の上に奥行き補正で等間隔
+      const NP = Array.isArray(p.nodePts) && p.nodePts.length === p.n ? p.nodePts : null;
       for (let i = 0; i < p.n; i++) {
-        const id = `${p.id}${i}`, kind = (p.fixed && p.fixed[i]) || 'slot', s = p.n === 1 ? 0 : (M.total * i) / (p.n - 1), pos = pointAt(pts, M, s), o = OV[id] || {};
+        const id = `${p.id}${i}`, kind = (p.fixed && p.fixed[i]) || 'slot', o = OV[id] || {};
+        const s = NP ? sOfPoint(pts, M, NP[i], sc.w || 1, sc.h || 1) : p.n === 1 ? 0 : (M.total * i) / (p.n - 1), pos = NP ? [NP[i][0], NP[i][1]] : pointAt(pts, M, s);
         nodes[id] = { id, path: p.id, idx: i, field: p.field, x: pos[0], y: pos[1], s, d: +depthOf(sc, pos[1]).toFixed(3), kind, branch: p.branch || null,
           side: o.side || (p.side && p.side[i]) || (i % 2 ? 1 : -1), terrain: o.terrain || p.terrain || 'grass',
           // 見せ方の上書き（config.nodeOverrides）：monster＝止まる位置（既定は道の上の点）、landmark＝目印の位置・大きさ、camera＝カメラの寄り
