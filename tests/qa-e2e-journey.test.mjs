@@ -49,9 +49,9 @@ test('JR-2：1地点進むだけでも画面上ではっきり歩き（カメラ
   await toField(pg);
   const pos = () => pg.evaluate(() => { const r = document.querySelector('#bmonw .mon img').getBoundingClientRect(), f = document.querySelector('#chf').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.bottom, w: f.width, h: f.height, node: S.m.raise.node, field: MMCHV.state().field, cam: MMCHV.state().cam.ty }; });
   const a = await pos(); await rollAs(pg, 1); await idle(pg); const b = await pos();
-  assert.equal(b.node, 'w1_1'); assert.ok(Math.abs(b.cam - a.cam) + Math.hypot(b.x - a.x, b.y - a.y) >= 40, `1地点＝手前のマスから次のマスへ（2026-10-01：01 は6マス）（カメラ ${Math.abs(b.cam - a.cam).toFixed(0)}px・画面 ${Math.hypot(b.x - a.x, b.y - a.y).toFixed(0)}px）`);
-  await place(pg, 'w1_3'); await idle(pg); await rollAs(pg, 3); await idle(pg); const c = await pos();
-  assert.deepEqual([c.node, c.field], ['w2_0', 2], '3地点：w1_4 → w1_5 → 背景の切り替え → w2_0');
+  assert.equal(b.node, 'w1_1'); assert.ok(Math.abs(b.cam - a.cam) + Math.hypot(b.x - a.x, b.y - a.y) >= 40, `1地点＝手前のマスから次のマスへ（2026-10-01：01 は5マス）（カメラ ${Math.abs(b.cam - a.cam).toFixed(0)}px・画面 ${Math.hypot(b.x - a.x, b.y - a.y).toFixed(0)}px）`);
+  await place(pg, 'w1_2'); await idle(pg); await rollAs(pg, 3); await idle(pg); const c = await pos();
+  assert.deepEqual([c.node, c.field], ['w2_0', 2], '3地点：w1_3 → w1_4 → 背景の切り替え → w2_0');
   assert.ok(c.y > c.h * 0.35 && c.y < c.h * 0.85 && c.x > 0 && c.x < c.w, `切り替え後も画面の中央より少し下（${c.y.toFixed(0)} / ${c.h}）`);
   const cams = await pg.evaluate(() => document.querySelectorAll('.chf-cam').length); assert.equal(cams, 1);
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
@@ -302,5 +302,24 @@ test('JR-13：大会会場への到着：14 の最後のマス（ゴール）に
   await pg.reload(); await pg.waitForFunction(() => typeof S === 'object' && S.m); await pg.evaluate(() => board());
   await pg.waitForSelector('#chrcv .rcv-row', { timeout: 20000 }); await pg.waitForTimeout(400);
   assert.deepEqual(await pg.evaluate(() => ({ talk: !!document.querySelector('.mmtalk'), on: document.querySelector('#chfarr').classList.contains('on'), rows: document.querySelectorAll('.rcv-row.ok').length })), { talk: false, on: true, rows: 2 }, '再読み込み：会話は繰り返さず受付から');
+  assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
+});
+
+test('JR-14：マスUI（正式素材は未着）：今の背景の各マスに、位置確認専用の仮表示（点線・「仮 #通し番号」）がノードの座標どおりに出る。config.tileUI.sprites に種別ごとの素材を登録すると、座標を変えずに素材だけ差し替わる', { skip: SKIP }, async () => {
+  const p = await open(); const pg = p.page;
+  await H.newGame(pg, 'テスト');
+  await pg.evaluate(() => { const m = mk(0); m.name = 'ソラ'; MMP7.ensureProg(m); S.m = m; save(); MMP8.depart(S, m, () => 0.37); save(); board(); });
+  await pg.waitForSelector('#chf .chf-bg'); await idle(pg);
+  const read = () => pg.evaluate(() => { const g = MMCH.graphFor(S.m), sc = MMCH.getConfig(1).fieldScenes[0]; return [...document.querySelectorAll('#chf .chf-tile')].map((t) => { const n = g.nodes[t.dataset.id]; return { id: t.dataset.id, ph: t.classList.contains('ph'), label: t.textContent, img: t.querySelector('img') && t.querySelector('img').getAttribute('src'), dx: Math.abs(parseFloat(t.style.left) - n.mx * sc.w), dy: Math.abs(parseFloat(t.style.top) - n.my * sc.h), type: t.dataset.type, under: +getComputedStyle(t).zIndex < +getComputedStyle(document.querySelector('#bmonw')).zIndex || getComputedStyle(document.querySelector('#bmonw')).zIndex === 'auto' }; }); });
+  const a = await read();
+  assert.deepEqual(a.map((t) => t.id), ['w1_0', 'w1_1', 'w1_2', 'w1_3', 'w1_4'], '01 の5マス'); assert.ok(a.every((t) => t.ph && !t.img && /^仮 #\d+$/.test(t.label) && t.dx < 0.5 && t.dy < 0.5), `仮表示がノードの座標に ${JSON.stringify(a)}`);
+  assert.deepEqual(a.map((t) => t.label), ['仮 #1', '仮 #2', '仮 #3', '仮 #4', '仮 #5']);
+  // 素材を登録（例：normal と stat）→ 同じ座標のまま、素材の画像に差し替わる（座標は作り直さない）
+  await pg.evaluate(() => { const c = MMCH.getConfig(1); c.tileUI.sprites.normal = './assets/fields/ch1a/nodes/event_normal.webp'; c.tileUI.sprites.stat = './assets/fields/ch1a/nodes/stat_life.webp'; S.m.raise.node = 'w2_0'; save(); board(); S.m.raise.node = 'w1_0'; save(); board(); });   // 背景を切り替えて描き直す
+  await pg.waitForTimeout(300);
+  const b = await read();
+  assert.deepEqual(b.map((t) => [t.id, t.dx < 0.5 && t.dy < 0.5]), a.map((t) => [t.id, true]), '座標は同じ'); assert.ok(b.every((t) => !t.ph && t.img), '素材の画像に差し替わる');
+  assert.ok(b.every((t) => t.img === (/^stat_/.test(t.type) ? './assets/fields/ch1a/nodes/stat_life.webp' : './assets/fields/ch1a/nodes/event_normal.webp')), `種別ごとの素材（stat は stat、ほかは normal）：${JSON.stringify(b.map((t) => [t.type, t.img]))}`);
+  await pg.evaluate(() => { MMCH.getConfig(1).tileUI.sprites = {}; });
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
 });

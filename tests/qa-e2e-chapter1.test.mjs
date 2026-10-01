@@ -110,9 +110,9 @@ test('CH1-B3：休む（1ターン・疲れ −30・移動なし）。疲れ100�
 test('CH1-B4：1本道：滝の見える道（05）の奥から出目のぶんそのまま大樹の森（06）へ進み、分岐の選択は出ない', { skip: SKIP }, async () => {
   const p = await L.open(); const pg = p.page;
   await start(p);
-  await place(pg, 'w5_2'); await idle(pg);
+  await place(pg, 'w5_1'); await idle(pg);
   await rollAs(pg, 3); await idle(pg);
-  const s = await st(pg); assert.deepEqual([s.node, s.field], ['w6_1', 6], 'w5_3 → 背景の切り替え → w6_0 → w6_1');
+  const s = await st(pg); assert.deepEqual([s.node, s.field], ['w6_1', 6], 'w5_2 → 背景の切り替え → w6_0 → w6_1');
   assert.equal(await pg.evaluate(() => document.querySelectorAll('.chroute').length), 0, '分岐の選択は出ない'); assert.equal(await pg.evaluate(() => S.m.raise.field.branch), null);
   assert.deepEqual(await pg.evaluate(() => [...document.querySelectorAll('.chf-bg')].map((i) => i.getAttribute('src'))), ['./assets/fields/ch1a/final/field/ch1_bg_06.webp']);
   assert.deepEqual(p.errors, []);
@@ -122,7 +122,7 @@ test('CH1-B4：1本道：滝の見える道（05）の奥から出目のぶん�
 test('CH1-B5：背景の切り替え：旅立ちの小道（01）の奥から木漏れ日の森道（02）の手前へ歩いて入る（前の背景の DOM は残さない）', { skip: SKIP }, async () => {
   const p = await L.open(); const pg = p.page;
   await start(p);
-  await place(pg, 'w1_3'); await idle(pg);
+  await place(pg, 'w1_2'); await idle(pg);
   await rollAs(pg, 3); await idle(pg);
   const r = await pg.evaluate(() => ({ node: S.m.raise.node, bgs: [...document.querySelectorAll('.chf-bg')].map((i) => i.getAttribute('src')), cams: document.querySelectorAll('.chf-cam').length, fd: document.querySelector('#chfd').textContent }));
   assert.equal(r.node, 'w2_0'); assert.deepEqual(r.bgs, ['./assets/fields/ch1a/final/field/ch1_bg_02.webp']); assert.equal(r.cams, 1); assert.equal(r.fd, '木漏れ日の森道');
@@ -272,7 +272,7 @@ test('CH1-B11：止まる位置と目印の位置は別：能力の石碑・宝�
 test('CH1-B12：背景の切り替え：フィールドの端からそのまま進む向きへ歩き続け、短い暗転のあと次のフィールドの入口の少し手前から歩いて入る（ワープしない）。前の背景の DOM は残さない', { skip: SKIP }, async () => {
   const p = await L.open(); const pg = p.page;
   await start(p);
-  await place(pg, 'w1_4'); await idle(pg);
+  await place(pg, 'w1_3'); await idle(pg);
   await startRecording(pg);
   await pg.evaluate(() => { window.__veil = 0; new MutationObserver(() => { if (document.querySelector('.chf-veil.on')) window.__veil++; }).observe(document.querySelector('#chf'), { subtree: true, attributes: true, childList: true }); });
   await rollAs(pg, 2); await idle(pg);
@@ -280,7 +280,7 @@ test('CH1-B12：背景の切り替え：フィールドの端からそのまま�
   const r = await pg.evaluate(() => ({ node: S.m.raise.node, bgs: [...document.querySelectorAll('.chf-bg')].map((i) => i.getAttribute('src')), cams: document.querySelectorAll('.chf-cam').length, veils: document.querySelectorAll('.chf-veil').length, veilOn: window.__veil, fd: document.querySelector('#chfd').textContent }));
   assert.equal(r.node, 'w2_0'); assert.deepEqual(r.bgs, ['./assets/fields/ch1a/final/field/ch1_bg_02.webp']); assert.equal(r.cams, 1); assert.equal(r.veils, 0, '暗転の幕は消える'); assert.ok(r.veilOn > 0, '短い暗転があった'); assert.equal(r.fd, '木漏れ日の森道');
   // 切り替えの前：進む向き（上）へ歩き続ける。切り替えの後：入口の手前（下）から入口へ歩いて入る
-  const before = rec.filter((x) => x.node === 'w1_5' && /walk/.test(x.cls) && x.wy > 0), after = rec.filter((x) => x.node !== 'w1_4' && x.node !== 'w1_5' && /walk/.test(x.cls) && x.wy > 0);
+  const before = rec.filter((x) => x.node === 'w1_4' && /walk/.test(x.cls) && x.wy > 0), after = rec.filter((x) => x.node !== 'w1_3' && x.node !== 'w1_4' && /walk/.test(x.cls) && x.wy > 0);
   assert.ok(before.length >= 2 && before[before.length - 1].wy < before[0].wy - 5, `端まで来ても上へ歩き続ける（${before.length}フレーム・${before[0] && before[0].wy.toFixed(0)}→${before.length && before[before.length - 1].wy.toFixed(0)}）`);
   assert.ok(after.length >= 2 && after[0].wy > after[after.length - 1].wy + 5, `次のフィールドでは入口の手前から上へ歩いて入る（${after.length}フレーム）`);
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);

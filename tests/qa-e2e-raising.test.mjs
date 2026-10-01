@@ -309,7 +309,7 @@ T('QA-RB3：サイコロ（出目3）→ 1地点ずつ移動し1歩ごとに保�
 });
 
 T('QA-RB4：サイコロの演出中・移動の途中で再読み込み → 出目・ターン消費・疲れは保存済みのまま（振り直しなし）→ 保存済みの地点から残りだけ進み、止まった地点の効果は1回だけ（視差効果を減らす設定）', async () => {
-  const p = await boot(seed({}, {}, { w1_1: { t: 'stat', k: 'li' }, w1_2: { t: 'stat', k: 'po' }, w1_3: { t: 'stat', k: 'hi' }, w1_4: { t: 'stat', k: 'in' }, w1_5: null }), '#chf-ui #brollbtn', { calm: true }); const pg = p.page;
+  const p = await boot(seed({}, {}, { w1_1: { t: 'stat', k: 'li' }, w1_2: { t: 'stat', k: 'po' }, w1_3: { t: 'stat', k: 'hi' }, w1_4: { t: 'stat', k: 'in' }, w2_0: null }), '#chf-ui #brollbtn', { calm: true }); const pg = p.page;
   const before = await H.getS(pg);
   // (1) 出目2：演出中（まだ移動していない）に再読み込み
   await setDice(pg, [2]);
@@ -330,7 +330,7 @@ T('QA-RB4：サイコロの演出中・移動の途中で再読み込み → 出
   assert.deepEqual({ ...statsOf(s1.m), po: before.m.po }, statsOf(before.m), 'ほかの能力（通過したライフの地点を含む）は変わらない');
   assert.match(await bmsg(pg), new RegExp(`ちから \\+${gain}$`));
   await assertSynced(pg);
-  // (2) 出目3：1歩進んだところ（w1_3）で再読み込み → 残り2歩（w1_4 → w1_5）だけ進む
+  // (2) 出目3：1歩進んだところ（w1_3）で再読み込み → 残り2歩（w1_4 → 背景02 の w2_0）だけ進む
   await setDice(pg, [3]);
   await pg.waitForTimeout(SETTLE);
   await pg.click('#brollbtn');
@@ -341,7 +341,7 @@ T('QA-RB4：サイコロの演出中・移動の途中で再読み込み → 出
   await reloadAndStart(pg, '#chf');
   await waitTurnDone(pg, 2);
   r = await raiseOf(pg);
-  assert.deepEqual([r.node, r.pend, r.turnsUsed, r.fatigue], ['w1_5', null, 2, 12], 'w1_3 から残り2歩 → w1_5。振り直していない');
+  assert.deepEqual([r.node, r.pend, r.turnsUsed, r.fatigue], ['w2_0', null, 2, 12], 'w1_3 から残り2歩 → w2_0。振り直していない');
   assert.deepEqual(statsOf((await H.getS(pg)).m), statsOf(s1.m), 'ちからの効果は重ならず、通過した w1_3・w1_4 も効果なし');
   assert.equal(await bmsg(pg), 'START でサイコロを振る。休むこともできる。');
   await assertSynced(pg);
@@ -349,15 +349,15 @@ T('QA-RB4：サイコロの演出中・移動の途中で再読み込み → 出
 });
 
 T('QA-RB5：背景の切り替えをまたぐ移動の途中で再読み込み → 残りの移動だけ進み、次の背景の最初の地点で止まって効果は1回だけ（視差効果を減らす設定）', async () => {
-  const p = await boot(seed({ node: 'w1_4', turnsUsed: 3 }, {}, { w1_5: null, w2_0: { t: 'stat', k: 'hi' } }), '#chf-ui #brollbtn', { calm: true }); const pg = p.page;
+  const p = await boot(seed({ node: 'w1_3', turnsUsed: 3 }, {}, { w1_4: null, w2_0: { t: 'stat', k: 'hi' } }), '#chf-ui #brollbtn', { calm: true }); const pg = p.page;
   const before = await H.getS(pg);
   await setDice(pg, [2]);
   await pg.waitForTimeout(SETTLE);
   await pg.click('#brollbtn');
   await stopDice(pg);
-  await pg.waitForFunction(() => JSON.parse(localStorage.getItem('mr4v6')).m.raise.node === 'w1_5', null, { timeout: 15000, polling: 10 });
+  await pg.waitForFunction(() => JSON.parse(localStorage.getItem('mr4v6')).m.raise.node === 'w1_4', null, { timeout: 15000, polling: 10 });
   const st1 = await storedRaise(pg);
-  assert.deepEqual([st1.node, st1.pend, st1.turnsUsed], ['w1_5', { roll: 2, left: 1, stage: 'move', fatigueAdded: 5 }, 4], '1歩進んだところで保存済み');
+  assert.deepEqual([st1.node, st1.pend, st1.turnsUsed], ['w1_4', { roll: 2, left: 1, stage: 'move', fatigueAdded: 5 }, 4], '1歩進んだところで保存済み');
   await reloadAndStart(pg, '#chf');
   await waitTurnDone(pg, 4);
   const r = await raiseOf(pg);

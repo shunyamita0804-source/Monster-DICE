@@ -137,6 +137,24 @@
     const vis = ((cfg.landmarkVisibility || {})[a.t] || 'always') === 'arrive' && !used;   // 着いたときに初めて現れる目印
     return `<div class="chf-obj ${look.cls}${used ? ' used' : ''}${vis ? ' hid' : ''}" data-id="${id}" data-t="${a.t}" data-side="${P.side}" style="left:${P.x.toFixed(1)}px;top:${P.y.toFixed(1)}px;z-index:${Math.round(P.y)};--sink:${look.sink || 0};--d:${d};opacity:${(P.opacity * (1 - far * 0.35)).toFixed(2)}"><i class="chf-osh"></i><i class="chf-glow"></i><img src="${asset(cfg, look.key)}" alt="" draggable="false" decoding="async" style="${size}">${look.tuft === false ? '' : tuftHtml(cfg, w || (look.h * d) * 0.7)}</div>`;
   }
+  // ---------------------------------------------------------
+  // マスUI（config.tileUI）：各マスの座標（ノードの止まる位置 mx・my）に、マス種別ごとの表示素材を地面に置く。
+  //  正式素材は未着：sprites に種類ごとの画像を書けば差し替わる（座標はそのまま。探す順＝種別名 → まとめた種類 → normal）。
+  //  素材が無い種類は、位置確認専用の仮表示（点線の楕円と「仮 #通し番号」。正式デザインではない）。tileUI が無い config は何も出さない
+  // ---------------------------------------------------------
+  const TILE_GROUP = { stat_life: 'stat', stat_power: 'stat', stat_intelligence: 'stat', stat_accuracy: 'stat', stat_evasion: 'stat', stat_toughness: 'stat', rest: 'event', wild: 'battle', strong: 'battle', rival: 'battle' };
+  function tileKeyOf(m, id) { const a = MMCH.typeAt(m, id); return MMCH.nodeTypeName(a); }
+  function tileSpriteOf(cfg, key) { const T = (cfg && cfg.tileUI && cfg.tileUI.sprites) || {}; return T[key] || T[TILE_GROUP[key]] || T.normal || null; }
+  function tilesHtml(cfg, g, sc, m, ids) {
+    const T = cfg.tileUI; if (!T) return '';
+    const W0 = (T.size && T.size.w) || 170, flat = (T.size && T.size.flat) || 0.34;
+    return ids.map((id) => {
+      const n = g.nodes[id], key = tileKeyOf(m, id), src = tileSpriteOf(cfg, key), w = W0 * n.d, h = w * flat, no = g.order.indexOf(id) + 1;
+      const box = `left:${(n.mx * sc.w).toFixed(1)}px;top:${(n.my * sc.h).toFixed(1)}px;width:${w.toFixed(1)}px;height:${h.toFixed(1)}px;--d:${n.d}`;
+      if (src) return `<i class="chf-tile" data-id="${id}" data-type="${key}" style="${box}"><img src="${esc(src)}" alt="" draggable="false" decoding="async"></i>`;
+      return T.placeholder === false ? '' : `<i class="chf-tile ph" data-id="${id}" data-type="${key}" style="${box}" title="仮表示（位置確認用）"><b>仮 #${no}</b></i>`;
+    }).join('');
+  }
   /** 分岐の道（config.branches[].options の id）どうしが同じ分かれ道か */
   function sameBranchGroup(cfg, a, b) { return (cfg.branches || []).some((B) => B.options.some((o) => o.id === a) && B.options.some((o) => o.id === b)); }
   /** 分岐の道の上の物を隠すか：その分かれ道でまだ道を選んでいない間は、どちらの道の物も隠す（選ぶ前に両方の道の全体を見せない） */
@@ -152,7 +170,7 @@
     const farBand = sc.farBand ? `<div class="chf-pg chf-far" data-k="${sc.farBand.k != null ? sc.farBand.k : PXk.far}"><img class="chf-farimg" src="${sc.bg}" alt="" draggable="false" style="--to:${((sc.farBand.to || 0.34) * 100).toFixed(1)}%"></div>` : '';
     return `<div class="chf-cam" id="chfcam" style="width:${sc.w}px;height:${sc.h}px">${farBand}<img class="chf-bg" src="${sc.bg}" alt="${esc(sc.name)}" draggable="false">
       <div class="chf-pg chf-back" data-k="${PXk.back}">${back.map((L, i) => envHtml(cfg, sc, L, i)).join('')}</div>
-      <div class="chf-pg chf-road" data-k="${PXk.road}">${road.map((L, i) => envHtml(cfg, sc, L, i)).join('')}${objs}${fg}${dbg}
+      <div class="chf-pg chf-road" data-k="${PXk.road}">${tilesHtml(cfg, g, sc, m, ids)}${road.map((L, i) => envHtml(cfg, sc, L, i)).join('')}${objs}${fg}${dbg}
         <div class="chf-mon" id="bmonw" style="--mh:${monH()}px"><i class="chf-msh"></i><div class="chf-flip"><div class="chf-lean"><div class="chf-bob"><div class="mon">${monHtml(m)}</div></div></div></div></div></div>
       <div class="chf-pg chf-front" data-k="${PXk.front}">${front.map((L, i) => envHtml(cfg, sc, L, i)).join('')}</div>
       <div class="chf-fx" id="chffx"></div></div>`;
@@ -705,5 +723,5 @@
   root.MMCHV = Object.freeze({ STEP_MS, FACING, DEFAULTS: DEF,
     state: () => ({ field: V.field, cam: { ...V.cam }, target: { ...V.tgt }, key: V.key, moving: V.moving, look: [...V.look], focus: V.focus ? { ...V.focus } : null, monster: V.monPos ? { ...V.monPos } : null, animator: (V.animator || DEFAULT_ANIMATOR).id }),
     lookOf, sideOffset, landmarkPos: (id) => { const n = V.g && V.g.nodes[id]; if (!n) return null; const m = gS() && gS().m, a = MMCH.fieldOf(m).nodeAssignments[id] || (['strong', 'rival'].includes(n.kind) ? { t: 'battle', bt: n.kind } : null), look = lookOf(V.cfg, a); return look ? landmarkPos(V.cfg, V.g, V.sc, id, look) : null; },
-    zoomAt, registerMonsterAnimator, registerReactionRenderer, focusPoint, roadX: (x, y, d) => roadX(x, y, d != null ? d : depthAtY(y)), stepDuration: (from, to) => { const r = MMCH.routeBetween(V.g, from, to).map((p) => [p[0] * V.sc.w, p[1] * V.sc.h]); return stepDuration(r, to); } });
+    zoomAt, registerMonsterAnimator, registerReactionRenderer, focusPoint, tileKeyOf, tileSpriteOf, roadX: (x, y, d) => roadX(x, y, d != null ? d : depthAtY(y)), stepDuration: (from, to) => { const r = MMCH.routeBetween(V.g, from, to).map((p) => [p[0] * V.sc.w, p[1] * V.sc.h]); return stepDuration(r, to); } });
 })(typeof window !== 'undefined' ? window : globalThis);
