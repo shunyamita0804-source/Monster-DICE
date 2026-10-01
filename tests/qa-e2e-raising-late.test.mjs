@@ -42,7 +42,7 @@ const SETTLE = 550;    // 画面が変わった直後の押下を無視する作
 const BLOCK_MSG = '育成中は、街・牧場・市場・研究所へは行けません。';
 const KS = ['li', 'po', 'in', 'hi', 'ev', 'de'];
 // 終えたChapterの記録（セーブに入れる m.raise.log の項目）
-const LOG1 = { ch: 1, reachedGoal: true, turnsUsed: 14, turnLimit: 20, declined: false, tour: { rank: 0, place: 1, won: true, firstClear: true } };
+const LOG1 = { ch: 1, reachedGoal: true, turnsUsed: 14, turnLimit: 20, declined: false, tour: { rank: 1, place: 1, won: true, firstClear: true } };   // Chapter 1 は D 優勝（2026-10-01：挑戦上限は最高クリア＋1。D クリアで Chapter 2 は C まで）
 const LOG2 = { ch: 2, reachedGoal: true, turnsUsed: 16, turnLimit: 20, declined: false, tour: { rank: 2, place: 1, won: true, firstClear: true } };
 const LOG3 = { ch: 3, reachedGoal: false, turnsUsed: 20, turnLimit: 20, declined: false, tour: null };
 const clr = (h) => [0, 1, 2, 3, 4, 5].map((i) => i <= h);   // クリア最高ランク h（0=E … 5=S、-1=なし）の rankClr
@@ -171,7 +171,7 @@ const myTable = (pg) => pg.evaluate(() => {
 // ターン切れ → Chapter間ファーム
 // ---------------------------------------------------------
 T('QA-RL1：Chapter 2 の20ターン目を使い切る → ターン終了の案内（育成失敗ではない）→ Chapter間ファームへ。ファームからは街へ行けず、中断して再開してもファームから', async () => {
-  const p = await boot(seed({ ch: 2, node: 'a1', turnsUsed: 19, log: [LOG1] }, { g: 120 }, 0), '.p9board #brollbtn', { calm: true }); const pg = p.page;
+  const p = await boot(seed({ ch: 2, node: 'a1', turnsUsed: 19, log: [LOG1] }, { g: 120 }, 1), '.p9board #brollbtn', { calm: true }); const pg = p.page;
   const before = await H.getS(pg);
   await setDice(pg, [1]);
   await pg.waitForTimeout(SETTLE);
@@ -219,7 +219,7 @@ T('QA-RL1：Chapter 2 の20ターン目を使い切る → ターン終了の案
 // 育成放棄
 // ---------------------------------------------------------
 T('QA-RL2：Chapter間ファームの「育成放棄」は2段階の確認（最後のボタンは3秒待ち）。「やめない」なら何も変わらず、放棄すると個体が消えて街へ戻れる（所持金・チケットは残る）', async () => {
-  const p = await boot(farmSeed(2, [LOG1], { g: 321, trainTix: 2 }, 0), '.p9farm.p15f'); const pg = p.page;
+  const p = await boot(farmSeed(2, [LOG1], { g: 321, trainTix: 2 }, 1), '.p9farm.p15f'); const pg = p.page;
   const raw0 = await rawSave(pg);
   const uid = await pg.evaluate(() => S.m.uid);
   const ask = 'button.fmab[onclick="p8AbandonAsk()"]';
@@ -262,7 +262,7 @@ T('QA-RL2：Chapter間ファームの「育成放棄」は2段階の確認（最
 // 修行
 // ---------------------------------------------------------
 T('QA-RL3：修行（Chapter間ファームから）：チケット1枚で開始 → 15マスをサイコロで進み、止まった専用能力マスだけ 特訓の能力とライフが同時に +2〜3 → 途中で再読み込みしても出目・チケットはそのまま → ゴールで回数を記録 → 修行メニュー → ファーム（視差効果を減らす設定）', async () => {
-  const p = await boot(farmSeed(2, [LOG1], { trainTix: 1 }, 0), '.p9farm.p15f', { calm: true }); const pg = p.page;
+  const p = await boot(farmSeed(2, [LOG1], { trainTix: 1 }, 1), '.p9farm.p15f', { calm: true }); const pg = p.page;
   const s0 = await H.getS(pg);
   assert.match(await textOf(pg, '.fmmid'), /特訓チケット\s*1枚/);
   await pg.waitForTimeout(SETTLE);
@@ -344,8 +344,8 @@ T('QA-RL3：修行（Chapter間ファームから）：チケット1枚で開始
 // ---------------------------------------------------------
 // 大会
 // ---------------------------------------------------------
-T('QA-RL4：Chapter 2 のゴール → ランク選択（クリア最高ランクE＋2＝Cまで）→ 2度押しで参加 → 順位表・対戦表。試合の途中で再読み込みするとその試合をやり直し（結果・賞金なし）、VS画面で再読み込みすると順位表へ（視差効果を減らす設定）', async () => {
-  const p = await boot(seed({ ch: 2, node: 'j4', turnsUsed: 10, log: [LOG1] }, { g: 1000 }, 0), '.p9board #brollbtn', { calm: true }); const pg = p.page;
+T('QA-RL4：Chapter 2 のゴール → ランク選択（クリア最高ランクD＋1＝Cまで）→ 2度押しで参加 → 順位表・対戦表。試合の途中で再読み込みするとその試合をやり直し（結果・賞金なし）、VS画面で再読み込みすると順位表へ（視差効果を減らす設定）', async () => {
+  const p = await boot(seed({ ch: 2, node: 'j4', turnsUsed: 10, log: [LOG1] }, { g: 1000 }, 1), '.p9board #brollbtn', { calm: true }); const pg = p.page;
   // j4 から出目3 → G で止まり、残りの移動は消える
   await setDice(pg, [3]);
   await pg.waitForTimeout(SETTLE);
@@ -358,7 +358,7 @@ T('QA-RL4：Chapter 2 のゴール → ランク選択（クリア最高ラン�
   const rk = await ranks();
   assert.equal(rk.length, 3, 'E・D・C の3つ');
   assert.match(rk[0], /ランクE大会 6体の総当たり（5試合） クリア済み：優勝でステータスボーナスのみ/);
-  assert.match(rk[1], /ランクD大会 6体の総当たり（5試合） 初回優勝：200G・特訓チケット×1・ステータスボーナス/);
+  assert.match(rk[1], /ランクD大会 6体の総当たり（5試合） クリア済み：優勝でステータスボーナスのみ/);
   assert.match(rk[2], /ランクC大会 8体の総当たり（7試合） 初回優勝：350G・特訓チケット×2・ステータスボーナス/);
   assert.equal(await pg.evaluate(() => MMP8.canRoll(S.m)), false, 'ゴールのあとはサイコロを振れない');
   await assertSynced(pg, 'ゴール到達は保存済み（再開してもゴールの画面から）');
@@ -416,7 +416,7 @@ T('QA-RL4：Chapter 2 のゴール → ランク選択（クリア最高ラン�
 
 let LAST_MATCH_MSG = null;   // QA-RL6 で記録した「最終戦に勝って2位」の結果の文言（QA-RL6b で確かめる）
 T('QA-RL5：大会の決着：全勝で優勝 → 初回優勝の賞金350G・修行チケット2枚・ステータスボーナスを1回だけ（結果画面で再読み込みしても増えない）→ Chapterを終えてファーム（前回の結果に優勝）', async () => {
-  const p = await boot(seed({ ch: 2, node: 'G', goal: true, turnsUsed: 12, log: [LOG1] }, { g: 1000, trainTix: 0 }, 0), '.p9rank'); const pg = p.page;
+  const p = await boot(seed({ ch: 2, node: 'G', goal: true, turnsUsed: 12, log: [LOG1] }, { g: 1000, trainTix: 0 }, 1), '.p9rank'); const pg = p.page;
   await startTour(pg, 2);
   const s0 = await H.getS(pg);
   const msgs = [];
@@ -457,7 +457,7 @@ T('QA-RL5：大会の決着：全勝で優勝 → 初回優勝の賞金350G・�
 });
 
 T('QA-RL6：最終戦に勝っても2位で終わった大会（相手の1体が全勝）：報酬なし・ランクのクリアなし・所持金そのまま、順位表・対戦表は正しい', async () => {
-  const p = await boot(seed({ ch: 2, node: 'G', goal: true, turnsUsed: 12, log: [LOG1] }, { g: 1000 }, 0), '.p9rank'); const pg = p.page;
+  const p = await boot(seed({ ch: 2, node: 'G', goal: true, turnsUsed: 12, log: [LOG1] }, { g: 1000 }, 1), '.p9rank'); const pg = p.page;
   // NPC同士の勝敗を固定して大会を作る（第1試合の相手＝8番が全勝する）。作ったあとは元の決め方に戻す
   await pg.evaluate(() => {
     MMP8L.setNpcMatchResolver((a, b) => a.id === 7 || (b.id !== 7 && a.id < b.id));
@@ -499,7 +499,7 @@ T('QA-RL6b：最終戦の結果の文言は、その試合の勝敗（勝ち！�
 // ---------------------------------------------------------
 T('QA-RL7：Chapter 4 で B ランクまでのまま大会を辞退 → 育成完了：フィナの会話 → 育成完了画面 → 牧場でモンスターを確認 → 街へ戻れる（育成完了1回）→ 再読み込みしても会話は出ない', async () => {
   const p = await boot(seed({ ch: 4, node: 'G', goal: true, turnsUsed: 15, log: [LOG1, LOG2, LOG3] }, {}, 3), '.p9rank'); const pg = p.page;
-  assert.equal(await pg.evaluate(() => document.querySelectorAll('.p9rank').length), 6, 'B クリア済み → E〜S まで挑戦できる');
+  assert.equal(await pg.evaluate(() => document.querySelectorAll('.p9rank').length), 5, 'B クリア済み → E〜A まで挑戦できる（＋1。S は封印）');
   const s0 = await H.getS(pg);
   const armed = await press2(pg, 'button[onclick="p8TourDecline(this)"]', '.mmtalk');
   assert.equal(armed, 'もう一度押すと辞退（報酬なしでChapter終了）');
@@ -517,7 +517,7 @@ T('QA-RL7：Chapter 4 で B ランクまでのまま大会を辞退 → 育成�
   assert.equal(talk.lines[0], 'お疲れさまでした！　育成完了です！');
   // 育成完了画面
   const done = await textOf(pg, '.p9farm.p9done');
-  for (const w of ['育成完了', 'ソラモの育成が完了した！', '最高クリアランク：B', '育成の記録', '14ターンでゴール／ランクE大会 1位', 'CHAPTER 4「灼熱の火山」', '15ターンでゴール／大会辞退']) assert.ok(done.includes(w), `育成完了画面に「${w}」`);
+  for (const w of ['育成完了', 'ソラモの育成が完了した！', '最高クリアランク：B', '育成の記録', '14ターンでゴール／ランクD大会 1位', 'CHAPTER 4「灼熱の火山」', '15ターンでゴール／大会辞退']) assert.ok(done.includes(w), `育成完了画面に「${w}」`);
   assert.equal(await pg.evaluate(() => !!document.querySelector('.p9done .mon svg, .p9done .mon img')), true, 'モンスターが表示されている');
   await assertSynced(pg);
   // 牧場へ → モンスターがいる → 街へ

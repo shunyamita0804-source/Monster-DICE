@@ -13,9 +13,9 @@
 (function (root) {
   'use strict';
   // sides：面の数（config.dice.sides。省略時は 3）。resultSprites に無い出目（例：6面で 4〜6 の停止画像が未着）は、数字の輪で出す（fallback。エンジン・演出は止まらない）
-  //  START／STOP（2026-10-01）：play に manualStop:true を渡すと、サイコロは宙に浮いて回り続け（spin）、requestStop()（STOP ボタン）か autoStopMs の経過で落ちて止まる（land）。
+  //  START／STOP（2026-10-01）：play に manualStop:true を渡すと、サイコロは宙に浮いて回り続け（spin）、プレイヤーが STOP（requestStop()）を押すと落ちて止まる（land）。自動では止めない
   //  出目は play を呼ぶ前に決まっている（STOP は確率を変えない。止める表示のきっかけだけ）
-  const C = { rollingSprite: './assets/fields/ch1a/dice/dice_rolling.webp', resultSprites: {}, min: 1, max: 3, sides: 3, ms: 920, resultMs: 480, settleMs: 180, upMs: 360, landMs: 640, autoStopMs: 3000 };
+  const C = { rollingSprite: './assets/fields/ch1a/dice/dice_rolling.webp', resultSprites: {}, min: 1, max: 3, sides: 3, ms: 920, resultMs: 480, settleMs: 180, upMs: 360, landMs: 640 };
   let locked = false, cache = null, phase = null, stopResolve = null;
   function configure(o) {
     if (o && typeof o === 'object') {
@@ -67,7 +67,7 @@
     try {
       const mv = ov.querySelector('.chdz-mv'), img = ov.querySelector('.chdz-img'), sh = ov.querySelector('.chdz-sh'), T = calm ? 260 : C.ms, settle = Math.min(0.3, C.settleMs / T);
       if (opts.manualStop) {
-        // START → 宙で回り続ける（spin）→ STOP（requestStop）または autoStopMs で落ちて止まる（land）。回転は止めた瞬間の角度から正式の角度へ収束
+        // START → 宙で回り続ける（spin）→ プレイヤーの STOP（requestStop）で落ちて止まる（land）。回転は止めた瞬間の角度から正式の角度へ収束
         const ax = lx * 0.5, ay = ly - 110;   // 宙に浮く位置（着地点の上）
         phase = 'spin'; ov.dataset.phase = 'spin';
         const stopP = new Promise((ok) => { stopResolve = ok; });
@@ -77,7 +77,7 @@
           img.classList.add('spin');
         } else { mv.style.transform = `translate(-50%,-50%) translate(${ax.toFixed(1)}px,${ay.toFixed(1)}px)`; }
         const t0 = performance.now();
-        await Promise.race([stopP, wait(Number.isFinite(opts.autoStopMs) ? opts.autoStopMs : C.autoStopMs)]);
+        await stopP;
         stopResolve = null; phase = 'land'; ov.dataset.phase = 'land';
         const T2 = calm ? 200 : C.landMs, settle2 = Math.min(0.3, C.settleMs / T2);
         if (!calm && mv.animate) {

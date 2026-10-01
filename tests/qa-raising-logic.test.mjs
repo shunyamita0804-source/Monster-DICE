@@ -653,12 +653,12 @@ const PRIZE = [100, 200, 350, 550, 800, 1200];
 /** Chapter no のゴールにいる個体（クリア最高ランク h） */
 function atGoal(no, h = -1) { const ctx = load(); const S = departTo(ctx, no, { h }); reachGoal(ctx.P8, S); return { ...ctx, S }; }
 
-test('QA-RL23：挑戦できるランク＝その個体のクリア最高ランク＋2（Sまで）。未クリアはE・D、Chapter 1はDまで（全組み合わせ）', () => {
+test('QA-RL23：挑戦できるランク＝その個体のクリア最高ランク＋1（Sまで）。D までは最初から選べる。Chapter 1はDまで（全組み合わせ）', () => {
   const { P7, P8 } = load();
   assert.equal(P8.RANK_LETTERS.join(''), 'EDCBAS');
   for (let h = -1; h <= 5; h++) for (const ch of [1, 2, 3, 4]) {
     const m = mon(P7); m.prog.rankClr = clr(h);
-    let cap = Math.min(5, h + 2); if (ch === 1) cap = Math.min(cap, 1);
+    let cap = Math.min(5, Math.max(1, h + 1)); if (ch === 1) cap = Math.min(cap, 1);
     assert.deepEqual(P8.eligibleRanks(m, ch), Array.from({ length: cap + 1 }, (_, i) => i), `h=${h} ch=${ch}`);
     assert.equal(P8.maxChallengeRank(m, ch), cap);
     for (let k = 0; k < 6; k++) assert.equal(P8.canChallenge(m, ch, k), k <= cap, `h=${h} ch=${ch} rank=${k}`);
@@ -666,7 +666,7 @@ test('QA-RL23：挑戦できるランク＝その個体のクリア最高ラン�
   const m = mon(P7);
   for (const bad of ['0', 1.5, -1, 6, null, undefined, NaN]) assert.equal(P8.canChallenge(m, 2, bad), false, String(bad));
   m.prog.rankClr = [false, false, false, true, false, false];   // 実績が飛び飛びでも「最高ランク」で決まる
-  assert.deepEqual(P8.eligibleRanks(m, 2), [0, 1, 2, 3, 4, 5]);
+  assert.deepEqual(P8.eligibleRanks(m, 2), [0, 1, 2, 3, 4], 'B だけ（飛び飛び）→ 最高 B＋1＝A');
 });
 
 test('QA-RL24：大会はゴール到達後だけ・各Chapterで1回・挑戦できるランクだけ（Chapter 1でCは不可）。大会中は辞退・Chapter終了・別ランクの試合はできない', () => {
@@ -700,7 +700,7 @@ test('QA-RL25：参加数はE・D 6体（自分の試合5）、C〜S 8体（自�
   const { LG } = load();
   assert.deepEqual([...LG.LEAGUE_SIZE], [6, 6, 8, 8, 8, 8]);
   for (let rank = 0; rank < 6; rank++) {
-    const { P8, S } = atGoal(4, rank - 2);
+    const { P8, S } = atGoal(4, rank - 1);
     assert.deepEqual(P8.startTournament(S, S.m, rank, 100 + rank), { ok: true });
     const lg = S.m.raise.tour.league, n = rank < 2 ? 6 : 8;
     assert.equal(lg.size, n); assert.equal(lg.entrants.length, n);
@@ -733,7 +733,7 @@ test('QA-RL26：初回優勝の賞金 E100／D200／C350／B550／A800／S1200G�
   // 修行チケットの枚数（E・D 1枚、C〜S 2枚）はコードの定義（CLAUDE.md には記載なし）
   assert.deepEqual([...P8.FIRST_CLEAR_TICKETS], [1, 1, 2, 2, 2, 2]);
   for (let rank = 0; rank < 6; rank++) {
-    const { P8: Q, S } = atGoal(4, rank - 2);
+    const { P8: Q, S } = atGoal(4, rank - 1);
     const g0 = S.g, t0 = S.trainTix, w0 = S.wins, m = S.m, s0 = stats(m);
     Q.startTournament(S, m, rank, 7);
     let f;
@@ -743,7 +743,7 @@ test('QA-RL26：初回優勝の賞金 E100／D200／C350／B550／A800／S1200G�
         assert.equal(f.won, true); assert.equal(f.settled, undefined);
         assert.deepEqual({ g: S.g, tix: S.trainTix, wins: S.wins, br: S.br, rk: m.rk, fa: m.fa, st: m.st }, { g: g0, tix: t0, wins: w0, br: undefined, rk: 0, fa: 0, st: 0 },
           '試合ごとの旧報酬（fight() の賞金など）は残らない');
-        assert.deepEqual(m.prog.rankClr, clr(rank - 2));
+        assert.deepEqual(m.prog.rankClr, clr(rank - 1));
       }
     }
     assert.deepEqual([f.settled, f.won, f.place], [true, true, 1]);
@@ -781,28 +781,28 @@ test('QA-RL27：クリア済みランクで再び優勝しても賞金・修行�
 });
 
 test('QA-RL28：上位ランクの優勝で下位ランクもクリア扱いになるが、飛ばした下位ランクの賞金は出ない（あとで下位ランクに優勝しても出ない）', () => {
-  const { P8, S } = atGoal(2, 0);   // Eだけクリア → Chapter 2 は C まで
+  const { P8, S } = atGoal(2, -1);   // 未クリア → D までは最初から選べる（E を飛ばして D に挑戦できる）
   const g0 = S.g, t0 = S.trainTix;
-  P8.startTournament(S, S.m, 2, 9);
+  P8.startTournament(S, S.m, 1, 9);
   const f = playLeague(P8, S);
   assert.equal(f.won, true);
-  assert.equal(S.g - g0, 350, 'Cの賞金だけ（Dの200Gは出ない）');
-  assert.equal(S.trainTix - t0, 2);
-  assert.deepEqual(S.m.prog.rankClr, [true, true, true, false, false, false], 'D もクリア扱い');
-  assert.deepEqual(S.rankRec.cleared, [true, true, true, false, false, false]);
+  assert.equal(S.g - g0, 200, 'Dの賞金だけ（Eの100Gは出ない）');
+  assert.equal(S.trainTix - t0, 1);
+  assert.deepEqual(S.m.prog.rankClr, [true, true, false, false, false, false], 'E もクリア扱い');
+  assert.deepEqual(S.rankRec.cleared, [true, true, false, false, false, false]);
   assert.equal(P8.endChapter(S, S.m).next, 3);
   P8.depart(S, S.m); reachGoal(P8, S);
-  assert.deepEqual(P8.eligibleRanks(S.m, 3), [0, 1, 2, 3, 4], 'C クリアで A まで');
+  assert.deepEqual(P8.eligibleRanks(S.m, 3), [0, 1, 2], 'D クリアで C まで（＋1）');
   const g1 = S.g, t1 = S.trainTix;
-  P8.startTournament(S, S.m, 1, 9);
+  P8.startTournament(S, S.m, 0, 9);
   const f2 = playLeague(P8, S);
   assert.deepEqual([f2.won, f2.reward.firstClear, f2.reward.prize], [true, false, 0]);
-  assert.deepEqual([S.g, S.trainTix], [g1, t1], '飛ばしたDに後から優勝しても賞金なし');
+  assert.deepEqual([S.g, S.trainTix], [g1, t1], '飛ばしたEに後から優勝しても賞金なし');
 });
 
 test('QA-RL29：ランク記録：優勝で個体のクリア実績・表示ランク・m.rk・セーブ全体の実績・Chapterの記録が更新される（1回だけ）', () => {
-  const { P7, P8, S } = atGoal(2, 0);
-  assert.equal(P8.rankLabel(S.m), 'E');
+  const { P7, P8, S } = atGoal(2, 1);
+  assert.equal(P8.rankLabel(S.m), 'D');
   const m = S.m, w0 = S.wins;
   const blank = P8.initIndividual(S, mon(P7, { name: 'B' }));
   assert.equal(P8.rankLabel(blank), 'ー', '未クリアは「ー」');
@@ -865,7 +865,7 @@ test('QA-RL31：試合が途中で終わったら（再読込）結果・賞金�
 });
 
 test('QA-RL32：大会の状態は保存され、再読込しても参加者・日程・NPC同士の結果・順位は変わらない（続きの結果も同じ）', () => {
-  const { P8, LG, S } = atGoal(3, 0);
+  const { P8, LG, S } = atGoal(3, 1);
   P8.startTournament(S, S.m, 2, 12345);
   playMatch(P8, S, true); playMatch(P8, S, false); playMatch(P8, S, true);
   const T = reload(P8, S);
@@ -936,8 +936,8 @@ test('QA-RL35：Chapter 4終了時のクリア最高ランクがA未満なら育
   const cases = [
     ['未クリアで辞退', () => { const c = atGoal(4, -1); return [c, c.P8.declineTournament(c.S, c.S.m)]; }],
     ['Bクリア済みで辞退', () => { const c = atGoal(4, 3); return [c, c.P8.declineTournament(c.S, c.S.m)]; }],
-    ['Chapter 4でBに初優勝', () => { const c = atGoal(4, 1); c.P8.startTournament(c.S, c.S.m, 3, 2); assert.equal(playLeague(c.P8, c.S).won, true); assert.equal(c.P8.highestCleared(c.S.m), 3); return [c, c.P8.endChapter(c.S, c.S.m)]; }],
-    ['Cクリア済みでA大会に全敗', () => { const c = atGoal(4, 2); c.P8.startTournament(c.S, c.S.m, 4, 2); assert.equal(playLeague(c.P8, c.S, () => false).won, false); return [c, c.P8.endChapter(c.S, c.S.m)]; }],
+    ['Chapter 4でBに初優勝', () => { const c = atGoal(4, 2); c.P8.startTournament(c.S, c.S.m, 3, 2); assert.equal(playLeague(c.P8, c.S).won, true); assert.equal(c.P8.highestCleared(c.S.m), 3); return [c, c.P8.endChapter(c.S, c.S.m)]; }],
+    ['Bクリア済みでA大会に全敗', () => { const c = atGoal(4, 3); c.P8.startTournament(c.S, c.S.m, 4, 2); assert.equal(playLeague(c.P8, c.S, () => false).won, false); return [c, c.P8.endChapter(c.S, c.S.m)]; }],
     ['ターン切れ（ゴールできず）', () => { const ctx = load(); const S = departTo(ctx, 4, { h: 3 }); timeUp(ctx.P8, S); const c = { ...ctx, S }; return [c, c.P8.endChapter(S, S.m)]; }],
   ];
   for (const [name, run] of cases) {
@@ -987,13 +987,13 @@ test('QA-RL36：Chapter 4終了時にA以上なら最終ルートへ。マップ
 });
 
 test('QA-RL37：Chapter 4でAまたはSに初優勝した場合・以前にAをクリア済みでターン切れの場合も、最終ルート前のファームへ進む', () => {
-  { const { P8, S } = atGoal(4, 2); const g0 = S.g;
+  { const { P8, S } = atGoal(4, 3); const g0 = S.g;
     P8.startTournament(S, S.m, 4, 8); assert.equal(playLeague(P8, S).won, true);
     assert.equal(S.g - g0, 800);
     const e = P8.endChapter(S, S.m);
     assert.equal(e.next, 'final'); assert.deepEqual(e.entry.tour, { rank: 4, place: 1, won: true, firstClear: true });
     assert.deepEqual([S.m.raise.state, S.m.raise.ch], ['farm', 'final']); assert.equal(P8.raiseDoneCount(S), 0); }
-  { const { P8, S } = atGoal(4, 3);
+  { const { P8, S } = atGoal(4, 4);
     P8.startTournament(S, S.m, 5, 8); assert.equal(playLeague(P8, S).won, true);
     assert.equal(P8.endChapter(S, S.m).next, 'final'); }
   { const ctx = load(); const S = departTo(ctx, 4, { h: 4 }); timeUp(ctx.P8, S);
@@ -1060,11 +1060,11 @@ test('QA-RL39：育成完了は終点：完了した個体にはボード・大�
   assertDone(P8, S, 5);
 });
 
-test('QA-RL40：新規開始から育成完了まで通し（正式マップ・通常ルート・固定乱数）：E→C→Aに優勝、Chapter 4は辞退、最終ルートは代替処理。賞金・チケット・記録が合う', () => {
+test('QA-RL40：新規開始から育成完了まで通し（正式マップ・通常ルート・固定乱数）：D→C→B→Aに優勝（挑戦上限は最高クリア＋1）、Chapter 4 で A をクリアして最終ルート、最終ルートは代替処理。賞金・チケット・記録が合う', () => {
   const ctx = load(); const { P7, P8 } = ctx; const rnd = rng(2026);
   const S = P8.newSave(); S.m = P8.initIndividual(S, mon(P7));
   const g0 = S.g, t0 = S.trainTix; let boardGold = 0, boardTix = 0;
-  const plan = { 1: 0, 2: 2, 3: 4, 4: null };   // 各Chapterで挑戦するランク（null＝辞退）
+  const plan = { 1: 1, 2: 2, 3: 3, 4: 4 };   // 各Chapterで挑戦するランク（null＝辞退）
   for (const no of [1, 2, 3, 4]) {
     assert.deepEqual(P8.depart(S, S.m), { ok: true, key: no });
     const trk = P8.boardOf(S.m);
@@ -1082,7 +1082,7 @@ test('QA-RL40：新規開始から育成完了まで通し（正式マップ・�
     else {
       P8.startTournament(S, S.m, plan[no], 40 + no);
       assert.equal(playLeague(P8, S, () => true).won, true);
-      assert.equal(P8.endChapter(S, S.m).next, no + 1);
+      assert.equal(P8.endChapter(S, S.m).next, no < 4 ? no + 1 : 'final');
     }
     // 中断・再開しても続きから（街は経由しない）
     const T = reload(P8, S); assert.deepEqual(T.m.raise, j(S.m.raise));
@@ -1090,9 +1090,9 @@ test('QA-RL40：新規開始から育成完了まで通し（正式マップ・�
   assert.deepEqual(P8.finishWithoutFinal(S, S.m).raiseDone, 1);
   assertDone(P8, S, 5);
   assert.deepEqual(S.m.raise.log.map((e) => [e.ch, e.tour ? `${P8.RANK_LETTERS[e.tour.rank]}${e.tour.place}位` : e.declined ? '辞退' : e.skipped ? '未実施' : '']),
-    [[1, 'E1位'], [2, 'C1位'], [3, 'A1位'], [4, '辞退'], ['final', '未実施']]);
-  assert.equal(S.g - g0, boardGold + 100 + 350 + 800, '賞金はE・C・Aの初回優勝分だけ（飛ばしたD・Bは出ない）');
-  assert.equal(S.trainTix - t0, boardTix + 1 + 2 + 2);
+    [[1, 'D1位'], [2, 'C1位'], [3, 'B1位'], [4, 'A1位'], ['final', '未実施']]);
+  assert.equal(S.g - g0, boardGold + 200 + 350 + 550 + 800, '賞金はD・C・B・Aの初回優勝分だけ（飛ばしたEは出ない）');
+  assert.equal(S.trainTix - t0, boardTix + 1 + 2 + 2 + 2);
   assert.deepEqual(S.m.prog.rankClr, clr(4));
   assert.equal(P8.rankLabel(S.m), 'A');
 });

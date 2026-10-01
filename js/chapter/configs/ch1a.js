@@ -37,8 +37,9 @@
     '09b': ['09b_forest_exit', '森の出口', [0.5, 0.52, 0.56, 0.6]],
     '10': ['10_tournament_approach', '大会会場への道', [0.5, 0.5, 0.5, 0.5]],
   };
-  // 周回数【暫定】：共通2周・橋1周・森2周・会場2周＝橋ルート 59マス／森ルート 79マス。1周＝石板4つ。
-  //  tests/chapter-balance.mjs の比較（2026-10-01、各600回）：急ぐ（橋）＝到達100%・平均19ターン、育成重視（森）＝到達97%・平均25ターン。最終確定は比較結果を見てからの判断
+  // 周回数＝ルートの長さ【暫定候補。正式確定ではない】：共通2周・橋1周・森2周・会場2周＝橋ルート 59マス／森ルート 79マス。1周＝石板4つ。
+  //  ここ（またはこの表）を変えるだけで総マス数が変わる。tests/chapter-balance.mjs で候補を比較（2026-10-01、各1000回：橋＝到達99.9%・平均19ターン、森＝到達95.9%・平均25.5ターン）。
+  //  最終距離はシミュレーションと実際の試遊感を見てから決める
   const LAPS = root.MMCH_CH1A_LAPS || { '01': 2, '02': 2, '03': 2, '04': 2, '05a': 1, '06a': 1, '07a': 1, '08a': 1, '09a': 1, '05b': 2, '06b': 2, '07b': 2, '08b': 2, '09b': 2, '10': 2 };
   // 旅の順とルート（path id の頭：共通 f1_／g1_／g2_／f2_、橋 a…、森 b…、合流 f3_。周回は b_／c_ を足す）
   const ORDER = { shared: [['01', 'f1_'], ['02', 'g1_'], ['03', 'g2_'], ['04', 'f2_']], bridge: [['05a', 'a'], ['06a', 'a2_'], ['07a', 'a3_'], ['08a', 'a4_'], ['09a', 'a5_']], forest: [['05b', 'b'], ['06b', 'b2_'], ['07b', 'b3_'], ['08b', 'b4_'], ['09b', 'b5_']], goal: [['10', 'f3_']] };
@@ -141,7 +142,7 @@
     companion: { npc: 'fina', reactions: {} },
 
     // ---- サイコロ：回転中は無地の正式サイコロ（dice_blank）、停止面は正式の dice_stop_1〜6（上面＝出目） ----
-    dice: { rollingSprite: D + 'dice_blank.webp', resultSprites: { 1: D + 'dice_stop_1.webp', 2: D + 'dice_stop_2.webp', 3: D + 'dice_stop_3.webp', 4: D + 'dice_stop_4.webp', 5: D + 'dice_stop_5.webp', 6: D + 'dice_stop_6.webp' }, autoStopMs: 3000 },
+    dice: { rollingSprite: D + 'dice_blank.webp', resultSprites: { 1: D + 'dice_stop_1.webp', 2: D + 'dice_stop_2.webp', 3: D + 'dice_stop_3.webp', 4: D + 'dice_stop_4.webp', 5: D + 'dice_stop_5.webp', 6: D + 'dice_stop_6.webp' } },
 
     assets: {
       stat_li: A + 'nodes/stat_life.webp', stat_po: A + 'nodes/stat_power.webp', stat_in: A + 'nodes/stat_intelligence.webp',
@@ -151,12 +152,12 @@
       battle_wild: A + 'nodes/battle_wild.webp', battle_rival: A + 'nodes/battle_rival.webp', battle_strong: A + 'nodes/battle_wild.webp',
       grass_front: A + 'env/grass_flower_border.webp',
     },
-    // 目印：石板の脇（道の中央の輪にモンスター、目印は輪の横）。足元の草は置かない（石の道）
+    // 目印：石板の脇（道の中央の輪にモンスター、目印は輪の横。奥の輪でもモンスターに重ならない距離 gap）。足元の草は置かない（石の道）
     nodeLook: {
-      stat: { w: 104, side: 1, gap: 170, sink: 0.1, tuft: false },
-      event: { h: 110, side: 1, gap: 170, sink: 0.06, tuft: false },
-      eventNature: { w: 140, side: 1, gap: 170, sink: 0.08, tuft: false },
-      treasure: { w: 88, side: -1, gap: 160, sink: 0.08, tuft: false },
+      stat: { w: 104, side: 1, gap: 215, sink: 0.1, tuft: false },
+      event: { h: 110, side: 1, gap: 215, sink: 0.06, tuft: false },
+      eventNature: { w: 140, side: 1, gap: 215, sink: 0.08, tuft: false },
+      treasure: { w: 88, side: -1, gap: 205, sink: 0.08, tuft: false },
       battle: { h: 140, side: 1, gap: 170, sink: 0.04, tuft: false },
       figure: { h: 190, side: 1, gap: 150, sink: 0.02, tuft: false },
       tuft: 'grass_front',

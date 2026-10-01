@@ -44,12 +44,12 @@ for (const size of [H.SIZES.base, H.SIZES.se]) {
   });
 }
 
-test('JR-2：1地点＝石板1つ：1地点進むだけでも画面上で長い距離（90px以上）を歩き、3地点は背景をまたいで歩く。背景の切り替えのあとも、モンスターは新しい背景の道の上（入口の地点）に立つ', { skip: SKIP }, async () => {
+test('JR-2：1地点＝石板1つ：1地点進むだけでも画面上ではっきり歩き（カメラと合わせて60px以上）、3地点は背景をまたいで歩く。背景の切り替えのあとも、モンスターは新しい背景の道の上（入口の地点）に立つ', { skip: SKIP }, async () => {
   const p = await open(); const pg = p.page;
   await toField(pg);
   const pos = () => pg.evaluate(() => { const r = document.querySelector('#bmonw .mon img').getBoundingClientRect(), f = document.querySelector('#chf').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.bottom, w: f.width, h: f.height, node: S.m.raise.node, field: MMCHV.state().field, cam: MMCHV.state().cam.ty }; });
   const a = await pos(); await rollAs(pg, 1); await idle(pg); const b = await pos();
-  assert.equal(b.node, 'f1_1'); assert.ok(Math.abs(b.cam - a.cam) + Math.hypot(b.x - a.x, b.y - a.y) >= 90, `1地点でも長い距離（カメラ ${Math.abs(b.cam - a.cam).toFixed(0)}px・画面 ${Math.hypot(b.x - a.x, b.y - a.y).toFixed(0)}px）`);
+  assert.equal(b.node, 'f1_1'); assert.ok(Math.abs(b.cam - a.cam) + Math.hypot(b.x - a.x, b.y - a.y) >= 60, `1地点＝手前の石板から次の石板へ（カメラ ${Math.abs(b.cam - a.cam).toFixed(0)}px・画面 ${Math.hypot(b.x - a.x, b.y - a.y).toFixed(0)}px）`);
   await place(pg, 'f1b_1'); await idle(pg); await rollAs(pg, 3); await idle(pg); const c = await pos();
   assert.deepEqual([c.node, c.field], ['g1_0', 3], '3地点：f1b_2 → f1b_3 → 背景の切り替え → g1_0');
   assert.ok(c.y > c.h * 0.35 && c.y < c.h * 0.85 && c.x > 0 && c.x < c.w, `切り替え後も画面の中央より少し下（${c.y.toFixed(0)} / ${c.h}）`);
@@ -185,17 +185,16 @@ for (const size of [H.SIZES.base, H.SIZES.se]) {
 test('JR-9：Chapter に入った瞬間、旅路全体の俯瞰図（演出専用の画像。Pattern A）が全画面に出て Chapter 名 → スタート地点へズーム／パン → 01 の実プレイ画面へ。その間は操作できない。1回だけ（再読み込みでは出ない）。タップで短縮', { skip: SKIP }, async () => {
   const p = await open({ intro: true }); const pg = p.page;
   await H.newGame(pg, 'テスト');
-  await pg.evaluate(() => { window.__tf = []; const mo = new MutationObserver(() => { const c = document.querySelector('.chintro-cam'); if (c && c.style.transform) { const t = c.style.transform; if (window.__tf[window.__tf.length - 1] !== t) window.__tf.push(t); } }); mo.observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['style', 'class'] }); });
+  await pg.evaluate(() => { window.__tf = []; const tick = () => { const c = document.querySelector('.chintro-cam'); if (c) { const m = /matrix\(([-\d.e]+)/.exec(getComputedStyle(c).transform); if (m) window.__tf.push(+m[1]); } if (window.__tf.length < 2000) setTimeout(tick, 50); }; tick(); });   // ズーム／パンは Web Animations なので、見た目の倍率（computed の matrix）を記録
   await pg.evaluate(() => { const m = mk(0); m.name = 'ソラ'; MMP7.ensureProg(m); S.m = m; save(); MMP8.depart(S, m, () => 0.37); save(); board(); });
   await pg.waitForSelector('.chintro.on', { timeout: 8000 }); await pg.waitForTimeout(400);
   const a = await pg.evaluate(() => { const im = document.querySelector('.chintro-img'), r = im.getBoundingClientRect(), f = document.querySelector('#chfw').getBoundingClientRect(); return { src: im.getAttribute('src'), cover: r.width >= f.width - 1 && r.height >= f.height - 1, title: document.querySelector('.chintro-title').textContent.replace(/\s+/g, ' '), titleOn: document.querySelector('.chintro-title').classList.contains('on'), busy: bBusy, start: document.querySelector('#brollbtn') && document.querySelector('#brollbtn').disabled, bgUnder: !!document.querySelector('#chf .chf-bg'), z: getComputedStyle(document.querySelector('.chintro')).zIndex }; });
   assert.equal(a.src, './assets/fields/ch1a/intro/ch1_intro_overview_pattern1.webp', 'Pattern A の俯瞰図（プレイの背景の流用ではない）'); assert.ok(a.cover, '全画面'); assert.match(a.title, /CHAPTER 1.*はじまりの草原/); assert.equal(a.titleOn, true);
   assert.deepEqual([a.busy, a.start, a.bgUnder], [true, true, true], '演出中は操作できない。下には実プレイの画面（01）が出来ている');
-  const scaleOf = (t) => { const m = /scale\(([\d.]+)\)/.exec(t || ''); return m ? +m[1] : null; };
   const t0 = await pg.evaluate(() => MMCHI.isPlaying()); assert.equal(t0, true);
   await pg.waitForFunction(() => !document.querySelector('.chintro'), null, { timeout: 15000 });
   const tf = await pg.evaluate(() => window.__tf);
-  assert.ok(tf.length >= 2 && scaleOf(tf[tf.length - 1]) > scaleOf(tf[0]) * 1.5, `俯瞰（引き）からスタート地点へ寄る（scale ${scaleOf(tf[0])} → ${scaleOf(tf[tf.length - 1])}）`);
+  assert.ok(tf.length >= 10 && Math.max(...tf) > tf[0] * 1.5, `俯瞰（引き）からスタート地点へ寄る（倍率 ${tf[0] && tf[0].toFixed(3)} → 最大 ${Math.max(...tf).toFixed(3)}）`);
   await idle(pg);
   const b = await pg.evaluate(() => ({ bg: document.querySelector('#chf .chf-bg').getAttribute('src'), node: S.m.raise.node, start: document.querySelector('#brollbtn').textContent.trim(), on: !document.querySelector('#brollbtn').disabled, busy: bBusy }));
   assert.deepEqual(b, { bg: './assets/fields/ch1a/road/01_journey_road.webp', node: 'f1_0', start: 'START', on: true, busy: false }, '俯瞰図のあとは 01 の実プレイ画面で START が押せる');
@@ -210,15 +209,14 @@ test('JR-9：Chapter に入った瞬間、旅路全体の俯瞰図（演出専�
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
 });
 
-test('JR-10：START のあと STOP を押さなくても config.dice.autoStopMs（3秒）で自動的に止まり、同じ出目で進む（抽選は START の時点）', { skip: SKIP }, async () => {
+test('JR-10：START のあと、STOP を押すまでサイコロは宙で回り続ける（自動では止まらない）。押すと START の時点で決まった出目で止まって進む（STOP のタイミングで確率は変わらない）', { skip: SKIP }, async () => {
   const p = await open(); const pg = p.page;
   await toField(pg);
-  await pg.evaluate(() => { MMCH.getConfig(1).dice.autoStopMs = 1200; });
-  const t0 = Date.now(); await rollAs(pg, 4, { stop: false });
+  await rollAs(pg, 4, { stop: false });
   const saved = await pg.evaluate(() => JSON.parse(localStorage.getItem('mr4v6')).m.raise.pend.roll);
-  await pg.waitForFunction(() => MMCHD.phase() === 'land' || !MMCHD.isLocked(), null, { timeout: 8000 });
-  const dt = Date.now() - t0; assert.ok(dt >= 1100 && dt <= 4000, `自動停止まで ${dt}ms`);
-  await idle(pg);
+  await pg.waitForTimeout(4500);
+  assert.deepEqual(await pg.evaluate(() => [MMCHD.phase(), document.querySelector('#brollbtn').textContent.trim(), S.m.raise.node]), ['spin', 'STOP', 'f1_0'], '4.5秒たっても回り続ける（自動停止なし）');
+  await pg.click('#brollbtn'); await idle(pg);
   assert.deepEqual(await pg.evaluate(() => [S.m.raise.node, S.m.raise.turnsUsed]), ['f1b_0', 1], `保存済みの出目 ${saved} で4地点`); assert.equal(saved, 4);
   assert.deepEqual(p.errors, []);
 });

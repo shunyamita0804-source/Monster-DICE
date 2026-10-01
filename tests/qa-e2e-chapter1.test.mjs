@@ -215,7 +215,7 @@ test('CH1-B9：カメラ：移動が始まるとモンスターより少し遅�
 test('CH1-B10：歩き：石板から石板へ道筋の点列で歩く（瞬間移動しない）。出目が決まると約0.1秒の構え → 加速 → 最後に減速して着地の順。1地点 0.38〜0.76秒', { skip: SKIP }, async () => {
   const p = await L.open(); const pg = p.page;
   await start(p);
-  await place(pg, 'f1_2'); await idle(pg);
+  await place(pg, 'f1b_0'); await idle(pg);   // 同じ背景（旅立ちの街道の2周目）の中で3地点
   await startRecording(pg);
   await rollAs(pg, 3); await idle(pg);
   const rec = await stopRecording(pg);
@@ -223,16 +223,16 @@ test('CH1-B10：歩き：石板から石板へ道筋の点列で歩く（瞬間�
   assert.deepEqual(phases.filter((x) => x !== 'idle'), ['ready', 'walk', 'land'], `構え → 歩き → 着地（${phases.join('→')}）`);
   const walk = rec.filter((r) => /walk/.test(r.cls)), dur = walk[walk.length - 1].t - walk[0].t;
   assert.ok(dur >= 700 && dur <= 2800, `3地点の歩きは ${dur}ms（設計 1.2〜2.3秒。負荷で伸びることがある）`);
-  const steps = await pg.evaluate(() => ['f1_3', 'f1b_0', 'f1b_1'].map((to, i) => MMCHV.stepDuration(['f1_2', 'f1_3', 'f1b_0'][i], to)));
+  const steps = await pg.evaluate(() => ['f1b_1', 'f1b_2', 'f1b_3'].map((to, i) => MMCHV.stepDuration(['f1b_0', 'f1b_1', 'f1b_2'][i], to)));
   for (const ms of steps) assert.ok(ms >= 300 && ms <= 800, `1地点 ${ms}ms`);
   // 速度の形：最初は遅く始まり、最後は遅くなって止まる
   const sp = (a, b) => Math.hypot(b.x - a.x, b.y - a.y) / Math.max(1, b.t - a.t);
   const v0 = sp(walk[0], walk[2]), vm = Math.max(...walk.slice(2, -2).map((r, i) => sp(walk[i + 2], walk[i + 3]))), v1 = sp(walk[walk.length - 3], walk[walk.length - 1]);
   assert.ok(v0 < vm * 0.85 && v1 < vm * 0.85, `加速・減速がある（始 ${v0.toFixed(2)} / 最大 ${vm.toFixed(2)} / 終 ${v1.toFixed(2)} px/ms）`);
   // 道筋：隣の石板へは道筋の点列（巨大街道はまっすぐ＝2点以上）
-  const route = await pg.evaluate(() => { const g = MMCH.graphFor(S.m); return [MMCH.routeBetween(g, 'f1_2', 'f1_3').length, MMCH.routeBetween(g, 'f1_3', 'f1b_0').length, MMCH.routeBetween(g, 'f1b_0', 'f1b_1').length]; });
+  const route = await pg.evaluate(() => { const g = MMCH.graphFor(S.m); return [MMCH.routeBetween(g, 'f1b_0', 'f1b_1').length, MMCH.routeBetween(g, 'f1b_1', 'f1b_2').length, MMCH.routeBetween(g, 'f1b_2', 'f1b_3').length]; });
   for (const n of route) assert.ok(n >= 2, `道筋の点 ${n}`);
-  assert.equal((await st(pg)).node, 'f1b_1');
+  assert.equal((await st(pg)).node, 'f1b_3');
   assert.deepEqual(p.errors, []);
 });
 

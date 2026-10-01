@@ -485,7 +485,7 @@
 
   /**
    * START：出目・ターン消費・疲れを確定して保存（演出の前。中断・再読み込みで振り直せない）→ サイコロが宙で回り続ける → 操作欄は STOP に。
-   *  STOP（chfStop）か config.dice.autoStopMs で落ちて止まり、停止面（dice_stop_N）→ 1地点ずつ移動 → 停止処理 → START に戻る
+   *  プレイヤーの STOP（chfStop）で落ちて止まり（自動では止めない）、停止面（dice_stop_N）→ 1地点ずつ移動 → 停止処理 → START に戻る
    */
   async function chfRoll() {
     const m = gS() && gS().m; if (!chfActive(m) || busyGet() || !P8().canRoll(m)) return;
@@ -498,8 +498,7 @@
       if (df) df.hidden = true;
       const fv = $('#chf'), fr = fv ? fv.getBoundingClientRect() : hr;
       V.spinning = true; refreshDeck(m, 'STOP でサイコロを止めよう。'); lockUi(true, '#brollbtn');
-      const auto = (V.cfg.dice && V.cfg.dice.autoStopMs) || undefined;
-      await MMCHD.play(r.value, { host, from, land: { x: fr.left + fr.width / 2 - hr.left, y: fr.top + fr.height * 0.44 - hr.top }, manualStop: true, autoStopMs: auto });   // 着地はモンスターの頭より上（モンスターを隠さない）
+      await MMCHD.play(r.value, { host, from, land: { x: fr.left + fr.width / 2 - hr.left, y: fr.top + fr.height * 0.44 - hr.top }, manualStop: true });   // 着地はモンスターの頭より上（モンスターを隠さない）
       V.spinning = false;
       rollToast(r.value, m.raise.pend ? m.raise.pend.fatigueAdded || 0 : 0); refreshDeck(m, ''); lockUi(true);
     } finally { V.spinning = false; busySet(false); }

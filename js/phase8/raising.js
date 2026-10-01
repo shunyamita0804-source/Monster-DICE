@@ -544,17 +544,18 @@
 
   // =========================================================
   // 公式ランク大会：挑戦できるランクと優勝報酬（Step 5）
-  //  挑戦上限＝その個体のクリア最高ランク＋2（Sまで）。未クリアの個体はE・Dまで。Chapterごとの上限はCHAPTER_RULES.rankCap。
+  //  挑戦上限＝その個体のクリア最高ランク＋1（Sまで。2026-10-01 正式仕様。旧：＋2）。ただし D までは常に選べる（未クリア・E クリアでも D まで）。Chapterごとの上限はCHAPTER_RULES.rankCap（Chapter 1 は D）。
   //  クリア済みランク・下位ランクへの再挑戦も可。報酬は「大会で最終1位」のときに1大会1回だけ。
   // =========================================================
-  const RANK_UNLOCK_STEP = 2;
+  const RANK_UNLOCK_STEP = 1;
+  const RANK_FLOOR = RANK_D;   // 最初から選べる上限（Chapter 1 の時点で D まで）
   const PRIZE = Object.freeze([100, 200, 350, 550, 800, 1200]);                                    // 初回優勝の賞金（E〜S）
   const FIRST_CLEAR_TICKETS = Object.freeze([1, 1, 2, 2, 2, 2]);                                 // 初回優勝の修行チケット（E〜S）
   const WIN_BONUS_RANGE = Object.freeze([[2, 4], [3, 5], [4, 7], [6, 9], [8, 12], [11, 16]].map(Object.freeze)); // 優勝ボーナス（1能力あたり、E〜S）
   const WIN_BONUS_COUNT = 3;                                                                     // 6能力から異なる3能力
   const BONUS_STATS = Object.freeze(['li', 'po', 'in', 'hi', 'ev', 'de']);
   function maxChallengeRank(m, key) {
-    let cap = Math.min(RANK_S, highestCleared(m) + RANK_UNLOCK_STEP);
+    let cap = Math.min(RANK_S, Math.max(RANK_FLOOR, highestCleared(m) + RANK_UNLOCK_STEP));
     const rule = chapterRule(key);
     if (rule && rule.rankCap != null) cap = Math.min(cap, rule.rankCap);
     return cap;

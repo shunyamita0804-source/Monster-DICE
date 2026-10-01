@@ -212,7 +212,7 @@ const FIGHT = (() => { const a = HTML.indexOf('async function fight('); return H
 /** その章のゴールまで進め、指定ランクの大会を始める（挑戦可能にするため下位ランクをクリア済みにする） */
 function tourSave(P7, P8, rank, ch = 4, seed = 7) {
   const r = playChapter(P7, P8, ch, 'main', () => 0.99), S = r.S;
-  for (let i = 0; i <= rank - 2; i++) S.m.prog.rankClr[i] = true;
+  for (let i = 0; i <= rank - 1; i++) S.m.prog.rankClr[i] = true;   // 挑戦上限＝最高クリア＋1
   assert.equal(P8.startTournament(S, S.m, rank, seed).ok, true, `ランク${rank}`);
   return S;
 }
@@ -363,7 +363,7 @@ function winLeague(P8, S, rank) {
 
 test('T5-1：Chapter 1→2→3→4を正式マップで通し、Chapter 4終了時にAランク以上なら最終ルートへ強制進行', () => {
   const { P7, P8 } = load(); const S = P8.newSave(); S.m = P8.initIndividual(S, mon(P7, { name: '通し' }));
-  const plan = [[1, 1], [2, 3], [3, 4], [4, 5]];   // [Chapter, 挑戦ランク]：D→B→A→S（最高クリア＋2の範囲内）
+  const plan = [[1, 1], [2, 2], [3, 3], [4, 4]];   // [Chapter, 挑戦ランク]：D→C→B→A（最高クリア＋1の範囲内。A をクリアして最終ルートへ）
   for (const [ch, rank] of plan) {
     assert.equal(P8.depart(S, S.m).ok, true, `Chapter ${ch} へ出発`); assert.equal(S.m.raise.ch, ch);
     runBoard(P8, S); assert.equal(S.m.raise.goal, true, `Chapter ${ch}：20ターン以内にゴール`); assert.ok(S.m.raise.turnsUsed <= 20);
@@ -372,7 +372,7 @@ test('T5-1：Chapter 1→2→3→4を正式マップで通し、Chapter 4終了�
     if (ch < 4) { assert.deepEqual([e.next, S.m.raise.state, S.m.raise.ch], [ch + 1, 'farm', ch + 1]); assert.equal(P8.canVisitTown(S), false, 'Chapter間ファームからも街へ戻れない'); }
     else { assert.equal(e.next, P8.FINAL, 'Aランク以上→最終ルート（選択肢なし）'); assert.deepEqual([S.m.raise.state, S.m.raise.ch], ['farm', P8.FINAL]); }
   }
-  assert.equal(P8.rankLabel(S.m), 'S');
+  assert.equal(P8.rankLabel(S.m), 'A');
   assert.equal(P8.canDepart(S, S.m).reason, 'no_map', '最終ルートの中身（マップ・ボス・ストーリー・報酬）は未確定のまま');
   assert.equal(S.m.raise.log.length, 4);
 });

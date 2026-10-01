@@ -425,7 +425,7 @@ test('QA-C7：売却額：未育成50G、育成完了は100G＋能力上昇（�
   assert.deepEqual(M.sellQuote(mon(P7, P8, S, 'board')), { ok: false, reason: 'raising' });
 });
 
-test('QA-C8：大会：賞金 E100〜S1200、参加数 E・D 6体／C〜S 8体、挑戦上限は最高クリア＋2（未クリアはDまで・Chapter 1はD）、最終ルートはA以上', () => {
+test('QA-C8：大会：賞金 E100〜S1200、参加数 E・D 6体／C〜S 8体、挑戦上限は最高クリア＋1（未クリアはDまで・Chapter 1はD）、最終ルートはA以上', () => {
   const { P7, P8, L } = load();
   assert.deepEqual([...P8.RANK_LETTERS], ['E', 'D', 'C', 'B', 'A', 'S']);
   assert.deepEqual([...P8.PRIZE], [100, 200, 350, 550, 800, 1200]);
@@ -436,7 +436,7 @@ test('QA-C8：大会：賞金 E100〜S1200、参加数 E・D 6体／C〜S 8体�
   const S = P8.newSave(); const m = mon(P7, P8, S, 'board');
   assert.deepEqual([1, 2, 3, 4].map((ch) => P8.maxChallengeRank(m, ch)), [1, 1, 1, 1], '未クリアは E・D まで');
   m.prog.rankClr = [true, true, true, false, false, false];   // C までクリア
-  assert.deepEqual([1, 2, 3, 4].map((ch) => P8.maxChallengeRank(m, ch)), [1, 4, 4, 4], 'C＋2＝A、Chapter 1 は D まで');
+  assert.deepEqual([1, 2, 3, 4].map((ch) => P8.maxChallengeRank(m, ch)), [1, 3, 3, 3], 'C＋1＝B、Chapter 1 は D まで');
   m.prog.rankClr = [true, true, true, true, true, false];     // A までクリア
   assert.deepEqual([2, 3, 4].map((ch) => P8.maxChallengeRank(m, ch)), [5, 5, 5], 'S が上限');
   assert.equal(P8.CHAPTER_RULES[1].rankCap, 1);

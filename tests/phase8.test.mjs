@@ -397,15 +397,15 @@ test('S4-7：画面側：出目は演出の前に確定・保存、移動は1歩
 // ---------------------------------------------------------
 // Step 5：挑戦できるランク・優勝報酬（初回／再クリア）・下位ランクのクリア扱い
 // ---------------------------------------------------------
-test('S5-1：挑戦できるランク＝最高クリア＋2（S上限）。未クリアはE・D、Chapter 1はDまで', () => {
+test('S5-1：挑戦できるランク＝最高クリア＋1（S上限。2026-10-01 正式仕様）。最初から D までは選べる（未クリア・E クリアは E・D）。Chapter 1はDまで', () => {
   const { P7, P8 } = load(); const m = mon(P7);
   assert.deepEqual(P8.eligibleRanks(m, 1), [0, 1]); assert.deepEqual(P8.eligibleRanks(m, 2), [0, 1]);
   m.prog.rankClr[0] = true;   // Eクリア
-  assert.deepEqual(P8.eligibleRanks(m, 1), [0, 1], 'Chapter 1の上限はD'); assert.deepEqual(P8.eligibleRanks(m, 2), [0, 1, 2], 'Cまで');
+  assert.deepEqual(P8.eligibleRanks(m, 1), [0, 1], 'Chapter 1の上限はD'); assert.deepEqual(P8.eligibleRanks(m, 2), [0, 1], 'E クリアでは D まで（E＋1＝D）');
   m.prog.rankClr = [true, true, false, false, false, false];
-  assert.equal(P8.maxChallengeRank(m, 3), 3, 'DクリアでBまで');
+  assert.equal(P8.maxChallengeRank(m, 3), 2, 'DクリアでCまで');
   m.prog.rankClr = [true, true, true, true, false, false];
-  assert.equal(P8.maxChallengeRank(m, 4), 5, 'BクリアでSまで');
+  assert.equal(P8.maxChallengeRank(m, 4), 4, 'BクリアでAまで');
   m.prog.rankClr = [true, true, true, true, true, true];
   assert.equal(P8.maxChallengeRank(m, 4), 5, 'S上限');
   assert.equal(P8.canChallenge(m, 2, 0), true, 'クリア済み・下位ランクにも再挑戦できる');
