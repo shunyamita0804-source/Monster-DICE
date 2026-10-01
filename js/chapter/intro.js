@@ -13,7 +13,11 @@
   const esc = (t) => String(t).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   function shown(key) { if (mem.has(key)) return true; try { return root.sessionStorage && root.sessionStorage.getItem(SS + key) === '1'; } catch (e) { return false; } }
   function mark(key) { mem.add(key); try { root.sessionStorage && root.sessionStorage.setItem(SS + key, '1'); } catch (e) {} }
-  function reset(key) { if (key == null) { mem.clear(); return; } mem.delete(key); try { root.sessionStorage && root.sessionStorage.removeItem(SS + key); } catch (e) {} }
+  function reset(key) {
+    if (key != null) { mem.delete(key); try { root.sessionStorage && root.sessionStorage.removeItem(SS + key); } catch (e) {} return; }
+    mem.clear();
+    try { const ss = root.sessionStorage; if (ss) for (let i = ss.length - 1; i >= 0; i--) { const k = ss.key(i); if (k && k.startsWith(SS)) ss.removeItem(k); } } catch (e) {}
+  }
   /** 俯瞰図：Pattern ごと（無ければ最初の1枚） */
   function overviewOf(cfg, patternId) { const I = cfg && cfg.intro, o = I && I.overviews; if (!o) return null; if (typeof o === 'string') return o; return o[patternId] || o[Object.keys(o)[0]] || null; }
   /** 画像を host いっぱいに（cover）置いたときの、焦点（割合）を中央に置く transform（scale と translate） */

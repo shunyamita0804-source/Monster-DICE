@@ -199,11 +199,11 @@ test('JR-9：Chapter に入った瞬間、旅路全体の俯瞰図（演出専�
   const b = await pg.evaluate(() => ({ bg: document.querySelector('#chf .chf-bg').getAttribute('src'), node: S.m.raise.node, start: document.querySelector('#brollbtn').textContent.trim(), on: !document.querySelector('#brollbtn').disabled, busy: bBusy }));
   assert.deepEqual(b, { bg: './assets/fields/ch1a/road/01_journey_road.webp', node: 'f1_0', start: 'START', on: true, busy: false }, '俯瞰図のあとは 01 の実プレイ画面で START が押せる');
   // 再読み込みでは出ない（セーブには持たない：mr4v6 に俯瞰図の項目は無い）
-  assert.equal(await pg.evaluate(() => /intro|overview/i.test(localStorage.getItem('mr4v6'))), false);
+  assert.equal(await pg.evaluate(() => { const s = JSON.parse(localStorage.getItem('mr4v6')); return /overview|chintro|mmch_intro/i.test(JSON.stringify(s)) || Object.keys(s.m.raise).some((k) => /intro/i.test(k)) || Object.keys(s.m.raise.field).some((k) => /intro/i.test(k)); }), false, '俯瞰図を見たかどうかはセーブに入れない');
   await pg.reload(); await pg.waitForFunction(() => typeof MMP8 === 'object'); await pg.click('.p15start'); await pg.waitForSelector('#chf .chf-bg'); await pg.waitForTimeout(600);
   assert.equal(await pg.evaluate(() => !!document.querySelector('.chintro')), false, '再読み込みでは出さない');
   // タップで短縮：別の個体で出発し直す（新しい鍵）
-  await pg.evaluate(() => { MMCHI.reset(); board(); });
+  await pg.evaluate(() => { MMCHI.reset(); document.querySelector('#app').innerHTML = ''; board(); });   // 演出は画面を作るときだけ（同じ画面の描き直しでは出ない）
   await pg.waitForSelector('.chintro.on', { timeout: 8000 }); await pg.waitForTimeout(300); await pg.click('.chintro');
   await pg.waitForFunction(() => !document.querySelector('.chintro'), null, { timeout: 4000 });
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);

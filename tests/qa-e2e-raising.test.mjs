@@ -79,6 +79,8 @@ const DICE_HOOK = () => {
   };
 };
 const setDice = (pg, vals) => pg.evaluate((v) => { window.__dice = v.slice(); }, vals);
+/** Chapterフィールドの START のあと：サイコロが宙で回り始めたら STOP を押す（STOP はプレイヤー操作。出目は START の時点で決まっている） */
+const stopDice = async (pg) => { await pg.waitForSelector('#brollbtn.spinning:not([disabled])', { timeout: 15000 }); await pg.waitForTimeout(200); await pg.click('#brollbtn'); };
 /**
  * セーブを入れて開き（再読み込み後も出目を固定できるようにして）、selector の画面まで進む。
  *  開始画面からの再開そのものは reloadAndStart で確かめるので、ここでは開始処理が呼ぶ p8Resume() で直接再開する。
@@ -285,8 +287,8 @@ T('QA-RB3：サイコロ（出目3）→ 1地点ずつ移動し1歩ごとに保�
   await setDice(pg, [3]);
   await pg.waitForTimeout(SETTLE);
   await pg.click('#brollbtn');
-  assert.equal(await pg.evaluate(() => { const b = document.querySelector('#brollbtn'); return !b || b.disabled || b.classList.contains('spinning'); }), true, 'START のあとは STOP（止めるだけ。振り直せない）か押せない');
-  await waitTurnDone(pg, 1);
+  await stopDice(pg);
+    await waitTurnDone(pg, 1);
   // f1_0 → f1_1（ライフ）→ f1_2（ちから）→ f1_3（何も起きない）。出目とターン消費は最初の保存で確定
   assert.deepEqual(await readTrace(pg), [['f1_0', 'move', 3, 1], ['f1_1', 'move', 2, 1], ['f1_2', 'move', 1, 1], ['f1_3', 'resolve', 0, 1], ['f1_3', null, null, 1]]);
   const after = await H.getS(pg);
@@ -332,6 +334,7 @@ T('QA-RB4：サイコロの演出中・移動の途中で再読み込み → 出
   await setDice(pg, [3]);
   await pg.waitForTimeout(SETTLE);
   await pg.click('#brollbtn');
+  await stopDice(pg);
   await pg.waitForFunction(() => JSON.parse(localStorage.getItem('mr4v6')).m.raise.node === 'f1_3', null, { timeout: 15000, polling: 10 });
   const st2 = await storedRaise(pg);
   assert.deepEqual([st2.node, st2.pend, st2.turnsUsed, st2.fatigue], ['f1_3', { roll: 3, left: 2, stage: 'move', fatigueAdded: 7 }, 2, 12]);
@@ -351,6 +354,7 @@ T('QA-RB5：分かれ道で再読み込み → 分岐待ち（候補・残り移
   await setDice(pg, [2]);
   await pg.waitForTimeout(SETTLE);
   await pg.click('#brollbtn');
+  await stopDice(pg);
   await pg.waitForSelector('.chroute', { timeout: 15000 });
   const pend = { roll: 2, left: 1, stage: 'branch', fatigueAdded: 5, opts: ['a0', 'b0'] };
   let r = await raiseOf(pg);
@@ -426,6 +430,7 @@ T('QA-RB7：☰メニュー →「中断」→ 開始画面（つづきから）
   await pg.click('#brollbtn');
   const during = await pg.evaluate(() => { p9Menu(); const menu = !!document.querySelector('#p9ov'); p8Suspend(); return { busy: bBusy, menu, title: !!document.querySelector('.p15start') }; });
   assert.deepEqual(during, { busy: true, menu: false, title: false });
+  await stopDice(pg);
   await waitTurnDone(pg, 2);
   assert.equal((await raiseOf(pg)).node, 'f1b_0');
   assert.equal(await pg.evaluate(() => !!document.querySelector('.p15start')), false, '移動のあとで開始画面へ飛ばない');
@@ -442,6 +447,7 @@ T('QA-RB8：Chapter 1 のゴール（大会会場。残りの移動は消える�
   await setDice(pg, [3]);
   await pg.waitForTimeout(SETTLE);
   await pg.click('#brollbtn');
+  await stopDice(pg);
   await pg.waitForSelector('.chgoal .p9rank', { timeout: 20000 });
   let r = await raiseOf(pg);
   assert.deepEqual([r.node, r.goal, r.pend, r.turnsUsed, r.fatigue], ['f3b_3', true, null, 21, 71], 'f3b_2 → f3b_3（ゴール）で止まり、残り2歩は消える');
