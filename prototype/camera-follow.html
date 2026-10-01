@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>カメラ追従プロトタイプ</title>
+<!--
+  ミスティックモンスターズ：Chapterボードの「モンスター移動＋カメラ追従」プロトタイプ（2026-10-01。正式実装ではない）
+  ・ゲーム本体（index.html・js/）とは完全に独立した1ページ。セーブ・サイコロ・Chapter 進行には触れない。消せば元どおり。
+  ・背景：assets/fields/proto/cam_test_road.webp（ユーザー提供の画像をそのまま WebP にしただけ。768×1360）
+  ・方式：1つの値 t（今いるマスの番号。移動中は小数）から、背景の拡大率・位置とモンスターの位置・大きさをすべて計算する（＝同じカメラ運動）。
+-->
+<style>
+  :root { --bg: #0b1424; --gold: #e6c56c; --ink: #fff; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); color: var(--ink); font-family: 'Noto Sans JP', system-ui, sans-serif; overscroll-behavior: none; }
+  #view { position: fixed; inset: 0; overflow: hidden; background: #000; touch-action: manipulation; }
+  #bg { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; user-select: none; -webkit-user-drag: none; }
+  #mon { position: absolute; left: 0; top: 0; transform-origin: 50% 100%; will-change: transform; pointer-events: none; }
+  #mon img { display: block; width: 100%; height: auto; }
+  #shadow { position: absolute; left: 0; top: 0; border-radius: 50%; background: radial-gradient(closest-side, rgba(0,0,0,.35), rgba(0,0,0,0)); will-change: transform; pointer-events: none; }
+  .dbg { position: absolute; border: 2px solid rgba(255,40,80,.9); border-radius: 50%; pointer-events: none; display: none; }
+  body.debug .dbg { display: block; }
+  #hud { position: fixed; left: 8px; right: 8px; top: calc(8px + env(safe-area-inset-top)); display: flex; justify-content: space-between; gap: 8px; font-size: 12px; pointer-events: none; }
+  #hud span { background: rgba(8,18,36,.78); border: 1px solid rgba(230,197,108,.6); border-radius: 8px; padding: 4px 8px; }
+  #ctl { position: fixed; left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom)); display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  #ctl button, #ctl select { font: inherit; font-size: 13px; color: var(--ink); background: rgba(10,24,48,.9); border: 1px solid var(--gold); border-radius: 10px; padding: 10px 4px; }
+  #ctl button.main { grid-column: span 2; font-size: 16px; font-weight: 700; background: linear-gradient(#8a1f2b, #5e121c); }
+  #ctl button:disabled { opacity: .45; }
+  #ctl .row { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+</style>
+</head>
+<body>
+<div id="view">
+  <img id="bg" src="../assets/fields/proto/cam_test_road.webp" alt="" draggable="false">
+  <div id="dbgs"></div>
+  <i id="shadow"></i>
+  <div id="mon"><img src="../assets/monsters/solamo.png" alt=""></div>
+</div>
+<div id="hud"><span id="info">マス 1 / 6</span><span id="zoom"></span></div>
+<div id="ctl">
+  <button id="prev">◀ 戻る</button>
+  <button id="next" class="main">次のマスへ ▶</button>
+  <button id="auto">自動で通す</button>
+  <div class="row">
+    <select id="mode" aria-label="方式">
+      <option value="follow">カメラ追従（今回の方式）</option>
+      <option value="fixed">比較：カメラ固定（モンスターだけ奥へ）</option>
+    </select>
+    <select id="k" aria-label="追従の強さ">
+      <option value="0.5">寄りの強さ 0.5</option>
+      <option value="0.7" selected>寄りの強さ 0.7</option>
+      <option value="0.85">寄りの強さ 0.85</option>
+      <option value="1">寄りの強さ 1.0（大きさ一定）</option>
+    </select>
+    <select id="dbg" aria-label="表示">
+      <option value="0">マスの印なし</option>
+      <option value="1">マスの中心を表示</option>
+    </select>
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ---- 背景画像（768×1360）上の円形マス：中心 [x, y] と、描かれた楕円の横半径 rx・縦半径 ry（画素。画像を拡大して目視で測った値）----
+  const IMG = { w: 768, h: 1360 };
+  const SQ = [
+    { x: 405, y: 1180, rx: 195, ry: 90 },   // マス1（いちばん手前）
+    { x: 399, y: 890, rx: 141, ry: 55 },    // マス2
+    { x: 396, y: 710, rx: 114, ry: 45 },    // マス3
+    { x: 393, y: 586, rx: 88, ry: 21 },     // マス4
+    { x: 395, y: 507, rx: 70, ry: 18 },     // マス5
+    { x: 395, y: 452, rx: 55, ry: 12 },     // マス6（いちばん奥。描き込みが薄い）
+  ];
+  const ANCHOR_Y = 0.6;      // 着地したモンスターの足元を置きたい画面の高さ（中央より少し下）
+  const MOVE_MS = 950;       // 1マスの移動時間
+  const MON_RATIO = 0.95;    // モンスターの高さ＝マスの見かけの直径 × この値
+  const view = document.getElementById('view'), bg = document.getElementById('bg'), mon = document.getElementById('mon'), sh = document.getElementById('shadow');
+  const $ = (id) => document.getElementById(id);
+  let t = 0, anim = null;    // t＝今のマス（0〜5。移動中は小数）
+  const opt = { mode: 'follow', k: 0.7 };
+
+  // t の位置での「マスの中心」と「マスの見かけの大きさ（rx）」：隣のマスの間を補間（大きさは比で補間＝遠近に沿う）
+  function at(tt) {
+    const i = Math.max(0, Math.min(SQ.length - 2, Math.floor(tt))), f = tt - i, a = SQ[i], b = SQ[i + 1];
+    return { x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f, rx: a.rx * Math.pow(b.rx / a.rx, f) };
+  }
+  // カメラ：拡大率 S（画像1px → 画面の CSS px）と平行移動 tx・ty
+  function camera(tt) {
+    const W = view.clientWidth, H = view.clientHeight, p = at(tt);
+    const cover = Math.max(W / IMG.w, H / IMG.h);               // 画面を背景で埋める最小の倍率（黒い隙間を出さない）
+    let S = cover;
+    if (opt.mode === 'follow') S = cover * Math.pow(SQ[0].rx / p.rx, opt.k);   // 奥のマスほど寄る（k=1 ならマスの見かけの大きさが一定）
+    // モンスターの足元（マスの中心）を画面の中央・少し下へ。ただし背景の外（黒い隙間）は見せない＝端では位置で調整
+    let tx = W / 2 - p.x * S, ty = H * ANCHOR_Y - p.y * S;
+    tx = Math.min(0, Math.max(W - IMG.w * S, tx)); ty = Math.min(0, Math.max(H - IMG.h * S, ty));
+    return { S, tx, ty, p, W, H };
+  }
+  function render(tt, walk = 0) {
+    const c = camera(tt), { S, tx, ty, p } = c;
+    bg.style.width = IMG.w + 'px';
+    bg.style.transform = `translate3d(${tx.toFixed(2)}px,${ty.toFixed(2)}px,0) scale(${S.toFixed(4)})`;
+    // モンスター：マスの中心（画像の点）を同じカメラで画面へ写した位置に立つ。大きさは、その場所のマスの見かけの大きさに比例
+    const fx = p.x * S + tx, fy = p.y * S + ty, h = p.rx * 2 * S * MON_RATIO, w = h;   // 正方形の画像
+    const bob = Math.sin(walk * Math.PI * 2) * h * 0.035 * (walk > 0 && walk < 1 ? 1 : 0);
+    mon.style.width = w.toFixed(1) + 'px';
+    mon.style.transform = `translate3d(${(fx - w / 2).toFixed(1)}px,${(fy - h * 0.97 - Math.abs(bob)).toFixed(1)}px,0)`;
+    sh.style.width = (w * 0.7).toFixed(1) + 'px'; sh.style.height = (w * 0.16).toFixed(1) + 'px';
+    sh.style.transform = `translate3d(${(fx - w * 0.35).toFixed(1)}px,${(fy - w * 0.08).toFixed(1)}px,0)`;
+    // 確認用：マスの中心の印（同じカメラで写す）
+    document.querySelectorAll('.dbg').forEach((d, i) => { const q = SQ[i]; d.style.left = (q.x * S + tx - q.rx * S) + 'px'; d.style.top = (q.y * S + ty - q.ry * S) + 'px'; d.style.width = (q.rx * 2 * S) + 'px'; d.style.height = (q.ry * 2 * S) + 'px'; });
+    const dpr = window.devicePixelRatio || 1;
+    $('info').textContent = `マス ${Math.round(tt) + 1} / ${SQ.length}`;
+    $('zoom').textContent = `背景 ×${S.toFixed(2)}（画像1px＝端末${(S * dpr).toFixed(1)}px）`;
+    $('prev').disabled = !!anim || t <= 0; $('next').disabled = !!anim || t >= SQ.length - 1; $('auto').disabled = !!anim;
+  }
+  const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);   // 加速 → 減速（歩き出し・止まり）
+  function go(to) {
+    if (anim || to < 0 || to > SQ.length - 1) return Promise.resolve();
+    const from = t, t0 = performance.now();
+    return new Promise((done) => {
+      anim = true;
+      const step = (now) => {
+        const r = Math.min(1, (now - t0) / MOVE_MS), e = ease(r);
+        t = from + (to - from) * e;
+        render(t, r);   // 背景・モンスターは同じ t から＝同じカメラ運動
+        if (r < 1) requestAnimationFrame(step); else { t = to; anim = null; render(t); done(); }
+      };
+      requestAnimationFrame(step);
+    });
+  }
+  $('next').onclick = () => go(Math.round(t) + 1);
+  $('prev').onclick = () => go(Math.round(t) - 1);
+  $('auto').onclick = async () => { if (anim) return; if (t >= SQ.length - 1) { t = 0; render(t); await new Promise((r) => setTimeout(r, 400)); } for (let i = Math.round(t) + 1; i < SQ.length; i++) { await go(i); await new Promise((r) => setTimeout(r, 450)); } };
+  $('mode').onchange = (e) => { opt.mode = e.target.value; render(t); };
+  $('k').onchange = (e) => { opt.k = +e.target.value; render(t); };
+  $('dbg').onchange = (e) => { document.body.classList.toggle('debug', e.target.value === '1'); };
+  document.getElementById('dbgs').innerHTML = SQ.map(() => '<i class="dbg"></i>').join('');
+  window.addEventListener('resize', () => render(t));
+  // テスト用（自動確認から呼ぶ）
+  window.CAMPROTO = { SQ, camera, at, go, get t() { return t; }, set: (v) => { t = v; render(t); }, opt, render };
+  const start = () => render(t);
+  if (bg.complete) start(); else bg.addEventListener('load', start);
+  start();
+})();
+</script>
+</body>
+</html>

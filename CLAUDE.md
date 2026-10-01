@@ -52,6 +52,7 @@ Claude Code は作業の前に毎回このファイルを読むこと。ここ�
 | assets/npc/genshin/ | ゲンシン（特訓の指導役。5種類すべて担当）の正式素材。アップ画像6表情（closeup/normal・smile・guide・serious・strict・praise）と、小さい顔用の face.webp（描き込まれた市松模様の背景を透明化。README.md に元画像との対応） |
 | assets/scenes/、assets/fields/、assets/dice/ | 背景・フィールド・サイコロの素材 |
 | assets/embedded/ | index.html の base64 から安全に外部化した既存画像の置き場（元データとバイト単位で同一。無加工）。ファイル名は「定数名_番号またはキー_用途」。第1段階：FT（ft_*）・TABS（tabs_*）、第2段階：FARMIMG・TRIMG2・NPI.b。Phase 6 の画像（SFR・BTB・SFXL・STOPART・SKART・AS.spr）は外部化しない |
+| prototype/camera-follow.html | 【試作】Chapterボードの「モンスター移動＋カメラ追従」の検証ページ（2026-10-01 夜。ゲーム本体とは完全に独立した1ページ・正式実装ではない。背景は assets/fields/proto/cam_test_road.webp＝ユーザー提供の画像。公開URLの …/prototype/camera-follow.html で試せる。消しても本体に影響なし） |
 | tests/*.test.mjs | 自動テスト |
 | tools/public-check.mjs | push 後の公開URLの確認（§7） |
 | KNOWN_ISSUES.md | 既知課題と判断事項の記録 |
