@@ -61,7 +61,10 @@
       await race(hold);
       // 2) スタート地点へズーム／パン（この先に長い旅路があることを見せてから、今いる場所へ寄る）
       title.classList.remove('on');
-      if (!skipped && !calm && cam.animate) { const a = cam.animate([{ transform: tf(drift) }, { transform: tf(f1) }], { duration: move, easing: 'cubic-bezier(.55,.05,.3,1)', fill: 'forwards' }); await race(move); try { a.finish(); } catch (e) {} }
+      //  config.intro.via＝途中で見せる地点 [{ x, y, zoom }]（任意。例：Chapter 2 の海上 → 海中 → 会場）。無ければ会場からスタートへ直接
+      const via = Array.isArray(I.via) ? I.via.filter((v) => v && Number.isFinite(v.x) && Number.isFinite(v.y)) : [];
+      const keys = [{ transform: tf(drift) }, ...via.map((v) => ({ transform: tf(fit(W, Hh, iw, ih, v, v.zoom || Z.from || 1)) })), { transform: tf(f1) }];
+      if (!skipped && !calm && cam.animate) { const a = cam.animate(keys, { duration: move, easing: via.length ? 'ease-in-out' : 'cubic-bezier(.55,.05,.3,1)', fill: 'forwards' }); await race(move); try { a.finish(); } catch (e) {} }
       else cam.style.transform = tf(f1);
       // 3) 実プレイ画面へ（下に描いてある 01 のフィールドをクロスフェードで見せる）
       ov.classList.add('out');

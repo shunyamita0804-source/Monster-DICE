@@ -476,11 +476,11 @@ T('QA-RB8：Chapter 1 のゴール（大会会場。残りの移動は消える�
   await pg.click(dep);
   await pg.waitForSelector('#chf-ui #brollbtn', { timeout: 20000 });   // 2026-10-01：Chapter 2 もエンジン（潮風の海岸。30ターン・6面）
   r = await raiseOf(pg);
-  assert.deepEqual([r.state, r.ch, r.node, r.turnsUsed, r.turnLimit, r.fatigue, r.field && r.field.chapterId, r.field && r.field.introSeen], ['board', 2, 'e1_0', 0, 30, 21, 2, undefined], 'Chapter 2 はエンジン（潮風の海岸・30ターン）。疲れは max(0, 71−50)。導入演出は自動テストでは出さない');
+  assert.deepEqual([r.state, r.ch, r.node, r.turnsUsed, r.turnLimit, r.fatigue, r.field && r.field.chapterId, r.field && r.field.introSeen], ['board', 2, 's1_0', 0, 30, 21, 2, undefined], 'Chapter 2 はエンジン（潮風の海岸・30ターン）。疲れは max(0, 71−50)。導入演出は自動テストでは出さない');
   assert.deepEqual(r.startStats, ss0, 'Chapter移行では育成開始時の能力値を取り直さない');
   assert.equal(await pg.evaluate(() => window.__talkSeen), false, 'Chapter間ファームからの出発ではフィナの会話は出ない');
   assert.match(await bmsg(pg), /CHAPTER 2「潮風の海岸」に出発！/);
-  assert.equal(await pg.evaluate(() => !!document.querySelector('#chf .chf-bg') && document.querySelector('#chf .chf-bg').getAttribute('src').includes('/ch2a/road/ch2_01_early_a')), true, 'Chapter 2 はエンジンのフィールド（序盤a の背景）');
+  assert.equal(await pg.evaluate(() => !!document.querySelector('#chf .chf-bg') && document.querySelector('#chf .chf-bg').getAttribute('src').includes('/ch2a/field/ch2_field_01')), true, 'Chapter 2 はエンジンのフィールド（フィールド 01 の背景）');
   await assertSynced(pg);
   noErrors(p);
 });
