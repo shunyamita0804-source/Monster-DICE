@@ -444,6 +444,7 @@
     const node = V.g.nodes[r.node] || V.g.nodes[V.g.start], key = `${m.uid}:${f.chapterId}:${f.patternId}:${f.layoutSeed}`;
     if (root.MMCHD) { if (V.diceCfg !== (V.cfg.dice || V.cfg)) { MMCHD.configure({ ...(V.cfg.dice || {}), sides: MMCH.rulesOf(V.cfg).diceSides }); V.diceCfg = V.cfg.dice || V.cfg; } MMCHD.preload(); }   // 面の数は rules.diceSides（停止面が無い出目は数字で出す）
     const app = $('#app'), same = V.key === key && V.field === node.field && $('#chf');
+    unscroll();   // 前の画面（ステータス・技管理・出発準備など）で残ったスクロール量を消す（HUD・操作欄は画面の固定位置に出す）
     if (!same) {
       V.key = key; V.field = null; V.moving = false; V.focus = null; V.tgt.z = 1; V.cam.z = 1;
       app.innerHTML = `<div class="chfw" id="chfw"><div class="chf" id="chf"></div><div class="chf-ui" id="chf-ui"></div></div>`;
@@ -481,6 +482,13 @@
     else camFocus({ x: V.monPos.x + V.look[0] * 160 * V.monPos.d, y: V.monPos.y + V.look[1] * 160 * V.monPos.d }, 0.5, CA().zoom.branch);   // 道の先が別の背景：進む向きの先を見せて少し引く
   }
   const onField = () => !!$('#chf') && !!$('#bmonw');
+  /**
+   * HUD と操作欄を常に画面の固定位置に出すため、フィールドの器（.chfw）を囲む #app・main・ページのスクロール量を 0 に戻す。
+   *  原因（2026-10-01）：#app は縦スクロールできる器で、前の画面でスクロールした量（ステータス・技管理・出発準備の下の方を見ていた）や、
+   *  画面の登場アニメ（translateY 12px）の 0.3秒の間に #app がはみ出して受け付けたスクロール量が、フィールドを描いた後も残ることがあった。
+   *  .chfw は #app の中の position:relative なので、その量だけ HUD（上）が画面の外へ押し上げられていた。CSS でも #app:has(>.chfw) を overflow:hidden にし、登場アニメは不透明度だけにしている
+   */
+  function unscroll() { try { for (const e of [$('#app'), document.querySelector('main'), document.scrollingElement, document.body]) if (e && e.scrollTop) e.scrollTop = 0; if (root.scrollX || root.scrollY) root.scrollTo(0, 0); } catch (e) {} }
   function setMsg(t) { const b = $('#bmsg'); if (b) b.innerHTML = t; }
   /** 出目の小さな表示（HUD の下・右上）：サイコロの停止面が主で、文字は補助。短く出て自然に消える */
   function rollToast(v, fat) {

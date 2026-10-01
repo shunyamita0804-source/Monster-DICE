@@ -411,3 +411,25 @@ for (const size of [H.SIZES.base, H.SIZES.se]) {
     assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
   });
 }
+
+test('CH1-B19：上部 HUD（Chapter・Turn・疲れ・所持金・メニュー）は常に画面の固定位置：前の画面で残ったスクロール量（#app・main・ページ）があっても、Chapter 開始直後・サイコロのあと・背景の切り替え後・停止地点の結果のあと・バトルからの復帰後・再読み込み後に上へずれない。フィールドの間 #app はスクロールしない', { skip: SKIP }, async () => {
+  const p = await L.open(); const pg = p.page;
+  await start(p);
+  const hud = async (tag) => { await pg.waitForTimeout(350); const r = await pg.evaluate(() => { const b = (s) => document.querySelector(s).getBoundingClientRect(); return { hudTop: Math.round(b('.chh').top), turnTop: Math.round(b('.chh-turn').top), menuTop: Math.round(b('.chh-menu').top), deckBottom: Math.round(b('#chdock').bottom), app: document.querySelector('#app').scrollTop, main: document.querySelector('main').scrollTop, win: scrollY, ov: getComputedStyle(document.querySelector('#app')).overflowY, H: innerHeight }; }); assert.deepEqual([r.hudTop, r.menuTop, r.app, r.main, r.win, r.ov, r.deckBottom], [8, 8, 0, 0, 0, 'hidden', r.H], `${tag}：${JSON.stringify(r)}`); assert.ok(r.turnTop >= 8, tag); };
+  const dirty = () => pg.evaluate(() => { try { document.querySelector('#app').scrollTop = 40; document.querySelector('main').scrollTop = 30; scrollTo(0, 20); } catch (e) {} });
+  await hud('Chapter 開始直後');
+  await dirty(); await pg.evaluate(() => board()); await hud('スクロール量を残して描き直し');
+  await pg.evaluate(() => chfOpen('st')); await pg.waitForSelector('#app .ds-st'); await pg.evaluate(() => { const d = document.querySelector('#app .ds-st .dbody'); if (d) d.scrollTop = 300; document.querySelector('#app').scrollTop = 300; });
+  await pg.evaluate(() => board()); await pg.waitForSelector('#chf .chf-bg'); await idle(pg); await hud('ステータス画面（スクロール）から戻る');
+  await pg.evaluate(() => chfOpen('w')); await pg.waitForFunction(() => !document.querySelector('#chf')); await pg.evaluate(() => { document.querySelector('#app').scrollTop = 400; }); await pg.evaluate(() => board()); await pg.waitForSelector('#chf .chf-bg'); await idle(pg); await hud('技管理（スクロール）から戻る');
+  await rollAs(pg, 2); await idle(pg); await hud('サイコロのあと');
+  await place(pg, 'f1_4'); await idle(pg); await rollAs(pg, 2); await idle(pg); assert.equal((await st(pg)).field, 2); await hud('背景の切り替え後');
+  const statId = await pg.evaluate(() => { const g = MMCH.graphFor(S.m), a = S.m.raise.field.nodeAssignments; return g.order.find((x) => a[x] && a[x].t === 'stat'); });
+  const prev = await pg.evaluate((id) => Object.keys(MMCH.graphFor(S.m).conn).find((k) => MMCH.graphFor(S.m).conn[k].includes(id)), statId);
+  await place(pg, prev); await idle(pg); await rollAs(pg, 1); await idle(pg); await hud('停止地点（能力）の結果のあと');
+  const strong = await pg.evaluate(() => { const g = MMCH.graphFor(S.m); return g.order.find((x) => g.nodes[x].kind === 'strong'); });
+  await place(pg, strong, { fatigue: 30, branch: 'bridge', pend: { roll: 2, left: 0, stage: 'resolve' } }); await pg.waitForSelector('.chbat'); await idle(pg);
+  await pg.evaluate(() => { MMP8.beginBattle(S, S.m, { kind: 'practice', rank: 0 }); save(); MMP8.markBattleDone(S); save(); after('試合終了'); }); await pg.waitForSelector('#chf .chf-bg'); await idle(pg); await hud('バトルからの復帰後');
+  await dirty(); await pg.reload(); await pg.waitForFunction(() => typeof MMP8 === 'object'); await pg.click('.p15start'); await pg.waitForSelector('#chf .chf-bg'); await idle(pg); await hud('再読み込み後');
+  assert.deepEqual(p.errors, []);
+});

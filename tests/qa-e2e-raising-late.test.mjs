@@ -44,6 +44,8 @@ const KS = ['li', 'po', 'in', 'hi', 'ev', 'de'];
 // 終えたChapterの記録（セーブに入れる m.raise.log の項目）
 const LOG1 = { ch: 1, reachedGoal: true, turnsUsed: 14, turnLimit: 20, declined: false, tour: { rank: 1, place: 1, won: true, firstClear: true } };   // Chapter 1 は D 優勝（2026-10-01：挑戦上限は最高クリア＋1。D クリアで Chapter 2 は C まで）
 const LOG2 = { ch: 2, reachedGoal: true, turnsUsed: 16, turnLimit: 20, declined: false, tour: { rank: 2, place: 1, won: true, firstClear: true } };
+// 2026-10-01：Chapter 2 もエンジン（潮風の海岸）になったため、旧ボード（20ターン・S／a1／j4／G）の確認は Chapter 3「天空の浮島」で行う。LOG2D＝Chapter 2 は大会を辞退（クリア最高ランクは D のまま）
+const LOG2D = { ch: 2, reachedGoal: true, turnsUsed: 16, turnLimit: 30, declined: true, tour: null };
 const LOG3 = { ch: 3, reachedGoal: false, turnsUsed: 20, turnLimit: 20, declined: false, tour: null };
 const clr = (h) => [0, 1, 2, 3, 4, 5].map((i) => i <= h);   // クリア最高ランク h（0=E … 5=S、-1=なし）の rankClr
 
@@ -170,8 +172,8 @@ const myTable = (pg) => pg.evaluate(() => {
 // ---------------------------------------------------------
 // ターン切れ → Chapter間ファーム
 // ---------------------------------------------------------
-T('QA-RL1：Chapter 2 の20ターン目を使い切る → ターン終了の案内（育成失敗ではない）→ Chapter間ファームへ。ファームからは街へ行けず、中断して再開してもファームから', async () => {
-  const p = await boot(seed({ ch: 2, node: 'a1', turnsUsed: 19, log: [LOG1] }, { g: 120 }, 1), '.p9board #brollbtn', { calm: true }); const pg = p.page;
+T('QA-RL1：Chapter 3（旧ボード）の20ターン目を使い切る → ターン終了の案内（育成失敗ではない）→ Chapter間ファームへ。ファームからは街へ行けず、中断して再開してもファームから', async () => {
+  const p = await boot(seed({ ch: 3, node: 'a2', turnsUsed: 19, log: [LOG1, LOG2D] }, { g: 120 }, 1), '.p9board #brollbtn', { calm: true }); const pg = p.page;
   const before = await H.getS(pg);
   await setDice(pg, [1]);
   await pg.waitForTimeout(SETTLE);
@@ -189,11 +191,11 @@ T('QA-RL1：Chapter 2 の20ターン目を使い切る → ターン終了の案
   await pg.click('button[onclick="p8EndChapter()"]');
   await pg.waitForSelector('.p9farm.p15f');
   const r = await raiseOf(pg);
-  assert.deepEqual([r.state, r.ch, r.node, r.turnsUsed, r.turnLimit, r.pend, r.goal, r.tour], ['farm', 3, null, 0, null, null, false, null]);
-  assert.deepEqual(r.log, [LOG1, { ch: 2, reachedGoal: false, turnsUsed: 20, turnLimit: 20, declined: false, tour: null }]);
+  assert.deepEqual([r.state, r.ch, r.node, r.turnsUsed, r.turnLimit, r.pend, r.goal, r.tour], ['farm', 4, null, 0, null, null, false, null]);
+  assert.deepEqual(r.log, [LOG1, LOG2D, { ch: 3, reachedGoal: false, turnsUsed: 20, turnLimit: 20, declined: false, tour: null }]);
   assert.equal((await H.getS(pg)).g, before.g, 'ゴールできなくても所持金は変わらない');
   const txt = await H.text(pg);
-  for (const w of ['Chapter 2 終了', '次のChapter', 'Chapter 3', 'CHAPTER 2「潮風の海岸」が終わった。', 'Chapter 3へ進む']) assert.ok(txt.includes(w), `ファームの表示に「${w}」`);
+  for (const w of ['Chapter 3 終了', '次のChapter', 'Chapter 4', 'CHAPTER 3「天空の浮島」が終わった。', 'Chapter 4へ進む']) assert.ok(txt.includes(w), `ファームの表示に「${w}」`);
   assert.equal(await lobbyButtons(pg), 0, 'Chapter間ファームに街へ戻る導線は無い');
   await assertSynced(pg);
   // 街・市場へは行けない（関数を直接呼んでもファームに留まり、セーブは変わらない）
@@ -211,7 +213,7 @@ T('QA-RL1：Chapter 2 の20ターン目を使い切る → ターン終了の案
   assert.equal(await pg.evaluate(() => document.querySelector('.tcap').textContent), 'つづきからはじめます');
   await startFromTitle(pg, '.p9farm.p15f');
   assert.equal(await rawSave(pg), raw0, '中断・再開で状態は変わらない');
-  assert.match(await H.text(pg), /Chapter 2 終了[\s\S]*Chapter 3へ進む/);
+  assert.match(await H.text(pg), /Chapter 3 終了[\s\S]*Chapter 4へ進む/);
   noErrors(p);
 });
 
@@ -344,9 +346,9 @@ T('QA-RL3：修行（Chapter間ファームから）：チケット1枚で開始
 // ---------------------------------------------------------
 // 大会
 // ---------------------------------------------------------
-T('QA-RL4：Chapter 2 のゴール → ランク選択（クリア最高ランクD＋1＝Cまで）→ 2度押しで参加 → 順位表・対戦表。試合の途中で再読み込みするとその試合をやり直し（結果・賞金なし）、VS画面で再読み込みすると順位表へ（視差効果を減らす設定）', async () => {
-  const p = await boot(seed({ ch: 2, node: 'j4', turnsUsed: 10, log: [LOG1] }, { g: 1000 }, 1), '.p9board #brollbtn', { calm: true }); const pg = p.page;
-  // j4 から出目3 → G で止まり、残りの移動は消える
+T('QA-RL4：Chapter 3（旧ボード）のゴール → ランク選択（クリア最高ランクD＋1＝Cまで）→ 2度押しで参加 → 順位表・対戦表。試合の途中で再読み込みするとその試合をやり直し（結果・賞金なし）、VS画面で再読み込みすると順位表へ（視差効果を減らす設定）', async () => {
+  const p = await boot(seed({ ch: 3, node: 'l2', turnsUsed: 10, log: [LOG1, LOG2D] }, { g: 1000 }, 1), '.p9board #brollbtn', { calm: true }); const pg = p.page;
+  // l2 から出目3（l3 → l4 → G）→ G で止まり、残りの移動は消える
   await setDice(pg, [3]);
   await pg.waitForTimeout(SETTLE);
   await pg.click('#brollbtn');
@@ -416,7 +418,7 @@ T('QA-RL4：Chapter 2 のゴール → ランク選択（クリア最高ラン�
 
 let LAST_MATCH_MSG = null;   // QA-RL6 で記録した「最終戦に勝って2位」の結果の文言（QA-RL6b で確かめる）
 T('QA-RL5：大会の決着：全勝で優勝 → 初回優勝の賞金350G・修行チケット2枚・ステータスボーナスを1回だけ（結果画面で再読み込みしても増えない）→ Chapterを終えてファーム（前回の結果に優勝）', async () => {
-  const p = await boot(seed({ ch: 2, node: 'G', goal: true, turnsUsed: 12, log: [LOG1] }, { g: 1000, trainTix: 0 }, 1), '.p9rank'); const pg = p.page;
+  const p = await boot(seed({ ch: 3, node: 'G', goal: true, turnsUsed: 12, log: [LOG1, LOG2D] }, { g: 1000, trainTix: 0 }, 1), '.p9rank'); const pg = p.page;
   await startTour(pg, 2);
   const s0 = await H.getS(pg);
   const msgs = [];
@@ -448,8 +450,8 @@ T('QA-RL5：大会の決着：全勝で優勝 → 初回優勝の賞金350G・�
   await pg.click('button[onclick="p8EndChapter()"]');
   await pg.waitForSelector('.p9farm.p15f');
   const r = await raiseOf(pg);
-  assert.deepEqual([r.state, r.ch], ['farm', 3]);
-  assert.deepEqual(r.log.at(-1), { ch: 2, reachedGoal: true, turnsUsed: 12, turnLimit: 20, declined: false, tour: { rank: 2, place: 1, won: true, firstClear: true } });
+  assert.deepEqual([r.state, r.ch], ['farm', 4]);
+  assert.deepEqual(r.log.at(-1), { ch: 3, reachedGoal: true, turnsUsed: 12, turnLimit: 20, declined: false, tour: { rank: 2, place: 1, won: true, firstClear: true } });
   const txt = await H.text(pg);
   assert.ok(txt.includes('大会ランク') && txt.includes('特訓チケット') && /特訓チケット\s*2枚/.test(txt), '情報パネル：特訓チケット2枚');
   assert.equal((await H.getS(pg)).g, s0.g + 350);
@@ -457,7 +459,7 @@ T('QA-RL5：大会の決着：全勝で優勝 → 初回優勝の賞金350G・�
 });
 
 T('QA-RL6：最終戦に勝っても2位で終わった大会（相手の1体が全勝）：報酬なし・ランクのクリアなし・所持金そのまま、順位表・対戦表は正しい', async () => {
-  const p = await boot(seed({ ch: 2, node: 'G', goal: true, turnsUsed: 12, log: [LOG1] }, { g: 1000 }, 1), '.p9rank'); const pg = p.page;
+  const p = await boot(seed({ ch: 3, node: 'G', goal: true, turnsUsed: 12, log: [LOG1, LOG2D] }, { g: 1000 }, 1), '.p9rank'); const pg = p.page;
   // NPC同士の勝敗を固定して大会を作る（第1試合の相手＝8番が全勝する）。作ったあとは元の決め方に戻す
   await pg.evaluate(() => {
     MMP8L.setNpcMatchResolver((a, b) => a.id === 7 || (b.id !== 7 && a.id < b.id));

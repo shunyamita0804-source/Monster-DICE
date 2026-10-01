@@ -15,7 +15,7 @@ import { lcg } from './chapter-sim.mjs';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 function loadWithNodes(nodes) {
   const w = { MMCH_CH1A_NODES: nodes };
-  for (const f of ['js/phase7/progression.js', 'js/phase8/league.js', 'js/phase8/raising.js', 'js/phase10/monsters.js', 'js/phase9/chapters.js', 'js/chapter/engine.js', 'js/chapter/configs/ch1a.js'])
+  for (const f of ['js/phase7/progression.js', 'js/phase8/league.js', 'js/phase8/raising.js', 'js/phase10/monsters.js', 'js/phase9/chapters.js', 'js/chapter/engine.js', 'js/chapter/configs/ch1a.js', 'js/chapter/configs/ch2a.js'])
     new Function('window', readFileSync(path.join(ROOT, f), 'utf8'))(w);
   for (const c of w.MMP9C.CHAPTERS) w.MMP7.registerChapterBoard(c.no, c.track, { provisional: false });
   return { P7: w.MMP7, P8: w.MMP8, CH: w.MMCH, w };

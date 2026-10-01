@@ -24,7 +24,7 @@ const mon = (P7, P8, S) => { const m = P8.initIndividual(S, { sp: 0, name: 'テ�
  *  骨格：スタート → … → 分岐（真ん中の背景）→ 2本の道（a／b）→ 合流 → … → ライバル（強制停止・ゴールの2つ手前）→ ゴール
  *  固定：特殊地点（special。合流の次）。可変：それ以外の候補ノード（配置で stat／event／battle／treasure）
  */
-export function makeNextConfig({ chapterId = 2, patternId = 'N', scenes = 9, per = 17, diceSides = 6, turnLimit = 30, onTimeUp = 'tournament', forceStopKinds = ['rival'], counts } = {}) {
+export function makeNextConfig({ chapterId = 3, patternId = 'N', scenes = 9, per = 17, diceSides = 6, turnLimit = 30, onTimeUp = 'tournament', forceStopKinds = ['rival'], counts } = {}) {
   const fieldScenes = [], paths = [];
   for (let i = 1; i <= scenes; i++) fieldScenes.push({ id: i, name: `背景${i}`, bg: `./assets/next/bg_${i}.webp`, w: 864, h: 1536, depth: [[0.98, 1], [0.4, 0.3]], zoom: { near: 1.2, far: 1.4 } });
   const pts = [[0.5, 0.92], [0.52, 0.7], [0.48, 0.5], [0.5, 0.4]];
@@ -103,7 +103,7 @@ test('NX-02：MMP8.roll は面の数をドライバから受け取る。6面の 
   for (const v of [1, 2, 3, 4, 5, 6]) { const E2 = onNext({}, 3); const t = turn(E2, v); assert.equal(t.length, v, `出目${v}で${v}地点`); assert.equal(E2.m.raise.node, `s1_${v}`); assert.equal(E2.m.raise.pend.roll, v); assert.equal(E2.m.raise.pend.left, 0); }
   const E1 = loadEngine(); const S = E1.P8.newSave(); S.m = mon(E1.P7, E1.P8, S); E1.P8.depart(S, S.m, lcg(1));
   assert.equal(E1.P8.diceSides(S.m), 6); assert.equal(E1.P8.roll(S, S.m, () => 0.999).value, 6, 'Chapter 1 の最大は 6');
-  assert.equal(E1.P8.diceSides({ raise: { ch: 2 } }), 3, 'エンジンを使わない Chapter は 1〜3');
+  assert.equal(E1.P8.diceSides({ raise: { ch: 4 } }), 3, 'エンジンを使わない Chapter は 1〜3');
 });
 
 test('NX-03：通過と停止の分離：出目6で通った 5地点（能力・イベント・宝箱・バトルを含む）は何も起こさず、6地点目だけ resolve する', () => {
@@ -135,7 +135,7 @@ test('NX-04：強制停止（forceStop）：ライバルの地点は出目が残
   P8.skipBattleSquare(S, m); assert.equal(m.raise.pend, null); assert.equal(m.raise.turnsUsed, 4);
   const t2 = turn(E, 1); assert.deepEqual(t2, [g.order[g.order.indexOf(rival) + 1]], '次のターンは余った歩数を使わず、出目どおり1地点');
   // 個別の指定：path.forceStop＝[index]・nodeOverrides[id].forceStop＝true・種類（forceStopKinds）は既定で無し
-  const c2 = makeNextConfig({ chapterId: 3, forceStopKinds: [] }); c2.paths[0].forceStop = [4]; c2.nodeOverrides = { s2_3: { forceStop: true } }; const g2 = CH.registerConfig(c2);
+  const c2 = makeNextConfig({ chapterId: 4, forceStopKinds: [] }); c2.paths[0].forceStop = [4]; c2.nodeOverrides = { s2_3: { forceStop: true } }; const g2 = CH.registerConfig(c2);
   assert.deepEqual([g2.nodes.s1_4.forceStop, g2.nodes.s2_3.forceStop, g2.nodes[g2.order.find((id) => g2.nodes[id].kind === 'rival')].forceStop], [true, true, false]);
   // Chapter 1：強制停止はライバルだけ（config.forceStopKinds）
   const g1 = CH.buildGraph(CH.getConfig(1)); assert.deepEqual(Object.values(g1.nodes).filter((n) => n.forceStop).map((n) => n.kind), ['rival']); assert.equal(Object.values(P8.trackOf(1).nodes).filter((n) => n.stop).length, 1);
@@ -151,8 +151,8 @@ test('NX-05：分岐の直後に強制停止・ゴールの手前で強制停止
   turn(E, 6); assert.equal(m.raise.node, rival, '1地点先の強制停止（ゴールは2地点先）'); land(E);
   turn(E, 6); assert.equal(m.raise.node, g.goal, 'ゴールで止まり残りは消える'); const r = land(E); assert.equal(r.goal, true); assert.equal(P8.boardPhase(m), 'goal');
   // 分岐で選んだ先が強制停止なら選んだ時点で止まる
-  const c = makeNextConfig({ chapterId: 3 }); c.nodeOverrides = { ra_0: { forceStop: true } }; E.CH.registerConfig(c);
-  const E2 = (() => { const X = loadEngine(); X.CH.registerConfig(c); const S2 = X.P8.newSave(); S2.m = mon(X.P7, X.P8, S2); Object.assign(S2.m.raise, { state: 'farm', ch: 3, log: [{ ch: 1 }] }); X.P8.depart(S2, S2.m, lcg(2)); return { ...X, S: S2, m: S2.m, cfg: c, g: X.CH.buildGraph(c) }; })();
+  const c = makeNextConfig({ chapterId: 4 }); c.nodeOverrides = { ra_0: { forceStop: true } }; E.CH.registerConfig(c);
+  const E2 = (() => { const X = loadEngine(); X.CH.registerConfig(c); const S2 = X.P8.newSave(); S2.m = mon(X.P7, X.P8, S2); Object.assign(S2.m.raise, { state: 'farm', ch: 4, log: [{ ch: 1 }, { ch: 2 }, { ch: 3 }] }); X.P8.depart(S2, S2.m, lcg(2)); return { ...X, S: S2, m: S2.m, cfg: c, g: X.CH.buildGraph(c) }; })();
   const br = E2.g.branchAt[0]; E2.m.raise.node = E2.g.order[E2.g.order.indexOf(br) - 1]; E2.m.raise.pend = null;
   const t = turn(E2, 6, 'ra_0'); assert.deepEqual(t, [br, 'ra_0']); assert.deepEqual([E2.m.raise.pend.stage, E2.m.raise.pend.left], ['resolve', 0]);
 });

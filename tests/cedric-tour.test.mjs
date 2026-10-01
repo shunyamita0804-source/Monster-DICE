@@ -91,11 +91,11 @@ test.before(async () => {
   await p.ctx.close();
 });
 test.after(async () => { if (L) await L.close(); });
-/** Chapter 2 のゴールに着いた状態（クリア最高ランク E。挑戦上限は最高クリア＋1＝D） */
+/** Chapter 3（旧ボード。2026-10-01 から Chapter 2 はエンジンのため）のゴールに着いた状態（クリア最高ランク E。Chapter 2 は辞退。挑戦上限は最高クリア＋1＝D） */
 function goalSave() {
   const s = JSON.parse(JSON.stringify(BASE));
   s.npcFlags = { ...s.npcFlags, raiseIntro: 1 };
-  Object.assign(s.m.raise, { state: 'board', ch: 2, node: 'G', goal: true, turnsUsed: 12, turnLimit: 20, pend: null, tour: null, battle: null, trainRun: null, log: [LOG1], startStats: Object.fromEntries(KS.map((k) => [k, s.m[k]])) });
+  Object.assign(s.m.raise, { state: 'board', ch: 3, node: 'G', goal: true, turnsUsed: 12, turnLimit: 20, pend: null, tour: null, battle: null, trainRun: null, log: [LOG1, { ch: 2, reachedGoal: true, turnsUsed: 16, turnLimit: 30, declined: true, tour: null }], startStats: Object.fromEntries(KS.map((k) => [k, s.m[k]])) });
   s.m.prog.rankClr = [true, false, false, false, false, false];
   return Object.assign(s, { g: 1000 });
 }

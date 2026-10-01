@@ -81,7 +81,7 @@ const SCRIPTS = [
   'js/battle-bridge.js', 'js/integration/adapter.js', 'js/phase7/progression.js', 'js/phase8/league.js', 'js/phase8/raising.js',
   'js/phase10/monsters.js', 'js/phase11/player.js', 'js/phase12/scenes.js', 'js/phase12/dice.js', 'js/phase13/field.js',
   'js/phase9/chapters.js', 'js/phase9/board-art.js', 'js/npc/npc.js',
-  'js/chapter/engine.js', 'js/chapter/configs/ch1a.js', 'js/chapter/dice-renderer.js', 'js/chapter/field-view.js', 'js/chapter/intro.js',   // 2026-09-30：Chapterフィールドエンジン
+  'js/chapter/engine.js', 'js/chapter/configs/ch1a.js', 'js/chapter/configs/ch2a.js', 'js/chapter/dice-renderer.js', 'js/chapter/field-view.js', 'js/chapter/intro.js',   // 2026-09-30：Chapterフィールドエンジン
   'js/battle/fit.js',   // 2026-09-30：バトル画面の表示だけの補正（fight()・.bt 系 CSS は変えない）
 ];
 // 旧名称（大文字小文字・区切りの違いも含む）。正式名称「ミスティックモンスターズ／MYSTIC MONSTERS」は含まない

@@ -1101,7 +1101,9 @@ button.mkc b{font-size:.9rem}button.mkc small{font-size:.66rem;color:#ffe9b0}
 /* ===== Chapterフィールド（Chapterフィールドエンジン：js/chapter/。2026-09-30 改修）：背景の道をモンスターと一緒に旅する正式の育成ボード =====
    画面：上〜中央＝フィールド（.chf。高さは 100% − 操作欄）、下＝操作欄（.chdeck：中央の円形 STOP・左の弧＝アイテム・右の弧＝休む）。
    重ね順（.chf-cam）：遠景の帯（far）→ 背景 → 奥の環境（back）→ 道（停止地点・モンスター：足元の y で前後）→ 手前の環境（front）→ 効果（fx）。ノード・線・番号は出さない */
-#app>.chfw{position:relative;box-sizing:border-box;height:calc(100% + 32px);margin:-16px;overflow:hidden;background:#0b1636;--chdeck:clamp(128px,19vh,166px);--chcmd:118px;--chstop:88px;--chwing:40px}
+#app>.chfw{position:relative;box-sizing:border-box;height:calc(100% + 32px);margin:-16px;overflow:hidden;background:#0b1636;--chdeck:clamp(128px,19vh,166px);--chcmd:118px;--chstop:88px;--chwing:40px;animation:chfwin .3s ease-out both}
+@keyframes chfwin{from{opacity:0}}
+#app:has(>.chfw){overflow:hidden}
 @supports (height:1dvh){#app>.chfw{--chdeck:clamp(128px,19dvh,166px)}}
 .chf{position:absolute;left:0;right:0;top:0;bottom:var(--chdeck);overflow:hidden;background:#0b1636;touch-action:none}
 .chf-cam{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform}
@@ -1930,6 +1932,7 @@ main>h1{flex:none}
 <!-- Chapterフィールドエンジン（共通エンジン＋Chapterごとの config。Chapter 1 Pattern A から。window.MMCH・MMCHD）と画面（chfBoard） -->
 <script src="./js/chapter/engine.js"></script>
 <script src="./js/chapter/configs/ch1a.js"></script>
+<script src="./js/chapter/configs/ch2a.js"></script>
 <script src="./js/chapter/dice-renderer.js"></script>
 <script src="./js/chapter/field-view.js"></script>
 <script src="./js/chapter/intro.js"></script>
