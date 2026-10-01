@@ -7,23 +7,29 @@
 <!--
   ミスティックモンスターズ：Chapterボードの「モンスター移動＋カメラ追従」プロトタイプ（2026-10-01。正式実装ではない）
   ・ゲーム本体（index.html・js/）とは完全に独立した1ページ。セーブ・サイコロ・Chapter 進行には触れない。消せば元どおり。
-  ・背景：assets/fields/proto/cam_test_road.webp（ユーザー提供の画像をそのまま WebP にしただけ。768×1360）
-  ・方式：1つの値 t（今いるマスの番号。移動中は小数）から、背景の拡大率・位置とモンスターの位置・大きさをすべて計算する（＝同じカメラ運動）。
+  ・背景A：assets/fields/proto/cam_test_road_a.webp、背景B：assets/fields/proto/cam_test_road_b.webp
+    （どちらもユーザー提供の別々の画像をそのまま WebP にしただけ。768×1360）。各背景6マス＝通しで12マス。
+  ・方式：1つの値 t（通しのマスの番号 0〜11。移動中は小数）から、背景の拡大率・位置とモンスターの位置・大きさをすべて計算する。
+  ・背景の切り替え（A の6マス目 → B の1マス目）：B を「A の道の先」に小さく置いた1つの座標系（ワールド）で考え、
+    カメラは A の6マス目の構図から B の1マス目の構図へ、拡大率は対数で・注視点は同じ割合で連続的に動く。
+    その間 B は道の先から手前へ広がりながら（縁をぼかして）フェードインし、A は下にそのまま残る＝黒い画面・瞬間的なズームなし。
 -->
 <style>
   :root { --bg: #0b1424; --gold: #e6c56c; --ink: #fff; }
   html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); color: var(--ink); font-family: 'Noto Sans JP', system-ui, sans-serif; overscroll-behavior: none; }
   #view { position: fixed; inset: 0; overflow: hidden; background: #000; touch-action: manipulation; }
-  #bg { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; user-select: none; -webkit-user-drag: none; }
+  .bg { position: absolute; left: 0; top: 0; width: 768px; transform-origin: 0 0; will-change: transform, opacity; user-select: none; -webkit-user-drag: none; }
   #mon { position: absolute; left: 0; top: 0; transform-origin: 50% 100%; will-change: transform; pointer-events: none; }
   #mon img { display: block; width: 100%; height: auto; }
   #shadow { position: absolute; left: 0; top: 0; border-radius: 50%; background: radial-gradient(closest-side, rgba(0,0,0,.35), rgba(0,0,0,0)); will-change: transform; pointer-events: none; }
-  .dbg { position: absolute; border: 2px solid rgba(255,40,80,.9); border-radius: 50%; pointer-events: none; display: none; }
-  body.debug .dbg { display: block; }
+  .dbg { position: absolute; border: 2px solid rgba(255,40,80,.9); border-radius: 50%; pointer-events: none; display: none; box-sizing: border-box; }
+  .dbg.b { border-color: rgba(40,160,255,.95); }
+  body.debug .dbg.on { display: block; }
   #hud { position: fixed; left: 8px; right: 8px; top: calc(8px + env(safe-area-inset-top)); display: flex; justify-content: space-between; gap: 8px; font-size: 12px; pointer-events: none; }
   #hud span { background: rgba(8,18,36,.78); border: 1px solid rgba(230,197,108,.6); border-radius: 8px; padding: 4px 8px; }
+  #info { font-size: 14px; font-weight: 700; }
   #ctl { position: fixed; left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom)); display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-  #ctl button, #ctl select { font: inherit; font-size: 13px; color: var(--ink); background: rgba(10,24,48,.9); border: 1px solid var(--gold); border-radius: 10px; padding: 10px 4px; }
+  #ctl button, #ctl select { font: inherit; font-size: 13px; color: var(--ink); background: rgba(10,24,48,.9); border: 1px solid var(--gold); border-radius: 10px; padding: 10px 4px; min-width: 0; }
   #ctl button.main { grid-column: span 2; font-size: 16px; font-weight: 700; background: linear-gradient(#8a1f2b, #5e121c); }
   #ctl button:disabled { opacity: .45; }
   #ctl .row { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
@@ -31,16 +37,17 @@
 </head>
 <body>
 <div id="view">
-  <img id="bg" src="../assets/fields/proto/cam_test_road.webp" alt="" draggable="false">
+  <img id="bgA" class="bg" src="../assets/fields/proto/cam_test_road_a.webp" alt="" draggable="false">
+  <img id="bgB" class="bg" src="../assets/fields/proto/cam_test_road_b.webp" alt="" draggable="false" style="opacity:0;visibility:hidden">
   <div id="dbgs"></div>
   <i id="shadow"></i>
   <div id="mon"><img src="../assets/monsters/solamo.png" alt=""></div>
 </div>
-<div id="hud"><span id="info">マス 1 / 6</span><span id="zoom"></span></div>
+<div id="hud"><span id="info">読み込み中…</span><span id="zoom"></span></div>
 <div id="ctl">
-  <button id="prev">◀ 戻る</button>
-  <button id="next" class="main">次のマスへ ▶</button>
-  <button id="auto">自動で通す</button>
+  <button id="prev" disabled>◀ 戻る</button>
+  <button id="next" class="main" disabled>次のマスへ ▶</button>
+  <button id="auto" disabled>自動で通す</button>
   <div class="row">
     <select id="mode" aria-label="方式">
       <option value="follow">カメラ追従（今回の方式）</option>
@@ -61,103 +68,118 @@
 <script>
 (() => {
   'use strict';
-  // ---- マルチ背景対応：2つの背景（各768×1360）を順に通る。各背景6マス、計12マス（t=0〜11）
   const IMG = { w: 768, h: 1360 };
-  // マルチ背景対応：2つの背景を順に表示。実装時に背景B（cam_test_road_b.webp）を提供してください。
-  // 今は両方に同じ画像を使用していますが、背景Bが提供されたら自動的に置き換わります。
-  const BACKGROUNDS = [
-    { src: '../assets/fields/proto/cam_test_road.webp', label: 'Background A' },
-    { src: '../assets/fields/proto/cam_test_road.webp', label: 'Background B (pending)' }  // TODO: 背景B の画像を提供
+  // 各背景の円形マス：画像（768×1360）上の中心 x・y と、描かれた楕円の横半径 rx・縦半径 ry（画素。拡大して目視で測った値）
+  const BG = [
+    { key: 'A', file: 'cam_test_road_a.webp', el: document.getElementById('bgA'), sq: [
+      { x: 405, y: 1178, rx: 200, ry: 88 },   // A-1（手前）
+      { x: 400, y: 895, rx: 145, ry: 55 },
+      { x: 390, y: 710, rx: 110, ry: 40 },
+      { x: 394, y: 590, rx: 78, ry: 23 },
+      { x: 392, y: 508, rx: 64, ry: 18 },
+      { x: 395, y: 453, rx: 46, ry: 10 },     // A-6（奥）
+    ] },
+    { key: 'B', file: 'cam_test_road_b.webp', el: document.getElementById('bgB'), sq: [
+      { x: 400, y: 1150, rx: 225, ry: 108 },  // B-1（手前）
+      { x: 400, y: 868, rx: 150, ry: 60 },
+      { x: 390, y: 680, rx: 110, ry: 40 },
+      { x: 395, y: 553, rx: 75, ry: 26 },
+      { x: 390, y: 467, rx: 60, ry: 14 },
+      { x: 392, y: 417, rx: 48, ry: 10 },     // B-6（奥）
+    ] },
   ];
-  // 背景ごとのノード定義。各背景に6ノード。
-  const SQ = [
-    // 背景A（ノード0-5）
-    [
-      { x: 405, y: 1180, rx: 195, ry: 90 },   // ノード0（手前）
-      { x: 399, y: 890, rx: 141, ry: 55 },
-      { x: 396, y: 710, rx: 114, ry: 45 },
-      { x: 393, y: 586, rx: 88, ry: 21 },
-      { x: 395, y: 507, rx: 70, ry: 18 },
-      { x: 395, y: 452, rx: 55, ry: 12 },     // ノード5（奥）
-    ],
-    // 背景B（ノード6-11）：背景Aと同じ配置を使用
-    [
-      { x: 405, y: 1180, rx: 195, ry: 90 },
-      { x: 399, y: 890, rx: 141, ry: 55 },
-      { x: 396, y: 710, rx: 114, ry: 45 },
-      { x: 393, y: 586, rx: 88, ry: 21 },
-      { x: 395, y: 507, rx: 70, ry: 18 },
-      { x: 395, y: 452, rx: 55, ry: 12 },
-    ]
-  ];
+  const PER = 6, LAST = BG.length * PER - 1;   // 通しのマス 0〜11
+  // B を A の道の先に置く：B の1マス目が、A の画像で A-6 のすぐ先の道（LINK_AT）に、その場所の道幅相当の大きさ（LINK_RX）で重なる
+  const LINK_AT = { x: 405, y: 418 }, LINK_RX = 38;
+  const s = LINK_RX / BG[1].sq[0].rx;                                    // B の画像1px ＝ ワールド（A の画像）の s px
+  const LINK = { s, ox: LINK_AT.x - BG[1].sq[0].x * s, oy: LINK_AT.y - BG[1].sq[0].y * s };
   const ANCHOR_Y = 0.6;      // 着地したモンスターの足元を置きたい画面の高さ（中央より少し下）
   const MOVE_MS = 950;       // 1マスの移動時間
+  const LINK_MS = 1450;      // 背景をまたぐ1マス（A-6 ⇄ B-1）の移動時間（拡大率の変化を長めに分ける）
   const MON_RATIO = 0.95;    // モンスターの高さ＝マスの見かけの直径 × この値
-  const view = document.getElementById('view'), bg = document.getElementById('bg'), mon = document.getElementById('mon'), sh = document.getElementById('shadow');
+  const view = document.getElementById('view'), mon = document.getElementById('mon'), sh = document.getElementById('shadow');
   const $ = (id) => document.getElementById(id);
-  let t = 0, anim = null;    // t＝今のマス（0〜11。移動中は小数。6未満は背景A、6以上は背景B）
+  let t = 0, anim = null, ready = false;
   const opt = { mode: 'follow', k: 0.7 };
 
-  // t の位置での「マスの中心」と「マスの見かけの大きさ（rx）」：隣のマスの間を補間（大きさは比で補間＝遠近に沿う）
-  // 背景の切り替えは tt=6.0 を境に行う（0〜5.99=背景A、6.0〜11.99=背景B）
-  function at(tt) {
-    const bgIndex = Math.floor(tt / 6);           // 背景のインデックス（0 or 1）
-    const localT = tt - bgIndex * 6;              // 同じ背景内でのローカルな位置（0〜5.99）
-    const bg = SQ[bgIndex];
-    const i = Math.max(0, Math.min(bg.length - 2, Math.floor(localT))), f = localT - i, a = bg[i], b = bg[i + 1];
-    return {
-      x: a.x + (b.x - a.x) * f,
-      y: a.y + (b.y - a.y) * f,
-      rx: a.rx * Math.pow(b.rx / a.rx, f),
-      bgIndex: bgIndex
-    };
+  const toWorld = (b, q) => (b === 0 ? { x: q.x, y: q.y, rx: q.rx, ry: q.ry } : { x: q.x * s + LINK.ox, y: q.y * s + LINK.oy, rx: q.rx * s, ry: q.ry * s });
+  // 背景 b の中の位置 lt（0〜5）：隣のマスの間を補間（大きさは比で補間＝遠近に沿う）。背景 b の画像の座標
+  function localAt(b, lt) {
+    const sq = BG[b].sq, i = Math.max(0, Math.min(PER - 2, Math.floor(lt))), f = lt - i, a = sq[i], c = sq[i + 1];
+    return { x: a.x + (c.x - a.x) * f, y: a.y + (c.y - a.y) * f, rx: a.rx * Math.pow(c.rx / a.rx, f) };
   }
-  // カメラ：拡大率 S（画像1px → 画面の CSS px）と平行移動 tx・ty
-  function camera(tt) {
-    const W = view.clientWidth, H = view.clientHeight, p = at(tt);
-    const cover = Math.max(W / IMG.w, H / IMG.h);               // 画面を背景で埋める最小の倍率（黒い隙間を出さない）
+  // 背景 b の画像だけを見たときのカメラ（その背景の画像の座標）。背景の外（黒い隙間）は見せない
+  function frame(b, p) {
+    const W = view.clientWidth, H = view.clientHeight;
+    const cover = Math.max(W / IMG.w, H / IMG.h);
     let S = cover;
-    if (opt.mode === 'follow') S = cover * Math.pow(SQ[0][0].rx / p.rx, opt.k);   // 奥のマスほど寄る（k=1 ならマスの見かけの大きさが一定）
-    // モンスターの足元（マスの中心）を画面の中央・少し下へ。ただし背景の外（黒い隙間）は見せない＝端では位置で調整
+    if (opt.mode === 'follow') S = cover * Math.pow(BG[b].sq[0].rx / p.rx, opt.k);   // 奥のマスほど寄る（k=1 ならマスの見かけの大きさが一定）
     let tx = W / 2 - p.x * S, ty = H * ANCHOR_Y - p.y * S;
     tx = Math.min(0, Math.max(W - IMG.w * S, tx)); ty = Math.min(0, Math.max(H - IMG.h * S, ty));
-    return { S, tx, ty, p, W, H, bgIndex: p.bgIndex };
+    return { S, tx, ty };
   }
+  // ワールド（A の画像の座標）のカメラへ。B の画像の点 q は ワールド s*q + o なので、画面 = S_B*q + t_B = (S_B/s)*w + (t_B − (S_B/s)*o)
+  function camWorld(b, c) {
+    if (b === 0) return c;
+    const S = c.S / s;
+    return { S, tx: c.tx - S * LINK.ox, ty: c.ty - S * LINK.oy };
+  }
+  // 通しの位置 tt（0〜11）の状態：ワールドのカメラ・モンスターの足元（ワールド）・B の見え方 u（0＝A だけ、1＝B だけ）
+  function state(tt) {
+    if (tt <= PER - 1) { const p = localAt(0, tt); return { cam: frame(0, p), p: toWorld(0, p), u: 0, bg: 0 }; }
+    if (tt >= PER) { const p = localAt(1, tt - PER); return { cam: camWorld(1, frame(1, p)), p: toWorld(1, p), u: 1, bg: 1 }; }
+    // A-6 → B-1 の間：拡大率は対数で、注視点（画面の基準位置に来るワールドの点）は同じ割合で動かす
+    const u = tt - (PER - 1), s0 = state(PER - 1), s1 = state(PER);
+    const W = view.clientWidth, H = view.clientHeight, ax = W / 2, ay = H * ANCHOR_Y;
+    const S = s0.cam.S * Math.pow(s1.cam.S / s0.cam.S, u);
+    const f0 = { x: (ax - s0.cam.tx) / s0.cam.S, y: (ay - s0.cam.ty) / s0.cam.S }, f1 = { x: (ax - s1.cam.tx) / s1.cam.S, y: (ay - s1.cam.ty) / s1.cam.S };
+    const fx = f0.x + (f1.x - f0.x) * u, fy = f0.y + (f1.y - f0.y) * u;
+    const p = { x: s0.p.x + (s1.p.x - s0.p.x) * u, y: s0.p.y + (s1.p.y - s0.p.y) * u, rx: s0.p.rx * Math.pow(s1.p.rx / s0.p.rx, u) };
+    return { cam: { S, tx: ax - fx * S, ty: ay - fy * S }, p, u, bg: u < 0.5 ? 0 : 1 };
+  }
+  const smooth = (a, b, x) => { const v = Math.max(0, Math.min(1, (x - a) / (b - a))); return v * v * (3 - 2 * v); };
+  const pct = (v) => v.toFixed(2) + '%';
   function render(tt, walk = 0) {
-    const c = camera(tt), { S, tx, ty, p, bgIndex } = c;
-    // 背景の切り替え
-    bg.src = BACKGROUNDS[bgIndex].src;
-    bg.style.width = IMG.w + 'px';
-    bg.style.transform = `translate3d(${tx.toFixed(2)}px,${ty.toFixed(2)}px,0) scale(${S.toFixed(4)})`;
-    // モンスター：マスの中心（画像の点）を同じカメラで画面へ写した位置に立つ。大きさは、その場所のマスの見かけの大きさに比例
-    const fx = p.x * S + tx, fy = p.y * S + ty, h = p.rx * 2 * S * MON_RATIO, w = h;   // 正方形の画像
+    const st = state(tt), { S, tx, ty } = st.cam, u = st.u;
+    const A = BG[0].el, B = BG[1].el;
+    A.style.transform = `translate3d(${tx.toFixed(2)}px,${ty.toFixed(2)}px,0) scale(${S.toFixed(5)})`;
+    A.style.visibility = u >= 1 ? 'hidden' : 'visible';
+    const SB = S * s, bx = tx + S * LINK.ox, by = ty + S * LINK.oy;
+    B.style.transform = `translate3d(${bx.toFixed(2)}px,${by.toFixed(2)}px,0) scale(${SB.toFixed(5)})`;
+    B.style.visibility = u <= 0 ? 'hidden' : 'visible';
+    B.style.opacity = u >= 1 ? '1' : smooth(0.02, 0.7, u).toFixed(3);
+    // 切り替えの途中だけ B の縁をぼかす（A の上に四角い縁が見えないように）。B が画面を覆うころには 0 になる
+    const fe = u > 0 && u < 1 ? 14 * (1 - smooth(0.25, 1, u)) : 0;
+    const m = fe > 0.05 ? `linear-gradient(to right,transparent 0,#000 ${pct(fe)},#000 ${pct(100 - fe)},transparent 100%),linear-gradient(to bottom,transparent 0,#000 ${pct(fe)},#000 ${pct(100 - fe)},transparent 100%)` : 'none';
+    B.style.webkitMaskImage = m; B.style.maskImage = m;
+    B.style.webkitMaskComposite = 'source-in'; B.style.maskComposite = 'intersect';
+    // モンスター：足元（ワールドの点）を同じカメラで画面へ写した位置。大きさは、その場所のマスの見かけの大きさに比例
+    const p = st.p, fx = p.x * S + tx, fy = p.y * S + ty, h = p.rx * 2 * S * MON_RATIO, w = h;
     const bob = Math.sin(walk * Math.PI * 2) * h * 0.035 * (walk > 0 && walk < 1 ? 1 : 0);
     mon.style.width = w.toFixed(1) + 'px';
     mon.style.transform = `translate3d(${(fx - w / 2).toFixed(1)}px,${(fy - h * 0.97 - Math.abs(bob)).toFixed(1)}px,0)`;
     sh.style.width = (w * 0.7).toFixed(1) + 'px'; sh.style.height = (w * 0.16).toFixed(1) + 'px';
     sh.style.transform = `translate3d(${(fx - w * 0.35).toFixed(1)}px,${(fy - w * 0.08).toFixed(1)}px,0)`;
-    // 確認用：マスの中心の印（同じカメラで写す）
-    const bgData = SQ[bgIndex];
-    document.querySelectorAll('.dbg').forEach((d, i) => {
-      if (i < bgData.length) {
-        const q = bgData[i]; d.style.left = (q.x * S + tx - q.rx * S) + 'px'; d.style.top = (q.y * S + ty - q.ry * S) + 'px'; d.style.width = (q.rx * 2 * S) + 'px'; d.style.height = (q.ry * 2 * S) + 'px';
-      }
+    // 確認用：12マスの中心の印（同じカメラで写す。見えている背景のものだけ）
+    document.querySelectorAll('.dbg').forEach((d) => {
+      const b = +d.dataset.b, q = toWorld(b, BG[b].sq[+d.dataset.i]);
+      d.classList.toggle('on', b === 0 ? u < 1 : u > 0);
+      d.style.left = (q.x * S + tx - q.rx * S) + 'px'; d.style.top = (q.y * S + ty - q.ry * S) + 'px';
+      d.style.width = (q.rx * 2 * S) + 'px'; d.style.height = (q.ry * 2 * S) + 'px';
     });
-    const dpr = window.devicePixelRatio || 1;
-    const nodeInBg = Math.round(tt) % 6;
-    const bgLabel = BACKGROUNDS[bgIndex].label;
-    $('info').textContent = `${bgLabel} / Node ${nodeInBg + 1} (全12マス中 ${Math.round(tt) + 1})`;
-    $('zoom').textContent = `背景 ×${S.toFixed(2)}（画像1px＝端末${(S * dpr).toFixed(1)}px）`;
-    $('prev').disabled = !!anim || t <= 0; $('next').disabled = !!anim || t >= 11; $('auto').disabled = !!anim;
+    const n = Math.round(tt), nb = Math.floor(n / PER), dpr = window.devicePixelRatio || 1, localS = u < 0.5 ? S : SB;
+    $('info').textContent = `背景${BG[nb].key} / マス ${n % PER + 1}（通し ${n + 1} / ${LAST + 1}）`;
+    $('zoom').textContent = `背景${BG[st.bg].key} ×${localS.toFixed(2)}（画像1px＝端末${(localS * dpr).toFixed(1)}px）`;
+    $('prev').disabled = !ready || !!anim || t <= 0; $('next').disabled = !ready || !!anim || t >= LAST; $('auto').disabled = !ready || !!anim;
   }
   const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);   // 加速 → 減速（歩き出し・止まり）
   function go(to) {
-    if (anim || to < 0 || to > 11) return Promise.resolve();
-    const from = t, t0 = performance.now();
+    if (!ready || anim || to < 0 || to > LAST) return Promise.resolve();
+    const from = t, t0 = performance.now(), ms = Math.min(from, to) < PER && Math.max(from, to) > PER - 1 ? LINK_MS : MOVE_MS;
     return new Promise((done) => {
       anim = true;
       const step = (now) => {
-        const r = Math.min(1, (now - t0) / MOVE_MS), e = ease(r);
+        const r = Math.min(1, (now - t0) / ms), e = ease(r);
         t = from + (to - from) * e;
         render(t, r);   // 背景・モンスターは同じ t から＝同じカメラ運動
         if (r < 1) requestAnimationFrame(step); else { t = to; anim = null; render(t); done(); }
@@ -165,19 +187,24 @@
       requestAnimationFrame(step);
     });
   }
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   $('next').onclick = () => go(Math.round(t) + 1);
   $('prev').onclick = () => go(Math.round(t) - 1);
-  $('auto').onclick = async () => { if (anim) return; if (t >= 11) { t = 0; render(t); await new Promise((r) => setTimeout(r, 400)); } for (let i = Math.round(t) + 1; i <= 11; i++) { await go(i); await new Promise((r) => setTimeout(r, 450)); } };
+  $('auto').onclick = async () => {
+    if (anim || !ready) return;
+    if (t >= LAST) { t = 0; render(t); await wait(400); }
+    for (let i = Math.round(t) + 1; i <= LAST; i++) { await go(i); await wait(450); }
+  };
   $('mode').onchange = (e) => { opt.mode = e.target.value; render(t); };
   $('k').onchange = (e) => { opt.k = +e.target.value; render(t); };
   $('dbg').onchange = (e) => { document.body.classList.toggle('debug', e.target.value === '1'); };
-  document.getElementById('dbgs').innerHTML = SQ[0].map(() => '<i class="dbg"></i>').join('');
+  $('dbgs').innerHTML = BG.map((g, b) => g.sq.map((_, i) => `<i class="dbg${b ? ' b' : ''}" data-b="${b}" data-i="${i}"></i>`).join('')).join('');
   window.addEventListener('resize', () => render(t));
   // テスト用（自動確認から呼ぶ）
-  window.CAMPROTO = { SQ, camera, at, go, get t() { return t; }, set: (v) => { t = v; render(t); }, opt, render, BACKGROUNDS };
-  const start = () => render(t);
-  if (bg.complete) start(); else bg.addEventListener('load', start);
-  start();
+  window.CAMPROTO = { BG, LINK, PER, LAST, state, frame, go, get t() { return t; }, get ready() { return ready; }, set: (v) => { t = v; render(t); }, opt, render };
+  render(t);
+  // 2枚とも読み込んでから操作できるようにする（切り替えの瞬間に B が未読込で黒くならないように）
+  Promise.all(BG.map((g) => (g.el.decode ? g.el.decode() : Promise.resolve()).catch(() => {}))).then(() => { ready = true; render(t); });
 })();
 </script>
 </body>
