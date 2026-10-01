@@ -98,7 +98,8 @@
   /** 目印の足元の位置（背景の画素）と大きさ。node.lm（config.nodeOverrides）があればそれを優先 */
   function landmarkPos(cfg, g, sc, id, look) {
     const n = g.nodes[id], o = n.lm || {}, P = (cfg.paths || []).find((p) => p.id === n.path) || {}, PL = P.landmark || {};   // 道ごとの置き方（橋の上では欄干ぎわ＝gapScale を小さく）
-    const side = look.side === 0 ? 0 : (PL.side || n.side || 1) * (look.side || 1), off = side ? sideOffset(g, sc, id, side, (look.gap || 96) * (PL.gapScale || 1)) : { dx: 0, dy: 0 };
+    const side = look.side === 0 ? 0 : PL.fixedSide ? PL.fixedSide : (PL.side || n.side || 1) * (look.side || 1),   // fixedSide：その道の物はいつもその側（分岐の左右の道＝外側。もう一方の道へはみ出さない）
+      off = side ? sideOffset(g, sc, id, side, (look.gap || 96) * (PL.gapScale || 1)) : { dx: 0, dy: 0 };
     const x = o.x != null ? o.x * sc.w : n.x * sc.w + off.dx, y = o.y != null ? o.y * sc.h : n.y * sc.h + off.dy;
     const d = (o.depth != null ? o.depth : n.d) * (o.scale || 1);
     return { x, y, d, side, opacity: o.opacity != null ? o.opacity : (look.opacity != null ? look.opacity : 1), anchor: o.anchor || look.anchor || 'foot' };
@@ -136,11 +137,16 @@
     const vis = ((cfg.landmarkVisibility || {})[a.t] || 'always') === 'arrive' && !used;   // 着いたときに初めて現れる目印
     return `<div class="chf-obj ${look.cls}${used ? ' used' : ''}${vis ? ' hid' : ''}" data-id="${id}" data-t="${a.t}" data-side="${P.side}" style="left:${P.x.toFixed(1)}px;top:${P.y.toFixed(1)}px;z-index:${Math.round(P.y)};--sink:${look.sink || 0};--d:${d};opacity:${(P.opacity * (1 - far * 0.35)).toFixed(2)}"><i class="chf-osh"></i><i class="chf-glow"></i><img src="${asset(cfg, look.key)}" alt="" draggable="false" decoding="async" style="${size}">${look.tuft === false ? '' : tuftHtml(cfg, w || (look.h * d) * 0.7)}</div>`;
   }
+  /** 分岐の道（config.branches[].options の id）どうしが同じ分かれ道か */
+  function sameBranchGroup(cfg, a, b) { return (cfg.branches || []).some((B) => B.options.some((o) => o.id === a) && B.options.some((o) => o.id === b)); }
+  /** 分岐の道の上の物を隠すか：その分かれ道でまだ道を選んでいない間は、どちらの道の物も隠す（選ぶ前に両方の道の全体を見せない） */
+  function branchHidden(cfg, n, fb) { return !!(n && n.branch && !(fb && sameBranchGroup(cfg, n.branch, fb))); }
   function sceneHtml(m, fieldId) {
     const cfg = MMCH.configFor(m), g = MMCH.graphFor(m), sc = sceneOf(cfg, fieldId), PXk = PX();
     const env = (cfg.landmarks[fieldId] || []), back = env.filter((L) => L.layer !== 'front' && (L.haze || 0) >= 0.15), road = env.filter((L) => L.layer !== 'front' && (L.haze || 0) < 0.15), front = env.filter((L) => L.layer === 'front');
     const ids = g.order.filter((id) => g.nodes[id].field === fieldId), fb = MMCH.fieldOf(m).branch;
-    const objs = ids.filter((id) => !(fb && g.nodes[id].branch && g.nodes[id].branch !== fb)).map((id) => nodeObjHtml(cfg, g, sc, m, id)).join('');   // 分岐を選んだ後は、選ばなかった道の物は出さない
+    // 分岐の道の物：選ぶ前はどちらの道も出さない（.brhide。選んだ道だけ chfPick で現れる）。選んだ後は、選ばなかった道の物を出さない
+    const objs = ids.filter((id) => !(fb && g.nodes[id].branch && sameBranchGroup(cfg, g.nodes[id].branch, fb) && g.nodes[id].branch !== fb)).map((id) => { const h = nodeObjHtml(cfg, g, sc, m, id); return branchHidden(cfg, g.nodes[id], fb) ? h.replace('class="chf-obj ', 'class="chf-obj brhide ') : h; }).join('');
     const fg = ((cfg.foreground || {})[fieldId] || []).map((F, i) => fgHtml(cfg, sc, F, i)).join('');
     const dbg = debug() ? ids.map((id) => { const n = g.nodes[id]; return `<i class="chf-dbg k-${n.kind}" style="left:${n.x * sc.w}px;top:${n.y * sc.h}px"><b>${id}</b></i>`; }).join('') + debugRoutes(g, sc, ids) : '';
     const farBand = sc.farBand ? `<div class="chf-pg chf-far" data-k="${sc.farBand.k != null ? sc.farBand.k : PXk.far}"><img class="chf-farimg" src="${sc.bg}" alt="" draggable="false" style="--to:${((sc.farBand.to || 0.34) * 100).toFixed(1)}%"></div>` : '';
@@ -477,10 +483,16 @@
     if (onField() && chfActive(m) && P8().boardPhase(m) === 'roll') refreshDeck(m);
   }
   /** 分岐：少し引いて、2つの道の入口が視界に入るようにする */
+  /** 分かれ道：それぞれの道の入口（最初の1地点）だけに小さな光の印と道の名前を出す（その先の地点は出さない。画像は使わない） */
+  function branchHints(m, ns) {
+    const fx = $('#chffx'); if (!fx) return; fx.querySelectorAll('.chf-brhint').forEach((e) => e.remove());
+    const br = (V.cfg.branches || []).find((b) => b.at === m.raise.node) || { options: [] };
+    for (const n of ns) { const o = br.options.find((x) => x.to === n.id) || {}; fx.insertAdjacentHTML('beforeend', `<i class="chf-brhint" data-id="${esc(n.id)}" style="left:${(n.mx * V.sc.w).toFixed(1)}px;top:${(n.my * V.sc.h).toFixed(1)}px;--d:${n.d}"><b>${esc(o.label || '')}</b></i>`); }
+  }
   function branchCamera(m) {
     const r = m.raise, opts = (r.pend && r.pend.opts) || [], ns = opts.map((id) => V.g.nodes[id]).filter((n) => n && n.field === V.field);
     if (!V.monPos) return;
-    if (ns.length) { const cx = ns.reduce((s, n) => s + n.mx, 0) / ns.length * V.sc.w, cy = ns.reduce((s, n) => s + n.my, 0) / ns.length * V.sc.h; camFocus({ x: cx, y: cy }, 0.5, CA().zoom.branch); }
+    if (ns.length) { const cx = ns.reduce((s, n) => s + n.mx, 0) / ns.length * V.sc.w, cy = ns.reduce((s, n) => s + n.my, 0) / ns.length * V.sc.h; camFocus({ x: cx, y: cy }, 0.5, CA().zoom.branch); branchHints(m, ns); }
     else camFocus({ x: V.monPos.x + V.look[0] * 160 * V.monPos.d, y: V.monPos.y + V.look[1] * 160 * V.monPos.d }, 0.5, CA().zoom.branch);   // 道の先が別の背景：進む向きの先を見せて少し引く
   }
   const onField = () => !!$('#chf') && !!$('#bmonw');
@@ -545,8 +557,9 @@
   function chfPick(id) {
     const m = gS() && gS().m; if (!chfActive(m) || busyGet()) return;
     const r = P8().chooseBranch(gS(), m, id); if (!r.ok) return chfBoard(); doSave();
-    const sh = $('#chf-ui .chbr'); if (sh) sh.remove();
-    const fb = MMCH.fieldOf(m).branch; document.querySelectorAll('#chf .chf-obj').forEach((e) => { const n = V.g.nodes[e.dataset.id]; if (n && n.branch && n.branch !== fb) e.classList.add('gone'); });
+    const sh = $('#chf-ui .chbr'); if (sh) sh.remove(); document.querySelectorAll('#chf .chf-brhint').forEach((e) => e.remove());
+    const fb = MMCH.fieldOf(m).branch || V.g.nodes[id].branch;   // 選んだ道（f.branch は最初の1歩で記録される）
+    document.querySelectorAll('#chf .chf-obj').forEach((e) => { const n = V.g.nodes[e.dataset.id]; if (!n || !n.branch || !sameBranchGroup(V.cfg, n.branch, fb)) return; if (n.branch === fb) e.classList.remove('brhide'); else e.classList.add('gone'); });
     const n = V.g.nodes[id];   // 選んだ道のほうへ少し寄ってから歩き出す（別の背景へ続く道なら、進む向きの先へ）
     if (n && n.field === V.field) camFocus({ x: n.mx * V.sc.w, y: n.my * V.sc.h }, 0.45, CA().zoom.idle);
     else if (V.monPos) camFocus({ x: V.monPos.x + V.look[0] * 140 * V.monPos.d, y: V.monPos.y + V.look[1] * 140 * V.monPos.d }, 0.4, CA().zoom.idle);

@@ -16,6 +16,8 @@
   const W = 864, H = 1536;
   const DEPTH = [[0.98, 1.22], [0.9, 1.1], [0.84, 1], [0.72, 0.84], [0.6, 0.62], [0.535, 0.5], [0.47, 0.4], [0.425, 0.34], [0.38, 0.28], [0.3, 0.2]];
   const NEAR = 0.87;   // いちばん手前のマスの y
+  // カメラの寄り（2026-10-01 夜：サイコロ 1〜3・マス密度の増加に合わせ、Chapter 1 より約10%寄せる＝モンスターが一回り大きく、次の数マスが見える）【暫定】
+  const ZOOM = { near: 1.45, far: 2.15 };
   // 背景：キー → [ファイル, 表示名【暫定】, 地形, 奥のマスの y（道が細くなりすぎる手前・門や階段の手前）, 道の中央線 [y, x, 半幅]（奥 → 手前）, 安全域の割合]
   const BG = {
     '01': [F + 'ch2_field_01', '海辺の遊歩道', 'coast', 0.40, [[0.30, 0.47, 0.03], [0.35, 0.46, 0.06], [0.40, 0.45, 0.10], [0.50, 0.46, 0.19], [0.60, 0.48, 0.27], [0.70, 0.50, 0.36], [0.80, 0.50, 0.42], [0.97, 0.50, 0.48]]],
@@ -32,23 +34,61 @@
   const ORDER = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10'];
   // 段階（表示・記録用。進む順は ORDER だけ）
   const STAGES = { coast: ['01', '02', '03', '04', '05'], undersea: ['06', '07', '08'], late: ['09'], arena: ['10'] };
-  // 背景1枚あたりのマス数＝ルートの長さ【暫定。正式確定ではない】：道の長さに合わせて 5〜7（長い橋 04・09 は 7、短い 05・07 は 5）＝ 59歩（ノード60。Chapter 1 と同じ）。
-  //  `node tests/chapter-sim.mjs 1000 cautious 2` で確認（2026-10-01：到達 100%・平均 19 ターン前後）
-  const NODES = root.MMCH_CH2A_NODES || { '01': 6, '02': 6, '03': 6, '04': 7, '05': 5, '06': 6, '07': 5, '08': 6, '09': 7, '10': 6 };
-  // path id：s1_〜s9_（フィールド 01〜09）・sa_（大会会場前）。旧構成の id（e1_…z1_）とは重ねない＝旧 Chapter 2 の途中のセーブは既存の安全処理で Chapter 2 の開始地点から
+  // 背景1枚あたりのマス数＝ルートの長さ【暫定。正式確定ではない】（2026-10-01 夜：サイコロ 1〜3 に合わせて密度を上げた）：
+  //  01＝8・02＝8・03＝6・04＝9・05＝7・06〜07（下の分岐）・08＝7・09＝8・会場前＝5。A ルート 68歩・B ルート 70歩。
+  //  `node tests/chapter-sim.mjs 1000 cautious 2` で確認
+  const NODES = root.MMCH_CH2A_NODES || { '01': 8, '02': 8, '03': 6, '04': 9, '05': 7, '08': 7, '09': 8, '10': 5 };
+  // ---- 分岐（同じ背景の太い道の上を、ノードの置き方だけで左右に分ける。背景の描き足し・追加の画像は無し）----
+  //  06 海底回廊の入口：手前の共通区間 s6_（3。最後 s6_2 が分かれ道）→ A＝左寄りの道（a6_ 3 → 07 の a7_ 4）／B＝右寄りの道（b6_ 4 → 07 の b7_ 5）→ 07 の奥の合流 m7_0 → 08。
+  //  ルートごとにマス数が違ってよい（A 11・B 13＝共通・合流を含む）。中身の傾向（lean）・表示名は【暫定】（報酬差は未決＝lean は空）。
+  //  LANE：[背景キー, path id, branch, 側（-1＝左・1＝右）, マス数, 手前の y, 奥の y]。x＝その y の道の中央 ＋ 側 × LANE_K × 半幅（道の安全域の中）
+  const LANE_K = 0.42;
+  const SPLIT = { field: '06', common: 3, commonFar: 0.72, merge: { field: '07', y: 0.615 } };
+  const LANES = [
+    ['06', 'a6_', 'A', -1, 3, 0.64, 0.47], ['07', 'a7_', 'A', -1, 4, 0.87, 0.67],
+    ['06', 'b6_', 'B', 1, 4, 0.64, 0.47], ['07', 'b7_', 'B', 1, 5, 0.87, 0.67],
+  ];
+  // path id：s1_〜s9_（フィールド 01〜09）・sa_（大会会場前）・分岐 a6_／a7_／b6_／b7_・合流 m7_。旧構成の id（e1_…z1_）とは重ねない＝旧 Chapter 2 の途中のセーブは既存の安全処理で Chapter 2 の開始地点から
   const PID = (k) => (k === '10' ? 'sa_' : `s${+k}_`);
   const fieldScenes = [], paths = [], landmarks = {}, foreground = {};
   const at = (pts, y, k) => { const C = [...pts].sort((a, b) => a[0] - b[0]); if (y <= C[0][0]) return C[0][k]; for (let i = 1; i < C.length; i++) if (y <= C[i][0]) { const a = C[i - 1], b = C[i]; return +(a[k] + (b[k] - a[k]) * (y - a[0]) / (b[0] - a[0])).toFixed(4); } return C[C.length - 1][k]; };
   const stageOf = (k) => Object.keys(STAGES).find((s) => STAGES[s].includes(k));
-  for (const k of ORDER) {
-    const [file, name, terrain, far, road, safe] = BG[k], sid = fieldScenes.length + 1, id = PID(k);
-    fieldScenes.push({ id: sid, name, bg: file + '.webp', w: W, h: H, bgKey: k, stage: stageOf(k), exit: 'up', farBand: { to: 0.26, k: 0.95 }, depth: DEPTH, zoom: { near: 1.32, far: 1.95 }, road: { center: road, safe: safe || 0.7 } });
-    landmarks[sid] = []; foreground[sid] = [];
-    const ys = [NEAR, ...road.map((p) => p[0]).filter((y) => y < NEAR && y > far).sort((a, b) => b - a), far];
-    paths.push({ id, field: sid, n: NODES[k], curve: 'linear', terrain, next: [], pts: ys.map((y) => [at(road, y, 1), y]) });
-    if (paths.length > 1) paths[paths.length - 2].next = [id];
-  }
+  const sid = (k) => ORDER.indexOf(k) + 1;
+  const ysOf = (road, near, far) => [near, ...road.map((p) => p[0]).filter((y) => y < near && y > far).sort((a, b) => b - a), far];
+  let tail = [];   // 直前の道の終わり（次の道へつなぐ）
+  const link = (ids) => { for (const t of tail) P(t).next.push(...ids); };
   const P = (id) => paths.find((p) => p.id === id), N = (id) => P(id).n;
+  for (const k of ORDER) {
+    const [file, name, terrain, far, road, safe] = BG[k], id = PID(k);
+    fieldScenes.push({ id: sid(k), name, bg: file + '.webp', w: W, h: H, bgKey: k, stage: stageOf(k), exit: 'up', farBand: { to: 0.26, k: 0.95 }, depth: DEPTH, zoom: ZOOM, road: { center: road, safe: safe || 0.7 } });
+    landmarks[sid(k)] = []; foreground[sid(k)] = [];
+    if (k === SPLIT.field) {   // 共通区間（中央）→ 分かれ道
+      paths.push({ id, field: sid(k), n: SPLIT.common, curve: 'linear', terrain, next: [], noSlot: [SPLIT.common - 1], pts: ysOf(road, NEAR, SPLIT.commonFar).map((y) => [at(road, y, 1), y]) });
+      link([id]); tail = [id];
+      for (const side of [-1, 1]) {   // 分かれ道からそれぞれの道へ（06 → 07 と続く）
+        let prev = [id];
+        for (const [fk, pid, br, sd, n, near, farY] of LANES.filter((L) => L[3] === side)) {
+          const rd = BG[fk][4];
+          paths.push({ id: pid, field: sid(fk), n, curve: 'linear', terrain: BG[fk][2], branch: br, next: [], landmark: { fixedSide: sd }, pts: ysOf(rd, near, farY).map((y) => [+(at(rd, y, 1) + sd * LANE_K * at(rd, y, 2)).toFixed(4), y]) });
+          for (const t of prev) P(t).next.push(pid);
+          prev = [pid];
+        }
+        tail = side === -1 ? prev : [...tail.filter((t) => t !== id), ...prev];
+      }
+      continue;
+    }
+    if (k === SPLIT.merge.field) {   // 合流（07 の奥の中央）。両方の道がここへ戻る
+      paths.push({ id: 'm7_', field: sid(k), n: 1, curve: 'linear', terrain, next: [], noSlot: [0], pts: [[at(road, SPLIT.merge.y, 1), SPLIT.merge.y]] });
+      link(['m7_']); tail = ['m7_'];
+      continue;
+    }
+    paths.push({ id, field: sid(k), n: NODES[k], curve: 'linear', terrain, next: [], pts: ysOf(road, NEAR, far).map((y) => [at(road, y, 1), y]) });
+    link([id]); tail = [id];
+  }
+  const BRANCHES = [{ at: `${PID(SPLIT.field)}${SPLIT.common - 1}`, options: [
+    { id: 'A', to: 'a6_0', label: '左の回廊', desc: '近道【暫定】', lean: {} },
+    { id: 'B', to: 'b6_0', label: '右の回廊', desc: '少し遠回り【暫定】', lean: {} },
+  ] }];
   P('s1_').start = true; P('s1_').fixed = { 0: 'start' };
   P('s4_').fixed = { [Math.floor(N('s4_') / 2)]: 'strong' };   // 強敵：海上の大橋の真ん中【暫定】
   const gl = P('sa_'); gl.goal = true; gl.fixed = { [N('sa_') - 3]: 'rival', [N('sa_') - 1]: 'goal' };   // ライバル（強制停止）→ ゴール（大会会場の階段の手前）
@@ -59,14 +99,14 @@
     title: '潮風の海岸',
     patternTitle: '海岸地方',
     playable: true,
-    rules: { turnLimit: 30, diceSides: 6 },
+    rules: { turnLimit: root.MMCH_CH2A_TURN_LIMIT || 30, diceSides: 3 },   // 通常 Chapter のサイコロは 1〜3（2026-10-01 夜）。4〜6 の素材・共通の仕組みは残す。ターン上限は 30【暫定。MMCH_CH2A_TURN_LIMIT はシミュレーション用】
     forceStopKinds: ['rival'],
     tournamentDestination: 'official',
     backgroundTransition: { type: 'forward', ms: 700 },
     stages: STAGES, stageOrder: ORDER, nodesPerBackground: NODES,
 
     fieldScenes, paths, edges: {}, nodeOverrides: {},
-    branches: [],
+    branches: BRANCHES,
 
     camera: { anchorY: 0.66, lookAhead: 0.08, followDelay: 110, zoom: { idle: 1, move: 0.985, stop: 1.015, branch: 0.93, focus: 1.02 } },
     motion: { stepMs: 520, minMs: 380, maxMs: 760, baseLen: 170, terrain: { coast: { speed: 1 }, bridge: { speed: 1, fixed: true }, undersea: { speed: 0.95 } } },
