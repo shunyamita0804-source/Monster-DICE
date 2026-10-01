@@ -8,15 +8,16 @@
 //  ・resultSprites：出目ごとの停止面（1・2・3 が上の面）。ゲームでは config.dice（ch1a.js）から configure する（今は暫定の SVG＝dice_stop_1〜3.svg。正式画像が届いたらファイルを差し替えるだけ）。
 //    止まる瞬間に、回転中の絵から停止面へ短くクロスフェードし、内部の出目と表示の面を必ず一致させる。1枚の画像を回して「2が上」「3が上」を偽造しない。
 //    未登録のとき（このモジュール単体の既定）は、止まったサイコロの上に金色の光の輪と数字（「3！」）を出す
-//  ・演出中は isLocked() が true（サイコロ・休む・分岐・アイテムの重複操作を防ぐ）
+//  ・演出中は isLocked() が true（サイコロ・休む・分岐・アイテムの重複操作を防ぐ）。phase()：'auto'（回転〜着地）→ 'result'（停止面）。旧 manualStop は 'spin' → 'land'
 // =========================================================
 (function (root) {
   'use strict';
   // sides：面の数（config.dice.sides。省略時は 3）。resultSprites に無い出目（例：6面で 4〜6 の停止画像が未着）は、数字の輪で出す（fallback。エンジン・演出は止まらない）
-  //  START／STOP（2026-10-01）：play に manualStop:true を渡すと、サイコロは宙に浮いて回り続け（spin）、プレイヤーが STOP（requestStop()）を押すと落ちて止まる（land）。自動では止めない
-  //  出目は play を呼ぶ前に決まっている（STOP は確率を変えない。止める表示のきっかけだけ）
-  const C = { rollingSprite: './assets/fields/ch1a/dice/dice_rolling.webp', resultSprites: {}, min: 1, max: 3, sides: 3, ms: 920, resultMs: 480, settleMs: 180, upMs: 360, landMs: 640 };
-  let locked = false, cache = null, phase = null, stopResolve = null;
+  //  1タップ（2026-10-01 正式）：play(value) は START の1回の押下で「出現 → 飛び上がって速く回る（約0.3秒）→ 落ちながら減速（約0.6秒）→ 着地・小さく跳ねる → 停止面（約0.42秒）→ 消える」まで
+  //   自動で進む（合計約1.7秒。ms＝回転〜着地、resultMs＝停止面を見せる時間）。出目は play を呼ぶ前に決まっている（演出の長さ・止まる瞬間は確率を変えない）。
+  //  manualStop:true（旧 START／STOP。通常の Chapter では使わない）：宙で回り続け、requestStop() で落ちて止まる。API は互換のため残す
+  const C = { rollingSprite: './assets/fields/ch1a/dice/dice_rolling.webp', resultSprites: {}, min: 1, max: 3, sides: 3, ms: 980, resultMs: 420, settleMs: 180, upMs: 360, landMs: 640 };
+  let locked = false, cache = null, phase = null, stopResolve = null, lastTiming = null;
   function configure(o) {
     if (o && typeof o === 'object') {
       Object.assign(C, o); if (o.resultSprites) C.resultSprites = { ...o.resultSprites }; cache = null;
@@ -56,6 +57,7 @@
     if (!valid(value)) return false;
     if (typeof document === 'undefined' || !document.body) return true;
     preload(); locked = true;
+    const tStart = (typeof performance !== 'undefined' ? performance.now() : Date.now()), tick = () => (typeof performance !== 'undefined' ? performance.now() : Date.now()) - tStart; let tSpin = 0, tFace = 0;
     const host = opts.host || document.body, calm = !!(root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches);
     const hw = host.clientWidth || 390, hh = host.clientHeight || 700;
     const from = opts.from || { x: hw / 2, y: hh * 0.9 }, land = opts.land || { x: hw / 2, y: hh * 0.56 };
@@ -95,6 +97,8 @@
           await Promise.race([a2.finished.catch(() => {}), wait(T2 + 200)]);
         } else { mv.style.transform = `translate(-50%,-50%) translate(${lx.toFixed(1)}px,${ly.toFixed(1)}px)`; await wait(T2); }
       } else if (!calm && mv.animate) {
+        // 1タップ：START の位置から飛び上がって速く回る → 落ちながら減速 → 着地 → 小さく跳ねて止まる（自動。止める操作は無い）
+        phase = 'auto'; ov.dataset.phase = 'auto';
         const a1 = mv.animate([
           { transform: 'translate(-50%,-50%) translate(0px,0px) scale(.9)', opacity: 1, offset: 0, easing: 'cubic-bezier(.2,.6,.4,1)' },
           { transform: `translate(-50%,-50%) translate(${(lx * 0.45).toFixed(1)}px,${(ly - 70).toFixed(1)}px) scale(1.18)`, offset: 0.34, easing: 'cubic-bezier(.4,0,.8,.6)' },   // 飛び上がって速く回る
@@ -110,7 +114,8 @@
           { transform: `translate(calc(-50% + ${dir * 22}px),-50%) scale(1)`, opacity: 0.55, offset: 1 },
         ], { duration: T, easing: 'linear', fill: 'forwards' });
         await Promise.race([a1.finished.catch(() => {}), wait(T + 200)]);
-      } else { mv.style.transform = `translate(-50%,-50%) translate(${lx.toFixed(1)}px,${ly.toFixed(1)}px)`; await wait(T); }
+      } else { phase = 'auto'; ov.dataset.phase = 'auto'; mv.style.transform = `translate(-50%,-50%) translate(${lx.toFixed(1)}px,${ly.toFixed(1)}px)`; await wait(T); }
+      tSpin = tick(); phase = 'result'; ov.dataset.phase = 'result';
       // 停止：停止画像があれば差し替え、無ければ金色の光の輪＋数字
       //  停止面（出目ごとの画像）があれば、回転中の絵から停止面へ短くクロスフェード（急に差し替えない）。無ければ金色の光の輪＋数字
       const rs = resultSprite(value), res = ov.querySelector('.chdz-res');
@@ -120,7 +125,9 @@
         ov.dataset.face = 'sprite'; await wait(calm ? 0 : 160);
       } else { res.hidden = false; ov.dataset.face = 'number'; }
       await wait(opts.fast ? 120 : C.resultMs);
+      tFace = tick() - tSpin;
       ov.classList.add('out'); await wait(160);
+      lastTiming = { value, spinMs: Math.round(tSpin), faceMs: Math.round(tFace), totalMs: Math.round(tick()), calm, manual: !!opts.manualStop };
       return true;
     } catch (e) { if (root.MM_QA_DEBUG) console.warn('MMCHD.play', e); return false; } finally { ov.remove(); locked = false; phase = null; stopResolve = null; }
   }
@@ -128,5 +135,6 @@
   function requestStop() { if (!stopResolve) return false; const f = stopResolve; stopResolve = null; f(); return true; }
   /** 停止面が登録されていない出目（数字で出す出目）。正式な停止画像が届く前の確認用 */
   const missingSprites = () => { const out = []; for (let v = C.min; v <= C.max; v++) if (!resultSprite(v)) out.push(v); return out; };
-  root.MMCHD = Object.freeze({ configure, roll, rollDice, play, preload, resultSprite, missingSprites, spinFrames, requestStop, isLocked: () => locked, phase: () => phase });
+  /** 直前の演出の実測（spinMs＝出現〜着地、faceMs＝停止面を見せた時間、totalMs＝消えるまで。テスト・報告用） */
+  root.MMCHD = Object.freeze({ configure, roll, rollDice, play, preload, resultSprite, missingSprites, spinFrames, requestStop, isLocked: () => locked, phase: () => phase, lastTiming: () => (lastTiming ? { ...lastTiming } : null) });
 })(typeof window !== 'undefined' ? window : globalThis);

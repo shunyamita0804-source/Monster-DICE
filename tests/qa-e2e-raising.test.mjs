@@ -79,8 +79,8 @@ const DICE_HOOK = () => {
   };
 };
 const setDice = (pg, vals) => pg.evaluate((v) => { window.__dice = v.slice(); }, vals);
-/** Chapterフィールドの START のあと：サイコロが宙で回り始めたら STOP を押す（STOP はプレイヤー操作。出目は START の時点で決まっている） */
-const stopDice = async (pg) => { await pg.waitForSelector('#brollbtn.spinning:not([disabled])', { timeout: 15000 }); await pg.waitForTimeout(200); await pg.click('#brollbtn'); };
+/** Chapterフィールドの START のあと：サイコロは自動で止まる（1タップ。STOP の操作は無い）。演出が出て消えるまで待つだけ */
+const stopDice = async (pg) => { await pg.waitForSelector('.chdz', { timeout: 15000 }); await pg.waitForFunction(() => !document.querySelector('.chdz'), null, { timeout: 15000 }); };
 /**
  * セーブを入れて開き（再読み込み後も出目を固定できるようにして）、selector の画面まで進む。
  *  開始画面からの再開そのものは reloadAndStart で確かめるので、ここでは開始処理が呼ぶ p8Resume() で直接再開する。
@@ -309,7 +309,7 @@ T('QA-RB3：サイコロ（出目3）→ 1地点ずつ移動し1歩ごとに保�
 });
 
 T('QA-RB4：サイコロの演出中・移動の途中で再読み込み → 出目・ターン消費・疲れは保存済みのまま（振り直しなし）→ 保存済みの地点から残りだけ進み、止まった地点の効果は1回だけ（視差効果を減らす設定）', async () => {
-  const p = await boot(seed({}, {}, { f1_1: { t: 'stat', k: 'li' }, f1_2: { t: 'stat', k: 'po' }, f1_3: { t: 'stat', k: 'hi' }, f1b_0: { t: 'stat', k: 'in' }, f1b_1: null }), '#chf-ui #brollbtn', { calm: true }); const pg = p.page;
+  const p = await boot(seed({}, {}, { f1_1: { t: 'stat', k: 'li' }, f1_2: { t: 'stat', k: 'po' }, f1_3: { t: 'stat', k: 'hi' }, f1_4: { t: 'stat', k: 'in' }, f1_5: null }), '#chf-ui #brollbtn', { calm: true }); const pg = p.page;
   const before = await H.getS(pg);
   // (1) 出目2：演出中（まだ移動していない）に再読み込み
   await setDice(pg, [2]);
@@ -330,7 +330,7 @@ T('QA-RB4：サイコロの演出中・移動の途中で再読み込み → 出
   assert.deepEqual({ ...statsOf(s1.m), po: before.m.po }, statsOf(before.m), 'ほかの能力（通過したライフの地点を含む）は変わらない');
   assert.match(await bmsg(pg), new RegExp(`ちから \\+${gain}$`));
   await assertSynced(pg);
-  // (2) 出目3：1歩進んだところ（f1_3）で再読み込み → 残り2歩（f1b_0 → f1b_1）だけ進む
+  // (2) 出目3：1歩進んだところ（f1_3）で再読み込み → 残り2歩（f1_4 → f1_5）だけ進む
   await setDice(pg, [3]);
   await pg.waitForTimeout(SETTLE);
   await pg.click('#brollbtn');
@@ -341,15 +341,15 @@ T('QA-RB4：サイコロの演出中・移動の途中で再読み込み → 出
   await reloadAndStart(pg, '#chf');
   await waitTurnDone(pg, 2);
   r = await raiseOf(pg);
-  assert.deepEqual([r.node, r.pend, r.turnsUsed, r.fatigue], ['f1b_1', null, 2, 12], 'f1_3 から残り2歩 → f1_5。振り直していない');
-  assert.deepEqual(statsOf((await H.getS(pg)).m), statsOf(s1.m), 'ちからの効果は重ならず、通過した f1_3・f1b_0 も効果なし');
+  assert.deepEqual([r.node, r.pend, r.turnsUsed, r.fatigue], ['f1_5', null, 2, 12], 'f1_3 から残り2歩 → f1_5。振り直していない');
+  assert.deepEqual(statsOf((await H.getS(pg)).m), statsOf(s1.m), 'ちからの効果は重ならず、通過した f1_3・f1_4 も効果なし');
   assert.equal(await bmsg(pg), 'START でサイコロを振る。休むこともできる。');
   await assertSynced(pg);
   noErrors(p);
 });
 
 T('QA-RB5：分かれ道で再読み込み → 分岐待ち（候補・残り移動・ターン）がそのまま残る → 選んだルートの最初の地点で止まり、効果は1回だけ（視差効果を減らす設定）', async () => {
-  const p = await boot(seed({ node: 'f2b_2', turnsUsed: 3 }, {}, { f2b_2: null, b0: { t: 'stat', k: 'hi' } }), '#chf-ui #brollbtn', { calm: true }); const pg = p.page;
+  const p = await boot(seed({ node: 'f2_4', turnsUsed: 3 }, {}, { f2_4: null, b0: { t: 'stat', k: 'hi' } }), '#chf-ui #brollbtn', { calm: true }); const pg = p.page;
   const before = await H.getS(pg);
   await setDice(pg, [2]);
   await pg.waitForTimeout(SETTLE);
@@ -358,7 +358,7 @@ T('QA-RB5：分かれ道で再読み込み → 分岐待ち（候補・残り移
   await pg.waitForSelector('.chroute', { timeout: 15000 });
   const pend = { roll: 2, left: 1, stage: 'branch', fatigueAdded: 5, opts: ['a0', 'b0'] };
   let r = await raiseOf(pg);
-  assert.deepEqual([r.node, r.pend, r.turnsUsed], ['f2b_3', pend, 4], '分かれ道 f2b_3 で選択待ち');
+  assert.deepEqual([r.node, r.pend, r.turnsUsed], ['f2_5', pend, 4], '分かれ道 f2_5 で選択待ち');
   assert.deepEqual((await storedRaise(pg)).pend, pend, '分岐待ちは保存済み');
   assert.equal(await bmsg(pg), '分かれ道だ。どちらへ進む？（のこり1）');
   const routes = () => pg.evaluate(() => [...document.querySelectorAll('.chroute')].map((b) => [b.className, b.getAttribute('onclick'), b.querySelector('b').textContent]));
@@ -366,7 +366,7 @@ T('QA-RB5：分かれ道で再読み込み → 分岐待ち（候補・残り移
   assert.deepEqual(rt, [['chroute k-bridge', "chfPick('a0')", '橋ルート'], ['chroute k-forest', "chfPick('b0')", '森ルート']]);
   await reloadAndStart(pg, '.chroute');
   r = await raiseOf(pg);
-  assert.deepEqual([r.node, r.pend, r.turnsUsed], ['f2b_3', pend, 4], '再読み込みしても分岐待ちのまま（振り直しなし）');
+  assert.deepEqual([r.node, r.pend, r.turnsUsed], ['f2_5', pend, 4], '再読み込みしても分岐待ちのまま（振り直しなし）');
   assert.deepEqual(await routes(), rt);
   assert.equal(await pg.evaluate(() => MMP8.canRoll(S.m)), false, '分岐を選ぶまではサイコロを振れない');
   await pg.waitForTimeout(SETTLE);
@@ -405,7 +405,7 @@ T('QA-RB6：停止地点の効果の処理前（resolve）の保存から再開 
 // 中断と再開
 // ---------------------------------------------------------
 T('QA-RB7：☰メニュー →「中断」→ 開始画面（つづきから）→ はじめる → 同じ地点・同じターン・同じ疲れから再開。移動中はメニューも中断も受け付けない（視差効果を減らす設定）', async () => {
-  const p = await boot(seed({ node: 'f1_3', turnsUsed: 1, fatigue: 7 }, {}, { f1b_0: null }), '#chf-ui #brollbtn', { calm: true }); const pg = p.page;
+  const p = await boot(seed({ node: 'f1_3', turnsUsed: 1, fatigue: 7 }, {}, { f1_4: null }), '#chf-ui #brollbtn', { calm: true }); const pg = p.page;
   const r0 = await raiseOf(pg);
   const raw0 = await rawSave(pg);
   await pg.waitForTimeout(SETTLE);
@@ -432,7 +432,7 @@ T('QA-RB7：☰メニュー →「中断」→ 開始画面（つづきから）
   assert.deepEqual(during, { busy: true, menu: false, title: false });
   await stopDice(pg);
   await waitTurnDone(pg, 2);
-  assert.equal((await raiseOf(pg)).node, 'f1b_0');
+  assert.equal((await raiseOf(pg)).node, 'f1_4');
   assert.equal(await pg.evaluate(() => !!document.querySelector('.p15start')), false, '移動のあとで開始画面へ飛ばない');
   await assertSynced(pg);
   noErrors(p);
@@ -442,7 +442,7 @@ T('QA-RB7：☰メニュー →「中断」→ 開始画面（つづきから）
 // Chapter 1 のゴール → 辞退 → Chapter間ファーム → 次のChapter
 // ---------------------------------------------------------
 T('QA-RB8：Chapter 1 のゴール（大会会場。残りの移動は消える）：挑戦できるのは E・D だけ → 辞退（2度押し）→ Chapter間ファーム → 次のChapterへは1回押すだけで出発（フィナの会話なし・疲れは −50 して持ち越す・視差効果を減らす設定）', async () => {
-  const p = await boot(seed({ node: 'f3b_2', turnsUsed: 20, fatigue: 64, field: { ...ch1Field({}), fieldId: 35, branch: 'bridge' } }), '#chf-ui #brollbtn', { calm: true }); const pg = p.page;
+  const p = await boot(seed({ node: 'f3_4', turnsUsed: 20, fatigue: 64, field: { ...ch1Field({}), fieldId: 15, branch: 'bridge' } }), '#chf-ui #brollbtn', { calm: true }); const pg = p.page;
   const ss0 = (await raiseOf(pg)).startStats;
   await setDice(pg, [3]);
   await pg.waitForTimeout(SETTLE);
@@ -450,7 +450,7 @@ T('QA-RB8：Chapter 1 のゴール（大会会場。残りの移動は消える�
   await stopDice(pg);
   await pg.waitForSelector('.chgoal .p9rank', { timeout: 20000 });
   let r = await raiseOf(pg);
-  assert.deepEqual([r.node, r.goal, r.pend, r.turnsUsed, r.fatigue], ['f3b_3', true, null, 21, 71], 'f3b_2 → f3b_3（ゴール）で止まり、残り2歩は消える');
+  assert.deepEqual([r.node, r.goal, r.pend, r.turnsUsed, r.fatigue], ['f3_5', true, null, 21, 71], 'f3_4 → f3_5（ゴール）で止まり、残り2歩は消える');
   assert.equal(await bmsg(pg), '大会会場に着いた！');
   const ranks = await pg.evaluate(() => [...document.querySelectorAll('.p9rank')].map((b) => b.getAttribute('onclick')));
   assert.deepEqual(ranks, ['p8TourStart(0,this)', 'p8TourStart(1,this)'], 'Chapter 1 の挑戦上限は D');

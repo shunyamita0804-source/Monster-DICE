@@ -1156,7 +1156,7 @@ button.mkc b{font-size:.9rem}button.mkc small{font-size:.66rem;color:#ffe9b0}
 .chf-zz{position:absolute;right:4%;top:2%;font:900 34px/1 var(--mm-font-head);color:#fff;text-shadow:0 2px 6px rgba(0,0,40,.6);animation:chfzz .9s ease-out forwards}
 .chf-zz small{font-size:.6em}
 @keyframes chfzz{0%{opacity:0;transform:translate(0,10px)}30%{opacity:1}100%{opacity:0;transform:translate(10px,-24px)}}
-@media (prefers-reduced-motion:reduce){.chf-mon.walk .chf-bob,.chf-mon.walk .chf-msh,.chf-mon.rest .chf-bob,.chf-mon.resting .chf-bob,.chf-mon.ready .chf-bob,.chf-mon.land .chf-bob,.chdf,.chdf img,.chstopw.on .chstop-rim::after{animation:none}}
+@media (prefers-reduced-motion:reduce){.chf-mon.walk .chf-bob,.chf-mon.walk .chf-msh,.chf-mon.rest .chf-bob,.chf-mon.resting .chf-bob,.chf-mon.ready .chf-bob,.chf-mon.land .chf-bob,.chstopw.on .chstop-rim::after{animation:none}}
 .chf-canopy{position:absolute;left:0;right:0;top:0;height:42%;background-size:100% auto;background-repeat:no-repeat;background-position:50% 0;pointer-events:none;z-index:3;animation:chffade .6s ease-out}
 @keyframes chffade{from{opacity:0}}
 .chf-veil{position:absolute;inset:0;background:#0b1636;opacity:0;transition:opacity .28s ease;z-index:4;pointer-events:none}
@@ -1236,11 +1236,6 @@ button.mkc b{font-size:.9rem}button.mkc small{font-size:.66rem;color:#ffe9b0}
 .chstop:disabled{filter:saturate(.3) brightness(.7) drop-shadow(0 4px 8px rgba(0,0,0,.5))}
 .chstop.wait .chstop-dome{background:radial-gradient(circle at 50% 30%,#8391c4 0,#2f4280 40%,#131c3e 100%)}
 .chstop.wait b{font-size:30px;text-shadow:0 2px 0 #0a1030}
-.chdf{position:absolute;left:50%;top:-112px;width:62px;height:62px;transform:translateX(-50%);pointer-events:none;z-index:3;animation:chdffloat 2.2s ease-in-out infinite}
-.chdf img{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 8px 8px rgba(0,0,0,.45));animation:chdfspin 3.6s linear infinite}
-.chdf[hidden]{display:none}
-@keyframes chdffloat{50%{transform:translate(-50%,-9px)}}
-@keyframes chdfspin{to{transform:rotate(360deg)}}
 /* 2026-10-01 リアル巨大ボード方式：画像の操作欄（START／STOP の2状態の正式画像。押せる領域は透明なボタン）・宙で回るサイコロ・Chapter開始の俯瞰図・フィナの一言 */
 .chdeck-img{padding-bottom:calc(2px + env(safe-area-inset-bottom,0px))}
 .chcmd-img{position:relative;height:auto;width:min(100%,calc(var(--chcmd) * var(--deckar,3.116)));aspect-ratio:var(--deckar,3.116);margin:0 auto;max-height:var(--chcmd)}
@@ -1255,10 +1250,8 @@ button.mkc b{font-size:.9rem}button.mkc small{font-size:.66rem;color:#ffe9b0}
 .chstop.chstop-img:disabled{filter:none;background:rgba(5,10,30,.5)}
 .chstop.chstop-img.spinning:not(:disabled),.chstop.chstop-img.wait{background:transparent}
 .chstop.chstop-img.wait{background:rgba(5,10,30,.35)}
-.chstopw-img .chdf{top:-104px}
 .chstopw.chstopw-img.on::after{content:"";position:absolute;left:18%;top:14%;width:64%;height:72%;border-radius:50%;box-shadow:0 0 22px 6px rgba(255,200,90,.8);opacity:0;pointer-events:none;animation:chstopglow 1.6s ease-in-out infinite}
 .chstop.spinning:not(.chstop-img) .chstop-dome{background:radial-gradient(circle at 50% 30%,#ffd27a 0,#e0541c 36%,#7a1a0a 76%,#3a0808 100%)}
-@media (max-height:720px){.chstopw-img .chdf{top:-88px}}
 .chdz-img.spin{animation:chdzspin .9s linear infinite}
 @keyframes chdzspin{to{transform:rotate(360deg)}}
 .chintro{position:absolute;inset:0;z-index:40;overflow:hidden;background:#0b1636;opacity:0;transition:opacity .35s ease;cursor:pointer}
@@ -1313,7 +1306,7 @@ button.mkc b{font-size:.9rem}button.mkc small{font-size:.66rem;color:#ffe9b0}
 .chdz-res[hidden]{display:none}
 .chdz.out{opacity:0;transition:opacity .16s}
 @keyframes chdzres{from{opacity:0;transform:translate(-50%,-50%) scale(.7)}}
-@media (max-height:720px){#app>.chfw{--chcmd:100px;--chstop:80px;--chwing:34px}.chwing{font-size:12px;gap:4px}.chwing svg{width:16px;height:16px}.chmsg{font-size:11.5px;padding:2px 8px}.chh-nm{font-size:14px}.chstop b{font-size:17px}.chdf{width:54px;height:54px;top:-92px}.chwing.chw-tl,.chwing.chw-tr{top:4px}.chwing.chw-bl,.chwing.chw-br{bottom:6px}.chroll{top:calc(env(safe-area-inset-top,0px) + 104px)}.chsheet{max-height:calc(100% - var(--chdeck) - 70px)}}
+@media (max-height:720px){#app>.chfw{--chcmd:100px;--chstop:80px;--chwing:34px}.chwing{font-size:12px;gap:4px}.chwing svg{width:16px;height:16px}.chmsg{font-size:11.5px;padding:2px 8px}.chh-nm{font-size:14px}.chstop b{font-size:17px}.chwing.chw-tl,.chwing.chw-tr{top:4px}.chwing.chw-bl,.chwing.chw-br{bottom:6px}.chroll{top:calc(env(safe-area-inset-top,0px) + 104px)}.chsheet{max-height:calc(100% - var(--chdeck) - 70px)}}
 /* ===== 2026-09-30 改修：街のフィナの案内・セーブ画面・市場の会話フェーズ・大会の演出・Battle 開始前（濃紺＋金＋アイボリー） ===== */
 /* 街：フィナの台詞（顔・名前つき）。システム通知は従来どおり顔なし */
 .dlg.fina{align-items:flex-end}

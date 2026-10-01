@@ -28,12 +28,12 @@ Claude Code は作業の前に毎回このファイルを読むこと。ここ�
 | js/phase12/scenes.js、js/phase12/dice.js | 背景・サイコロ演出 |
 | js/phase13/field.js | 旧 Chapter 1 のフィールド表示（試作。Chapter 1 は js/chapter/ が担当するため、今は表示されない） |
 | js/chapter/engine.js | Chapterフィールドの共通エンジン `MMCH`（config の登録・ノードの組み立て・配置の生成と検証・疲れ・能力マス・イベント・宝箱・バトル）。MMP8.registerChapterDriver で raising.js へつなぐ。Chapter ごとの分岐（if chapter===N）は書かない |
-| js/chapter/configs/ch1a.js | Chapter 1 Pattern A「大橋と清流の草原」の config（データだけ。2026-10-01 からリアル巨大ボード方式＝背景15枚＋周回 LAPS・6面・30ターン・ライバル強制停止・俯瞰図 intro・操作欄 deck）。新しい Chapter／パターンは configs/ にファイルを足して MMCH.registerConfig する |
-| js/chapter/dice-renderer.js | サイコロ `MMCHD`（出目 rollDice と演出 play を分ける。2026-10-01：`play(v, { manualStop:true })`＝START で宙に浮いて回り続け、プレイヤーの `requestStop()`（STOP）で落ちて止まる（自動では止めない）。回転中の正式画像1枚を動かす：STOP の上から飛び → 減速 → 着地 → 小さく跳ねる → 最後の約0.18秒で正式の角度（0°）へ収束。停止画像は resultSprites に登録するだけ） |
+| js/chapter/configs/ch1a.js | Chapter 1 Pattern A「大橋と清流の草原」の config（データだけ。2026-10-01 からリアル巨大ボード方式＝背景15枚をそれぞれ1回だけ通り、1枚の中に NODES（共通6・橋6・森8・会場6【暫定】）のマスを道の中央線（fieldScenes[].road）の上に置く・6面・30ターン・ライバル強制停止・俯瞰図 intro・操作欄 deck（START だけ）。周回 LAPS は廃止）。新しい Chapter／パターンは configs/ にファイルを足して MMCH.registerConfig する |
+| js/chapter/dice-renderer.js | サイコロ `MMCHD`（出目 rollDice と演出 play を分ける。2026-10-01 正式＝1タップ：`play(v)` は START の位置から出現 → 飛び上がって速く回る → 落ちながら減速 → 着地・小さく跳ねる（ms 980）→ 最後の約0.18秒で正式の角度（0°）へ収束 → 停止面（resultMs 420）→ 消える、まで自動（合計約1.7秒。実測は `lastTiming()`）。旧 `manualStop:true`（STOP で止める）は API だけ残し、通常の Chapter では使わない。停止画像は resultSprites に登録するだけ） |
 | js/chapter/intro.js | Chapter開始の演出 `MMCHI`（旅路全体の俯瞰図 → Chapter 名 → スタート地点へズーム／パン → 実プレイ画面へクロスフェード。config.intro。1回だけ・セーブには持たない・タップで短縮・自動テストは MM_QA_NO_INTRO） |
-| js/chapter/field-view.js | Chapterフィールドの画面（`MMCHV`・chf*。2026-10-01：操作欄は config.deck の画像（START／STOP）、START→STOP の流れ chfRoll／chfStop、フィナの吹き出し .chf-fina。層分け・視差・rAF のカメラ追従・道の曲線に沿った歩き・止まる位置と目印の分離・停止の演出・背景の切り替え・HUD・下の操作欄＝中央 STOP＋左右の弧。歩行アニメの差し込み口 registerMonsterAnimator） |
+| js/chapter/field-view.js | Chapterフィールドの画面（`MMCHV`・chf*。2026-10-01：操作欄は config.deck の画像（START だけ。STOP は廃止）、1タップの流れ chfRoll（START → 出目を保存 → サイコロ出現・自動停止 → 移動 → START）、サイコロは START を押すまで出さない、モンスターの x は道の安全域に収める（roadX → MMCH.clampToRoad）、フィナの吹き出し .chf-fina。層分け・視差・rAF のカメラ追従・道の曲線に沿った歩き・止まる位置と目印の分離・停止の演出・背景の切り替え・HUD・下の操作欄＝中央 STOP＋左右の弧。歩行アニメの差し込み口 registerMonsterAnimator） |
 | js/battle/fit.js | バトル画面の表示だけの補正 `MMBF`（#bt が出たら、HUD と技UIの間に収まる「切れない最大の大きさ」を計算して .mw／.mon にインラインの寸法を入れる。fight()・.bt 系 CSS は変えない） |
-| assets/fields/ch1a/ | Chapter 1 Pattern A の素材：正式＝リアル巨大ボード方式（road/＝背景15枚、intro/＝俯瞰図3枚、dice/dice_stop_1〜6.webp＋dice_blank.webp、ui/＝START／STOP の操作欄。road/README.md）。旧：背景13枚（journey/。README.md に旅の順と元ファイルの対応）・止まる地点の絵・環境素材・サイコロ（dice/dice_rolling.webp と暫定の停止面 dice_stop_1〜3.svg）。旧背景 bg_01〜03.webp は互換のため残すが参照しない（README.md） |
+| assets/fields/ch1a/ | Chapter 1 Pattern A の素材：正式＝リアル巨大ボード方式（road/＝背景15枚、intro/＝俯瞰図3枚、dice/dice_stop_1〜6.webp＋dice_blank.webp、ui/＝操作欄（deck_start.webp を使う。deck_stop.webp はファイルだけ残し使わない）。road/README.md）。旧：背景13枚（journey/。README.md に旅の順と元ファイルの対応）・止まる地点の絵・環境素材・サイコロ（dice/dice_rolling.webp と暫定の停止面 dice_stop_1〜3.svg）。旧背景 bg_01〜03.webp は互換のため残すが参照しない（README.md） |
 | js/npc/npc.js | 共通NPC表示・共通会話。`MMNPC` |
 | assets/monsters/ | 4原種の正式画像 |
 | assets/title/ | 開始画面の正式画像（README.md に出どころ） |
@@ -70,7 +70,7 @@ Claude Code は作業の前に毎回このファイルを読むこと。ここ�
 - 2026-09-30 の Chapter 移動体験の改修（カメラ・歩き・目印・STOP・バトルの表示）の後：ふだんの実行は821件（合格620・skip 201・失敗0）。実ブラウザテストも含めた全件（49ファイルを1つずつ）は831件で失敗0（tests/qa-e2e-chapter1.test.mjs は CH1-B1〜B17 の19件。tests/chapter-engine.test.mjs に CH1-25〜27・DICE-06・BF-01）
 - 2026-09-30 の Chapter 1 の13枚の旅と見せ方・操作の改修（大会・VS・バトル前・街・セーブ・市場を含む）の後：ふだんの実行は832件（合格620・skip 212・失敗0）。実ブラウザテストも含めた全件（50ファイルを1つずつ）は842件で失敗0（新しい tests/qa-e2e-journey.test.mjs は JR-1〜8 の11件）
 - 2026-09-30 の次期Chapter（リアル巨大ボード方式）の内部基盤の後：ふだんの実行は848件（合格636・skip 212・失敗0。新しい tests/chapter-next.test.mjs は NX-01〜16 の16件＝合成 config で 6面・100〜200マス・強制停止・30ターン・seed・セーブ互換）
-- 2026-10-01 の Chapter 1 リアル巨大ボード方式（背景15枚・俯瞰図・START／STOP・6面）の後：ふだんの実行は852件（合格636・skip 216・失敗0）。Chapter 1 の実ブラウザテスト（qa-e2e-chapter1・journey・raising・raising-late・save・save-reload）は新構成のノードIDと START→STOP に合わせて書き直し、tests/qa-e2e-journey.test.mjs に JR-9〜12（俯瞰図・自動停止・ターン切れ・フィナの吹き出し）を追加。距離の比較は `node tests/chapter-balance.mjs 600`
+- 2026-10-01 の Chapter 1 リアル巨大ボード方式（背景15枚・俯瞰図・START／STOP・6面）の後：ふだんの実行は852件（合格636・skip 216・失敗0）。同日のサイコロ1タップ化・道の安全域・周回の廃止の後：ふだんの実行は853件（合格637・skip 216・失敗0。tests/chapter-engine.test.mjs に CH1-28）。Chapter 1 の実ブラウザテストは1タップと新しいノードIDに合わせて書き直し（CH1-B15＝1タップの流れと連打、CH1-B18＝複数の背景での道の安全域、JR-10＝自動停止）。Chapter 1 の実ブラウザテスト（qa-e2e-chapter1・journey・raising・raising-late・save・save-reload）は新構成のノードIDと START→STOP に合わせて書き直し、tests/qa-e2e-journey.test.mjs に JR-9〜12（俯瞰図・自動停止・ターン切れ・フィナの吹き出し）を追加。距離の比較は `node tests/chapter-balance.mjs 600`
 - 既知の失敗テスト：なし（M3-3 はテストの古い期待値が原因だったため、テスト側を修正。assets/monsters/soramo/・gauru/ のフォルダは旧PHASE 1 土台の data/assets.json が登録しているプロフィールカード画像で、ユーザー判断により残す。ゲームは使わない）
 - 画面・操作にかかわる変更をしたら：ふだんのテストと、変更に関係する実ブラウザテスト（該当ファイルだけ、QA_E2E=1）が通ったら、すぐ main へ push する。全件の実ブラウザテストは push の後に実行し、問題が出たらすぐ直して再 push する（試遊をすぐできるようにするため）
 
@@ -141,13 +141,15 @@ Claude Code は作業の前に毎回このファイルを読むこと。ここ�
 - Chapterボード上に NPC（フィナを含む）を置かない。
 - **Chapterフィールド（2026-09-30。Chapter 1 から）**：Chapter 1 は js/chapter/ のエンジン＋config（Pattern A「大橋と清流の草原」）で動く。Chapter 2〜4 は従来のボード（20ターン）のまま。
   - **リアル巨大ボード方式（2026-10-01。正式。下の「13枚の旅」「操作欄の STOP」の記述は旧構成の記録）**：
-    - 背景15枚（assets/fields/ch1a/road/）＝世界の中の巨大な古代街道。01〜04 共通 → 04 の最後の石板で分岐 → 橋ルート 05A〜09A（短め・強敵 08A）／森ルート 05B〜09B（長め）→ 10 大会会場への道（合流・ライバル＝強制停止・大会門）。1枚に輪の刻まれた石板4つ（y≈0.84・0.60・0.47・0.38）＝石板1つが1マス。同じ背景を「周回」として何度か通る（config の LAPS。周回の切り替えは既存の背景の切り替え）。
-    - 【暫定候補・正式確定ではない】周回＝共通2周・橋1周・森2周・会場2周＝橋ルート 59マス／森ルート 79マス（ノード100）。ルートの長さは config（LAPS）だけで変えられる。tests/chapter-balance.mjs の比較（各1000回）：橋（急ぐ）＝到達99.9%・平均19・中央値19、森（寄り道）＝到達95.9%・平均25.5・中央値25、自由＝98.0%・平均22.3。最終距離はシミュレーションと実際の試遊感を見てから決める（候補は chapter-balance.mjs の CANDIDATES）。
+    - 背景15枚（assets/fields/ch1a/road/）＝世界の中の巨大な古代街道。01〜04 共通 → 04 の奥の端で分岐 → 橋ルート 05A〜09A（短め・強敵 08A）／森ルート 05B〜09B（長め）→ 10 大会会場への道（合流・ライバル＝強制停止・大会門）。
+    - **周回なし（2026-10-01 改修）**：背景はどれも1回だけ通る（鏡像・仮の背景は作らない）。1枚の中に複数のマス（config の NODES＝背景1枚あたりのマス数：共通 6・橋 6・森 8・会場 6【暫定】）を、道の中央線の上に手前（y 0.87）から奥（y 0.36）へ奥行き補正で等間隔に置く（engine の alongPersp。奥ほど画面上の間隔が縮む）。絵に描かれた輪（y≈0.84・0.60）と1対1ではない。
+    - **道の中央線と安全域（fieldScenes[].road）**：背景ごとに { center:[[y, x]…]（画素計測＋目視の中央線。y 0.65 より手前は石畳が画面幅いっぱい＝0.5）, vanish 0.245（消失点）, slope 0.95, maxHalf 0.5, safe 0.7（半幅のうち使う割合。橋の上は 0.6） }。`MMCH.roadAt(scene, y)`＝{ x, half, left, right, safeLeft, safeRight }、`MMCH.clampToRoad(scene, x, y, bodyHalf)`。止まる位置（node.mx。nodeOverrides.monster を含む）は buildGraph で安全域に収め、画面側（field-view の setMonPos → roadX）は歩きの途中も体の半幅（config.monster.w 150 × 奥行き）ぶん内側に収める。road の無い背景（旧 Chapter・合成 config）は制限なし。
+    - 【暫定候補・正式確定ではない】総マス数＝橋ルート 59歩／森ルート 69歩（ノード100）。ルートの長さは config（NODES）だけで変えられる。tests/chapter-balance.mjs の比較（2026-10-01、各1000回）：橋（急ぐ）＝到達100%・平均19.0・中央値19（p10〜p90 16〜22）、森（寄り道）＝到達100%・平均22.3・中央値22（19〜25）、自由＝99.9%・平均20.7。最終距離はシミュレーションと実際の試遊感を見てから決める（候補 G〜K は chapter-balance.mjs の CANDIDATES）。
     - ルール：サイコロ 1〜6（rules.diceSides）・30ターン・会場に着いた時点で移動終了→大会（残りターンは消える）・30ターンで着けなければ大会なし・ランクは上がらない・能力と持ち物は保持してファームへ→次の Chapter（rules.onTimeUp:'end'＝既存の timeup 経路）。通過は効果なし、停止だけ効果。例外は config の強制停止（forceStopKinds:['rival']）だけ。
-    - ノードID：共通 f1_／f1b_（01 の1周目・2周目）・g1_／g1b_（02）・g2_／g2b_（03）・f2_／f2b_（04。分岐 f2b_3）、橋 a／a2_〜a5_（強敵 a4_1）、森 b／bb_／b2_／b2b_…（b5b_）、会場 f3_／f3b_（合流 f3_0・ライバル f3b_1・ゴール f3b_3）。
+    - ノードID（path id＋番号）：共通 f1_0〜5（01。スタート f1_0）・g1_（02）・g2_（03）・f2_（04。分岐 f2_5）、橋 a0〜5（05A）・a2_〜a5_（強敵 a4_3）、森 b0〜7（05B）・b2_〜b5_（各8）、会場 f3_0〜5（合流 f3_0・ライバル f3_3・ゴール f3_5）。
     - 見せ方：低いカメラ（fieldScenes[].zoom near 1.32・far 1.95。近景の石板2〜3枚だけが見える）、モンスターは輪の上、目印（石碑・祠・宝箱）は石板の脇（nodeLook gap 205〜215・tuft 無し）。街道の背景に環境素材は重ねない（landmarks／foreground は空）。
     - Chapter開始の演出（js/chapter/intro.js・config.intro）：出発直後に俯瞰図（intro/ch1_intro_overview_pattern1〜3.webp＝Pattern A／B／C。演出専用。プレイの背景の流用ではない）を全画面 → 「CHAPTER 1／はじまりの草原」→ 会場のほうから startFocus へズーム／パン（zoom 1.0→2.3・2.2秒）→ クロスフェードで 01 の実プレイ画面 → START。1回だけ（sessionStorage。セーブには持たない。再読み込みでは出さない）。タップで短縮。視差効果を減らす設定では短く。
-    - START／STOP（config.deck＝ui/deck_start.webp・deck_stop.webp＋押せる領域 hit）：START＝出目・ターン・疲れを確定して保存 → サイコロ（無地 dice_blank）が宙に浮いて回り続け、操作欄は STOP の画像に → プレイヤーが STOP を押すと落ちて止まり（自動では止めない）、停止面 dice_stop_1〜6 → 1地点ずつ移動 → 停止処理 → START に戻る。STOP は確率を変えない（出目は START の時点で保存済み。再読み込みでは残りの移動だけ）。4コマンドは画像の上の透明なボタン（文字は読み上げ・テスト用に残す）。
+    - **サイコロは START の1タップ（2026-10-01 正式。STOP の操作は廃止）**（config.deck＝ui/deck_start.webp＋押せる領域 hit。deck_stop.webp はファイルだけ残し、使わない）：START を押すまでサイコロは画面に出さない（操作欄の上で浮く絵も無し）。START＝出目・ターン・疲れを確定して保存 → サイコロ（無地 dice_blank）が START の位置から出現して回り、自動で減速して着地（約0.98秒）→ 停止面 dice_stop_1〜6 を約0.42秒 → 消える（合計約1.7秒）→ 1地点ずつ移動 → 停止処理 → START に戻る。止まるタイミングは確率を変えない（出目は START の時点で保存済み。再読み込みでは残りの移動だけ）。演出・移動・停止処理の間は START も4コマンドも押せない（bBusy＋MMCHD.isLocked＋disabled。連打しても1ターン）。4コマンドは画像の上の透明なボタン（文字は読み上げ・テスト用に残す）。
     - フィナのリアクション：停止地点の結果 → MMCH.companionReaction → フィナの小さな吹き出し（.chf-fina。顔・名前・一言、約1.6秒）。本文は config.companion.reactions（未決＝空＝何も出ない）。
     - 同行者はプレイヤー・フィナ・育成中のモンスター（ダンは同行しない）。
   - **13枚の正式背景による旅（2026-09-30。旧構成の記録）**：背景1枚＝旅の一区間（FIELD）。旅の順は 01 旅立ちの草原 → 02 大橋の見える草原 → 03 清流のほとり → 04 小さな石橋 → 05 分かれ道の丘（分岐）→ 大橋ルート：06 橋のたもとの集落 → 07 大橋を望む道 → 08 大橋（強敵）／森の小道：09 古い石柱の道 → 10 森の小道 → 11 森の出口 → 合流：12 大会へ続く丘 → 13 大会会場の高原（ライバル・大会門）。config は fieldScenes（13）と paths（背景ごとの道：f1_・g1_・g2_・g3_・f2_（分岐 f2_3）／a・a2_・a3_（強敵 a3_2）／b・b2_・b3_／g4_（合流）・f3_（ライバル f3_4・ゴール f3_5））。歩数は大橋 44・森 48（1000回のシミュレーションで平均 24.5 ターン・到達 99%）。
@@ -436,7 +438,7 @@ Claude Code は作業の前に毎回このファイルを読むこと。ここ�
 - 能力選択イベント（3つから1つ選ぶ）の上昇量・出現率：未決
 - 特訓チケット地点の出現条件：未決
 - 分岐ルート用 1〜6 サイコロを振る場面：未決（未実装）
-- リアル巨大ボード方式（Chapter 1 に 2026-10-01 適用）：周回数＝総マス数の最終確定（今は【暫定】橋59／森79。tests/chapter-balance.mjs の比較結果で判断）・出目 4〜6 の疲れ（今は +7）・配置の数（counts）・フィナのリアクションの本文・フィナの会話UI・ダンの出発時の掛け合いの文面（DAN_TALK.handoff「ダン、この子のことお願いしてもいい？／ああ。こっちは任せてくれ。」がダンへ預けて旅立つように読める。最小修正案：フィナ「ダン、この子と一緒に行ってくるね。」→ダン「ああ。気をつけてな。ファームで待ってる。」＝仕様側の判断待ち）・同じ背景を周回で続けて通る見え方（試遊で確認）：未決
+- リアル巨大ボード方式（Chapter 1 に 2026-10-01 適用）：背景1枚あたりのマス数（NODES）＝総マス数の最終確定（今は【暫定】橋59／森69。tests/chapter-balance.mjs の比較結果で判断）・出目 4〜6 の疲れ（今は +7）・配置の数（counts）・フィナのリアクションの本文・フィナの会話UI・ダンの出発時の掛け合いの文面（DAN_TALK.handoff「ダン、この子のことお願いしてもいい？／ああ。こっちは任せてくれ。」がダンへ預けて旅立つように読める。最小修正案：フィナ「ダン、この子と一緒に行ってくるね。」→ダン「ああ。気をつけてな。ファームで待ってる。」＝仕様側の判断待ち）・同じ背景を周回で続けて通る見え方（試遊で確認）：未決
 - Chapterフィールドの素材待ち：泉・祠（イベント）の自然物、ライバル本人の立ち姿、正式な歩行アニメ（idle／walk／run）、Pattern B／C の config（俯瞰図 pattern2・3 は登録済み）。いずれも config／registerMonsterAnimator で差し替えるだけ（2026-09-30）
 - 個性スキル（Battle 開始前の導入で表示する「個性スキル」の正式データ）：未登録・未決。今は「―（未登録）」の枠だけ（p9TraitOf で返す。Battle Engine の処理とは分ける）
 - フィナの大会の見立て（FINA_RANK_TALK：余裕／互角／厳しい の文面）とセドリックの大会開始の一言（CEDRIC_TALK.open）：暫定の文面＝要確認

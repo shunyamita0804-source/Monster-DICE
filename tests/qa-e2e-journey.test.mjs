@@ -18,10 +18,10 @@ async function toField(pg) {
   await pg.evaluate(() => { const m = mk(0); m.name = 'ソラ'; MMP7.ensureProg(m); S.m = m; save(); MMP8.depart(S, m, () => 0.37); save(); board(); });
   await pg.waitForSelector('#chf .chf-bg'); await idle(pg);
 }
-async function rollAs(pg, v, { stop = true } = {}) {
+/** 出目を決めて START を1回押す（1タップ：サイコロは自動で止まる） */
+async function rollAs(pg, v) {
   await pg.evaluate((v) => { window.__mr = Math.random; Math.random = () => ({ 1: 0.05, 2: 0.2, 3: 0.4, 4: 0.55, 5: 0.75, 6: 0.95 }[v]); }, v);
   await pg.click('#brollbtn'); await pg.evaluate(() => { Math.random = window.__mr; });
-  if (stop) { await pg.waitForSelector('#brollbtn.spinning:not([disabled])', { timeout: 10000 }); await pg.waitForTimeout(250); await pg.click('#brollbtn'); }
 }
 const place = (pg, node, extra = {}) => pg.evaluate(([node, extra]) => { const r = S.m.raise; r.node = node; r.pend = null; Object.assign(r, extra); r.field.branch = node.startsWith('a') ? 'bridge' : node.startsWith('b') ? 'forest' : r.field.branch; save(); board(); }, [node, extra]);
 
@@ -50,22 +50,22 @@ test('JR-2：1地点＝石板1つ：1地点進むだけでも画面上ではっ�
   const pos = () => pg.evaluate(() => { const r = document.querySelector('#bmonw .mon img').getBoundingClientRect(), f = document.querySelector('#chf').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.bottom, w: f.width, h: f.height, node: S.m.raise.node, field: MMCHV.state().field, cam: MMCHV.state().cam.ty }; });
   const a = await pos(); await rollAs(pg, 1); await idle(pg); const b = await pos();
   assert.equal(b.node, 'f1_1'); assert.ok(Math.abs(b.cam - a.cam) + Math.hypot(b.x - a.x, b.y - a.y) >= 60, `1地点＝手前の石板から次の石板へ（カメラ ${Math.abs(b.cam - a.cam).toFixed(0)}px・画面 ${Math.hypot(b.x - a.x, b.y - a.y).toFixed(0)}px）`);
-  await place(pg, 'f1b_1'); await idle(pg); await rollAs(pg, 3); await idle(pg); const c = await pos();
-  assert.deepEqual([c.node, c.field], ['g1_0', 3], '3地点：f1b_2 → f1b_3 → 背景の切り替え → g1_0');
+  await place(pg, 'f1_3'); await idle(pg); await rollAs(pg, 3); await idle(pg); const c = await pos();
+  assert.deepEqual([c.node, c.field], ['g1_0', 2], '3地点：f1_4 → f1_5 → 背景の切り替え → g1_0');
   assert.ok(c.y > c.h * 0.35 && c.y < c.h * 0.85 && c.x > 0 && c.x < c.w, `切り替え後も画面の中央より少し下（${c.y.toFixed(0)} / ${c.h}）`);
   const cams = await pg.evaluate(() => document.querySelectorAll('.chf-cam').length); assert.equal(cams, 1);
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
 });
 
-test('JR-3：操作欄の4コマンド（アイテム・休む・技設定・ステータス）＋ START／STOP。移動中はすべて押せない。技設定・ステータスは既存の画面（hall）へ。HUD に所持金', { skip: SKIP }, async () => {
+test('JR-3：操作欄の4コマンド（アイテム・休む・技設定・ステータス）＋ START。移動中はすべて押せない。技設定・ステータスは既存の画面（hall）へ。HUD に所持金', { skip: SKIP }, async () => {
   const p = await open(); const pg = p.page;
   await toField(pg);
   await pg.evaluate(() => { S.g = 1234; board(); }); await idle(pg);
   const r = await pg.evaluate(() => ({ cmds: [...document.querySelectorAll('.chwing')].map((w) => [w.className.replace(/chwing |chw-\w+/g, '').trim(), w.textContent.replace(/\s+/g, ' ').trim(), w.disabled]), gold: document.querySelector('#chgold').textContent.replace(/\s+/g, ''), stop: !document.querySelector('#brollbtn').disabled }));
   assert.deepEqual(r.cmds, [['chwing-img chitem', 'アイテム', false], ['chwing-img chrest', '休む疲れ −30', false], ['chwing-img chskill', '技設定', false], ['chwing-img chstatus', 'ステータス', false]]);
   assert.match(r.gold, /所持金1234G/); assert.equal(r.stop, true);
-  await rollAs(pg, 2, { stop: false }); await pg.waitForFunction(() => bBusy || MMCHD.isLocked());
-  assert.deepEqual(await pg.evaluate(() => [...document.querySelectorAll('.chwing')].map((w) => w.disabled)), [true, true, true, true], '演出・移動中は4コマンドを押せない'); await pg.click('#brollbtn');
+  await rollAs(pg, 2); await pg.waitForFunction(() => bBusy || MMCHD.isLocked());
+  assert.deepEqual(await pg.evaluate(() => [...document.querySelectorAll('.chwing')].map((w) => w.disabled)), [true, true, true, true], '演出・移動中は4コマンドを押せない');
   await idle(pg);
   await pg.evaluate(() => chfOpen('st')); await pg.waitForSelector('#app .ds-st'); assert.equal(await pg.evaluate(() => !!document.querySelector('#app .ds-st')), true, 'ステータス＝既存の画面');
   await pg.evaluate(() => board()); await pg.waitForSelector('#chf .chf-bg'); await idle(pg);
@@ -180,7 +180,7 @@ for (const size of [H.SIZES.base, H.SIZES.se]) {
 }
 
 // =========================================================
-// 2026-10-01 リアル巨大ボード方式：Chapter開始の俯瞰図 → ズーム／パン → 実プレイ画面、START／STOP の自動停止、ターン切れ（大会なし → ファーム → 次の Chapter）、フィナのリアクションの差し込み口
+// 2026-10-01 リアル巨大ボード方式：Chapter開始の俯瞰図 → ズーム／パン → 実プレイ画面、START の1タップ（自動停止）、ターン切れ（大会なし → ファーム → 次の Chapter）、フィナのリアクションの差し込み口
 // =========================================================
 test('JR-9：Chapter に入った瞬間、旅路全体の俯瞰図（演出専用の画像。Pattern A）が全画面に出て Chapter 名 → スタート地点へズーム／パン → 01 の実プレイ画面へ。その間は操作できない。1回だけ（再読み込みでは出ない）。タップで短縮', { skip: SKIP }, async () => {
   const p = await open({ intro: true }); const pg = p.page;
@@ -209,15 +209,18 @@ test('JR-9：Chapter に入った瞬間、旅路全体の俯瞰図（演出専�
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
 });
 
-test('JR-10：START のあと、STOP を押すまでサイコロは宙で回り続ける（自動では止まらない）。押すと START の時点で決まった出目で止まって進む（STOP のタイミングで確率は変わらない）', { skip: SKIP }, async () => {
+test('JR-10：START の1タップだけで、サイコロは自動で止まって（STOP の操作なし）START の時点で保存した出目のぶん進む。止まるまで約1秒、停止面を見せてから移動。STOP を押す場面・STOP の画像は無い', { skip: SKIP }, async () => {
   const p = await open(); const pg = p.page;
   await toField(pg);
-  await rollAs(pg, 4, { stop: false });
+  assert.equal(await pg.evaluate(() => document.querySelectorAll('.chdz,.chdf,[onclick*="chfStop"],img[src*="deck_stop"]').length), 0, 'START の前：サイコロ・STOP は無い');
+  await rollAs(pg, 4);
   const saved = await pg.evaluate(() => JSON.parse(localStorage.getItem('mr4v6')).m.raise.pend.roll);
-  await pg.waitForTimeout(4500);
-  assert.deepEqual(await pg.evaluate(() => [MMCHD.phase(), document.querySelector('#brollbtn').textContent.trim(), S.m.raise.node]), ['spin', 'STOP', 'f1_0'], '4.5秒たっても回り続ける（自動停止なし）');
-  await pg.click('#brollbtn'); await idle(pg);
-  assert.deepEqual(await pg.evaluate(() => [S.m.raise.node, S.m.raise.turnsUsed]), ['f1b_0', 1], `保存済みの出目 ${saved} で4地点`); assert.equal(saved, 4);
+  await pg.waitForSelector('.chdz'); const t0 = Date.now();
+  await pg.waitForFunction(() => !document.querySelector('.chdz'), null, { timeout: 8000 }); const gone = Date.now() - t0;
+  assert.ok(gone >= 1200 && gone <= 3500, `サイコロは自動で止まって消える（${gone}ms。設計 約1.7秒）`);
+  assert.equal(await pg.evaluate(() => typeof window.chfStop), 'undefined', 'STOP の関数は無い');
+  await idle(pg);
+  assert.deepEqual(await pg.evaluate(() => [S.m.raise.node, S.m.raise.turnsUsed, document.querySelector('#brollbtn').textContent.trim(), !document.querySelector('#brollbtn').disabled]), ['f1_4', 1, 'START', true], `保存済みの出目 ${saved} で4地点 → START に戻る`); assert.equal(saved, 4);
   assert.deepEqual(p.errors, []);
 });
 

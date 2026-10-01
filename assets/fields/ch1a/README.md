@@ -1,6 +1,6 @@
 # Chapter 1「はじまりの草原」Pattern A「大橋と清流の草原」の素材
 
-2026-10-01：正式はリアル巨大ボード方式の素材（road/＝背景15枚、intro/＝俯瞰図3枚、dice/dice_stop_1〜6.webp・dice_blank.webp、ui/＝START／STOP の操作欄。road/README.md）。下の journey/・bg_01〜03・dice_stop_1〜3.svg・dice_rolling.webp は互換のため残すが参照しない。nodes/・env/grass_flower_border は引き続き使う。
+2026-10-01：正式はリアル巨大ボード方式の素材（road/＝背景15枚、intro/＝俯瞰図3枚、dice/dice_stop_1〜6.webp・dice_blank.webp、ui/＝操作欄（deck_start.webp。deck_stop.webp は使わない）。road/README.md）。下の journey/・bg_01〜03・dice_stop_1〜3.svg・dice_rolling.webp は互換のため残すが参照しない。nodes/・env/grass_flower_border は引き続き使う。
 
 2026-09-30：正式背景は journey/（13枚。journey/README.md に旅の順と元ファイルの対応）。下の bg_01〜03.webp（3枚構成）は互換のため残すが、config からは参照しない。dice/dice_stop_1〜3.svg は暫定の停止面（上面＝出目。正式の停止画像が届いたら差し替える）。
 

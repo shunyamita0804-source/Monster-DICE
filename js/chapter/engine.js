@@ -138,6 +138,29 @@
     for (let i = 1; i < c.length; i++) if (y >= c[i][0]) { const [y0, d0] = c[i - 1], [y1, d1] = c[i]; return d0 + (d1 - d0) * (y - y0) / (y1 - y0); }
     return 1;
   }
+  // ---------------------------------------------------------
+  // 道の安全域（2026-10-01）：背景ごとの「モンスターが安全に歩ける道の中央線」と幅。fieldScenes[].road＝
+  //   { center:[[y, x]…]（中央線。y 昇順でなくてもよい）, vanish（消失点の y）, slope（手前へ広がる割合）, maxHalf（半幅の上限）, safe（半幅のうち使う割合。端には寄らない） }
+  //  road が無い背景は制限なし（旧 Chapter・合成 config はそのまま）。
+  // ---------------------------------------------------------
+  /** y での道：{ x（中央）, half（半幅）, left, right（絵の道の端）, safeLeft, safeRight（モンスターが入ってよい範囲） }。割合（0〜1） */
+  function roadAt(scene, y) {
+    const R = scene && scene.road; if (!R || !Array.isArray(R.center) || !R.center.length) return null;
+    const C = [...R.center].sort((a, b) => a[0] - b[0]);
+    let x = C[0][1];
+    if (y >= C[C.length - 1][0]) x = C[C.length - 1][1];
+    else for (let i = 1; i < C.length; i++) if (y <= C[i][0]) { const [y0, x0] = C[i - 1], [y1, x1] = C[i]; x = y1 === y0 ? x1 : x0 + (x1 - x0) * (y - y0) / (y1 - y0); break; }
+    const slope = R.slope != null ? R.slope : 0.95, vanish = R.vanish != null ? R.vanish : 0.25, maxHalf = R.maxHalf != null ? R.maxHalf : 0.5, safe = R.safe != null ? R.safe : 0.7;
+    const half = Math.max(0.01, Math.min(maxHalf, slope * (y - vanish))), sh = half * safe;
+    return { x: +x.toFixed(4), half: +half.toFixed(4), left: +(x - half).toFixed(4), right: +(x + half).toFixed(4), safeLeft: +(x - sh).toFixed(4), safeRight: +(x + sh).toFixed(4) };
+  }
+  /** x を道の安全域に収める（bodyHalf＝体の半幅（割合）。安全域が体より狭ければ中央）。{ x, clamped, road } */
+  function clampToRoad(scene, x, y, bodyHalf = 0) {
+    const r = roadAt(scene, y); if (!r) return { x, clamped: false, road: null };
+    const lo = r.safeLeft + bodyHalf, hi = r.safeRight - bodyHalf;
+    const nx = lo > hi ? r.x : Math.max(lo, Math.min(hi, x));
+    return { x: +nx.toFixed(4), clamped: Math.abs(nx - x) > 1e-6, road: r };
+  }
   function buildGraph(cfg) {
     const key = `${cfg.chapterId}:${cfg.patternId}`; if (GRAPHS.has(key)) return GRAPHS.get(key);
     const scenes = {}; for (const s of cfg.fieldScenes) scenes[s.id] = s;
@@ -155,7 +178,7 @@
         nodes[id] = { id, path: p.id, idx: i, field: p.field, x: pos[0], y: pos[1], s, d: +depthOf(sc, pos[1]).toFixed(3), kind, branch: p.branch || null,
           side: o.side || (p.side && p.side[i]) || (i % 2 ? 1 : -1), terrain: o.terrain || p.terrain || 'grass',
           // 見せ方の上書き（config.nodeOverrides）：monster＝止まる位置（既定は道の上の点）、landmark＝目印の位置・大きさ、camera＝カメラの寄り
-          mx: o.monster ? o.monster[0] : pos[0], my: o.monster ? o.monster[1] : pos[1], lm: o.landmark || null, cam: o.camera || null,
+          mx: clampToRoad(sc, o.monster ? o.monster[0] : pos[0], o.monster ? o.monster[1] : pos[1]).x, my: o.monster ? o.monster[1] : pos[1], lm: o.landmark || null, cam: o.camera || null,   // 止まる位置は道の安全域の中（fieldScenes[].road）
           // 強制停止：path の forceStop:[index...]・nodeOverrides[id].forceStop・config.forceStopKinds の種類。出目が残っていてもここで止まり、残りの移動は消える（MMP8.step が node.stop で判定）
           forceStop: !!((p.forceStop && p.forceStop.includes(i)) || o.forceStop === true || stopKinds.includes(kind)) };
         if (p.noSlot && p.noSlot.includes(i) && kind === 'slot') nodes[id].kind = 'normal';
@@ -547,7 +570,7 @@
   function attach(P8 = root.MMP8) { if (P8 && typeof P8.registerChapterDriver === 'function') P8.registerChapterDriver(DRIVER); }
 
   root.MMCH = fz({ STATS, SPECIAL, TIERS, BATTLE_TYPES, NODE_TYPES, REACTION_KEYS, DEFAULT_RULES, rng, newSeed, registerConfig, getConfig, patterns, handles, selectPattern,
-    buildGraph, trackOf, alongPersp, smoothCurve, measure, pointAt, routeBetween, depthOf, stepsToMerge, sceneNodes, nextFields, sceneOrder, routeLengths,
+    buildGraph, trackOf, alongPersp, smoothCurve, measure, pointAt, routeBetween, depthOf, roadAt, clampToRoad, stepsToMerge, sceneNodes, nextFields, sceneOrder, routeLengths,
     validateLayout, generateLayout, initRun, fieldOf, configFor, graphFor, validField, sanitize, typeAt, nodeTypeName, assignOfType, turnInfo,
     fatigue, addFatigue, rollFatigue, canRoll, recover, carryFatigue, registerFatigueItem, fatigueItemEffect, useFatigueItem,
     statOdds, statOutcome, statAmount, registerEventHandler, registerPassHandler, onPass, resolve, reactionKeyOf, registerReactionResolver, companionReaction, DRIVER, attach, rulesOf });

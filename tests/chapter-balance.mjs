@@ -1,6 +1,6 @@
 // =========================================================
 // Chapter 1（リアル巨大ボード方式）の距離・密度の比較（最終確定の前に見る資料。テストではない）
-//  周回数の表（ch1a.js の LAPS）の候補ごとに、進行シミュレーション（実物の MMP7・MMP8・MMCH）で
+//  背景1枚あたりのマス数（ch1a.js の NODES：共通・橋・森・会場。周回なし＝背景はどれも1回だけ）の候補ごとに、進行シミュレーション（実物の MMP7・MMP8・MMCH）で
 //   ・橋ルート／森ルートの総マス数
 //   ・ルート固定（橋＝大会へ急ぐ／森＝寄り道して育成）ごとの 平均・中央値・p10／p90・30ターン以内の到達率・停止地点の回数
 //   ・休む回数を決めた場合（0回＝疲れ100で動けないときだけ／1回・2回・3回＝疲れ40以上になった最初の k 回だけ休む）の平均・到達率
@@ -13,20 +13,20 @@ import path from 'node:path';
 import { lcg } from './chapter-sim.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-function loadWithLaps(laps) {
-  const w = { MMCH_CH1A_LAPS: laps };
+function loadWithNodes(nodes) {
+  const w = { MMCH_CH1A_NODES: nodes };
   for (const f of ['js/phase7/progression.js', 'js/phase8/league.js', 'js/phase8/raising.js', 'js/phase10/monsters.js', 'js/phase9/chapters.js', 'js/chapter/engine.js', 'js/chapter/configs/ch1a.js'])
     new Function('window', readFileSync(path.join(ROOT, f), 'utf8'))(w);
   for (const c of w.MMP9C.CHAPTERS) w.MMP7.registerChapterBoard(c.no, c.track, { provisional: false });
   return { P7: w.MMP7, P8: w.MMP8, CH: w.MMCH, w };
 }
-const L = (sh, br, fo, go) => ({ '01': sh, '02': sh, '03': sh, '04': sh, '05a': br, '06a': br, '07a': br, '08a': br, '09a': br, '05b': fo, '06b': fo, '07b': fo, '08b': fo, '09b': fo, '10': go });
+const L = (shared, bridge, forest, goal) => ({ shared, bridge, forest, goal });
 export const CANDIDATES = [
-  { id: 'B', label: '共通1・橋1・森2・会場1', laps: L(1, 1, 2, 1) },
-  { id: 'C', label: '共通2・橋1・森2・会場1', laps: L(2, 1, 2, 1) },
-  { id: 'D', label: '共通2・橋1・森2・会場2（今の暫定候補）', laps: L(2, 1, 2, 2) },
-  { id: 'E', label: '共通2・橋2・森2・会場2', laps: L(2, 2, 2, 2) },
-  { id: 'F', label: '共通2・橋2・森3・会場2', laps: L(2, 2, 3, 2) },
+  { id: 'G', label: '共通5・橋5・森7・会場5（短め）', nodes: L(5, 5, 7, 5) },
+  { id: 'H', label: '共通6・橋5・森8・会場6', nodes: L(6, 5, 8, 6) },
+  { id: 'I', label: '共通6・橋6・森8・会場6（今の暫定候補）', nodes: L(6, 6, 8, 6) },
+  { id: 'J', label: '共通6・橋6・森9・会場6', nodes: L(6, 6, 9, 6) },
+  { id: 'K', label: '共通7・橋6・森9・会場7（長め）', nodes: L(7, 6, 9, 7) },
 ];
 const pct = (xs, q) => { const a = [...xs].sort((x, y) => x - y); return a.length ? a[Math.min(a.length - 1, Math.floor(a.length * q))] : null; };
 const avg = (xs) => (xs.length ? +(xs.reduce((a, b) => a + b, 0) / xs.length).toFixed(1) : null);
@@ -62,8 +62,8 @@ function summarize(runs) {
   return { n: runs.length, reach: +(reached.length / runs.length).toFixed(3), avg: avg(t), median: pct(t, 0.5), p10: pct(t, 0.1), p90: pct(t, 0.9), rests: avg(runs.map((r) => r.rests)), forced: avg(runs.map((r) => r.forced)),
     stops: { stat: avg(runs.map((r) => r.stat)), event: avg(runs.map((r) => r.event)), battle: avg(runs.map((r) => r.battle)), treasure: avg(runs.map((r) => r.treasure)) } };
 }
-export function evaluate(laps, n = 1000, seed0 = 20261001) {
-  const E = loadWithLaps(laps), cfg = E.CH.getConfig(1), g = E.CH.buildGraph(cfg), len = E.CH.routeLengths(g);
+export function evaluate(nodes, n = 1000, seed0 = 20261001) {
+  const E = loadWithNodes(nodes), cfg = E.CH.getConfig(1), g = E.CH.buildGraph(cfg), len = E.CH.routeLengths(g);
   const Lb = len.min, rng = (a, b) => [Math.round(Lb * a), Math.round(Lb * b)];
   cfg.layoutRules.counts = { stat: rng(0.2, 0.25), event: rng(0.11, 0.15), battle: rng(0.075, 0.11), treasure: rng(0.05, 0.075) };
   cfg.layoutRules.maxPerStat = Math.ceil(Lb * 0.25 / 6) + 1; cfg.layoutRules.maxBattlesFirst = [Math.min(16, Math.round(Lb * 0.2)), 1];
@@ -76,7 +76,7 @@ export function evaluate(laps, n = 1000, seed0 = 20261001) {
 if (process.argv[1] && process.argv[1].endsWith('chapter-balance.mjs')) {
   const n = +(process.argv[2] || 1000), only = process.argv[3];
   for (const c of CANDIDATES.filter((x) => !only || x.id === only)) {
-    const r = evaluate(c.laps, n);
+    const r = evaluate(c.nodes, n);
     console.log(`\n## 候補 ${c.id}：${c.label}　橋ルート ${r.length.bridge}マス／森ルート ${r.length.forest}マス（ノード ${r.length.nodes}）`);
     console.log('  [ルート別・休むは疲れ86以上で]');
     for (const [k, x] of Object.entries(r.routes)) console.log(`   ${k.padEnd(9)} 到達 ${(x.reach * 100).toFixed(1)}%  平均 ${x.avg}  中央値 ${x.median}  p10〜p90 ${x.p10}〜${x.p90}  休む平均 ${x.rests}（うち強制 ${x.forced}）  停止 能力${x.stops.stat}・イベント${x.stops.event}・バトル${x.stops.battle}・宝箱${x.stops.treasure}`);

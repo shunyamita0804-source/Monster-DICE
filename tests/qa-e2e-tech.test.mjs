@@ -565,9 +565,8 @@ B('QA-TD5：サイコロ演出（Chapter 1 のボード・修行ボード）の�
   const p = await openTown({ size: H.SIZES.base }, true, true);
   const pg = p.page;
   await pg.waitForTimeout(500);
-  // 1) ボタンで振る（Chapter 1 は START → 宙で回る → STOP。STOP はプレイヤー操作）
+  // 1) ボタンで振る（Chapter 1 は START の1タップ：サイコロは自動で止まる）
   await pg.click('#brollbtn');
-  if (await pg.evaluate(() => !!window.chfActive && chfActive(S.m))) { await pg.waitForSelector('#brollbtn.spinning:not([disabled])', { timeout: 10000 }); await pg.waitForTimeout(200); await pg.click('#brollbtn'); }
   await pg.waitForFunction(() => !!document.querySelector('.p12dz, .chdz') || !bBusy, null, { timeout: 5000 });
   await pg.waitForFunction(() => !bBusy && !document.querySelector('.p12dz') && !['move', 'resolve'].includes(MMP8.boardPhase(S.m)), null, { timeout: 20000 });
   await quiet(pg);
