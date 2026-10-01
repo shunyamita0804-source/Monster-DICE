@@ -455,14 +455,19 @@
     document.querySelectorAll('#chf .chf-obj').forEach((e) => { const id = e.dataset.id; e.classList.toggle('used', f.consumedEvents.includes(id) || f.openedTreasures.includes(id) || f.clearedStats.includes(id)); });
     $('#chf-ui').innerHTML = hudHtml(m) + sheetHtml(m, ph) + deckHtml(m, ph, msg);
     if (ph === 'branch') branchCamera(m); else if (V.focus && ph === 'roll') camFocus(null);
-    // Chapter に入った直後（出発してまだ何もしていない）：旅路全体の俯瞰図 → スタート地点へ寄る演出（js/chapter/intro.js。1回だけ・セーブには持たない）
-    if (!same && ph === 'roll' && r.turnsUsed === 0 && r.node === V.g.start && root.MMCHI && V.cfg.intro && !MMCHI.shown(key) && !root.MM_QA_NO_INTRO) chfIntro(m, key);   // MM_QA_NO_INTRO：自動テスト専用（tests/e2e/harness.mjs）
+    // Chapter に入った直後（出発してまだ何もしていない）：旅路全体の俯瞰図 → スタート地点へ寄る演出（js/chapter/intro.js）。
+    //  「初回」の判定（2026-10-01）＝育成個体 × Chapter ごとに1回：この Chapter の配置 m.raise.field（出発のたびに作り直され、Chapter の終了・育成放棄で消える）に
+    //  introSeen を記録する（演出を始める前に保存）。同じ育成の再読み込み・再開では出さず、新しい育成個体（育成放棄のあとの別の個体を含む）や次の Chapter では出す。
+    //  sessionStorage などセーブの外の記録では判定しない（タブが閉じられると消え、新旧の個体の区別も保証できないため）
+    if (!same && ph === 'roll' && r.turnsUsed === 0 && r.node === V.g.start && root.MMCHI && V.cfg.intro && !f.introSeen && !root.MM_QA_NO_INTRO) chfIntro(m, key);   // MM_QA_NO_INTRO：自動テスト専用（tests/e2e/harness.mjs）
     // 再開した移動・停止地点の処理は少し後で。その間に別の画面へ移ったら何もしない（次にフィールドを開いたとき1回だけ処理する）
     if (ph === 'move') setTimeout(() => { if (onField()) chfContinue(); }, 300); else if (ph === 'resolve') setTimeout(() => { if (onField()) chfResolve(); }, 300);
     return true;
   }
   async function chfIntro(m, key) {
     if (busyGet()) return;
+    const f = MMCH.fieldOf(m); if (!f) return;
+    f.introSeen = true; doSave();   // 先に「見た」を保存（演出の途中で再読み込みしても二度出ない）。この個体のこの Chapter の配置と一緒に消える
     busySet(true); lockUi(true);
     try { await MMCHI.play(V.cfg, { key, host: $('#chfw'), chapterId: V.cfg.chapterId, title: V.cfg.title, patternId: MMCH.fieldOf(m).patternId, calm: V.calm }); }
     catch (e) {} finally { busySet(false); }

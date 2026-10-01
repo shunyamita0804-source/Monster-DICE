@@ -338,7 +338,11 @@ test('CH1-B15：1タップ：START を押すまでサイコロは画面に無い
       const w = document.querySelector('#bmonw'); if (w && w.classList.contains('walk') && !window.__moveAt) window.__moveAt = performance.now(); }).observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['class'] }); });
   await rollAs(pg, 2); await pg.waitForSelector('.chdz');
   const sp = await pg.evaluate(() => ({ text: document.querySelector('#brollbtn') ? document.querySelector('#brollbtn').textContent.trim() : null, img: document.querySelector('.chdeck-bg').getAttribute('src'), phase: MMCHD.phase(), pend: S.m.raise.pend, saved: JSON.parse(localStorage.getItem('mr4v6')).m.raise.pend, wings: [...document.querySelectorAll('.chwing')].map((w) => w.disabled), btn: [...document.querySelectorAll('.chstop')].map((b) => [b.disabled, b.textContent.trim()]), imgs: [...document.querySelectorAll('.chdz img')].map((i) => i.getAttribute('src')) }));
-  assert.equal(sp.phase, 'auto', '自動で回って止まる（STOP 待ちの spin は無い）'); assert.match(sp.img, /deck_start\.webp$/, '操作欄は START の画像のまま（STOP の画像は使わない）'); assert.deepEqual(sp.wings, [true, true, true, true]); assert.deepEqual(sp.btn, [[true, '2']], '中央のボタンは押せない（移動中）');
+  assert.equal(sp.phase, 'auto', '自動で回って止まる（STOP 待ちの spin は無い）');
+  // 4コマンドは操作だけ不可で、見た目（不透明度・色・画像・装飾）は START を押す前と同じ（暗くしない）
+  const look = () => pg.evaluate(() => [...document.querySelectorAll('.chwing')].map((w) => { const c = getComputedStyle(w); return { op: c.opacity, bg: c.backgroundColor, filter: c.filter, img: c.backgroundImage, border: c.borderWidth, shadow: c.boxShadow, deck: document.querySelector('.chdeck-bg').getAttribute('src') }; }));
+  const during = await look(); assert.deepEqual(during.map((x) => [x.op, x.bg, x.filter]), [['1', 'rgba(0, 0, 0, 0)', 'none'], ['1', 'rgba(0, 0, 0, 0)', 'none'], ['1', 'rgba(0, 0, 0, 0)', 'none'], ['1', 'rgba(0, 0, 0, 0)', 'none']], 'サイコロ処理中も4コマンドは暗くならない（半透明の覆い・opacity・filter なし）');
+  const wingLook0 = during; assert.match(sp.img, /deck_start\.webp$/, '操作欄は START の画像のまま（STOP の画像は使わない）'); assert.deepEqual(sp.wings, [true, true, true, true]); assert.deepEqual(sp.btn, [[true, '2']], '中央のボタンは押せない（移動中）');
   assert.deepEqual(sp.imgs, ['./assets/fields/ch1a/dice/dice_blank.webp'], '回転中は無地の正式サイコロ1枚');
   assert.deepEqual([sp.pend.roll, sp.pend.stage, sp.saved.roll], [2, 'move', 2], '出目は START の時点で確定・保存（自動停止のタイミングで変わらない）');
   const t0 = await st(pg); await pg.evaluate(() => { chfRoll(); chfRoll(); chfRest(); }); assert.deepEqual(await st(pg), t0, '演出中の START・休むの連打は無視');
@@ -352,6 +356,7 @@ test('CH1-B15：1タップ：START を押すまでサイコロは画面に無い
   assert.ok(tm.moveAfterGone >= -50, `サイコロが消えてから歩き出す（${tm.moveAfterGone.toFixed(0)}ms）`);
   assert.ok(tm.last && tm.last.value === 2 && tm.last.manual === false && tm.last.spinMs >= 700 && tm.last.spinMs <= 1400 && tm.last.faceMs >= 300 && tm.last.faceMs <= 700, `実測 ${JSON.stringify(tm.last)}`);
   assert.deepEqual([tm.dice, tm.text, tm.on, tm.busy], [0, 'START', true, false], '移動が終わるとサイコロは消え、START が押せる');
+  assert.deepEqual(await look(), wingLook0, '通常時とサイコロ処理中で4コマンドの見た目（色・画像・装飾）が同じ');
   assert.deepEqual((({ node, turns }) => ({ node, turns }))(await st(pg)), { node: 'f1_2', turns: 1 }, '1回の START で1ターン・2地点');
   // 連打：短い間に2回押しても1ターン
   await pg.evaluate(() => { window.__mr = Math.random; Math.random = () => 0.05; const b = document.querySelector('#brollbtn'); b.click(); b.click(); chfRoll(); setTimeout(() => chfRoll(), 300); setTimeout(() => { const c = document.querySelector('#brollbtn'); if (c) c.click(); }, 1200); Math.random = window.__mr; });

@@ -198,12 +198,12 @@ test('JR-9：Chapter に入った瞬間、旅路全体の俯瞰図（演出専�
   await idle(pg);
   const b = await pg.evaluate(() => ({ bg: document.querySelector('#chf .chf-bg').getAttribute('src'), node: S.m.raise.node, start: document.querySelector('#brollbtn').textContent.trim(), on: !document.querySelector('#brollbtn').disabled, busy: bBusy }));
   assert.deepEqual(b, { bg: './assets/fields/ch1a/road/01_journey_road.webp', node: 'f1_0', start: 'START', on: true, busy: false }, '俯瞰図のあとは 01 の実プレイ画面で START が押せる');
-  // 再読み込みでは出ない（セーブには持たない：mr4v6 に俯瞰図の項目は無い）
-  assert.equal(await pg.evaluate(() => { const s = JSON.parse(localStorage.getItem('mr4v6')); return /overview|chintro|mmch_intro/i.test(JSON.stringify(s)) || Object.keys(s.m.raise).some((k) => /intro/i.test(k)) || Object.keys(s.m.raise.field).some((k) => /intro/i.test(k)); }), false, '俯瞰図を見たかどうかはセーブに入れない');
+  // 再読み込みでは出ない：「見た」はこの個体のこの Chapter の配置（m.raise.field.introSeen）に保存（セーブ全体の項目や sessionStorage では判定しない）
+  assert.equal(await pg.evaluate(() => { const s = JSON.parse(localStorage.getItem('mr4v6')); return s.m.raise.field.introSeen === true && !Object.keys(s).some((k) => /intro/i.test(k)) && !Object.keys(s.m.raise).some((k) => /intro/i.test(k)); }), true, '見たかどうかは個体の Chapter の配置に持つ');
   await pg.reload(); await pg.waitForFunction(() => typeof MMP8 === 'object'); await pg.click('.p15start'); await pg.waitForSelector('#chf .chf-bg'); await pg.waitForTimeout(600);
   assert.equal(await pg.evaluate(() => !!document.querySelector('.chintro')), false, '再読み込みでは出さない');
-  // タップで短縮：別の個体で出発し直す（新しい鍵）
-  await pg.evaluate(() => { MMCHI.reset(); document.querySelector('#app').innerHTML = ''; board(); });   // 演出は画面を作るときだけ（同じ画面の描き直しでは出ない）
+  // タップで短縮：この Chapter の配置を作り直した状態（＝新しい出発）で出し直す
+  await pg.evaluate(() => { delete S.m.raise.field.introSeen; save(); document.querySelector('#app').innerHTML = ''; board(); });   // 演出は画面を作るときだけ（同じ画面の描き直しでは出ない）
   await pg.waitForSelector('.chintro.on', { timeout: 8000 }); await pg.waitForTimeout(300); await pg.click('.chintro');
   await pg.waitForFunction(() => !document.querySelector('.chintro'), null, { timeout: 4000 });
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
@@ -256,4 +256,28 @@ test('JR-12：フィナのリアクションの差し込み口：config.companio
   assert.match(r.text, /フィナ/); assert.match(r.text, /強くなったよ|大成功|残念/); assert.match(r.img, /assets\/npc\/fina\/closeup\/\w+\.webp$/);
   await idle(pg); assert.equal(await pg.evaluate(() => !!document.querySelector('.chf-fina')), false, '吹き出しは自然に消える');
   assert.deepEqual(p.errors, []);
+});
+
+test('JR-13：導入演出は「育成個体 × Chapter の初回」に1回：新規育成の Chapter 1 で出る → プレイ中の再読み込みでは出ない → 育成放棄 → 別の個体で新規育成 → Chapter 1 で再び出る（実際の操作：市場で購入 → ファーム → 出発 → フィナの選択肢）', { skip: SKIP }, async () => {
+  const p = await open({ intro: true }); const pg = p.page;
+  await H.newGame(pg, 'テスト');
+  const buy = async (name) => { await pg.evaluate(() => market()); await H.marketDetail(pg); await pg.evaluate(() => p10BuyAsk()); await pg.waitForSelector('#mnm'); await pg.fill('#mnm', name); await pg.waitForTimeout(400); await pg.click('#p10ov [onclick*="mkgo"]'); await H.finishTalk(pg).catch(() => {}); await pg.waitForSelector('.tbar .tcmd'); };
+  const depart = async () => { await pg.click('.tbar button[onclick*="hall"]'); await pg.waitForSelector('.fm'); await pg.evaluate(() => prepScr()); await H.startRaising(pg); };
+  const st = () => pg.evaluate(() => ({ intro: !!document.querySelector('.chintro'), uid: S.m.uid, node: S.m.raise.node, seen: S.m.raise.field.introSeen === true }));
+  const settle = () => pg.waitForFunction(() => !document.querySelector('.chintro') && !bBusy && !MMCHD.isLocked() && !document.querySelector('.chpop,.chdz'), null, { timeout: 30000 });
+  await buy('ソラ'); await depart();
+  const a = await st(); assert.deepEqual([a.intro, a.node, a.seen], [true, 'f1_0', true], '1体目：Chapter 1 の初突入で導入演出'); await settle();
+  await pg.click('#brollbtn'); await settle();   // プレイ中（1ターン進めた）
+  await pg.reload(); await pg.waitForFunction(() => typeof MMP8 === 'object'); await pg.click('.p15start'); await pg.waitForSelector('#chf .chf-bg'); await pg.waitForTimeout(700);
+  const b = await st(); assert.deepEqual([b.intro, b.uid, b.seen], [false, a.uid, true], '同じ育成の再読み込み：導入演出なし・続きから');
+  // 育成放棄（フィールドのメニュー → 2段階の確認）→ 街
+  await pg.evaluate(() => p9Menu()); await pg.waitForSelector('#p9ov'); await pg.waitForTimeout(450); await pg.click('#p9ov button[onclick*="p8AbandonAsk"]');
+  await pg.waitForSelector('#p8m'); await pg.waitForTimeout(450); await pg.click('#p8m button[onclick*="p8AbandonAsk2"]');
+  await pg.waitForFunction(() => { const b = document.querySelector('#p8abgo'); return b && !b.disabled; }, null, { timeout: 8000 }); await pg.click('#p8abgo');
+  await pg.waitForSelector('.tbar .tcmd'); assert.equal(await pg.evaluate(() => S.m), null, '放棄で育成中の個体は消える');
+  await buy('ガウ'); await depart();
+  const c = await st(); assert.deepEqual([c.intro, c.node, c.seen], [true, 'f1_0', true], '2体目：Chapter 1 の初突入で導入演出が再び出る'); assert.notEqual(c.uid, a.uid);
+  await settle();
+  assert.deepEqual(await pg.evaluate(() => ({ on: !document.querySelector('#brollbtn').disabled, bg: document.querySelector('#chf .chf-bg').getAttribute('src') })), { on: true, bg: './assets/fields/ch1a/road/01_journey_road.webp' });
+  assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
 });
