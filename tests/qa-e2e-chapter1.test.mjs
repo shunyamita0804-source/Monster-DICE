@@ -61,7 +61,7 @@ for (const size of [H.SIZES.base, H.SIZES.se]) {
         dice: document.querySelectorAll('.chdf,.chdz').length };
     });
     assert.ok(r.sh <= r.H && r.sw <= r.W, `ページのはみ出し・スクロールなし（${r.sh}/${r.H}）`);
-    assert.deepEqual([r.cams, r.bgs], [1, ['./assets/fields/ch1a/road/01_journey_road.webp']], '今いるフィールド（旅立ちの街道）の背景だけ');
+    assert.deepEqual([r.cams, r.bgs], [1, ['./assets/fields/ch1a/field/ch1_field_01.webp']], '今いるフィールド（旅立ちの街道）の背景だけ');
     assert.equal(r.dbg, 0, 'ノード・線・番号の表示は無い');
     assert.ok(r.mon[1] <= r.dockTop + 8 && r.mon[0] >= r.hudBottom - 20 && r.mon[2] >= 0 && r.mon[3] <= r.W, `モンスターは画面の中でUIに隠れない（${r.mon}・操作欄 ${r.dockTop}）`);
     assert.deepEqual(r.broken, []); assert.deepEqual(r.filt, [], '正式モンスター画像に色のフィルタをかけない');
@@ -81,10 +81,11 @@ test('CH1-B2：サイコロ：START の1タップで無地の正式サイコロ�
   const p = await L.open(); const pg = p.page;
   await start(p);
   await pg.evaluate(() => { window.__nodes = []; new MutationObserver(() => { const n = document.querySelector('#bmonw') && document.querySelector('#bmonw').dataset.node; if (n && window.__nodes[window.__nodes.length - 1] !== n) window.__nodes.push(n); }).observe(document.querySelector('#chf'), { subtree: true, attributes: true, attributeFilter: ['data-node'] }); });
+  await pg.evaluate(() => { delete S.m.raise.field.nodeAssignments.f1_3; save(); board(); }); await idle(pg);   // 止まる f1_3 は何も起きない地点にする（配置の seed によっては疲れ回復のイベントになるため）
   await rollAs(pg, 3);
   await pg.waitForSelector('.chdz');
   const d = await pg.evaluate(() => ({ imgs: [...document.querySelectorAll('.chdz img')].map((i) => i.getAttribute('src')), locked: MMCHD.isLocked(), btn: [...document.querySelectorAll('.chstop')].every((b) => b.disabled), rest: document.querySelector('.chrest') && document.querySelector('.chrest').disabled }));
-  assert.deepEqual(d.imgs, ['./assets/fields/ch1a/dice/dice_blank.webp'], '回転中は無地の正式サイコロ1枚'); assert.equal(d.locked, true); assert.equal(d.btn, true); assert.equal(d.rest, true);
+  assert.equal(d.imgs.length, 1, '回転中は正式サイコロ1枚'); assert.match(d.imgs[0], /dice_(blank|stop_[1-6])\.webp$/, '回転中は正式の停止画像の面を切り替えて見せる'); assert.equal(d.locked, true); assert.equal(d.btn, true); assert.equal(d.rest, true);
   const t0 = await st(pg); await pg.evaluate(() => { chfRoll(); chfRest(); }); assert.deepEqual(await st(pg), t0, '演出中の押下は無視（ターン・疲れ・位置は変わらない）');
   await pg.waitForSelector('.chdz-stop.on'); assert.deepEqual(await pg.evaluate(() => [document.querySelector('.chdz-stop').getAttribute('src'), getComputedStyle(document.querySelector('.chdz-res')).display]), ['./assets/fields/ch1a/dice/dice_stop_3.webp', 'none'], '出目3 → 3が上の停止面（数字の輪は出さない）');
   await idle(pg);
@@ -106,29 +107,25 @@ test('CH1-B3：休む（1ターン・疲れ −30・移動なし）。疲れ100�
   assert.deepEqual(p.errors, []);
 });
 
-test('CH1-B4：分かれ道：橋ルート／森ルートを選ぶ（出目で勝手に決めない）。選んだ後は選ばなかった道の物を出さない', { skip: SKIP }, async () => {
+test('CH1-B4：1本道（橋／森の分岐は廃止。2026-10-01）：森の遺跡（05）の奥から出目のぶんそのまま天空の大橋（06）へ進み、分岐の選択は出ない', { skip: SKIP }, async () => {
   const p = await L.open(); const pg = p.page;
   await start(p);
-  await place(pg, 'f2_4'); await idle(pg);
-  await rollAs(pg, 3);
-  await pg.waitForSelector('.chroute');
-  assert.deepEqual(await pg.evaluate(() => [...document.querySelectorAll('.chroute b')].map((b) => b.textContent)), ['橋ルート', '森ルート']);
-  const s0 = await st(pg); assert.deepEqual([s0.node, s0.ph], ['f2_5', 'branch']);
-  await pg.waitForTimeout(500); assert.equal((await st(pg)).node, 'f2_5', '選ぶまで進まない');
-  await pg.click('.chroute.k-forest'); await idle(pg);
-  const s = await st(pg); assert.equal(s.node, 'b1', '残り2歩：森ルートの b0 → b1');
-  assert.equal(await pg.evaluate(() => S.m.raise.field.branch), 'forest');
-  assert.equal(await pg.evaluate(() => [...document.querySelectorAll('#chf .chf-obj')].filter((e) => e.dataset.id.startsWith('a') && !e.classList.contains('gone')).length), 0, '橋ルートの物は消える');
+  await place(pg, 'f5_4'); await idle(pg);
+  await rollAs(pg, 3); await idle(pg);
+  const s = await st(pg); assert.deepEqual([s.node, s.field], ['f6_1', 6], 'f5_5 → 背景の切り替え → f6_0 → f6_1');
+  assert.equal(await pg.evaluate(() => document.querySelectorAll('.chroute').length), 0, '分岐の選択は出ない'); assert.equal(await pg.evaluate(() => S.m.raise.field.branch), null);
+  assert.deepEqual(await pg.evaluate(() => [...document.querySelectorAll('.chf-bg')].map((i) => i.getAttribute('src'))), ['./assets/fields/ch1a/field/ch1_field_06.webp']);
   assert.deepEqual(p.errors, []);
 });
 
-test('CH1-B5：背景の切り替え：旅立ちの街道の奥から花の草原の手前へ歩いて入る（前の背景の DOM は残さない）', { skip: SKIP }, async () => {
+
+test('CH1-B5：背景の切り替え：旅立ちの草原の奥から花の丘の手前へ歩いて入る（前の背景の DOM は残さない）', { skip: SKIP }, async () => {
   const p = await L.open(); const pg = p.page;
   await start(p);
   await place(pg, 'f1_3'); await idle(pg);
   await rollAs(pg, 3); await idle(pg);
   const r = await pg.evaluate(() => ({ node: S.m.raise.node, bgs: [...document.querySelectorAll('.chf-bg')].map((i) => i.getAttribute('src')), cams: document.querySelectorAll('.chf-cam').length, fd: document.querySelector('#chfd').textContent }));
-  assert.equal(r.node, 'g1_0'); assert.deepEqual(r.bgs, ['./assets/fields/ch1a/road/02_flower_meadow.webp']); assert.equal(r.cams, 1); assert.equal(r.fd, '花の草原');
+  assert.equal(r.node, 'f2_0'); assert.deepEqual(r.bgs, ['./assets/fields/ch1a/field/ch1_field_02.webp']); assert.equal(r.cams, 1); assert.equal(r.fd, '花の丘');
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
 });
 
@@ -136,7 +133,7 @@ test('CH1-B6：バトル地点 → バトル → Chapterへ戻る：疲れ +5・
   const p = await L.open(); const pg = p.page;
   await start(p);
   const id = await pg.evaluate(() => { const g = MMCH.graphFor(S.m); return g.order.find((x) => g.nodes[x].kind === 'strong'); });
-  await place(pg, id, { fatigue: 30, turnsUsed: 12, branch: 'bridge', pend: { roll: 2, left: 0, stage: 'resolve' } });
+  await place(pg, id, { fatigue: 30, turnsUsed: 12, pend: { roll: 2, left: 0, stage: 'resolve' } });
   await pg.waitForSelector('.chbat'); await idle(pg);
   assert.match(await pg.evaluate(() => document.querySelector('.chbat h3').textContent), /強敵/);
   const before = await pg.evaluate(() => JSON.stringify(S.m.raise.field));
@@ -164,9 +161,9 @@ test('CH1-B7：再読み込み → 開始でも、同じ配置・同じ地点・
 test('CH1-B8：ゴール（大会会場）→ 公式ランク大会の選択 → 大会へ（大会では疲れを増やさない）', { skip: SKIP }, async () => {
   const p = await L.open(); const pg = p.page;
   await start(p);
-  await place(pg, 'f3_4', { fatigue: 60, turnsUsed: 20, branch: 'bridge' }); await idle(pg);
+  await place(pg, 'f10_4', { fatigue: 60, turnsUsed: 20 }); await idle(pg);
   await rollAs(pg, 3); await pg.waitForSelector('.chgoal .p9rank'); await idle(pg);
-  assert.deepEqual(await pg.evaluate(() => [S.m.raise.node, S.m.raise.goal, S.m.raise.turnsUsed]), ['f3_5', true, 21], '出目がゴールを超えてもゴールで止まる');
+  assert.deepEqual(await pg.evaluate(() => [S.m.raise.node, S.m.raise.goal, S.m.raise.turnsUsed]), ['f10_5', true, 21], '出目がゴールを超えてもゴールで止まる');
   const f0 = (await st(pg)).f;
   // 画面が出た直後（0.35秒）の押下は無視・2度押しの2回目は0.4秒以上あける作りなので、他の育成テストと同じ間隔で押す
   await pg.evaluate(() => { window.__clk = []; document.addEventListener('click', (e) => window.__clk.push([Math.round(performance.now()), e.target.className || e.target.tagName, e.target.closest('.p9rank') ? e.target.closest('.p9rank').dataset.a : '-', bBusy]), true); });
@@ -278,7 +275,7 @@ test('CH1-B12：背景の切り替え：フィールドの端からそのまま�
   await rollAs(pg, 2); await idle(pg);
   const rec = await stopRecording(pg);
   const r = await pg.evaluate(() => ({ node: S.m.raise.node, bgs: [...document.querySelectorAll('.chf-bg')].map((i) => i.getAttribute('src')), cams: document.querySelectorAll('.chf-cam').length, veils: document.querySelectorAll('.chf-veil').length, veilOn: window.__veil, fd: document.querySelector('#chfd').textContent }));
-  assert.equal(r.node, 'g1_0'); assert.deepEqual(r.bgs, ['./assets/fields/ch1a/road/02_flower_meadow.webp']); assert.equal(r.cams, 1); assert.equal(r.veils, 0, '暗転の幕は消える'); assert.ok(r.veilOn > 0, '短い暗転があった'); assert.equal(r.fd, '花の草原');
+  assert.equal(r.node, 'f2_0'); assert.deepEqual(r.bgs, ['./assets/fields/ch1a/field/ch1_field_02.webp']); assert.equal(r.cams, 1); assert.equal(r.veils, 0, '暗転の幕は消える'); assert.ok(r.veilOn > 0, '短い暗転があった'); assert.equal(r.fd, '花の丘');
   // 切り替えの前：進む向き（上）へ歩き続ける。切り替えの後：入口の手前（下）から入口へ歩いて入る
   const before = rec.filter((x) => x.node === 'f1_5' && /walk/.test(x.cls) && x.wy > 0), after = rec.filter((x) => x.node !== 'f1_4' && x.node !== 'f1_5' && /walk/.test(x.cls) && x.wy > 0);
   assert.ok(before.length >= 2 && before[before.length - 1].wy < before[0].wy - 5, `端まで来ても上へ歩き続ける（${before.length}フレーム・${before[0] && before[0].wy.toFixed(0)}→${before.length && before[before.length - 1].wy.toFixed(0)}）`);
@@ -286,24 +283,18 @@ test('CH1-B12：背景の切り替え：フィールドの端からそのまま�
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
 });
 
-test('CH1-B13：分岐：カメラが少し引いて（zoom 0.93）2つの道の入口のほうを見てから選択肢を出す。選ぶと選んだ道のほうへ寄ってから歩き出す。再読み込み後は今の地点を基準にカメラを合わせる', { skip: SKIP }, async () => {
+test('CH1-B13：再読み込み後は今の地点を基準にカメラを合わせる（カメラの状態は保存しない）。曲がった道（08 古代遺跡）でもモンスターは中央より少し下・画面の中', { skip: SKIP }, async () => {
   const p = await L.open(); const pg = p.page;
   await start(p);
-  await place(pg, 'f2_4'); await idle(pg);
-  await rollAs(pg, 3); await pg.waitForSelector('.chroute'); await pg.waitForTimeout(700);
-  const b = await pg.evaluate(() => MMCHV.state());
-  assert.ok(Math.abs(b.target.z - 0.93) < 0.001 && b.focus && b.focus.mix > 0, `分岐でカメラは少し引く（${b.target.z}・${JSON.stringify(b.focus)}）`);
-  await pg.click('.chroute.k-forest'); await pg.waitForTimeout(60);
-  const c = await pg.evaluate(() => MMCHV.state()); assert.ok(c.focus && c.target.z === 1, '選んだ道のほうへ寄る');
-  await idle(pg);
-  const d = await pg.evaluate(() => MMCHV.state()); assert.equal(d.focus, null); assert.equal((await st(pg)).node, 'b1');
-  // 再読み込み：カメラの状態は保存しない。今の地点からその場で合わせる（目標＝現在）
+  await place(pg, 'f8_1'); await idle(pg);
+  await rollAs(pg, 2); await idle(pg); assert.equal((await st(pg)).node, 'f8_3');
   await pg.reload(); await pg.waitForFunction(() => typeof MMP8 === 'object');
   await pg.click('.p15start'); await pg.waitForSelector('#chf .chf-bg'); await pg.waitForTimeout(400);
   const e = await pg.evaluate(() => { const s = MMCHV.state(), r = document.querySelector('#bmonw .mon img').getBoundingClientRect(), f = document.querySelector('#chf').getBoundingClientRect(); return { dx: Math.abs(s.cam.x - s.target.x), dy: Math.abs(s.cam.y - s.target.y), node: document.querySelector('#bmonw').dataset.node, y: (r.bottom - f.top) / f.height, inX: r.left >= 0 && r.right <= f.width }; });
-  assert.ok(e.dx < 0.5 && e.dy < 0.5, `再読み込み後はその場で合っている（${e.dx}・${e.dy}）`); assert.equal(e.node, 'b1'); assert.ok(e.y > 0.4 && e.y < 0.8 && e.inX, `モンスターは中央より少し下（${e.y.toFixed(2)}）`);
+  assert.ok(e.dx < 0.5 && e.dy < 0.5, `再読み込み後はその場で合っている（${e.dx}・${e.dy}）`); assert.equal(e.node, 'f8_3'); assert.ok(e.y > 0.4 && e.y < 0.8 && e.inX, `モンスターは中央より少し下（${e.y.toFixed(2)}）`);
   assert.deepEqual(p.errors, []);
 });
+
 
 test('CH1-B14：バトル地点：目印は無く、着いたら草むらが揺れて「！」→ 野生のモンスターの案内。移動・演出・結果の間は STOP・アイテム・休む・分岐を受け付けない', { skip: SKIP }, async () => {
   const p = await L.open(); const pg = p.page;
@@ -343,12 +334,12 @@ test('CH1-B15：1タップ：START を押すまでサイコロは画面に無い
   const look = () => pg.evaluate(() => [...document.querySelectorAll('.chwing')].map((w) => { const c = getComputedStyle(w); return { op: c.opacity, bg: c.backgroundColor, filter: c.filter, img: c.backgroundImage, border: c.borderWidth, shadow: c.boxShadow, deck: document.querySelector('.chdeck-bg').getAttribute('src') }; }));
   const during = await look(); assert.deepEqual(during.map((x) => [x.op, x.bg, x.filter]), [['1', 'rgba(0, 0, 0, 0)', 'none'], ['1', 'rgba(0, 0, 0, 0)', 'none'], ['1', 'rgba(0, 0, 0, 0)', 'none'], ['1', 'rgba(0, 0, 0, 0)', 'none']], 'サイコロ処理中も4コマンドは暗くならない（半透明の覆い・opacity・filter なし）');
   const wingLook0 = during; assert.match(sp.img, /deck_start\.webp$/, '操作欄は START の画像のまま（STOP の画像は使わない）'); assert.deepEqual(sp.wings, [true, true, true, true]); assert.deepEqual(sp.btn, [[true, '2']], '中央のボタンは押せない（移動中）');
-  assert.deepEqual(sp.imgs, ['./assets/fields/ch1a/dice/dice_blank.webp'], '回転中は無地の正式サイコロ1枚');
+  assert.equal(sp.imgs.length, 1); assert.match(sp.imgs[0], /dice_(blank|stop_[1-6])\.webp$/, '回転中は正式サイコロ1枚（面を切り替えて見せる）');
   assert.deepEqual([sp.pend.roll, sp.pend.stage, sp.saved.roll], [2, 'move', 2], '出目は START の時点で確定・保存（自動停止のタイミングで変わらない）');
   const t0 = await st(pg); await pg.evaluate(() => { chfRoll(); chfRoll(); chfRest(); }); assert.deepEqual(await st(pg), t0, '演出中の START・休むの連打は無視');
   await pg.waitForFunction(() => !!window.__res, null, { timeout: 15000 });
   const r = await pg.evaluate(() => window.__res);
-  assert.ok(Math.abs(r.a - 1) < 0.02 && Math.abs(r.b) < 0.02, `止まったサイコロは正式の角度（matrix ${r.a}, ${r.b}）`); assert.equal(r.src, './assets/fields/ch1a/dice/dice_stop_2.webp', '出目2 → 2が上の停止面'); assert.equal(r.roll, './assets/fields/ch1a/dice/dice_blank.webp'); assert.equal(r.ring, 'none'); assert.equal(r.phase, 'result');
+  assert.ok(Math.abs(r.a - 1) < 0.02 && Math.abs(r.b) < 0.02, `止まったサイコロは正式の角度（matrix ${r.a}, ${r.b}）`); assert.equal(r.src, './assets/fields/ch1a/dice/dice_stop_2.webp', '出目2 → 2が上の停止面'); assert.match(r.roll, /dice_stop_2\.webp$/, '着地の前から出目の面に落ち着いている'); assert.equal(r.ring, 'none'); assert.equal(r.phase, 'result');
   await idle(pg);
   const tm = await pg.evaluate(() => ({ spin: window.__faceAt - window.__t0, face: window.__goneAt - window.__faceAt, moveAfterGone: window.__moveAt - window.__goneAt, last: MMCHD.lastTiming(), dice: document.querySelectorAll('.chdz,.chdf').length, text: document.querySelector('#brollbtn').textContent.trim(), on: !document.querySelector('#brollbtn').disabled, busy: bBusy }));
   assert.ok(tm.spin >= 600 && tm.spin <= 1700, `出現〜停止面 ${tm.spin.toFixed(0)}ms（設計 約0.98秒＋クロスフェード。負荷で伸びることがある）`);
@@ -365,10 +356,10 @@ test('CH1-B15：1タップ：START を押すまでサイコロは画面に無い
   assert.deepEqual(p.errors, []);
 });
 
-test('CH1-B18：道の安全域：複数の背景（街道・遺跡・古代橋の中央・森の小川・大会会場への道）で、止まっているときも歩いている途中も、モンスターは道の中央線の安全域の中にいて、道の端・画面の外に出ない', { skip: SKIP }, async () => {
+test('CH1-B18：道の安全域：複数の背景（草原・森と清流・天空の大橋・古代遺跡の S字・大会地方・大会会場）で、止まっているときも歩いている途中も、モンスターは道の中央線の安全域の中にいて、道の端・画面の外に出ない', { skip: SKIP }, async () => {
   const p = await L.open(); const pg = p.page;
   await start(p);
-  const cases = [['f1_1', null], ['f2_1', null], ['a4_1', 'bridge'], ['b3_2', 'forest'], ['f3_1', 'bridge']];
+  const cases = [['f1_1', null], ['f3_1', null], ['f6_1', null], ['f8_1', null], ['f9_2', null], ['f10_1', null]];
   for (const [node, branch] of cases) {
     await place(pg, node, branch ? { branch } : {}); await idle(pg);
     const c0 = await monCheck(pg); assert.equal(c0.node, node);
@@ -381,7 +372,7 @@ test('CH1-B18：道の安全域：複数の背景（街道・遺跡・古代橋�
   }
   // 端に寄せた位置は安全域へ戻される（画面側の roadX）
   const fix = await pg.evaluate(() => { const st = MMCHV.state(), sc = MMCH.getConfig(1).fieldScenes.find((s) => s.id === st.field); const y = 0.5 * sc.h; return { in: MMCHV.roadX(0.02 * sc.w, y) / sc.w, out: MMCHV.roadX(0.98 * sc.w, y) / sc.w, road: MMCH.roadAt(sc, 0.5) }; });
-  assert.ok(fix.in >= fix.road.safeLeft && fix.out <= fix.road.safeRight && fix.in < 0.5 && fix.out > 0.5, `端の x は安全域へ（${JSON.stringify(fix)}）`);
+  assert.ok(fix.in >= fix.road.safeLeft && fix.out <= fix.road.safeRight && fix.in < fix.road.x && fix.out > fix.road.x, `端の x は安全域へ（${JSON.stringify(fix)}）`);
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
 });
 
@@ -428,7 +419,7 @@ test('CH1-B19：上部 HUD（Chapter・Turn・疲れ・所持金・メニュー�
   const prev = await pg.evaluate((id) => Object.keys(MMCH.graphFor(S.m).conn).find((k) => MMCH.graphFor(S.m).conn[k].includes(id)), statId);
   await place(pg, prev); await idle(pg); await rollAs(pg, 1); await idle(pg); await hud('停止地点（能力）の結果のあと');
   const strong = await pg.evaluate(() => { const g = MMCH.graphFor(S.m); return g.order.find((x) => g.nodes[x].kind === 'strong'); });
-  await place(pg, strong, { fatigue: 30, branch: 'bridge', pend: { roll: 2, left: 0, stage: 'resolve' } }); await pg.waitForSelector('.chbat'); await idle(pg);
+  await place(pg, strong, { fatigue: 30, pend: { roll: 2, left: 0, stage: 'resolve' } }); await pg.waitForSelector('.chbat'); await idle(pg);
   await pg.evaluate(() => { MMP8.beginBattle(S, S.m, { kind: 'practice', rank: 0 }); save(); MMP8.markBattleDone(S); save(); after('試合終了'); }); await pg.waitForSelector('#chf .chf-bg'); await idle(pg); await hud('バトルからの復帰後');
   await dirty(); await pg.reload(); await pg.waitForFunction(() => typeof MMP8 === 'object'); await pg.click('.p15start'); await pg.waitForSelector('#chf .chf-bg'); await idle(pg); await hud('再読み込み後');
   assert.deepEqual(p.errors, []);

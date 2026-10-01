@@ -20,13 +20,12 @@ function loadWithNodes(nodes) {
   for (const c of w.MMP9C.CHAPTERS) w.MMP7.registerChapterBoard(c.no, c.track, { provisional: false });
   return { P7: w.MMP7, P8: w.MMP8, CH: w.MMCH, w };
 }
-const L = (shared, bridge, forest, goal) => ({ shared, bridge, forest, goal });
+const K = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10'];
+const L = (n) => Object.fromEntries(K.map((k) => [k, n]));   // 2026-10-01：Chapter 1 は正式背景10枚の1本道。背景1枚あたりのマス数を同じにした候補
 export const CANDIDATES = [
-  { id: 'G', label: '共通5・橋5・森7・会場5（短め）', nodes: L(5, 5, 7, 5) },
-  { id: 'H', label: '共通6・橋5・森8・会場6', nodes: L(6, 5, 8, 6) },
-  { id: 'I', label: '共通6・橋6・森8・会場6（今の暫定候補）', nodes: L(6, 6, 8, 6) },
-  { id: 'J', label: '共通6・橋6・森9・会場6', nodes: L(6, 6, 9, 6) },
-  { id: 'K', label: '共通7・橋6・森9・会場7（長め）', nodes: L(7, 6, 9, 7) },
+  { id: 'P', label: '各5（49歩）', nodes: L(5) },
+  { id: 'Q', label: '各6（59歩・今の暫定候補）', nodes: L(6) },
+  { id: 'R', label: '各7（69歩）', nodes: L(7) },
 ];
 const pct = (xs, q) => { const a = [...xs].sort((x, y) => x - y); return a.length ? a[Math.min(a.length - 1, Math.floor(a.length * q))] : null; };
 const avg = (xs) => (xs.length ? +(xs.reduce((a, b) => a + b, 0) / xs.length).toFixed(1) : null);
@@ -67,20 +66,18 @@ export function evaluate(nodes, n = 1000, seed0 = 20261001) {
   const Lb = len.min, rng = (a, b) => [Math.round(Lb * a), Math.round(Lb * b)];
   cfg.layoutRules.counts = { stat: rng(0.2, 0.25), event: rng(0.11, 0.15), battle: rng(0.075, 0.11), treasure: rng(0.05, 0.075) };
   cfg.layoutRules.maxPerStat = Math.ceil(Lb * 0.25 / 6) + 1; cfg.layoutRules.maxBattlesFirst = [Math.min(16, Math.round(Lb * 0.2)), 1];
-  const out = { length: { bridge: g.routes[0].seq.length - 1, forest: g.routes[1].seq.length - 1, nodes: len.nodes }, routes: {}, rests: {} };
+  const out = { length: { steps: g.routes[0].seq.length - 1, nodes: len.nodes }, routes: {}, rests: {} };
   const many = (route, rests) => { const runs = []; for (let i = 0; i < n; i++) runs.push(runOnce(E, seed0 + i * 101, route, rests)); return summarize(runs); };
-  for (const [k, route] of [['橋（急ぐ）', 'bridge'], ['森（寄り道）', 'forest'], ['自由（ランダム）', null]]) out.routes[k] = many(route, 'auto');
-  for (const route of ['bridge', 'forest']) { out.rests[route] = {}; for (const k of [0, 1, 2, 3]) out.rests[route][k] = many(route, k); }
+  out.routes['1本道'] = many(null, 'auto');
+  out.rests.all = {}; for (const k of [0, 1, 2, 3]) out.rests.all[k] = many(null, k);
   return out;
 }
 if (process.argv[1] && process.argv[1].endsWith('chapter-balance.mjs')) {
   const n = +(process.argv[2] || 1000), only = process.argv[3];
   for (const c of CANDIDATES.filter((x) => !only || x.id === only)) {
     const r = evaluate(c.nodes, n);
-    console.log(`\n## 候補 ${c.id}：${c.label}　橋ルート ${r.length.bridge}マス／森ルート ${r.length.forest}マス（ノード ${r.length.nodes}）`);
-    console.log('  [ルート別・休むは疲れ86以上で]');
-    for (const [k, x] of Object.entries(r.routes)) console.log(`   ${k.padEnd(9)} 到達 ${(x.reach * 100).toFixed(1)}%  平均 ${x.avg}  中央値 ${x.median}  p10〜p90 ${x.p10}〜${x.p90}  休む平均 ${x.rests}（うち強制 ${x.forced}）  停止 能力${x.stops.stat}・イベント${x.stops.event}・バトル${x.stops.battle}・宝箱${x.stops.treasure}`);
-    console.log('  [休む回数を決めた場合（疲れ40以上の最初の k 回だけ休む。0回＝疲れ100で動けないときだけ）]');
-    for (const route of ['bridge', 'forest']) for (const k of [0, 1, 2, 3]) { const x = r.rests[route][k]; console.log(`   ${route === 'bridge' ? '橋' : '森'} 休む${k}回  到達 ${(x.reach * 100).toFixed(1)}%  平均 ${x.avg}  中央値 ${x.median}  p90 ${x.p90}  実際の休む平均 ${x.rests}（うち強制 ${x.forced}）`); }
+    console.log(`\n## 候補 ${c.id}：${c.label}　${r.length.steps}歩（ノード ${r.length.nodes}）`);
+    for (const [k, x] of Object.entries(r.routes)) console.log(`   ${k}  到達 ${(x.reach * 100).toFixed(1)}%  平均 ${x.avg}  中央値 ${x.median}  p10〜p90 ${x.p10}〜${x.p90}  休む平均 ${x.rests}  停止 能力${x.stops.stat}・イベント${x.stops.event}・バトル${x.stops.battle}・宝箱${x.stops.treasure}`);
+    for (const k of [0, 1, 2, 3]) { const x = r.rests.all[k]; console.log(`   休む${k}回  到達 ${(x.reach * 100).toFixed(1)}%  平均 ${x.avg}  中央値 ${x.median}  p90 ${x.p90}`); }
   }
 }

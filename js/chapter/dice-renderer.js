@@ -52,6 +52,22 @@
       { transform: `rotate(${dir * fin}deg)`, offset: 1 },
     ];
   }
+  /**
+   * 回転中の面（2026-10-01）：無地の宝石に見えないよう、正式の停止画像（resultSprites＝各出目が上の面）を回転に合わせて切り替える。
+   *  速く回る間は短い間隔、落ちながら長い間隔、着地（全体の 60%）の少し前からは出目の面のまま。出目・確率には触れない（見た目だけ）。
+   *  停止画像が全部そろっていないとき（C.spinFaces:false を含む）は、従来どおり rollingSprite のまま
+   */
+  function spinFaces(img, value, T) {
+    if (C.spinFaces === false) return;
+    const faces = []; for (let v = C.min; v <= C.max; v++) { const s = resultSprite(v); if (!s) return; faces.push(v); }
+    const sched = [], landAt = T * 0.5; let t = 0, k = 0, prev = value;
+    while (t < landAt) { const p = t / landAt, gap = 70 + 150 * p * p; let v; do { v = faces[(k++ * 5 + 3) % faces.length]; } while (v === prev && faces.length > 1); sched.push([t, v]); prev = v; t += gap; }
+    sched.push([landAt, value]);
+    // 先読み（preload）が終わった面だけに切り替える（読み込み途中の画像へ差し替えて通信を打ち切らない。無ければその回は飛ばす）
+    const ready = (src) => !!(cache && cache.some((im) => im.complete && im.naturalWidth > 0 && im.src.endsWith(src.replace(/^\.\//, ''))));
+    for (const [ms, v] of sched) setTimeout(() => { const src = resultSprite(v); if (img.isConnected && ready(src)) img.src = src; }, ms);
+    img.dataset.faces = String(sched.length);
+  }
   /** 見せ方だけ（出目は決まっている）。DOM・アニメーションが使えない環境では何もせず true */
   async function play(value, opts = {}) {
     if (!valid(value)) return false;
@@ -99,6 +115,7 @@
       } else if (!calm && mv.animate) {
         // 1タップ：START の位置から飛び上がって速く回る → 落ちながら減速 → 着地 → 小さく跳ねて止まる（自動。止める操作は無い）
         phase = 'auto'; ov.dataset.phase = 'auto';
+        spinFaces(img, value, T);   // 回転中も各面（1〜sides の停止画像）が一瞬ずつ見える。着地の前から出目の面に落ち着く
         const a1 = mv.animate([
           { transform: 'translate(-50%,-50%) translate(0px,0px) scale(.9)', opacity: 1, offset: 0, easing: 'cubic-bezier(.2,.6,.4,1)' },
           { transform: `translate(-50%,-50%) translate(${(lx * 0.45).toFixed(1)}px,${(ly - 70).toFixed(1)}px) scale(1.18)`, offset: 0.34, easing: 'cubic-bezier(.4,0,.8,.6)' },   // 飛び上がって速く回る
@@ -136,5 +153,5 @@
   /** 停止面が登録されていない出目（数字で出す出目）。正式な停止画像が届く前の確認用 */
   const missingSprites = () => { const out = []; for (let v = C.min; v <= C.max; v++) if (!resultSprite(v)) out.push(v); return out; };
   /** 直前の演出の実測（spinMs＝出現〜着地、faceMs＝停止面を見せた時間、totalMs＝消えるまで。テスト・報告用） */
-  root.MMCHD = Object.freeze({ configure, roll, rollDice, play, preload, resultSprite, missingSprites, spinFrames, requestStop, isLocked: () => locked, phase: () => phase, lastTiming: () => (lastTiming ? { ...lastTiming } : null) });
+  root.MMCHD = Object.freeze({ configure, roll, rollDice, play, preload, resultSprite, missingSprites, spinFrames, requestStop, isLocked: () => locked, phase: () => phase, lastTiming: () => (lastTiming ? { ...lastTiming } : null), spinFaces });
 })(typeof window !== 'undefined' ? window : globalThis);

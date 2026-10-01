@@ -23,7 +23,7 @@ async function rollAs(pg, v) {
   await pg.evaluate((v) => { window.__mr = Math.random; Math.random = () => ({ 1: 0.05, 2: 0.2, 3: 0.4, 4: 0.55, 5: 0.75, 6: 0.95 }[v]); }, v);
   await pg.click('#brollbtn'); await pg.evaluate(() => { Math.random = window.__mr; });
 }
-const place = (pg, node, extra = {}) => pg.evaluate(([node, extra]) => { const r = S.m.raise; r.node = node; r.pend = null; Object.assign(r, extra); r.field.branch = node.startsWith('a') ? 'bridge' : node.startsWith('b') ? 'forest' : r.field.branch; save(); board(); }, [node, extra]);
+const place = (pg, node, extra = {}) => pg.evaluate(([node, extra]) => { const r = S.m.raise; r.node = node; r.pend = null; Object.assign(r, extra);  save(); board(); }, [node, extra]);
 
 for (const size of [H.SIZES.base, H.SIZES.se]) {
   test(`JR-1（${size.join('×')}）：サイコロの停止面：内部の出目 1〜6 と、止まったサイコロの面（dice_stop_1〜6）が必ず一致する。回転中の絵から停止面へ切り替わり、数字の輪は出さない。出目は右上の小さな表示`, { skip: SKIP }, async () => {
@@ -44,14 +44,14 @@ for (const size of [H.SIZES.base, H.SIZES.se]) {
   });
 }
 
-test('JR-2：1地点＝石板1つ：1地点進むだけでも画面上ではっきり歩き（カメラと合わせて60px以上）、3地点は背景をまたいで歩く。背景の切り替えのあとも、モンスターは新しい背景の道の上（入口の地点）に立つ', { skip: SKIP }, async () => {
+test('JR-2：1地点進むだけでも画面上ではっきり歩き（カメラと合わせて40px以上）、3地点は背景をまたいで歩く。背景の切り替えのあとも、モンスターは新しい背景の道の上（入口の地点）に立つ', { skip: SKIP }, async () => {
   const p = await open(); const pg = p.page;
   await toField(pg);
   const pos = () => pg.evaluate(() => { const r = document.querySelector('#bmonw .mon img').getBoundingClientRect(), f = document.querySelector('#chf').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.bottom, w: f.width, h: f.height, node: S.m.raise.node, field: MMCHV.state().field, cam: MMCHV.state().cam.ty }; });
   const a = await pos(); await rollAs(pg, 1); await idle(pg); const b = await pos();
-  assert.equal(b.node, 'f1_1'); assert.ok(Math.abs(b.cam - a.cam) + Math.hypot(b.x - a.x, b.y - a.y) >= 60, `1地点＝手前の石板から次の石板へ（カメラ ${Math.abs(b.cam - a.cam).toFixed(0)}px・画面 ${Math.hypot(b.x - a.x, b.y - a.y).toFixed(0)}px）`);
+  assert.equal(b.node, 'f1_1'); assert.ok(Math.abs(b.cam - a.cam) + Math.hypot(b.x - a.x, b.y - a.y) >= 40, `1地点＝手前のマスから次のマスへ（2026-10-01：新しい背景は1枚に6マス＝間隔が旧構成より短い）（カメラ ${Math.abs(b.cam - a.cam).toFixed(0)}px・画面 ${Math.hypot(b.x - a.x, b.y - a.y).toFixed(0)}px）`);
   await place(pg, 'f1_3'); await idle(pg); await rollAs(pg, 3); await idle(pg); const c = await pos();
-  assert.deepEqual([c.node, c.field], ['g1_0', 2], '3地点：f1_4 → f1_5 → 背景の切り替え → g1_0');
+  assert.deepEqual([c.node, c.field], ['f2_0', 2], '3地点：f1_4 → f1_5 → 背景の切り替え → f2_0');
   assert.ok(c.y > c.h * 0.35 && c.y < c.h * 0.85 && c.x > 0 && c.x < c.w, `切り替え後も画面の中央より少し下（${c.y.toFixed(0)} / ${c.h}）`);
   const cams = await pg.evaluate(() => document.querySelectorAll('.chf-cam').length); assert.equal(cams, 1);
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
@@ -189,7 +189,7 @@ test('JR-9：Chapter に入った瞬間、旅路全体の俯瞰図（演出専�
   await pg.evaluate(() => { const m = mk(0); m.name = 'ソラ'; MMP7.ensureProg(m); S.m = m; save(); MMP8.depart(S, m, () => 0.37); save(); board(); });
   await pg.waitForSelector('.chintro.on', { timeout: 8000 }); await pg.waitForTimeout(400);
   const a = await pg.evaluate(() => { const im = document.querySelector('.chintro-img'), r = im.getBoundingClientRect(), f = document.querySelector('#chfw').getBoundingClientRect(); return { src: im.getAttribute('src'), cover: r.width >= f.width - 1 && r.height >= f.height - 1, title: document.querySelector('.chintro-title').textContent.replace(/\s+/g, ' '), titleOn: document.querySelector('.chintro-title').classList.contains('on'), busy: bBusy, start: document.querySelector('#brollbtn') && document.querySelector('#brollbtn').disabled, bgUnder: !!document.querySelector('#chf .chf-bg'), z: getComputedStyle(document.querySelector('.chintro')).zIndex }; });
-  assert.equal(a.src, './assets/fields/ch1a/intro/ch1_intro_overview_pattern1.webp', 'Pattern A の俯瞰図（プレイの背景の流用ではない）'); assert.ok(a.cover, '全画面'); assert.match(a.title, /CHAPTER 1.*はじまりの草原/); assert.equal(a.titleOn, true);
+  assert.equal(a.src, './assets/fields/ch1a/intro/ch1_intro_overview.webp', '正式な俯瞰図（プレイの背景の流用ではない）'); assert.ok(a.cover, '全画面'); assert.match(a.title, /CHAPTER 1.*はじまりの草原/); assert.equal(a.titleOn, true);
   assert.deepEqual([a.busy, a.start, a.bgUnder], [true, true, true], '演出中は操作できない。下には実プレイの画面（01）が出来ている');
   const t0 = await pg.evaluate(() => MMCHI.isPlaying()); assert.equal(t0, true);
   await pg.waitForFunction(() => !document.querySelector('.chintro'), null, { timeout: 15000 });
@@ -197,7 +197,7 @@ test('JR-9：Chapter に入った瞬間、旅路全体の俯瞰図（演出専�
   assert.ok(tf.length >= 10 && Math.max(...tf) > tf[0] * 1.5, `俯瞰（引き）からスタート地点へ寄る（倍率 ${tf[0] && tf[0].toFixed(3)} → 最大 ${Math.max(...tf).toFixed(3)}）`);
   await idle(pg);
   const b = await pg.evaluate(() => ({ bg: document.querySelector('#chf .chf-bg').getAttribute('src'), node: S.m.raise.node, start: document.querySelector('#brollbtn').textContent.trim(), on: !document.querySelector('#brollbtn').disabled, busy: bBusy }));
-  assert.deepEqual(b, { bg: './assets/fields/ch1a/road/01_journey_road.webp', node: 'f1_0', start: 'START', on: true, busy: false }, '俯瞰図のあとは 01 の実プレイ画面で START が押せる');
+  assert.deepEqual(b, { bg: './assets/fields/ch1a/field/ch1_field_01.webp', node: 'f1_0', start: 'START', on: true, busy: false }, '俯瞰図のあとは 01 の実プレイ画面で START が押せる');
   // 再読み込みでは出ない：「見た」はこの個体のこの Chapter の配置（m.raise.field.introSeen）に保存（セーブ全体の項目や sessionStorage では判定しない）
   assert.equal(await pg.evaluate(() => { const s = JSON.parse(localStorage.getItem('mr4v6')); return s.m.raise.field.introSeen === true && !Object.keys(s).some((k) => /intro/i.test(k)) && !Object.keys(s.m.raise).some((k) => /intro/i.test(k)); }), true, '見たかどうかは個体の Chapter の配置に持つ');
   await pg.reload(); await pg.waitForFunction(() => typeof MMP8 === 'object'); await pg.click('.p15start'); await pg.waitForSelector('#chf .chf-bg'); await pg.waitForTimeout(600);
@@ -227,7 +227,7 @@ test('JR-10：START の1タップだけで、サイコロは自動で止まっ�
 test('JR-11：30ターン目に大会会場へ着けなかった：大会なし・ランクは上がらない・Chapter は終了して能力と持ち物は保持 → ファーム → 次の Chapter へ進める', { skip: SKIP }, async () => {
   const p = await open(); const pg = p.page;
   await toField(pg);
-  await pg.evaluate(() => { const r = S.m.raise; r.node = 'g1_0'; r.turnsUsed = 29; r.fatigue = 10; S.m.po = 160; S.g = 999; S.inv.bag.push({ id: 'herb' }); save(); board(); }); await idle(pg);
+  await pg.evaluate(() => { const r = S.m.raise; r.node = 'f2_0'; r.turnsUsed = 29; r.fatigue = 10; S.m.po = 160; S.g = 999; S.inv.bag.push({ id: 'herb' }); save(); board(); }); await idle(pg);
   await rollAs(pg, 2); await pg.waitForSelector('.chsheet [onclick="p8EndChapter()"]', { timeout: 20000 });
   const a = await pg.evaluate(() => ({ ph: MMP8.boardPhase(S.m), text: document.querySelector('.chsheet').innerText.replace(/\s+/g, ' '), tour: S.m.raise.tour, canRoll: MMP8.canRoll(S.m), ranks: document.querySelectorAll('.p9rank').length }));
   assert.equal(a.ph, 'timeup'); assert.match(a.text, /公式大会には参加できません/); assert.equal(a.tour, null); assert.equal(a.canRoll, false); assert.equal(a.ranks, 0, '大会の選択は出ない');
@@ -278,6 +278,6 @@ test('JR-13：導入演出は「育成個体 × Chapter の初回」に1回：�
   await buy('ガウ'); await depart();
   const c = await st(); assert.deepEqual([c.intro, c.node, c.seen], [true, 'f1_0', true], '2体目：Chapter 1 の初突入で導入演出が再び出る'); assert.notEqual(c.uid, a.uid);
   await settle();
-  assert.deepEqual(await pg.evaluate(() => ({ on: !document.querySelector('#brollbtn').disabled, bg: document.querySelector('#chf .chf-bg').getAttribute('src') })), { on: true, bg: './assets/fields/ch1a/road/01_journey_road.webp' });
+  assert.deepEqual(await pg.evaluate(() => ({ on: !document.querySelector('#brollbtn').disabled, bg: document.querySelector('#chf .chf-bg').getAttribute('src') })), { on: true, bg: './assets/fields/ch1a/field/ch1_field_01.webp' });
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
 });

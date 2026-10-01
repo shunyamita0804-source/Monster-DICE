@@ -140,18 +140,18 @@
   }
   // ---------------------------------------------------------
   // 道の安全域（2026-10-01）：背景ごとの「モンスターが安全に歩ける道の中央線」と幅。fieldScenes[].road＝
-  //   { center:[[y, x]…]（中央線。y 昇順でなくてもよい）, vanish（消失点の y）, slope（手前へ広がる割合）, maxHalf（半幅の上限）, safe（半幅のうち使う割合。端には寄らない） }
+  //   { center:[[y, x]…] または [[y, x, 半幅]…]（中央線。y 昇順でなくてもよい。半幅を書けば幅も点ごと）, vanish（消失点の y）, slope（手前へ広がる割合）, maxHalf（半幅の上限）, safe（半幅のうち使う割合。端には寄らない） }
   //  road が無い背景は制限なし（旧 Chapter・合成 config はそのまま）。
   // ---------------------------------------------------------
   /** y での道：{ x（中央）, half（半幅）, left, right（絵の道の端）, safeLeft, safeRight（モンスターが入ってよい範囲） }。割合（0〜1） */
   function roadAt(scene, y) {
     const R = scene && scene.road; if (!R || !Array.isArray(R.center) || !R.center.length) return null;
-    const C = [...R.center].sort((a, b) => a[0] - b[0]);
-    let x = C[0][1];
-    if (y >= C[C.length - 1][0]) x = C[C.length - 1][1];
-    else for (let i = 1; i < C.length; i++) if (y <= C[i][0]) { const [y0, x0] = C[i - 1], [y1, x1] = C[i]; x = y1 === y0 ? x1 : x0 + (x1 - x0) * (y - y0) / (y1 - y0); break; }
+    // center の各点は [y, x] または [y, x, 半幅]（2026-10-01：半幅を書いた点があれば、幅は点どうしの補間＝曲がった細い道用。無ければ消失点のモデル）
+    const C = [...R.center].sort((a, b) => a[0] - b[0]), withHalf = C.every((c) => Number.isFinite(c[2]));
+    const lerp = (k) => { if (y <= C[0][0]) return C[0][k]; if (y >= C[C.length - 1][0]) return C[C.length - 1][k]; for (let i = 1; i < C.length; i++) if (y <= C[i][0]) { const a = C[i - 1], b = C[i]; return b[0] === a[0] ? b[k] : a[k] + (b[k] - a[k]) * (y - a[0]) / (b[0] - a[0]); } return C[C.length - 1][k]; };
+    const x = lerp(1);
     const slope = R.slope != null ? R.slope : 0.95, vanish = R.vanish != null ? R.vanish : 0.25, maxHalf = R.maxHalf != null ? R.maxHalf : 0.5, safe = R.safe != null ? R.safe : 0.7;
-    const half = Math.max(0.01, Math.min(maxHalf, slope * (y - vanish))), sh = half * safe;
+    const half = withHalf ? Math.max(0.005, lerp(2)) : Math.max(0.01, Math.min(maxHalf, slope * (y - vanish))), sh = half * safe;
     return { x: +x.toFixed(4), half: +half.toFixed(4), left: +(x - half).toFixed(4), right: +(x + half).toFixed(4), safeLeft: +(x - sh).toFixed(4), safeRight: +(x + sh).toFixed(4) };
   }
   /** x を道の安全域に収める（bodyHalf＝体の半幅（割合）。安全域が体より狭ければ中央）。{ x, clamped, road } */

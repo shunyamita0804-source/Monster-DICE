@@ -90,7 +90,9 @@
   function sideOffset(g, sc, id, side, gap) {
     const n = g.nodes[id], [tx, ty] = tangentAt(g, sc, id);
     let nx = -ty, ny = tx * 0.45;   // 直角方向（上下は奥行きのため浅く）
-    const k = Math.hypot(nx, ny) || 1; nx /= k; ny /= k;
+    let k = Math.hypot(nx, ny) || 1; nx /= k; ny /= k;
+    // 道が横へ曲がる所（急なカーブ）でも目印は道の横へ（真上・真下に置くとモンスターと重なる）。まっすぐな道（|nx|≒1）は変わらない
+    if (Math.abs(nx) < 0.9) { nx = (nx < 0 ? -1 : 1) * 0.9; ny = Math.sign(ny || 1) * Math.sqrt(1 - 0.81); }
     return { dx: nx * side * gap * n.d, dy: ny * side * gap * n.d * 0.6 };
   }
   /** 目印の足元の位置（背景の画素）と大きさ。node.lm（config.nodeOverrides）があればそれを優先 */
