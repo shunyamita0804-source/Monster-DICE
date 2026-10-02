@@ -43,7 +43,14 @@
   // index.html の let／const（S・save・msv・LAB）は window のプロパティにならないため、名前で直接読む
   const gS = () => { try { return S; } catch (e) { return undefined; } };
   const doSave = () => { try { save(); } catch (e) {} };
-  const monHtml = (m) => { try { return msv(m); } catch (e) { return ''; } };
+  // 歩行スプライトの種族は全コマを重ねて置き、見せるコマだけ切り替える（src を差し替えない＝再読み込み・ちらつきなし。停止の絵が先頭）
+  const monHtml = (m) => { const sp = spriteSetOf(m); if (sp) { const I = sp.idle || 0, ord = [I, ...sp.frames.map((_, i) => i).filter((i) => i !== I)]; return `<span class="chf-spr" data-f="${I + 1}" style="--sprh:${sp.h || 0.9}">${ord.map((i) => `<img src="${esc(sp.frames[i])}" data-i="${i}" class="${i === I ? 'on' : ''}" alt="" draggable="false" decoding="async">`).join('')}</span>`; } try { return msv(m); } catch (e) { return ''; } };
+  /** 歩行スプライト（config.monsterSprites[種族キー].walk＝{ frames:[…], fps, idle, h, noFlip }）。無い種族は従来の画像＋CSS の上下動 */
+  function spriteSetOf(m) {
+    const cfg = V.cfg || (root.MMCH && m ? MMCH.configFor(m) : null), P = root.MMP10M, key = P && m ? P.keyOf(m.sp) : null;
+    const set = cfg && cfg.monsterSprites && key ? cfg.monsterSprites[key] : null;
+    return set && set.walk && Array.isArray(set.walk.frames) && set.walk.frames.length ? set.walk : null;
+  }
   const labOf = (k) => { try { return LAB[k] || k; } catch (e) { return k; } };
 
   /** エンジンが担当する Chapter の進行中か */
@@ -175,7 +182,7 @@
     return `<div class="chf-cam" id="chfcam" style="width:${sc.w}px;height:${sc.h}px">${farBand}<img class="chf-bg" src="${sc.bg}" alt="${esc(sc.name)}" draggable="false">
       <div class="chf-pg chf-back" data-k="${PXk.back}">${back.map((L, i) => envHtml(cfg, sc, L, i)).join('')}</div>
       <div class="chf-pg chf-road" data-k="${PXk.road}">${tilesHtml(cfg, g, sc, m, ids)}${road.map((L, i) => envHtml(cfg, sc, L, i)).join('')}${objs}${fg}${dbg}
-        <div class="chf-mon" id="bmonw" style="--mh:${monH()}px"><i class="chf-msh"></i><div class="chf-flip"><div class="chf-lean"><div class="chf-bob"><div class="mon">${monHtml(m)}</div></div></div></div></div></div>
+        <div class="chf-mon${spriteSetOf(m) ? ' spr' : ''}" id="bmonw" style="--mh:${monH()}px"><i class="chf-msh"></i><div class="chf-flip"><div class="chf-lean"><div class="chf-bob"><div class="mon">${monHtml(m)}</div></div></div></div></div></div>
       <div class="chf-pg chf-front" data-k="${PXk.front}">${front.map((L, i) => envHtml(cfg, sc, L, i)).join('')}</div>
       <div class="chf-fx" id="chffx"></div></div>`;
   }
@@ -197,6 +204,7 @@
   function buildScene(m, fieldId) {
     const fv = $('#chf'); if (!fv) return;
     V.field = fieldId; V.sc = sceneOf(V.cfg, fieldId); V.seedTuft = (MMCH.fieldOf(m).layoutSeed + fieldId * 97) >>> 0;
+    SPR.set = spriteSetOf(m); SPR.frame = -1;   // 歩行スプライト（種族ごと。無ければ従来の画像）
     fv.querySelectorAll('.chf-cam,.chf-canopy,.chf-veil').forEach((e) => e.remove());   // 前のフィールドの DOM は捨てる（画像を積み上げない）
     fv.insertAdjacentHTML('afterbegin', sceneHtml(m, fieldId) + overlayHtml(V.cfg, m));
     V.par0 = null; V.focus = null;
@@ -273,8 +281,39 @@
       if (state === 'walk') el.style.setProperty('--spd', String(clamp((info && info.speed) || 1, 0.6, 1.4)));
     },
   };
+  /**
+   * 歩行スプライトの再生（config.monsterSprites。その場歩行の絵を順に切り替えるだけ。フィールド上の位置は moveAlong が動かす）。
+   *  walk の間だけ frames を 01→…→末尾→01 とループ（fps × 歩く速さ。歩き出し・止まる前の減速では少しゆっくり）。それ以外（idle／ready／land／rest）は止めて idle の絵（既定 01）
+   */
+  const SPR = { raf: 0, phase: 0, last: 0, speed: 1, frame: -1, set: null };
+  function sprShow(i) {
+    const box = $('#bmonw .chf-spr'); if (!box || !SPR.set) return;
+    if (box.dataset.f === String(i + 1)) { SPR.frame = i; return; }
+    const next = box.querySelector(`img[data-i="${i}"]`); if (!next || !next.complete) return;   // 読み込み前のコマには切り替えない（ちらつきを防ぐ）
+    const cur = box.querySelector('img.on'); if (cur) cur.classList.remove('on');
+    next.classList.add('on'); box.dataset.f = String(i + 1); SPR.frame = i;
+  }
+  function sprTick(now) {
+    const set = SPR.set; if (!set) { SPR.raf = 0; return; }
+    const dt = Math.min(100, now - (SPR.last || now)); SPR.last = now;
+    SPR.phase += (dt / 1000) * (set.fps || 12) * (0.55 + 0.45 * clamp(SPR.speed, 0, 1));
+    sprShow(Math.floor(SPR.phase) % set.frames.length);
+    SPR.raf = requestAnimationFrame(sprTick);
+  }
+  function sprStop() { if (SPR.raf) cancelAnimationFrame(SPR.raf); SPR.raf = 0; SPR.phase = 0; SPR.last = 0; if (SPR.set) sprShow(SPR.set.idle || 0); }
+  const SPRITE_ANIMATOR = {
+    id: 'sprite',
+    set(el, state, info) {
+      DEFAULT_ANIMATOR.set(el, state, info);   // 影・構え・着地の CSS はそのまま（上下動は絵に任せる＝.spr では止める）
+      if (!el || !el.querySelector('.chf-spr')) { sprStop(); return; }
+      if (state === 'walk' && !(info && info.calm)) {
+        SPR.speed = (info && info.speed != null) ? info.speed : 1;
+        if (!SPR.raf) { SPR.last = 0; SPR.raf = requestAnimationFrame(sprTick); }
+      } else if (SPR.raf || SPR.frame !== (SPR.set.idle || 0)) sprStop();
+    },
+  };
   function registerMonsterAnimator(a) { if (!a || typeof a.set !== 'function') throw new Error('MMCHV：animator は set(el, state, info) を持つこと'); V.animator = a; }
-  const anim = (state, info) => (V.animator || DEFAULT_ANIMATOR).set($('#bmonw'), state, info);
+  const anim = (state, info) => (V.animator || (SPR.set ? SPRITE_ANIMATOR : DEFAULT_ANIMATOR)).set($('#bmonw'), state, info);
   const monW = () => ((V.cfg && V.cfg.monster && V.cfg.monster.w) || monH() * 0.8);
   /** 道の安全域に収めた x（背景の画素）。体の半幅ぶん内側（fieldScenes[].road が無い背景はそのまま） */
   function roadX(x, y, d) { if (!V.sc || !V.sc.road || !MMCH.clampToRoad) return x; return MMCH.clampToRoad(V.sc, x / V.sc.w, y / V.sc.h, (monW() * d * 0.5) / V.sc.w).x * V.sc.w; }
@@ -289,10 +328,10 @@
   function face(dx) {
     if (Math.abs(dx) < 3) return;
     const right = dx > 0, flip = FACING === 'left' ? right : !right, fl = $('#bmonw .chf-flip');
-    if (fl) fl.classList.toggle('r', flip);
+    if (fl) fl.classList.toggle('r', SPR.set && SPR.set.noFlip ? false : flip);   // 後ろ姿の歩行スプライトは左右反転しない（尻尾の位置が入れ替わるため）
     V.facing = right ? 1 : -1;
   }
-  function lean(deg) { const l = $('#bmonw .chf-lean'); if (l) l.style.setProperty('--lean', `${deg.toFixed(2)}deg`); }
+  function lean(deg) { if (SPR.set && SPR.set.noFlip) deg = 0; const l = $('#bmonw .chf-lean'); if (l) l.style.setProperty('--lean', `${deg.toFixed(2)}deg`); }
   /** 今いる地点に置く（再読み込み・戻ってきたとき）。向きは次の地点のほう */
   function placeMon(id, instant) {
     const n = V.g && V.g.nodes[id]; if (!n || !$('#bmonw')) return;
@@ -340,7 +379,11 @@
     const n = V.g.nodes[id]; if (!n) return;
     const w = $('#bmonw'), cur = w && w.dataset.node;
     if (first && V.pickLean) { await wait(V.pickLean); V.pickLean = 0; V.focus = null; }   // 分岐で選んだ道のほうへ寄ってから（寄りを解いて歩き出す。選んだ道が次の背景でも同じ）
-    if (n.field !== V.field) { await switchField(m, n.field, id, cur); return; }
+    if (n.field !== V.field) {
+      await switchField(m, n.field, id, cur);
+      if (last) { V.moving = false; lean(0); anim('land'); camZoom('stop'); await wait(V.calm ? 20 : MO().landMs); anim('idle'); }   // 背景をまたいで止まるときも歩きを止めて停止の姿勢へ
+      return;
+    }
     const route = MMCH.routeBetween(V.g, cur, id).map((p) => [p[0] * V.sc.w, p[1] * V.sc.h]);
     const pts = route.length >= 2 ? route : [[V.monPos.x, V.monPos.y], [n.mx * V.sc.w, n.my * V.sc.h]];
     const M = MO(), C = CA();

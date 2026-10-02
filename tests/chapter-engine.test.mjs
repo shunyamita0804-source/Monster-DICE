@@ -577,3 +577,16 @@ test('CH2-04：分岐（06 の分かれ道 s6_2）：プレイヤーが A／B �
     assert.equal(seen.filter((id) => id.startsWith(pick)).length, pick === 'a' ? 6 : 8, 'A は 6地点・B は 8地点（合流の手前まで）');
   }
 });
+
+test('CH1-33：ソラモの後ろ向き歩行アニメ（2026-10-02 正式素材）：config.monsterSprites.solamo.walk＝8コマ（01→08）・停止の絵は 01・左右反転しない。素材は透過 WebP（同じ大きさ＝その場歩行）。画面は src を差し替えず、重ねたコマの表示を切り替える', async () => {
+  const { CH } = loadEngine(), cfg = CH.getConfig(1), W = cfg.monsterSprites.solamo.walk, D = './assets/monsters/solamo_walk_back/';
+  assert.deepEqual(W.frames, [1, 2, 3, 4, 5, 6, 7, 8].map((i) => `${D}solamo_walk_back_0${i}.webp`), '01→08 の順');
+  assert.deepEqual([W.idle, W.noFlip, W.fps], [0, true, 12], '停止は 01・後ろ姿は反転しない・12fps（歩く速さで 55〜100%）');
+  const sizes = W.frames.map((f) => { const b = readFileSync(path.join(ROOT, f)); assert.equal(b.toString('ascii', 0, 4) + b.toString('ascii', 8, 12), 'RIFFWEBP', f); assert.ok(b.includes(Buffer.from('ALPH')) || b.includes(Buffer.from('VP8L')), `${f}：透過あり`); return b.readUIntLE(24, 3) + 1 + 'x' + (b.readUIntLE(27, 3) + 1); });
+  assert.equal(new Set(sizes).size, 1, `8コマとも同じ大きさ（${sizes[0]}。共通の切り抜き＝コマごとのずれを足さない）`);
+  assert.equal(cfg.monsterSprites.gauru, undefined, 'ガウルなど素材の無い種族は従来の画像');
+  const FV = rd('js/chapter/field-view.js'), code = FV.split('\n').map((l) => l.replace(/\/\/.*$/, '')).join('\n');
+  assert.doesNotMatch(code, /\.chf-spr[^\n]*setAttribute\('src'/, 'コマの切り替えで src を差し替えない（再読み込み・ちらつきなし）');
+  assert.match(code, /if \(state === 'walk' && !\(info && info\.calm\)\)/, '歩いている間だけループ');
+  assert.match(code, /await switchField\(m, n\.field, id, cur\);\n\s+if \(last\) \{[^\n]*anim\('land'\)[^\n]*anim\('idle'\)/, '背景をまたいで止まるときも停止の姿勢へ');
+});

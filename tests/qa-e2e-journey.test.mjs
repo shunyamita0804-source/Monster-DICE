@@ -330,3 +330,26 @@ test('JR-14：マスUI（正式素材）：今の背景の種類のあるマス�
   await qg.waitForSelector('#chf .chf-bg'); assert.ok(await qg.evaluate(() => !!document.querySelector('.chf-tile.ph[data-id="w1_3"]')), 'デバッグでは通常マスに仮表示');
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
 });
+
+
+test('JR-15：ソラモの後ろ向き歩行（390×844）：止まっている間は 01、移動の間だけ 01→08 をループ（3マス連続でも途切れない・背景の切り替えをまたいでも続く）、着いたら 01 に戻る。見えるコマはいつも1枚。足元はマスの上、画面の中央下。素材の読み込みの失敗なし', { skip: SKIP }, async () => {
+  const p = await open(); const pg = p.page;
+  await toField(pg);
+  const st = () => pg.evaluate(() => { const b = document.querySelector('#bmonw .chf-spr'), on = b.querySelectorAll('img.on'), r = on[0].getBoundingClientRect(), w = document.querySelector('#bmonw'); return { f: b.dataset.f, n: on.length, walk: w.classList.contains('walk'), bottom: r.bottom, H: innerHeight, node: S.m.raise.node, flip: !!document.querySelector('#bmonw .chf-flip.r'), ok: [...b.querySelectorAll('img')].every((i) => i.complete && i.naturalWidth > 0) }; });
+  const s0 = await st(); assert.deepEqual([s0.f, s0.n, s0.walk, s0.ok], ['1', 1, false, true], '止まっている間は 01');
+  assert.ok(s0.bottom > s0.H * 0.55 && s0.bottom < s0.H * 0.75, `足元は画面の中央下（${Math.round(s0.bottom)}/${s0.H}）`);
+  async function walkSample(v) {
+    await rollAs(pg, v); const seen = []; let n1 = true, flip = false;
+    for (let i = 0; i < 120; i++) { const x = await st(); if (x.walk) seen.push(x.f); if (x.n !== 1) n1 = false; if (x.flip) flip = true; if (i > 20 && !(await pg.evaluate(() => bBusy))) break; await pg.waitForTimeout(40); }
+    await idle(pg); return { seen, n1, flip, end: await st() };
+  }
+  const a = await walkSample(3);
+  assert.equal(a.end.node, 'w1_3'); assert.ok(new Set(a.seen).size >= 6, `3マスの間に 8コマを順に見せる（${a.seen.join('')}）`); assert.ok(a.n1, '見えるコマはいつも1枚'); assert.equal(a.flip, false, '後ろ姿は左右反転しない');
+  const ch = a.seen.map(Number).filter((f, i, A) => i === 0 || f !== A[i - 1]), d = ch.slice(1).map((f, i) => (f - ch[i] + 8) % 8);
+  assert.ok(d.every((x) => x >= 1 && x <= 3), `コマは前へだけ進む（${ch.join('')}）`);
+  assert.deepEqual([a.end.f, a.end.walk], ['1', false], '着いたら 01');
+  // 背景 01 → 02 をまたいで止まる
+  const b = await walkSample(3);
+  assert.equal(b.end.node, 'w2_1'); assert.ok(new Set(b.seen).size >= 6); assert.deepEqual([b.end.f, b.end.walk, b.end.n], ['1', false, 1], '背景をまたいで止まっても 01');
+  assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
+});

@@ -103,7 +103,8 @@
     fieldScenes, paths, edges: {}, nodeOverrides: {},
     branches: [],
 
-    camera: { anchorY: 0.66, lookAhead: 0.08, followDelay: 110, zoom: { idle: 1, move: 0.985, stop: 1.015, branch: 0.93, focus: 1.02 } },
+    // anchorY 0.72（2026-10-02 歩行アニメ：0.66 → 0.72。ソラモを画面の中央下に置き、進む先の道を広く見せる）
+    camera: { anchorY: 0.72, lookAhead: 0.08, followDelay: 110, zoom: { idle: 1, move: 0.985, stop: 1.015, branch: 0.93, focus: 1.02 } },
     motion: { stepMs: 520, minMs: 380, maxMs: 760, baseLen: 170, terrain: { grass: { speed: 1 }, highland: { speed: 0.96 }, bridge: { speed: 1, fixed: true }, forest: { speed: 0.94 } } },
     parallax: { far: 0.95, back: 0.97, road: 1, front: 1.12, canopy: 0.6 },
 
@@ -189,6 +190,11 @@
     },
     battleMarkers: false,
     landmarkVisibility: { stat: 'arrive', event: 'arrive', treasure: 'arrive' },   // 宝箱はマスUIがあるので、止まったときに現れる
+    // ---- 歩行アニメ（2026-10-02 正式素材：ソラモの後ろ向き歩行 8カット。assets/monsters/solamo_walk_back/）。種族キーごと。無い種族は従来の画像＋CSS の上下動。
+    //  その場歩行の絵：移動の間だけ 01→08 をループ（fps × 歩く速さ）、止まったら idle（01）。後ろ姿なので左右反転・前傾はしない（noFlip） ----
+    monsterSprites: {
+      solamo: { walk: { frames: [1, 2, 3, 4, 5, 6, 7, 8].map((i) => `./assets/monsters/solamo_walk_back/solamo_walk_back_0${i}.webp`), fps: 12, idle: 0, h: 0.9, noFlip: true } },
+    },
     monster: { h: 180, w: 150 },   // w＝体の幅（道の安全域の計算に使う。画像の見た目の幅）
     landmarks, foreground, branchOverlays: {},
   };

@@ -1148,6 +1148,12 @@ button.mkc b{font-size:.9rem}button.mkc small{font-size:.66rem;color:#ffe9b0}
 .chf-lean{width:100%;height:100%;transform:rotate(var(--lean,0deg));transform-origin:50% 92%;transition:transform .12s linear}
 .chf-bob{width:100%;height:100%}
 .chf-mon .mon{width:100%;height:100%}
+/* 歩行スプライト（config.monsterSprites。その場歩行の絵を切り替えるだけ・位置は field-view が動かす）：足元を影の位置（箱の94%）にそろえる。上下動・前傾は絵に任せる */
+.chf-mon.spr .mon{position:relative}
+.chf-mon.spr .chf-spr{position:absolute;left:0;right:0;bottom:6%;height:calc(var(--sprh,.9) * 100%);pointer-events:none;user-select:none}
+.chf-mon.spr .chf-spr img{position:absolute;left:50%;bottom:0;height:100%;width:auto;max-width:none;transform:translateX(-50%);visibility:hidden;-webkit-user-drag:none}
+.chf-mon.spr .chf-spr img.on{visibility:visible}
+.chf-mon.spr.walk .chf-bob,.chf-mon.spr.walk .chf-msh{animation:none}
 .chf-mon.walk .chf-bob{animation:chfbob calc(.26s / var(--spd,1)) ease-in-out infinite}
 @keyframes chfbob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5%)}}
 .chf-mon.walk .chf-msh{animation:chfshb calc(.26s / var(--spd,1)) ease-in-out infinite}
