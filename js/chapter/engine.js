@@ -9,10 +9,12 @@
 //    再読み込み・セーブ／ロード・バトルからの復帰では引き直さない
 //  ・疲れ（0〜100）：出目で +3/+5/+7、ボード上のバトル後 +5、休む −30（1ターン消費・移動なし）、100 ならサイコロ不可
 //  ・能力地点（2026-10-02 正式）：そのモンスターの該当能力の成長適性 A〜E（MMP10M.growthGain＝A+7・B+6・C+5・D+4・E+3）をそのまま加算。ランダム幅・失敗・大成功なし（疲れは影響しない）
-//  ・野生バトル（2026-10-02 正式）：野生のマスに止まったとき rules.rareWildRate（10%）でレア野生（fx.rare）。強敵（strong）とは別。レアの敵データ・専用演出は未登録
+//  ・バトルのマス（2026-10-02 正式）：野生（wild）・レアモンスター（rare）・ライバル（rival）。レアモンスターマスは配置を作るとき（Chapter開始時に1回）に
+//    バトルの候補マスごとに layoutRules.rareBattleRate（Chapter 1＝10%）で決め、配置と一緒に保存する（止まってから抽選はしない）。レアの敵データ・専用演出は未登録
+//    （今のバトルは野生と同じ）。strong（強敵）は Chapter 2 の固定の骨格だけに残る旧来の種類（Chapter 1 では使わない）
 //  ・イベント：イベントの種類（handler）ごとの処理を EVENT_HANDLERS に登録する（巨大な switch にしない）
 //  ・宝箱：tier（normal / rare / special）と開封まで。中身は未決（config.treasurePool.contents が null のあいだは何も渡さない）
-//  ・バトル：type（wild / strong / rival）。絵の asset key は type ごとに分ける（同じ絵でも差し替えは config だけ）
+//  ・バトル：type（wild / rare / rival。旧来の strong は Chapter 2 の固定の骨格だけ）。絵の asset key は type ごとに分ける（同じ絵でも差し替えは config だけ）
 //  ・次期Chapter（リアル巨大ボード方式）の土台（2026-09-30）：rules.diceSides（面の数）・rules.onTimeUp（ターン切れ→大会）・forceStop（強制停止）・
 //    special（Chapter固有の固定イベント）・onPass（通過は効果なし）・turnInfo・NODE_TYPES（正式名）・companionReaction（フィナの一言の差し込み口）。
 //    総マス数・背景の枚数は config から決まる（コードに固定しない）
@@ -29,7 +31,7 @@
   const STATS = fz(['li', 'po', 'in', 'hi', 'ev', 'de']);                  // 正式6能力
   const SPECIAL = fz(['stat', 'event', 'battle', 'treasure']);             // 特殊地点の種類
   const TIERS = fz(['normal', 'rare', 'special']);
-  const BATTLE_TYPES = fz(['wild', 'strong', 'rival']);
+  const BATTLE_TYPES = fz(['wild', 'rare', 'strong', 'rival']);
 
   // ---------------------------------------------------------
   // 既定のルール（config で上書きできる。正式仕様の値）
@@ -40,7 +42,6 @@
     onTimeUp: 'end',              // ターンを使い切った時：'end'＝大会なしで Chapter 終了（現行）／'tournament'＝最後のターンの停止処理のあと大会へ（次期Chapter）
     dice: fz({ min: 1, max: 3 }),
     fatigueRules: fz({ max: 100, roll: fz({ 1: 3, 2: 5, 3: 7 }), battle: 5, rest: 30, carry: 50 }),
-    rareWildRate: 0.1,            // 野生のマスに止まったときのレア野生の確率（通常 90%・レア 10%）
     fatigueItems: fz({ small: fz({ amount: 10 }), medium: fz({ amount: 30 }), large: fz({ full: true }) }),
   });
 
@@ -318,7 +319,9 @@
       Object.assign(assign[id], { tier: e.tier, ev: e.id }, e.recovery ? { recovery: true } : {});
     });
     for (const id of g.order) if (assign[id] && assign[id].t === 'treasure') assign[id].tier = pickWeighted(TIERS.map((t) => ({ t, weight: ((cfg.treasurePool || {}).tierWeights || {})[t] || 0 })), r).t;
-    for (const id of g.order) if (assign[id] && assign[id].t === 'battle') assign[id].bt = 'wild';
+    // バトル：候補マスごとに layoutRules.rareBattleRate の確率でレアモンスターマス（rare）、それ以外は野生（wild）。率が無い config は乱数を使わない（配置の乱数列は従来どおり）
+    const rareRate = Number(L.rareBattleRate) || 0;
+    for (const id of g.order) if (assign[id] && assign[id].t === 'battle') assign[id].bt = rareRate > 0 && r() < rareRate ? 'rare' : 'wild';
     // 固定の強敵・ライバル
     for (const id of g.order) { const k = g.nodes[id].kind; if (k === 'strong' || k === 'rival') assign[id] = { t: 'battle', bt: k, fixed: true }; }
     return assign;
@@ -360,6 +363,14 @@
     r.fatigue = clampFatigue(r.fatigue);
     if (r.field != null && !validField(r.field)) r.field = null;
     if (r.field) for (const k of ['consumedEvents', 'openedTreasures', 'clearedStats']) if (!Array.isArray(r.field[k])) r.field[k] = [];
+    // 互換：強敵（strong）を使わなくなった Chapter（Chapter 1。config.battleTypes に strong が無い）の古い配置の strong は野生のマスとして扱う（バトルの中身は同じ）
+    const cfg = r.field && getConfig(r.field.chapterId, r.field.patternId);
+    if (cfg && !(cfg.battleTypes || {}).strong) {
+      for (const a of Object.values(r.field.nodeAssignments)) if (a.t === 'battle' && a.bt === 'strong') { a.bt = 'wild'; delete a.fixed; }
+      if (isObj(r.pend) && isObj(r.pend.fx) && r.pend.fx.battleType === 'strong') r.pend.fx.battleType = 'wild';
+    }
+    // 互換：旧仕様（止まってから10%で抽選したレア野生）の pend.fx.rare は使わない
+    if (isObj(r.pend) && isObj(r.pend.fx) && 'rare' in r.pend.fx) delete r.pend.fx.rare;
     return m;
   }
   /** 停止地点の種類（配置の割り当て。無ければ骨格の種類。固定の強敵・ライバル・Chapter固有イベント（special）は骨格から） */
@@ -372,12 +383,12 @@
     return { t: k === 'goal' ? 'goal' : k === 'start' ? 'start' : 'normal' };
   }
   // ---- マス種別の正式名（内部の割り当て {t, k, bt, ...} との対応）。新しい名前を乱立させず、既存の t／k／bt をそのまま使う ----
-  //  stat_life…stat_toughness＝{t:'stat', k}、event、wild／strong／rival＝{t:'battle', bt}、treasure、rest＝疲れ回復イベント（{t:'event', recovery:true}）、special＝Chapter固有の固定イベント
+  //  stat_life…stat_toughness＝{t:'stat', k}、event、wild／rare／strong／rival＝{t:'battle', bt}、treasure、rest＝疲れ回復イベント（{t:'event', recovery:true}）、special＝Chapter固有の固定イベント
   const NODE_TYPES = fz({
     stat_life: fz({ t: 'stat', k: 'li' }), stat_power: fz({ t: 'stat', k: 'po' }), stat_intelligence: fz({ t: 'stat', k: 'in' }),
     stat_accuracy: fz({ t: 'stat', k: 'hi' }), stat_evasion: fz({ t: 'stat', k: 'ev' }), stat_toughness: fz({ t: 'stat', k: 'de' }),
     event: fz({ t: 'event' }), rest: fz({ t: 'event', recovery: true }), treasure: fz({ t: 'treasure' }),
-    wild: fz({ t: 'battle', bt: 'wild' }), strong: fz({ t: 'battle', bt: 'strong' }), rival: fz({ t: 'battle', bt: 'rival' }),
+    wild: fz({ t: 'battle', bt: 'wild' }), rare: fz({ t: 'battle', bt: 'rare' }), strong: fz({ t: 'battle', bt: 'strong' }), rival: fz({ t: 'battle', bt: 'rival' }),
     special: fz({ t: 'special' }), start: fz({ t: 'start' }), goal: fz({ t: 'goal' }), normal: fz({ t: 'normal' }),
   });
   const STAT_NAMES = fz({ li: 'stat_life', po: 'stat_power', in: 'stat_intelligence', hi: 'stat_accuracy', ev: 'stat_evasion', de: 'stat_toughness' });
@@ -435,8 +446,6 @@
   // ---------------------------------------------------------
   /** 能力地点の上昇量：成長適性（MMP10M.growthOf／growthGain。表は monsters.js の GROWTH_GAIN の1か所）。{ grade, amount } */
   function statGain(m, k) { const P = root.MMP10M; if (!P || !P.growthGain) throw new Error('MMCH：成長適性（js/phase10/monsters.js）が読み込まれていません'); return { grade: P.growthOf(m, k), amount: P.growthGain(m, k) }; }
-  /** 今のバトル待ち（pend.fx）がレア野生か。レアの敵データ・専用の遭遇演出が登録されたら、ここを見て分岐する（今は判定と記録だけ） */
-  const isRareEncounter = (m) => !!(m && m.raise && m.raise.pend && m.raise.pend.fx && m.raise.pend.fx.rare === true);
   const STAT_MAX = 999;
   function addStat(m, k, n) { const b = m[k] || 0; m[k] = clamp(b + n, 0, STAT_MAX); return m[k] - b; }
 
@@ -463,10 +472,10 @@
 
   // ---------------------------------------------------------
   // 同行者（フィナ）のリアクション：停止地点の結果 → 短い一言。会話の本文は config.companion.reactions（未登録なら null＝何も出さない）
-  //  reactions: { gold:[...], stat_up:[...], stat_great:[...], stat_fail:[...], treasure:[...], wild:[...], strong:[...], rival:[...], tired:[...], recovered:[...], goal_near:[...], time_last:[...] }
+  //  reactions: { gold:[...], stat_up:[...], stat_great:[...], stat_fail:[...], treasure:[...], wild:[...], rare:[...], strong:[...], rival:[...], tired:[...], recovered:[...], goal_near:[...], time_last:[...] }
   //  各要素は共通会話の行（{ npc, expression, text }）か文字列。画面側は MMCHV.registerReactionRenderer で表示の仕方を差し込む（既定は表示しない）
   // ---------------------------------------------------------
-  const REACTION_KEYS = fz(['gold', 'stat_up', 'stat_great', 'stat_fail', 'treasure', 'wild', 'strong', 'rival', 'tired', 'recovered', 'goal_near', 'time_last']);
+  const REACTION_KEYS = fz(['gold', 'stat_up', 'stat_great', 'stat_fail', 'treasure', 'wild', 'rare', 'strong', 'rival', 'tired', 'recovered', 'goal_near', 'time_last']);
   /** 停止地点の結果（resolve の戻り値）から、リアクションの種類を決める */
   function reactionKeyOf(fx, m) {
     if (!isObj(fx)) return null;
@@ -519,10 +528,8 @@
       return { kind: 'treasure', tier: a.tier, reward };
     }
     if (a.t === 'battle') {
-      const bt = a.bt || 'wild', fx = { kind: 'battle', battleType: bt };
-      // レア野生：通常の野生のマスに止まった瞬間に抽選（盤面にレア専用のマスは置かない）。強敵・ライバルは対象外
-      if (bt === 'wild' && rnd() < rulesOf(cfg).rareWildRate) fx.rare = true;
-      return fx;
+      // マスの種類（配置のときに決めた wild／rare／rival）をそのまま渡す。止まったときの抽選はしない
+      return { kind: 'battle', battleType: BATTLE_TYPES.includes(a.bt) ? a.bt : 'wild' };
     }
     if (a.t === 'special') {   // Chapter固有の固定イベント（config.specials[nodeId]＝{ handler, params, text, once }）。once（既定）なら1回だけ
       if (a.once !== false && f.consumedEvents.includes(id)) return { kind: 'none', note: 'consumed' };
@@ -584,6 +591,6 @@
     buildGraph, trackOf, alongPersp, smoothCurve, measure, pointAt, routeBetween, depthOf, roadAt, clampToRoad, stepsToMerge, sceneNodes, nextFields, sceneOrder, routeLengths,
     validateLayout, generateLayout, initRun, fieldOf, configFor, graphFor, validField, sanitize, typeAt, nodeTypeName, assignOfType, turnInfo,
     fatigue, addFatigue, rollFatigue, canRoll, recover, carryFatigue, registerFatigueItem, fatigueItemEffect, useFatigueItem,
-    statGain, isRareEncounter, registerEventHandler, registerPassHandler, onPass, resolve, reactionKeyOf, registerReactionResolver, companionReaction, DRIVER, attach, rulesOf });
+    statGain, registerEventHandler, registerPassHandler, onPass, resolve, reactionKeyOf, registerReactionResolver, companionReaction, DRIVER, attach, rulesOf });
   attach();
 })(typeof window !== 'undefined' ? window : globalThis);

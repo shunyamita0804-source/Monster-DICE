@@ -54,12 +54,12 @@
       growth: G6('D', 'B', 'B', 'C', 'B', 'E'),
       image: fz({ src: './assets/monsters/gauru.png', w: 720, h: 647 }), }),
     fz({ id: 2, key: 'nobiton', name: 'ノビトン', en: 'NOBITON', kind: '獣種', personality: null, formerNames: fz([]),
-      base: fz({ li: 120, po: 80, in: 80, hi: 80, ev: 50, de: 100 }), speed: 2, uniqueSkill: 'unique_nobiton', growth: null, tagline: 'のびる・たれる・くっつく。不思議な鼻（くち）を持つ、マイペースなモンスター。',
+      base: fz({ li: 120, po: 80, in: 80, hi: 80, ev: 50, de: 100 }), speed: 2, uniqueSkill: 'unique_nobiton', growth: G6('B', 'D', 'D', 'D', 'E', 'C'), tagline: 'のびる・たれる・くっつく。不思議な鼻（くち）を持つ、マイペースなモンスター。',
       image: fz({ src: './assets/monsters/nobiton.png', w: 720, h: 658 }),
       silhouette: fz({ src: './assets/monsters/nobiton_silhouette.png', w: 720, h: 658 }) }),
     // ジオル：英字表記は正式仕様に未記載のため null（推測で決めない）
     fz({ id: 3, key: 'jiol', name: 'ジオル', en: null, kind: '岩石種', personality: 'のんびり・おとなしい', formerNames: fz([]),
-      base: fz({ li: 90, po: 120, in: 40, hi: 50, ev: 30, de: 150 }), speed: 1, uniqueSkill: 'unique_jiol', tagline: null, growth: null,   // 成長適性は未登録（正式データ待ち）
+      base: fz({ li: 90, po: 120, in: 40, hi: 50, ev: 30, de: 150 }), speed: 1, uniqueSkill: 'unique_jiol', tagline: null, growth: G6('C', 'A', 'E', 'D', 'E', 'A'),   // 成長適性（2026-10-02 正式）
       image: fz({ src: './assets/monsters/jiol.png', w: 720, h: 531 }), }),
   ]);
   // ---- 種族IDの役割（二重管理にしない：1つの種族レコードが両方を持つ） ----
@@ -78,8 +78,8 @@
   const baseOf = (sp) => { const s = byId(sp); return s ? { ...s.base } : null; };
   const skillOf = (sp) => { const s = byId(sp); return s ? UNIQUE_SKILLS[s.uniqueSkill] : null; };
   /** プレイヤー向けの固有スキル説明（内部専用の数値は出さない。説明文自体が内部数値を含まない） */
-  // 成長適性：個体に正式な適性（m.growth＝合体個体など将来用）があればそれ、無ければ種族の適性。種族の適性が未登録（ノビトン・ジオル）なら
-  //  GROWTH_UNREGISTERED（C＝【暫定】。正式データが届いたら SPECIES の growth を書くだけ）。上昇量は GROWTH_GAIN の1か所だけで決める
+  // 成長適性：個体に正式な適性（m.growth＝合体個体など将来用）があればそれ、無ければ種族の適性。種族の適性が未登録（今は4原種とも登録済み）なら
+  //  GROWTH_UNREGISTERED（C＝【暫定】。新しい種族は SPECIES の growth を書くだけ）。上昇量は GROWTH_GAIN の1か所だけで決める
   const GROWTH_UNREGISTERED = 'C';
   const isGrade = (g) => GROWTH_GRADES.includes(g);
   function growthOf(m, key) {

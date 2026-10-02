@@ -308,9 +308,9 @@ test('JR-13：大会会場への到着：14 の最後のマス（ゴール）に
 test('JR-14：マスUI（正式素材）：今の背景の種類のあるマスに正式素材が、ノードの座標どおりに出る（通常マスは何も置かない）。仮表示（点線・「仮 #番号」）は通常プレイに出ない（?chdebug=1 だけ）。旧目印（石碑・宝箱など）は出さない。能力マスに止まると適性の値（ガウルの丈夫さ E＝+3）', { skip: SKIP }, async () => {
   const p = await open(); const pg = p.page;
   await H.newGame(pg, 'テスト');
-  await pg.evaluate(() => { const m = mk(1); m.name = 'ガル'; MMP7.ensureProg(m); S.m = m; save(); MMP8.depart(S, m, () => 0.37); const a = S.m.raise.field.nodeAssignments; a.w1_1 = { t: 'stat', k: 'de' }; a.w1_2 = { t: 'treasure', tier: 'normal' }; delete a.w1_3; save(); board(); });
+  await pg.evaluate(() => { const m = mk(1); m.name = 'ガル'; MMP7.ensureProg(m); S.m = m; save(); MMP8.depart(S, m, () => 0.37); const a = S.m.raise.field.nodeAssignments; a.w1_1 = { t: 'stat', k: 'de' }; a.w1_2 = { t: 'treasure', tier: 'normal' }; delete a.w1_3; a.w1_4 = { t: 'treasure', tier: 'rare' }; save(); board(); });
   await pg.waitForSelector('#chf .chf-bg'); await idle(pg);
-  const read = () => pg.evaluate(() => { const g = MMCH.graphFor(S.m), sc = MMCH.getConfig(1).fieldScenes[0]; return { objs: document.querySelectorAll('#chf .chf-obj').length, tiles: [...document.querySelectorAll('#chf .chf-tile')].map((t) => { const n = g.nodes[t.dataset.id], im = t.querySelector('img'); return { id: t.dataset.id, ph: t.classList.contains('ph'), text: t.textContent, img: im && im.getAttribute('src'), ok: !!(im && im.complete && im.naturalWidth), dx: Math.abs(parseFloat(t.style.left) - n.mx * sc.w), dy: Math.abs(parseFloat(t.style.top) - n.my * sc.h), type: t.dataset.type }; }) }; });
+  const read = () => pg.evaluate(() => { const g = MMCH.graphFor(S.m), sc = MMCH.getConfig(1).fieldScenes[0]; return { objs: document.querySelectorAll('#chf .chf-obj:not(.hid)').length, tiles: [...document.querySelectorAll('#chf .chf-tile')].map((t) => { const n = g.nodes[t.dataset.id], im = t.querySelector('img'); return { id: t.dataset.id, ph: t.classList.contains('ph'), text: t.textContent, img: im && im.getAttribute('src'), ok: !!(im && im.complete && im.naturalWidth), dx: Math.abs(parseFloat(t.style.left) - n.mx * sc.w), dy: Math.abs(parseFloat(t.style.top) - n.my * sc.h), type: t.dataset.type }; }) }; });
   const a = await read();
   assert.equal(a.objs, 0, '旧目印は出さない'); assert.ok(a.tiles.every((t) => !t.ph && !/仮/.test(t.text) && t.ok && t.dx < 0.5 && t.dy < 0.5), `正式素材がノードの座標に：${JSON.stringify(a.tiles)}`);
   const by = Object.fromEntries(a.tiles.map((t) => [t.id, t.img]));
@@ -318,6 +318,12 @@ test('JR-14：マスUI（正式素材）：今の背景の種類のあるマス�
   // 能力マス（丈夫さ）に止まる：ガウル（丈夫さ E）は +3、マスが光り、使ったマスは少し暗く
   const de0 = await pg.evaluate(() => S.m.de); await rollAs(pg, 1); await pg.waitForSelector('.chpop'); const pop = await pg.evaluate(() => [document.querySelector('.chpop').textContent, document.querySelector('.chf-tile[data-id="w1_1"]').classList.contains('hit')]); await idle(pg);
   assert.deepEqual([pop[1], await pg.evaluate(() => S.m.de) - de0, await pg.evaluate(() => document.querySelector('.chf-tile[data-id="w1_1"]').classList.contains('used'))], [true, 3, true]); assert.match(pop[0], /丈夫さ \+3/);
+  // 宝箱（normal）：止まると通常の宝箱が現れて開く。rare は宝箱の絵を出さない（従来の表示＝マスUIだけ）
+  const chest = () => pg.evaluate(() => { const o = document.querySelector('#chf .chf-obj[data-id="w1_2"]'), im = o && o.querySelector('img'); return o ? { hid: o.classList.contains('hid'), src: im.getAttribute('src'), ok: im.naturalWidth > 0 } : null; });
+  assert.deepEqual(await chest(), { hid: true, src: './assets/fields/ch1a/tiles/chest_normal_closed.webp', ok: true }, '止まるまでは見えない');
+  assert.equal(await pg.evaluate(() => !!document.querySelector('#chf .chf-obj[data-id="w1_4"]')), false, 'rare の宝箱は正式の宝箱の絵を流用しない');
+  await rollAs(pg, 1); await pg.waitForSelector('.chpop'); await idle(pg);
+  assert.deepEqual(await chest(), { hid: false, src: './assets/fields/ch1a/tiles/chest_normal_open.webp', ok: true }, '止まると現れて開く');
   // デバッグ（?chdebug=1）だけ仮表示が出る（素材の無い通常マスの位置確認用）
   const q = await open({ query: '?chdebug=1' }); const qg = q.page; await H.newGame(qg, 'テスト');
   await qg.evaluate(() => { const m = mk(0); m.name = 'ソラ'; MMP7.ensureProg(m); S.m = m; save(); MMP8.depart(S, m, () => 0.37); delete S.m.raise.field.nodeAssignments.w1_3; save(); board(); });

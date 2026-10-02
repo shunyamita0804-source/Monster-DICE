@@ -63,7 +63,10 @@
   function lookOf(cfg, a) {
     const L = cfg.nodeLook || {};
     if (!a) return null;
-    if (cfg.tileUI && cfg.tileUI.replacesLandmarks && ['stat', 'event', 'treasure'].includes(a.t)) return null;   // マスUIが種別を示す：同じ意味の旧目印は出さない
+    if (cfg.tileUI && cfg.tileUI.replacesLandmarks && ['stat', 'event', 'treasure'].includes(a.t)) {   // マスUIが種別を示す：同じ意味の旧目印は出さない
+      const ch = a.t === 'treasure' && (cfg.tileUI.chests || {})[a.tier || 'normal'];   // 宝箱の正式素材（tier ごと。無い tier は出さない）
+      return ch ? { ...L.treasure, w: ch.w || (L.treasure || {}).w, key: ch.closed, openKey: ch.open, cls: `tr tr-${a.tier || 'normal'} chest` } : null;
+    }
     if (a.t === 'stat') return { ...L.stat, key: `stat_${a.k}`, cls: `st st-${a.k}` };
     if (a.t === 'event') {
       const e = (cfg.eventPool || []).find((x) => x.id === a.ev), tier = a.tier || 'normal';
@@ -136,14 +139,14 @@
     const w = look.w ? look.w * d : 0, size = look.w ? `width:${w.toFixed(1)}px;` : `height:${(look.h * d).toFixed(1)}px;`;
     const far = clamp((1 - n.d) * 1.1, 0, 0.7);   // 遠景ほど淡く小さく（透明度だけ。色は変えない）
     const vis = ((cfg.landmarkVisibility || {})[a.t] || 'always') === 'arrive' && !used;   // 着いたときに初めて現れる目印
-    return `<div class="chf-obj ${look.cls}${used ? ' used' : ''}${vis ? ' hid' : ''}" data-id="${id}" data-t="${a.t}" data-side="${P.side}" style="left:${P.x.toFixed(1)}px;top:${P.y.toFixed(1)}px;z-index:${Math.round(P.y)};--sink:${look.sink || 0};--d:${d};opacity:${(P.opacity * (1 - far * 0.35)).toFixed(2)}"><i class="chf-osh"></i><i class="chf-glow"></i><img src="${asset(cfg, look.key)}" alt="" draggable="false" decoding="async" style="${size}">${look.tuft === false ? '' : tuftHtml(cfg, w || (look.h * d) * 0.7)}</div>`;
+    return `<div class="chf-obj ${look.cls}${used ? ' used' : ''}${vis ? ' hid' : ''}" data-id="${id}" data-t="${a.t}" data-side="${P.side}" style="left:${P.x.toFixed(1)}px;top:${P.y.toFixed(1)}px;z-index:${Math.round(P.y)};--sink:${look.sink || 0};--d:${d};opacity:${(P.opacity * (1 - far * 0.35)).toFixed(2)}"><i class="chf-osh"></i><i class="chf-glow"></i><img src="${asset(cfg, used && look.openKey ? look.openKey : look.key)}"${look.openKey ? ` data-open="${esc(asset(cfg, look.openKey) || '')}"` : ''} alt="" draggable="false" decoding="async" style="${size}">${look.tuft === false ? '' : tuftHtml(cfg, w || (look.h * d) * 0.7)}</div>`;
   }
   // ---------------------------------------------------------
   // マスUI（config.tileUI）：各マスの座標（ノードの止まる位置 mx・my）に、マス種別ごとの表示素材を地面に置く。
   //  正式素材は未着：sprites に種類ごとの画像を書けば差し替わる（座標はそのまま。探す順＝種別名 → まとめた種類 → normal）。
   //  素材が無い種類は、位置確認専用の仮表示（点線の楕円と「仮 #通し番号」。正式デザインではない）。tileUI が無い config は何も出さない
   // ---------------------------------------------------------
-  const TILE_GROUP = { stat_life: 'stat', stat_power: 'stat', stat_intelligence: 'stat', stat_accuracy: 'stat', stat_evasion: 'stat', stat_toughness: 'stat', rest: 'event', wild: 'battle', strong: 'battle', rival: 'battle' };
+  const TILE_GROUP = { stat_life: 'stat', stat_power: 'stat', stat_intelligence: 'stat', stat_accuracy: 'stat', stat_evasion: 'stat', stat_toughness: 'stat', rest: 'event', wild: 'battle', rare: 'battle', strong: 'battle', rival: 'battle' };
   function tileKeyOf(m, id) { const a = MMCH.typeAt(m, id); return MMCH.nodeTypeName(a); }
   function tileSpriteOf(cfg, key) { const T = (cfg && cfg.tileUI && cfg.tileUI.sprites) || {}; return T[key] || T[TILE_GROUP[key]] || T.normal || null; }
   function tilesHtml(cfg, g, sc, m, ids) {
@@ -676,7 +679,7 @@
         const P = objPoint(obj);
         if (P) camFocus(P, fx.kind === 'treasure' ? 0.45 : 0.36, CA().zoom.focus);   // 物のほうへ少し寄る（大きくズームしない）
         if (obj && obj.classList.contains('hid')) { obj.classList.remove('hid'); await wait(V.calm ? 0 : 240); }   // 道端の物が現れる（発見）
-        if (obj) { obj.classList.add('hit'); if (fx.kind === 'treasure') { await wait(V.calm ? 0 : 180); obj.classList.add('open'); } }
+        if (obj) { obj.classList.add('hit'); if (fx.kind === 'treasure') { await wait(V.calm ? 0 : 180); const im = obj.querySelector('img[data-open]'); if (im && im.dataset.open) im.src = im.dataset.open; obj.classList.add('open'); } }   // 正式の宝箱は開いた絵へ
         setMsg(T ? T.t : '');
         await popup(T ? T.h : '', T ? T.c : '', fx.kind === 'chstat' ? 850 : 1300);
         if (obj) { obj.classList.remove('hit'); obj.classList.add('used'); }

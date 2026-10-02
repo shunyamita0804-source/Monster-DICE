@@ -53,7 +53,7 @@ for (const size of [H.SIZES.base, H.SIZES.se]) {
       const filt = []; for (let e = document.querySelector('#bmonw .mon img'); e && e !== document.body; e = e.parentElement) { const f = getComputedStyle(e).filter; if (f && f !== 'none' && !/^drop-shadow/.test(f)) filt.push(e.className); }
       return { sh: document.documentElement.scrollHeight, H: innerHeight, sw: document.documentElement.scrollWidth, W: innerWidth, cams: document.querySelectorAll('.chf-cam').length, bgs: [...document.querySelectorAll('.chf-bg')].map((i) => i.getAttribute('src')),
         dbg: document.querySelectorAll('.chf-dbg,.p9n,.p13n,svg line,svg path.p9ln').length, mon: [mon.top, mon.bottom, mon.left, mon.right], dockTop: dock.top, hudBottom: hud.bottom, broken, filt,
-        objs: document.querySelectorAll('#chf .chf-obj').length, objsWant: 0, tiles: document.querySelectorAll('#chf .chf-tile:not(.ph)').length, ph: document.querySelectorAll('#chf .chf-tile.ph').length, tilesWant: (() => { const g = MMCH.graphFor(S.m), f = MMCHV.state().field; return g.order.filter((id) => g.nodes[id].field === f && MMCHV.tileSpriteOf(MMCH.configFor(S.m), MMCHV.tileKeyOf(S.m, id))).length; })(), env: [...document.querySelectorAll('#chf .chf-env')].map((e) => e.dataset.asset), text: document.querySelector('#chf-ui').innerText,
+        objs: document.querySelectorAll('#chf .chf-obj:not(.hid)').length, objsWant: 0, tiles: document.querySelectorAll('#chf .chf-tile:not(.ph)').length, ph: document.querySelectorAll('#chf .chf-tile.ph').length, tilesWant: (() => { const g = MMCH.graphFor(S.m), f = MMCHV.state().field; return g.order.filter((id) => g.nodes[id].field === f && MMCHV.tileSpriteOf(MMCH.configFor(S.m), MMCHV.tileKeyOf(S.m, id))).length; })(), env: [...document.querySelectorAll('#chf .chf-env')].map((e) => e.dataset.asset), text: document.querySelector('#chf-ui').innerText,
         battleObjs: document.querySelectorAll('#chf .chf-obj[data-t="battle"]').length, fg: document.querySelectorAll('#chf .chf-fg').length, layers: ['.chf-far', '.chf-bg', '.chf-back', '.chf-road', '.chf-front', '.chf-fx'].map((c) => !!document.querySelector('#chf ' + c)),
         stop: (() => { const b = document.querySelector('#brollbtn'), r = b.getBoundingClientRect(); return { w: r.width, h: r.height, radius: getComputedStyle(b).borderRadius, text: b.textContent.trim() }; })(),
         deckImg: (() => { const i = document.querySelector('.chdeck-bg'); return i && i.complete && i.naturalWidth > 0 ? i.getAttribute('src') : null; })(),
@@ -132,10 +132,11 @@ test('CH1-B5：背景の切り替え：旅立ちの小道（01）の奥から木
 test('CH1-B6：バトル地点 → バトル → Chapterへ戻る：疲れ +5・同じ地点・同じ配置・次のターン（フィールド・分岐を失わない）', { skip: SKIP }, async () => {
   const p = await L.open(); const pg = p.page;
   await start(p);
-  const id = await pg.evaluate(() => { const g = MMCH.graphFor(S.m); return g.order.find((x) => g.nodes[x].kind === 'strong'); });
+  // レアモンスターマス（2026-10-02。配置のときに決まる。バトルの中身は野生と同じ【暫定】）
+  const id = await pg.evaluate(() => { const g = MMCH.graphFor(S.m), a = S.m.raise.field.nodeAssignments, x = g.order.find((x) => a[x] && a[x].t === 'battle' && !a[x].fixed); a[x].bt = 'rare'; save(); return x; });
   await place(pg, id, { fatigue: 30, turnsUsed: 12, pend: { roll: 2, left: 0, stage: 'resolve' } });
   await pg.waitForSelector('.chbat'); await idle(pg);
-  assert.match(await pg.evaluate(() => document.querySelector('.chbat h3').textContent), /強敵/);
+  assert.match(await pg.evaluate(() => document.querySelector('.chbat h3').textContent), /レアモンスター/);
   const before = await pg.evaluate(() => JSON.stringify(S.m.raise.field));
   await pg.evaluate(() => { MMP8.beginBattle(S, S.m, { kind: 'practice', rank: 0 }); save(); MMP8.markBattleDone(S); save(); after('試合終了'); });
   await pg.waitForSelector('#chf .chf-bg'); await idle(pg);
@@ -250,7 +251,7 @@ test('CH1-B11：正式マスUI（2026-10-02）：マスは止まる位置（ノ�
     await place(pg, id); await idle(pg);
     const r = await pg.evaluate((id) => {
       const t = document.querySelector(`#chf .chf-tile[data-id="${id}"]`), ti = t.getBoundingClientRect(), mi = document.querySelector('#bmonw .mon img').getBoundingClientRect();
-      return { objs: document.querySelectorAll('#chf .chf-obj').length, cx: Math.abs((ti.left + ti.right) / 2 - (mi.left + mi.right) / 2), feet: mi.bottom - ti.top, th: ti.height, tw: ti.width, mw: mi.width, hit: t.classList.contains('hit'), ok: t.querySelector('img').naturalWidth > 0 };
+      return { objs: document.querySelectorAll('#chf .chf-obj:not(.hid)').length, cx: Math.abs((ti.left + ti.right) / 2 - (mi.left + mi.right) / 2), feet: mi.bottom - ti.top, th: ti.height, tw: ti.width, mw: mi.width, hit: t.classList.contains('hit'), ok: t.querySelector('img').naturalWidth > 0 };
     }, id);
     assert.equal(r.objs, 0, '旧目印は無い'); assert.ok(r.ok && !r.hit, `${id}：正式素材・普段は光らない`);
     assert.ok(r.cx < r.tw * 0.12 && r.feet > 0 && r.feet < r.th * 1.2, `${id}：モンスターはマスの上（中心のずれ ${r.cx.toFixed(0)}px・足元 ${r.feet.toFixed(0)}/${r.th.toFixed(0)}px）`);
@@ -415,7 +416,7 @@ test('CH1-B19：上部 HUD（Chapter・Turn・疲れ・所持金・メニュー�
   const statId = await pg.evaluate(() => { const g = MMCH.graphFor(S.m), a = S.m.raise.field.nodeAssignments; return g.order.find((x) => a[x] && a[x].t === 'stat'); });
   const prev = await pg.evaluate((id) => Object.keys(MMCH.graphFor(S.m).conn).find((k) => MMCH.graphFor(S.m).conn[k].includes(id)), statId);
   await place(pg, prev); await idle(pg); await rollAs(pg, 1); await idle(pg); await hud('停止地点（能力）の結果のあと');
-  const strong = await pg.evaluate(() => { const g = MMCH.graphFor(S.m); return g.order.find((x) => g.nodes[x].kind === 'strong'); });
+  const strong = await pg.evaluate(() => { const g = MMCH.graphFor(S.m), a = S.m.raise.field.nodeAssignments; return g.order.find((x) => a[x] && a[x].t === 'battle' && !a[x].fixed); });
   await place(pg, strong, { fatigue: 30, pend: { roll: 2, left: 0, stage: 'resolve' } }); await pg.waitForSelector('.chbat'); await idle(pg);
   await pg.evaluate(() => { MMP8.beginBattle(S, S.m, { kind: 'practice', rank: 0 }); save(); MMP8.markBattleDone(S); save(); after('試合終了'); }); await pg.waitForSelector('#chf .chf-bg'); await idle(pg); await hud('バトルからの復帰後');
   await dirty(); await pg.reload(); await pg.waitForFunction(() => typeof MMP8 === 'object'); await pg.click('.p15start'); await pg.waitForSelector('#chf .chf-bg'); await idle(pg); await hud('再読み込み後');

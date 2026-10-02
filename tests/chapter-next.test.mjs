@@ -233,9 +233,10 @@ test('NX-09：固定＋可変：骨格（start・branch・merge・rival・specia
   m.raise.pend = { roll: 1, left: 0, stage: 'resolve' }; assert.equal(E.P8.resolveLanding(E.S, m, lcg(1)).fx.kind, 'none', '2回目は起きない');
 });
 
-test('NX-10：マス種別の正式名：stat_life…stat_toughness・event・rest・treasure・wild・strong・rival・special（既存の t／k／bt との対応。新しい名前を乱立させない）', () => {
+test('NX-10：マス種別の正式名：stat_life…stat_toughness・event・rest・treasure・wild・rare・strong・rival・special（既存の t／k／bt との対応。新しい名前を乱立させない）', () => {
   const { CH } = loadEngine();
-  assert.deepEqual(Object.keys(CH.NODE_TYPES), ['stat_life', 'stat_power', 'stat_intelligence', 'stat_accuracy', 'stat_evasion', 'stat_toughness', 'event', 'rest', 'treasure', 'wild', 'strong', 'rival', 'special', 'start', 'goal', 'normal']);
+  assert.deepEqual(Object.keys(CH.NODE_TYPES), ['stat_life', 'stat_power', 'stat_intelligence', 'stat_accuracy', 'stat_evasion', 'stat_toughness', 'event', 'rest', 'treasure', 'wild', 'rare', 'strong', 'rival', 'special', 'start', 'goal', 'normal']);
+  assert.deepEqual(CH.assignOfType('rare'), { t: 'battle', bt: 'rare' }); assert.equal(CH.nodeTypeName({ t: 'battle', bt: 'rare' }), 'rare');   // レアモンスターマス（2026-10-02。strong は Chapter 2 の固定の骨格だけ）
   assert.deepEqual(CH.assignOfType('stat_power'), { t: 'stat', k: 'po' }); assert.deepEqual(CH.assignOfType('rival'), { t: 'battle', bt: 'rival' }); assert.deepEqual(CH.assignOfType('rest'), { t: 'event', recovery: true }); assert.equal(CH.assignOfType('nope'), null);
   assert.equal(CH.nodeTypeName({ t: 'stat', k: 'li' }), 'stat_life'); assert.equal(CH.nodeTypeName({ t: 'battle', bt: 'strong' }), 'strong'); assert.equal(CH.nodeTypeName({ t: 'event', ev: 'shade', recovery: true }), 'rest'); assert.equal(CH.nodeTypeName({ t: 'event', ev: 'coin' }), 'event'); assert.equal(CH.nodeTypeName(null), 'normal');
   // Chapter 1 の配置を正式名で数えられる（内部の割り当ては変わらない）
@@ -290,7 +291,7 @@ test('NX-14：サイコロの演出（MMCHD）：面の数は configure({ sides 
 
 test('NX-15：同行者（フィナ）のリアクションの差し込み口：停止地点の結果 → key → config.companion.reactions の行。未登録なら null（何も出さない）。画面は registerReactionRenderer で差し替える', () => {
   const E = onNext(); const { CH, m } = E;
-  assert.deepEqual([...CH.REACTION_KEYS], ['gold', 'stat_up', 'stat_great', 'stat_fail', 'treasure', 'wild', 'strong', 'rival', 'tired', 'recovered', 'goal_near', 'time_last']);
+  assert.deepEqual([...CH.REACTION_KEYS], ['gold', 'stat_up', 'stat_great', 'stat_fail', 'treasure', 'wild', 'rare', 'strong', 'rival', 'tired', 'recovered', 'goal_near', 'time_last']);
   assert.deepEqual([{ kind: 'gold' }, { kind: 'chstat', outcome: 'ok' }, { kind: 'chstat', outcome: 'great' }, { kind: 'chstat', outcome: 'fail' }, { kind: 'treasure' }, { kind: 'battle', battleType: 'wild' }, { kind: 'battle', battleType: 'rival' }, { kind: 'fatigue' }, { kind: 'none' }].map((fx) => CH.reactionKeyOf(fx)),
     ['gold', 'stat_up', 'stat_great', 'stat_fail', 'treasure', 'wild', 'rival', 'recovered', null]);
   assert.deepEqual(CH.companionReaction(m, { kind: 'gold', amount: 50 }, { rnd: () => 0 }), { key: 'gold', npc: 'fina', expression: 'normal', text: 'やった、お金だ！' });

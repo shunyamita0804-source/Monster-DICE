@@ -19,7 +19,7 @@
 | field/ch1_bg_06.webp | 大樹の森 | 3 | |
 | field/ch1_bg_07.webp | 深い森の小道 | 3 | |
 | field/ch1_bg_08.webp | 水道橋の見える道 | 4 | |
-| field/ch1_bg_09.webp | 天空の大橋 | 6 | 強敵 w9_3 |
+| field/ch1_bg_09.webp | 天空の大橋 | 6 | （旧：強敵 w9_3。2026-10-02 に廃止＝通常の候補マス） |
 | field/ch1_bg_10.webp | 風の丘 | 5 | |
 | field/ch1_bg_11.webp | 古塔の遺跡 | 5 | |
 | field/ch1_bg_12.webp | 遺跡の高台 | 4 | |

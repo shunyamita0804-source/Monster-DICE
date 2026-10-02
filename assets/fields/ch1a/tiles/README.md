@@ -13,7 +13,7 @@
 
 明るい背景・暗い背景の両方で、市松模様の残り・縁のにじみがないことを目で確認した。
 
-## 使い方（js/chapter/configs/ch1a.js の tileUI.sprites・assets.rare_wild）
+## 使い方（js/chapter/configs/ch1a.js の tileUI.sprites・tileUI.chests）
 
 | ファイル | 元ファイル | 用途（マス種別） |
 |---|---|---|
@@ -23,17 +23,20 @@
 | tile_stat_accuracy.webp | board_node_stat_accuracy.jpeg | 命中（stat_accuracy） |
 | tile_stat_evasion.webp | board_node_stat_evasion.jpeg | 回避（stat_evasion） |
 | tile_stat_toughness.webp | board_node_stat_toughness.jpeg | 丈夫さ（stat_toughness） |
-| tile_wild_battle.webp | board_node_wild_battle.jpeg | 野生（wild）。強敵（strong）も今はこの素材【要確認】 |
+| tile_wild_battle.webp | board_node_wild_battle.jpeg | 野生モンスターマス（wild。赤い爪） |
 | tile_treasure.webp | board_node_treasure.jpeg | 宝（treasure） |
 | tile_rest.webp | board_node_rest.jpeg | 休憩（rest＝疲れ回復のイベント） |
 | tile_rival.webp | board_node_rival.jpeg | ライバル（rival） |
 | tile_event.webp | board_node_event.jpeg | ？イベント（event） |
 | tile_chapter_goal.webp | 05_goal_and_treasure/board_node_chapter_goal.jpeg | ゴール（goal＝大会会場の門前） |
-| tile_strong_enemy.webp | board_node_strong_enemy.jpeg | レア野生（10%）の素材として登録だけ（assets.rare_wild。盤面には出さない）【要確認：ZIP の目録では「強敵マス」】 |
+| tile_rare_monster.webp | board_node_strong_enemy.jpeg | レアモンスターマス（rare。深紅。2026-10-02 に tile_strong_enemy.webp から改名。強敵マスは正式のマスではない） |
+| chest_normal_closed.webp・chest_normal_open.webp | 05_goal_and_treasure/treasure_normal_closed／open.jpeg | 宝箱 normal（止まったとき現れて開く。tileUI.chests） |
+| chest_rainbow_closed.webp・chest_rainbow_open.webp | treasure_rainbow_closed／open.jpeg | 宝箱 special（虹色）。rare は従来の表示（マスUIだけ）で、この素材を流用しない |
+
+宝箱の4枚は長辺 384px。treasure_rainbow_closed は市松模様ではなく白地だったため、外周から白地をたどって切り抜いた。
 
 ## 使っていない ZIP の素材（このフォルダには入れていない。ユーザーの ZIP に元がある）
 
 - 02_branching（分岐・合流・左右ゲート）：Chapter 1 は1本道のため
 - 03_board_effects（宝箱取得・能力UPフレーム・大成功・残りターン警告・遭遇）：「実装方法・最終採用は未確定」の候補。大成功は今の仕様に無い
 - 04_progression_gate_candidates（A／B）：正式採用が未決定
-- 05_goal_and_treasure の宝箱4枚（通常／虹色 × 閉／開）：今の宝箱の段階（normal・rare・special の3段階）と明確に対応しないため

@@ -18,6 +18,8 @@ const fixed = (...vals) => { let i = 0; return () => vals[Math.min(i++, vals.len
 const DIE = { 1: 0.05, 2: 0.2, 3: 0.4, 4: 0.55, 5: 0.75, 6: 0.95 };   // MMP7.rollDie(6, rnd)=1+floor(rnd*6)（Chapter 1 は 6面）
 const DIE3 = { 1: 0.1, 2: 0.5, 3: 0.9 };   // MMP7.rollDie(3, rnd)（Chapter 2 は 1〜3。2026-10-01 夜）
 function mon(P7, P8, S) { const m = P8.initIndividual(S, { sp: 0, name: 'テスト', age: 0, span: 30, h: 0, rk: 0, fa: 0, st: 0, last: null, li: 100, po: 100, in: 100, hi: 100, ev: 100, de: 100, sk: [0, 1, 2, 3], eq: [0, 1, 2, 3, -1, -1] }); P7.ensureProg(m); return m; }
+/** 画面側（field-view.js）の純粋な関数（lookOf・tileKeyOf・tileSpriteOf）を Node で読む。DOM は使わない */
+function loadView() { const E = loadEngine(); new Function('window', 'MMCH', rd('js/chapter/field-view.js'))(E.w, E.w.MMCH); return E.w.MMCHV; }
 function onCh1(seed = 7) { const E = loadEngine(); const { P7, P8 } = E; const S = P8.newSave(); S.m = mon(P7, P8, S); assert.equal(P8.depart(S, S.m, lcg(seed)).ok, true); return { ...E, S, m: S.m }; }
 /** 出目 v で1ターン（分岐があれば opt を選ぶ）。停止地点の処理まで */
 function turn(E, v, opt, die = DIE3) {   // 2026-10-01 夜：Chapter 1・2 とも 1〜3
@@ -52,7 +54,7 @@ test('CH-ENGINE-01：config からフィールド（正式背景14枚 ch1_bg_01�
   assert.equal(cfg.paths.length, 14); const fields = g.routes[0].seq.map((id) => g.nodes[id].field).filter((v, i, a) => i === 0 || a[i - 1] !== v); assert.deepEqual(fields, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14], '背景は 01→14 の順に1回ずつ');
   for (const n of Object.values(g.nodes)) { assert.ok(n.x >= 0 && n.x <= 1 && n.y >= 0 && n.y <= 1, `${n.id} は背景に対する割合`); assert.ok(n.d > 0 && n.d <= 1.3); }
   const kinds = {}; for (const n of Object.values(g.nodes)) if (n.kind !== 'slot' && n.kind !== 'normal') kinds[n.id] = n.kind;
-  assert.deepEqual(kinds, { w1_0: 'start', w9_3: 'strong', w14_0: 'rival', w14_2: 'goal' }, '骨格：スタート・強敵（天空の大橋）・ライバル（強制停止）・ゴール（大会会場の門前）');
+  assert.deepEqual(kinds, { w1_0: 'start', w14_0: 'rival', w14_2: 'goal' }, '骨格：スタート・ライバル（強制停止）・ゴール（大会会場の門前）。強敵（strong）は正式のマスではない（2026-10-02）');
   assert.equal(g.nodes.w14_0.forceStop, true); assert.equal(P8.trackOf(1).nodes.w14_0.stop, true);
   assert.deepEqual([CH.rulesOf(cfg).diceSides, CH.rulesOf(cfg).turnLimit, CH.rulesOf(cfg).onTimeUp], [3, 40, 'end'], '1〜3・40ターン・間に合わなければ大会なしで終了'); assert.equal(Object.keys(cfg.dice.resultSprites).length, 6, '4〜6 の停止画像は残す');
   // 15 枚目は到着イベント専用（マスの背景には入れない）
@@ -126,7 +128,10 @@ test('CH1-08：能力マスの上昇量＝成長適性（A+7・B+6・C+5・D+4�
   const K = ['li', 'po', 'in', 'hi', 'ev', 'de'], of = (sp) => K.map((k) => M.growthOf({ sp }, k)).join(''), gain = (sp) => K.map((k) => M.growthGain({ sp }, k));
   assert.equal(of(0), 'CCCCCC', 'ソラモ'); assert.deepEqual(gain(0), [5, 5, 5, 5, 5, 5]);
   assert.equal(of(1), 'DBBCBE', 'ガウル'); assert.deepEqual(gain(1), [4, 6, 6, 5, 6, 3]);
-  assert.deepEqual([M.growthRegistered(0), M.growthRegistered(1), M.growthRegistered(2), M.growthRegistered(3)], [true, true, false, false], 'ノビトン・ジオルは未登録（【暫定】C）');
+  assert.equal(of(2), 'BDDDEC', 'ノビトン'); assert.deepEqual(gain(2), [6, 4, 4, 4, 3, 5]);
+  assert.equal(of(3), 'CAEDEA', 'ジオル'); assert.deepEqual(gain(3), [5, 7, 3, 4, 3, 7]);
+  assert.deepEqual([0, 1, 2, 3].map((sp) => M.growthRegistered(sp)), [true, true, true, true], '4原種とも登録済み（種族ごとのデータ。種族名の分岐は書かない）');
+  assert.ok(!/sp\s*===?\s*[0-3]|key\s*===?\s*'(solamo|gauru|nobiton|jiol)'/.test(rd('js/phase10/monsters.js').slice(rd('js/phase10/monsters.js').indexOf('function growthOf'), rd('js/phase10/monsters.js').indexOf('const growthRegistered'))), '適性の取り出しに種族ごとの分岐を書かない');
   assert.equal(M.growthOf({ sp: 0, growth: { po: 'A' } }, 'po'), 'A', '個体ごとの適性（合体個体など将来用）を優先'); assert.equal(M.growthGain({ sp: 0, growth: { po: 'Z' } }, 'po'), 5, '不正な値は種族の適性');
   const SRC = rd('js/chapter/engine.js'); assert.ok(!/statGainRange|greatMultiplier|statOdds/.test(SRC.replace(/^\s*\/\/.*$/gm, '')), '旧仕様（+10〜15・疲れの失敗／大成功）は残さない');
   assert.ok(!/A:\s*7/.test(SRC) && !/\bE:\s*3\b/.test(rd('js/phase8/raising.js')), '上昇量の表を重複して書かない');
@@ -134,7 +139,7 @@ test('CH1-08：能力マスの上昇量＝成長適性（A+7・B+6・C+5・D+4�
 });
 
 test('CH1-09：能力マスに止まる → その能力だけ 適性の値ぶん上がる（どの疲れ・どの乱数でも同じ）。イベントの能力変化は適性の影響を受けない', () => {
-  for (const [sp, want] of [[0, { li: 5, po: 5, in: 5, hi: 5, ev: 5, de: 5 }], [1, { li: 4, po: 6, in: 6, hi: 5, ev: 6, de: 3 }]]) {
+  for (const [sp, want] of [[0, { li: 5, po: 5, in: 5, hi: 5, ev: 5, de: 5 }], [1, { li: 4, po: 6, in: 6, hi: 5, ev: 6, de: 3 }], [2, { li: 6, po: 4, in: 4, hi: 4, ev: 3, de: 5 }], [3, { li: 5, po: 7, in: 3, hi: 4, ev: 3, de: 7 }]]) {
     for (const k of Object.keys(want)) for (const [fat, rv] of [[0, 0.01], [55, 0.5], [99, 0.99]]) {
       const E = onCh1(); E.m.sp = sp; const g = E.CH.graphFor(E.m), id = g.order.find((x) => x !== g.start && g.nodes[x].kind === 'slot');
       E.m.raise.field.nodeAssignments[id] = { t: 'stat', k }; E.m.raise.node = id; E.m.raise.pend = { roll: 1, left: 0, stage: 'resolve' }; E.m.raise.fatigue = fat;
@@ -149,16 +154,36 @@ test('CH1-09：能力マスに止まる → その能力だけ 適性の値ぶ�
   const fx = E.P8.resolveLanding(E.S, E.m, () => 0.99).fx; assert.equal(fx.amount, 20, '賢者 +20');
 });
 
-test('CH1-31：レア野生（2026-10-02 正式）：通常の野生のマスに止まった瞬間に抽選して 10%（盤面にレア専用のマスは無い）。強敵・ライバルは対象外。結果はバトル待ち（pend.fx.rare）に記録', () => {
-  const { CH } = loadEngine(); assert.equal(CH.rulesOf(CH.getConfig(1)).rareWildRate, 0.1);
-  const at = (bt, rv) => { const E = onCh1(); const g = E.CH.graphFor(E.m), id = g.order.find((x) => x !== g.start && g.nodes[x].kind === 'slot'); E.m.raise.field.nodeAssignments[id] = { t: 'battle', bt }; E.m.raise.node = id; E.m.raise.pend = { roll: 1, left: 0, stage: 'resolve' }; const r = E.P8.resolveLanding(E.S, E.m, () => rv); return { fx: r.fx, rare: E.CH.isRareEncounter(E.m), stage: E.m.raise.pend && E.m.raise.pend.stage }; };
-  const a = at('wild', 0.05), b = at('wild', 0.1), c = at('strong', 0.01), d = at('rival', 0.01);
-  assert.deepEqual([a.fx.rare, a.rare, a.stage], [true, true, 'battle'], '0.05 < 10% → レア'); assert.deepEqual([b.fx.rare, b.rare], [undefined, false], '0.10 は通常');
-  assert.deepEqual([c.fx.battleType, c.fx.rare, d.fx.rare], ['strong', undefined, undefined], '強敵・ライバルはレアにならない');
-  { const E = onCh1(); const g = E.CH.graphFor(E.m), id = g.order.find((x) => x !== g.start && g.nodes[x].kind === 'slot'), r = lcg(31); E.m.raise.field.nodeAssignments[id] = { t: 'battle', bt: 'wild' }; let n = 0;
-    for (let i = 0; i < 5000; i++) { E.m.raise.node = id; E.m.raise.pend = { roll: 1, left: 0, stage: 'resolve' }; if (E.P8.resolveLanding(E.S, E.m, r).fx.rare) n++; }
-    assert.ok(Math.abs(n / 5000 - 0.1) < 0.015, `野生 5000回でレア 約10%（${n}）`); }
-  const cfg = CH.getConfig(1); assert.equal(cfg.assets.rare_wild, './assets/fields/ch1a/tiles/tile_strong_enemy.webp', 'レア野生の素材は登録だけ（盤面には出さない）'); assert.ok(!Object.values(cfg.tileUI.sprites).includes(cfg.assets.rare_wild), '盤面のマスにはレア素材を使わない');
+test('CH1-31：レアモンスターマス（2026-10-02 正式）：バトルの候補マスを作るとき（Chapter開始時に1回）に 10% でレアモンスターマス。配置と一緒に保存し、ロード後も同じ。止まってからの抽選はしない。強敵マスは無い', () => {
+  const { CH } = loadEngine(), cfg = CH.getConfig(1), SRC = rd('js/chapter/engine.js').replace(/^\s*\/\/.*$/gm, '');
+  assert.equal(cfg.layoutRules.rareBattleRate, 0.1); assert.equal(CH.rulesOf(cfg).rareWildRate, undefined, '旧仕様（止まってから10%）の設定は無い');
+  assert.ok(!/rareWildRate|isRareEncounter|fx\.rare\s*=/.test(SRC), '止まってから抽選する旧コードは残さない');
+  assert.deepEqual(Object.keys(cfg.battleTypes), ['wild', 'rare', 'rival'], 'バトルのマスは 野生・レアモンスター・ライバル だけ');
+  // 多数の配置で、バトルの候補マス（ライバルを除く）のうちレアの割合が約10%。60マス中ちょうど6個などの固定数ではない
+  let rare = 0, wild = 0; const perRun = new Set();
+  for (let s = 1; s <= 1500; s++) { const A = CH.generateLayout(cfg, Math.imul(s, 2654435761) >>> 0).assign; let n = 0; for (const a of Object.values(A)) if (a.t === 'battle' && !a.fixed) { if (a.bt === 'rare') { rare++; n++; } else { assert.equal(a.bt, 'wild'); wild++; } } perRun.add(n); }
+  const rate = rare / (rare + wild); assert.ok(Math.abs(rate - 0.1) < 0.015, `レアの割合 約10%（${(rate * 100).toFixed(1)}%）`); assert.ok(perRun.size >= 3, '1回ごとの数は固定でない');
+  // 止まったときはマスの種類をそのまま渡す（乱数に関係なく同じ）
+  const at = (bt, rv) => { const E = onCh1(); const g = E.CH.graphFor(E.m), id = g.order.find((x) => x !== g.start && g.nodes[x].kind === 'slot'); E.m.raise.field.nodeAssignments[id] = { t: 'battle', bt }; E.m.raise.node = id; E.m.raise.pend = { roll: 1, left: 0, stage: 'resolve' }; return E.P8.resolveLanding(E.S, E.m, () => rv).fx; };
+  for (const rv of [0.01, 0.5, 0.99]) { assert.deepEqual(at('wild', rv), { kind: 'battle', battleType: 'wild' }); assert.deepEqual(at('rare', rv), { kind: 'battle', battleType: 'rare' }); }
+  // 保存 → 読み込み：レアの位置は同じ
+  for (let s = 1; s < 200; s++) { const E = onCh1(s); const A = E.m.raise.field.nodeAssignments; if (!Object.values(A).some((a) => a.bt === 'rare')) continue;
+    const S2 = E.P8.migrateSave(j(E.S)); assert.deepEqual(S2.m.raise.field.nodeAssignments, A, 'ロード後も同じ配置（レアの位置を含む）'); assert.deepEqual(CH.generateLayout(cfg, E.m.raise.field.layoutSeed).assign, A); break; }
+  // マスの素材：野生＝赤い爪、レア＝深紅（ZIP の board_node_strong_enemy）、ライバル＝紫
+  const T = cfg.tileUI.sprites, TL = './assets/fields/ch1a/tiles/';
+  assert.deepEqual([T.wild, T.rare, T.rival, T.strong], [TL + 'tile_wild_battle.webp', TL + 'tile_rare_monster.webp', TL + 'tile_rival.webp', undefined]);
+  assert.ok(existsSync(path.join(ROOT, T.rare))); assert.ok(!existsSync(path.join(ROOT, TL + 'tile_strong_enemy.webp')), '旧名のファイルは改名済み');
+  const FV = loadView(); assert.equal(FV.tileSpriteOf(cfg, CH.nodeTypeName({ t: 'battle', bt: 'rare' })), T.rare); assert.equal(FV.tileSpriteOf(cfg, CH.nodeTypeName({ t: 'battle', bt: 'wild' })), T.wild); assert.equal(CH.nodeTypeName({ t: 'battle', bt: 'rare' }), 'rare');
+  // Chapter 2 はレアの率を書いていない＝配置の乱数列は従来どおり
+  assert.equal(CH.getConfig(2).layoutRules.rareBattleRate, undefined);
+});
+
+test('CH1-32：互換：古い Chapter 1 の途中のセーブにある強敵（w9_3 の strong）・止まってからの抽選の記録（pend.fx.rare）は、読み込み時に野生として扱う（配置はそのまま）', () => {
+  const E = onCh1(5); const A = E.m.raise.field.nodeAssignments; A.w9_3 = { t: 'battle', bt: 'strong', fixed: true };
+  E.m.raise.node = 'w9_3'; E.m.raise.pend = { roll: 1, left: 0, stage: 'battle', fx: { kind: 'battle', battleType: 'strong', rare: true } };
+  const S2 = E.P8.migrateSave(j(E.S)), m2 = S2.m;
+  assert.deepEqual(m2.raise.field.nodeAssignments.w9_3, { t: 'battle', bt: 'wild' }); assert.deepEqual(m2.raise.pend.fx, { kind: 'battle', battleType: 'wild' });
+  assert.equal(m2.raise.node, 'w9_3'); assert.equal(m2.raise.field.layoutSeed, E.m.raise.field.layoutSeed, '配置は作り直さない');
 });
 
 test('CH1-10：配置はシードで決まり、Chapter開始時に確定して保存される（同じシード＝同じ配置）', () => {
@@ -180,17 +205,18 @@ test('CH1-11：再読み込み（セーブ→読み込み）・Chapter再開で�
   assert.equal(S3.m.raise.field, null); E.P8.ensureBoardPosition(S3, S3.m); assert.deepEqual([S3.m.raise.node, S3.m.raise.turnsUsed], ['w1_0', 0]);
 });
 
-test('CH1-12〜13：1本道（橋／森の分岐は廃止）。分岐の選択は出ず、背景の切り替えをまたいでそのまま進む。強敵は天空の大橋（09）の真ん中', () => {
+test('CH1-12〜13：1本道（橋／森の分岐は廃止）。分岐の選択は出ず、背景の切り替えをまたいでそのまま進む。強敵マスは無い', () => {
   const E = onCh1(); E.m.raise.node = 'w5_1'; E.m.raise.pend = null;
   const t = turn(E, 3); assert.deepEqual(t, ['w5_2', 'w6_0', 'w6_1'], '05 → 06 へそのまま'); assert.equal(E.m.raise.field.branch, null);
-  const g = E.CH.graphFor(E.m); assert.equal(g.nodes.w9_3.kind, 'strong'); assert.equal(g.nodes.w9_3.terrain, 'bridge');
+  const g = E.CH.graphFor(E.m); assert.equal(g.nodes.w9_3.kind, 'slot', '天空の大橋の真ん中も通常の候補マス（強敵マスは無い）'); assert.equal(g.nodes.w9_3.terrain, 'bridge');
 });
 
 
-test('CH1-14〜15：ボード上のバトルの後は疲れ +5（野生・強敵・ライバル同じ）。同じ地点・同じ配置のまま次のターンへ。途中終了・公式大会では増やさない', () => {
-  for (const bt of ['wild', 'strong', 'rival']) {
+test('CH1-14〜15：ボード上のバトルの後は疲れ +5（野生・レアモンスター・ライバル同じ）。同じ地点・同じ配置のまま次のターンへ。途中終了・公式大会では増やさない', () => {
+  for (const bt of ['wild', 'rare', 'rival']) {
     const E = onCh1(31); const { P8, S, m, CH } = E, g = CH.graphFor(m);
-    const id = bt === 'wild' ? g.order.find((x) => m.raise.field.nodeAssignments[x] && m.raise.field.nodeAssignments[x].bt === 'wild') : g.order.find((x) => g.nodes[x].kind === bt);
+    const id = bt === 'rival' ? g.order.find((x) => g.nodes[x].kind === bt) : g.order.find((x) => m.raise.field.nodeAssignments[x] && m.raise.field.nodeAssignments[x].t === 'battle' && !m.raise.field.nodeAssignments[x].fixed);
+    if (bt === 'rare') m.raise.field.nodeAssignments[id].bt = 'rare';
     m.raise.node = id; m.raise.fatigue = 40; m.raise.turnsUsed = 5; m.raise.pend = { roll: 2, left: 0, stage: 'resolve' };
     const r = P8.resolveLanding(S, m, lcg(2)), fieldBefore = j(m.raise.field); assert.equal(r.fx.kind, 'battle'); assert.equal(r.fx.battleType, bt); assert.equal(m.raise.pend.stage, 'battle');
     assert.equal(P8.beginBattle(S, m, { kind: 'practice', rank: 0 }).ok, true); P8.markBattleDone(S);
@@ -204,12 +230,13 @@ test('CH1-14〜15：ボード上のバトルの後は疲れ +5（野生・強敵
   assert.match(rd('js/phase8/raising.js'), /if \(b\.kind === 'practice'\) \{\n\s+const d = driverFor\(r\.ch\); if \(d && d\.onBattleFinished\)/, '疲れはボード上のバトル（practice）だけ。公式大会（league）の試合では増やさない');
 });
 
-test('CH1-16：バトル地点の絵：wild・strong・rival は asset key を分ける（今は同じ絵でも、ファイルを差し替えるだけで変えられる）', () => {
+test('CH1-16：バトルの種類：wild・rare・rival（レアモンスターの敵データは未登録＝バトルの中身は野生と同じ【暫定】）。旧目印の asset key は wild・rival で分ける', () => {
   const { CH } = loadEngine(), cfg = CH.getConfig(1), bt = cfg.battleTypes;
-  assert.deepEqual(Object.keys(bt), ['wild', 'strong', 'rival']);
-  assert.deepEqual([bt.wild.asset, bt.strong.asset, bt.rival.asset], ['battle_wild', 'battle_strong', 'battle_rival']);
-  assert.notEqual(cfg.assets.battle_wild, cfg.assets.battle_rival, '別のファイル名');
-  for (const k of ['battle_wild', 'battle_rival', 'battle_strong']) assert.ok(existsSync(path.join(ROOT, cfg.assets[k])), k);
+  assert.deepEqual(Object.keys(bt), ['wild', 'rare', 'rival']);
+  assert.deepEqual([bt.wild.label, bt.rare.label, bt.rival.label], ['野生のモンスター', 'レアモンスター', 'ライバル']);
+  assert.deepEqual([bt.wild.asset, bt.rare.asset, bt.rival.asset], ['battle_wild', 'battle_wild', 'battle_rival']);
+  assert.notEqual(cfg.assets.battle_wild, cfg.assets.battle_rival, '別のファイル名'); assert.equal(cfg.assets.battle_strong, undefined);
+  for (const k of ['battle_wild', 'battle_rival']) assert.ok(existsSync(path.join(ROOT, cfg.assets[k])), k);
   assert.equal(rd(cfg.assets.battle_wild).length, rd(cfg.assets.battle_rival).length, '今は同じ絵（素材の指定どおり）');
 });
 
@@ -347,7 +374,7 @@ test('CH1-27：見せ方の config：バトルの目印は常設しない、背�
   const { CH } = loadEngine(), cfg = CH.getConfig(1);
   assert.equal(cfg.battleMarkers, false);
   for (const s of cfg.fieldScenes) { assert.deepEqual(cfg.landmarks[s.id], [], `背景 ${s.id}：背景に描かれている物に素材を重ねない`); assert.deepEqual(cfg.foreground[s.id], []); }
-  assert.deepEqual(cfg.landmarkVisibility, { stat: 'arrive', event: 'arrive', treasure: 'always' }, '石碑・イベントの物は着いたときに初めて現れる。宝箱は最初から');
+  assert.deepEqual(cfg.landmarkVisibility, { stat: 'arrive', event: 'arrive', treasure: 'arrive' }, '道端の物は着いたときに初めて現れる（宝箱もマスUIがあるので、止まったときに現れて開く。2026-10-02）');
   assert.deepEqual(Object.keys(cfg.dice.resultSprites), ['1', '2', '3', '4', '5', '6'], 'サイコロの停止面（1〜6）'); for (let v = 1; v <= 6; v++) { assert.match(cfg.dice.resultSprites[v], /dice_stop_\d\.webp$/); assert.ok(existsSync(path.join(ROOT, cfg.dice.resultSprites[v])), `dice_stop_${v}`); }
   assert.ok(existsSync(path.join(ROOT, cfg.dice.rollingSprite)), '回転中の無地のサイコロ（停止面がそろわないときの予備）');
   for (const e of cfg.eventPool) assert.ok(!e.asset, `${e.id}：街道の上に木・岩は置かない（tier の祠を小さく）`);
@@ -386,12 +413,20 @@ test('CH1-29：大会会場への到着（config.arrival）と大会受付：到
 test('CH1-30：マスUI（config.tileUI。2026-10-02 正式素材）：能力6種・野生・宝・休憩・ライバル・？イベント・ゴールに正式素材。60個の座標はそのまま（素材は種別だけで決まる）。仮表示は通常プレイに出さない（?chdebug=1 だけ）。同じ意味の旧目印は出さない', () => {
   const { CH } = loadEngine(), cfg = CH.getConfig(1), FV = rd('js/chapter/field-view.js'), T = cfg.tileUI.sprites, TL = './assets/fields/ch1a/tiles/';
   assert.deepEqual(T, { stat_life: TL + 'tile_stat_life.webp', stat_power: TL + 'tile_stat_power.webp', stat_intelligence: TL + 'tile_stat_intelligence.webp', stat_accuracy: TL + 'tile_stat_accuracy.webp', stat_evasion: TL + 'tile_stat_evasion.webp', stat_toughness: TL + 'tile_stat_toughness.webp',
-    wild: TL + 'tile_wild_battle.webp', strong: TL + 'tile_wild_battle.webp', rival: TL + 'tile_rival.webp', treasure: TL + 'tile_treasure.webp', rest: TL + 'tile_rest.webp', event: TL + 'tile_event.webp', goal: TL + 'tile_chapter_goal.webp' });
-  for (const f of new Set([...Object.values(T), cfg.assets.rare_wild])) assert.ok(existsSync(path.join(ROOT, f)), f);
+    wild: TL + 'tile_wild_battle.webp', rare: TL + 'tile_rare_monster.webp', rival: TL + 'tile_rival.webp', treasure: TL + 'tile_treasure.webp', rest: TL + 'tile_rest.webp', event: TL + 'tile_event.webp', goal: TL + 'tile_chapter_goal.webp' });
+  for (const f of Object.values(T)) assert.ok(existsSync(path.join(ROOT, f)), f);
   assert.equal(T.normal, undefined, '通常マスの正式素材は未着（何も置かない）'); assert.equal(T.start, undefined);
   assert.deepEqual([cfg.tileUI.placeholder, cfg.tileUI.replacesLandmarks], [false, true]);
   assert.match(FV, /T\.placeholder === false && !debug\(\) \? '' :/, '仮表示は ?chdebug=1 のときだけ');
-  assert.match(FV, /if \(cfg\.tileUI && cfg\.tileUI\.replacesLandmarks && \['stat', 'event', 'treasure'\]\.includes\(a\.t\)\) return null;/, '旧目印（石碑・イベントの物・道端の宝箱）は出さない');
+  assert.match(FV, /if \(cfg\.tileUI && cfg\.tileUI\.replacesLandmarks && \['stat', 'event', 'treasure'\]\.includes\(a\.t\)\) \{/, '旧目印（石碑・イベントの物・道端の宝箱）は出さない');
+  // 宝箱：normal＝通常の宝箱、special＝虹色の宝箱（止まったとき現れて開く）。rare は従来の表示（この2つを流用しない＝宝箱の絵は出さない）
+  const V = loadView(), C = cfg.tileUI.chests;
+  assert.deepEqual([cfg.assets[C.normal.closed], cfg.assets[C.normal.open], cfg.assets[C.special.closed], cfg.assets[C.special.open]], [TL + 'chest_normal_closed.webp', TL + 'chest_normal_open.webp', TL + 'chest_rainbow_closed.webp', TL + 'chest_rainbow_open.webp']);
+  for (const k of Object.values(C).flatMap((c) => [c.closed, c.open])) assert.ok(existsSync(path.join(ROOT, cfg.assets[k])), k);
+  assert.equal(C.rare, undefined); assert.equal(V.lookOf(cfg, { t: 'treasure', tier: 'rare' }), null, 'rare は宝箱の絵を出さない（マスUIだけ＝従来どおり）');
+  assert.deepEqual([V.lookOf(cfg, { t: 'treasure', tier: 'normal' }).key, V.lookOf(cfg, { t: 'treasure', tier: 'special' }).key, V.lookOf(cfg, { t: 'treasure', tier: 'special' }).openKey], ['chest_normal_closed', 'chest_special_closed', 'chest_special_open']);
+  assert.deepEqual([V.lookOf(cfg, { t: 'stat', k: 'li' }), V.lookOf(cfg, { t: 'event', ev: 'coin', tier: 'normal' })], [null, null]);
+  assert.deepEqual({ ...cfg.treasurePool.contents }, { handler: 'gold_table', params: { table: [{ w: 4, gold: 50 }, { w: 1, gold: 150 }] } }, '報酬は変えていない');
   assert.match(FV, /function tileSpriteOf\(cfg, key\) \{ const T = \(cfg && cfg\.tileUI && cfg\.tileUI\.sprites\) \|\| \{\}; return T\[key\] \|\| T\[TILE_GROUP\[key\]\] \|\| T\.normal \|\| null; \}/, '種別名 → まとめた種類 → normal');
   assert.match(FV, /left:\$\{\(n\.mx \* sc\.w\)\.toFixed\(1\)\}px;top:\$\{\(n\.my \* sc\.h\)\.toFixed\(1\)\}px/, 'マスUIの位置はノードの座標（止まる位置）');
   // 60個の座標・背景ごとのマス数は変えていない（2026-10-02 の確定値）

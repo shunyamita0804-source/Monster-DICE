@@ -77,7 +77,7 @@
   const ORDER = BACKGROUNDS.map((B) => B.backgroundId), NODES = Object.fromEntries(BACKGROUNDS.map((B) => [B.backgroundId, B.nodes.length]));
   const P = (id) => paths.find((p) => p.id === id), N = (id) => P(id).n;
   P('w1_').start = true; P('w1_').fixed = { 0: 'start' };
-  P('w9_').fixed = { [Math.floor(N('w9_') / 2)]: 'strong' };   // 強敵：天空の大橋（09）の真ん中
+  // 強敵（strong）は正式のマスではない（2026-10-02）：天空の大橋（09）の真ん中 w9_3 の固定の強敵は外し、ほかと同じ候補マスにした
   const gl = P('w14_'); gl.goal = true; gl.fixed = { [N('w14_') - 3]: 'rival', [N('w14_') - 1]: 'goal' };   // ライバル（強制停止）→ ゴール（大会会場の門前）
 
   const cfg = {
@@ -121,6 +121,7 @@
       maxPerStat: 4, recoveryEvents: [2, 4], recoveryPerRoute: true,
       noBattleFirst: 5, maxBattlesFirst: [12, 1], noEventLast: 4,
       maxFieldShare: 0.25, minFieldShare: 0,
+      rareBattleRate: 0.1,   // バトルの候補マスがレアモンスターマスになる確率（2026-10-02 正式：10%）。配置を作るとき（Chapter開始時に1回）に決めて保存する
       eventTierWeights: { normal: 70, rare: 25, special: 5 },
     },
 
@@ -140,7 +141,7 @@
     treasurePool: { tierWeights: { normal: 70, rare: 25, special: 5 }, contents: { handler: 'gold_table', params: { table: [{ w: 4, gold: 50 }, { w: 1, gold: 150 }] } } },
     battleTypes: {
       wild: { label: '野生のモンスター', asset: 'battle_wild' },
-      strong: { label: '強敵', asset: 'battle_strong' },
+      rare: { label: 'レアモンスター', asset: 'battle_wild' },   // レアモンスターマス（10%）。敵データ・報酬・遭遇演出は未登録＝【暫定】バトルの中身は野生と同じ
       rival: { label: 'ライバル', asset: 'battle_rival', figure: null },
     },
     // 同行者（フィナ）のリアクション：本文は未決（空＝何も出さない）。例：gold: ['50G拾ったよ。ラッキーだね。']。key は MMCH.REACTION_KEYS
@@ -154,9 +155,11 @@
       stat_hi: A + 'nodes/stat_accuracy.webp', stat_ev: A + 'nodes/stat_evasion.webp', stat_de: A + 'nodes/stat_toughness.webp',
       event_normal: A + 'nodes/event_normal.webp', event_rare: A + 'nodes/event_rare.webp', event_special: A + 'nodes/event_special.webp',
       treasure_normal: A + 'nodes/treasure_normal.webp', treasure_rare: A + 'nodes/treasure_rare.webp', treasure_special: A + 'nodes/treasure_special.webp',
-      battle_wild: A + 'nodes/battle_wild.webp', battle_rival: A + 'nodes/battle_rival.webp', battle_strong: A + 'nodes/battle_wild.webp',
+      battle_wild: A + 'nodes/battle_wild.webp', battle_rival: A + 'nodes/battle_rival.webp',
       grass_front: A + 'env/grass_flower_border.webp',
-      rare_wild: TL + 'tile_strong_enemy.webp',   // レア野生（10%）の素材：登録だけ（盤面のマスには使わない。遭遇の演出・敵データは未登録）
+      // 宝箱（2026-10-02 正式素材。ZIP の 05_goal_and_treasure を透過化）：normal＝通常の宝箱、special＝虹色の宝箱。rare は従来の表示のまま（この2つを流用しない）
+      chest_normal_closed: TL + 'chest_normal_closed.webp', chest_normal_open: TL + 'chest_normal_open.webp',
+      chest_special_closed: TL + 'chest_rainbow_closed.webp', chest_special_open: TL + 'chest_rainbow_open.webp',
     },
     // 目印：石板の脇（道の中央の輪にモンスター、目印は輪の横。奥の輪でもモンスターに重ならない距離 gap）。足元の草は置かない（石の道）
     nodeLook: {
@@ -171,19 +174,21 @@
     // ---- マスUI（2026-10-02 正式素材：assets/fields/ch1a/tiles/。ZIP mystic-monsters-board-ui-assets-complete-2026-10-02 の 01_board_nodes・05_goal_and_treasure を透過化）。
     //  60個の座標は BACKGROUNDS[].nodes のまま、種別ごとの素材だけを差し替える。種別名は MMCH.NODE_TYPES。探す順＝種別名 → まとめた種類（stat・event・battle）→ normal。
     //  通常マス（normal）・スタート（start）の正式素材は未着（ZIP の MISSING_OR_PENDING）＝何も置かない。位置確認の仮表示は ?chdebug=1 のときだけ。
-    //  強敵（strong）は野生と同じ素材（board_node_strong_enemy の深紅の素材はレア野生として登録＝assets.rare_wild。盤面には出さない）【要確認】
+    //  バトルのマスは 野生（赤い爪）・レアモンスター（深紅。ZIP の board_node_strong_enemy＝tile_rare_monster）・ライバル（紫の交差した剣）の3種類だけ（強敵マスは無い）
     //  replacesLandmarks：マスUIが種別を示すので、同じ意味の旧目印（道端の石碑・宝箱・イベントの物）は出さない ----
     tileUI: {
       sprites: {
         stat_life: TL + 'tile_stat_life.webp', stat_power: TL + 'tile_stat_power.webp', stat_intelligence: TL + 'tile_stat_intelligence.webp',
         stat_accuracy: TL + 'tile_stat_accuracy.webp', stat_evasion: TL + 'tile_stat_evasion.webp', stat_toughness: TL + 'tile_stat_toughness.webp',
-        wild: TL + 'tile_wild_battle.webp', strong: TL + 'tile_wild_battle.webp', rival: TL + 'tile_rival.webp',
+        wild: TL + 'tile_wild_battle.webp', rare: TL + 'tile_rare_monster.webp', rival: TL + 'tile_rival.webp',
         treasure: TL + 'tile_treasure.webp', rest: TL + 'tile_rest.webp', event: TL + 'tile_event.webp', goal: TL + 'tile_chapter_goal.webp',
       },
+      // 宝箱のマスに止まったとき、マスの脇に現れて開く宝箱（tier ごと。書いていない tier＝rare は従来の表示＝マスUIだけ）
+      chests: { normal: { closed: 'chest_normal_closed', open: 'chest_normal_open', w: 128 }, special: { closed: 'chest_special_closed', open: 'chest_special_open', w: 134 } },
       size: { w: 230, flat: 0.46, depthPow: 0.65 }, placeholder: false, replacesLandmarks: true,   // 表示の大きさ：基準 230px × 奥行き^0.65（手前 約250px・奥 約130px＝背景の画素。縦は 0.46 に潰して地面に置いた見え方）
     },
     battleMarkers: false,
-    landmarkVisibility: { stat: 'arrive', event: 'arrive', treasure: 'always' },
+    landmarkVisibility: { stat: 'arrive', event: 'arrive', treasure: 'arrive' },   // 宝箱はマスUIがあるので、止まったときに現れる
     monster: { h: 180, w: 150 },   // w＝体の幅（道の安全域の計算に使う。画像の見た目の幅）
     landmarks, foreground, branchOverlays: {},
   };
