@@ -34,7 +34,8 @@ test.before(async () => {
 test.after(async () => { if (L) await L.close(); });
 // テストごとに開いたページを閉じる
 const OPEN = [];
-const openPage = async (o) => { const p = await L.open(o); OPEN.push(p); return p; };
+const openPage = async (o) => { const p = await L.open({ legacyStep: true, ...o });   // 1地点ずつ止まる進み方で、保存・再読み込みを確かめる（通常マスの通過専用は qa-e2e-journey の JR-16）
+ OPEN.push(p); return p; };
 test.afterEach(async () => { for (const p of OPEN.splice(0)) await p.ctx.close().catch(() => {}); });
 /** T(名前, 関数) または T(名前, { todo など }, 関数) */
 const T = (name, a, b) => (typeof a === 'function' ? test(name, { skip: SKIP }, a) : test(name, { skip: SKIP, ...a }, b));

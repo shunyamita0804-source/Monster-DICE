@@ -20,6 +20,8 @@ const DIE3 = { 1: 0.1, 2: 0.5, 3: 0.9 };   // MMP7.rollDie(3, rnd)（Chapter 2 �
 function mon(P7, P8, S) { const m = P8.initIndividual(S, { sp: 0, name: 'テスト', age: 0, span: 30, h: 0, rk: 0, fa: 0, st: 0, last: null, li: 100, po: 100, in: 100, hi: 100, ev: 100, de: 100, sk: [0, 1, 2, 3], eq: [0, 1, 2, 3, -1, -1] }); P7.ensureProg(m); return m; }
 /** 画面側（field-view.js）の純粋な関数（lookOf・tileKeyOf・tileSpriteOf）を Node で読む。DOM は使わない */
 function loadView() { const E = loadEngine(); new Function('window', 'MMCH', rd('js/chapter/field-view.js'))(E.w, E.w.MMCH); return E.w.MMCHV; }
+/** 効果の無い通常マス（通過専用）を無くす：空いた候補ノードをすべて能力マスにする（1地点ずつの進み方を確かめるテスト用） */
+function fillSlots(E) { const g = E.CH.graphFor(E.m), A = E.m.raise.field.nodeAssignments; for (const id of g.order) if (g.nodes[id].kind === 'slot' && !A[id]) A[id] = { t: 'stat', k: 'li' }; return E; }
 function onCh1(seed = 7) { const E = loadEngine(); const { P7, P8 } = E; const S = P8.newSave(); S.m = mon(P7, P8, S); assert.equal(P8.depart(S, S.m, lcg(seed)).ok, true); return { ...E, S, m: S.m }; }
 /** 出目 v で1ターン（分岐があれば opt を選ぶ）。停止地点の処理まで */
 function turn(E, v, opt, die = DIE3) {   // 2026-10-01 夜：Chapter 1・2 とも 1〜3
@@ -82,14 +84,14 @@ test('CH-ENGINE-02：Chapter を差し替えられる（config を登録する�
   assert.doesNotMatch(code, /はじまりの草原|大橋|f1_|f3_/, 'Chapter 1 固有の値をエンジンに書かない');
 });
 
-test('CH1-01〜03：出目1〜3の数だけ1地点ずつ進む（瞬間移動しない。2026-10-01 夜から 1〜3）。01 の奥のマスの先は次の背景（w2_）', () => {
+test('CH1-01〜03：出目1〜3の数だけ1地点ずつ進む（瞬間移動しない。2026-10-01 夜から 1〜3）。01 の奥のマスの先は次の背景（w2_）。※通常マスは通過専用（CH1-34）なので、ここでは全部の地点を効果マスにして確かめる', () => {
   for (const v of [1, 2, 3]) {
-    const E = onCh1(); const path = turn(E, v);
+    const E = fillSlots(onCh1()); const path = turn(E, v);
     assert.equal(path.length, v, `出目${v}`); assert.equal(E.m.raise.node, `w1_${v}`); assert.equal(E.m.raise.turnsUsed, 1);
   }
   const E = onCh1(); assert.equal(E.P8.diceSides(E.m), 3); assert.equal(E.P8.roll(E.S, E.m, () => 0.999).value, 3);
   const seen = new Set(); for (let i = 0; i < 3000; i++) seen.add(E.P7.rollDie(E.P8.diceSides(E.m), Math.random)); assert.deepEqual([...seen].sort(), [1, 2, 3], '4〜6 は出ない');
-  const E2 = onCh1(); E2.m.raise.node = 'w1_3'; assert.deepEqual(turn(E2, 3), ['w1_4', 'w2_0', 'w2_1'], '背景をまたいで1地点ずつ');
+  const E2 = fillSlots(onCh1()); E2.m.raise.node = 'w1_3'; assert.deepEqual(turn(E2, 3), ['w1_4', 'w2_0', 'w2_1'], '背景をまたいで1地点ずつ');
 });
 
 test('CH1-04：途中の地点を順番に通る（止まった地点だけ効果）', () => {
@@ -206,7 +208,7 @@ test('CH1-11：再読み込み（セーブ→読み込み）・Chapter再開で�
 });
 
 test('CH1-12〜13：1本道（橋／森の分岐は廃止）。分岐の選択は出ず、背景の切り替えをまたいでそのまま進む。強敵マスは無い', () => {
-  const E = onCh1(); E.m.raise.node = 'w5_1'; E.m.raise.pend = null;
+  const E = fillSlots(onCh1()); E.m.raise.node = 'w5_1'; E.m.raise.pend = null;
   const t = turn(E, 3); assert.deepEqual(t, ['w5_2', 'w6_0', 'w6_1'], '05 → 06 へそのまま'); assert.equal(E.m.raise.field.branch, null);
   const g = E.CH.graphFor(E.m); assert.equal(g.nodes.w9_3.kind, 'slot', '天空の大橋の真ん中も通常の候補マス（強敵マスは無い）'); assert.equal(g.nodes.w9_3.terrain, 'bridge');
 });
@@ -317,11 +319,11 @@ test('DICE-01〜05：出目は1〜3だけ（等確率）。forcedResult で固�
   const src = rd('js/chapter/dice-renderer.js'); assert.match(src, /translate/); assert.match(src, /rotate/); assert.doesNotMatch(src, /frames|\/01\.webp/, '連番画像を使わない');
 });
 
-test('シミュレーション（1000回）：Chapter 1・1〜3・40ターン（2026-10-01 夜）。到達ターン・40ターン内到達率・停止地点・疲れ。総マス数は【暫定】なので範囲だけ', () => {
+test('シミュレーション（1000回）：Chapter 1・1〜3・40ターン（2026-10-01 夜）。到達ターン・40ターン内到達率・停止地点・疲れ。2026-10-02 から通常マスは通過専用（止まるのは効果マス・ライバル・ゴールだけ＝平均 約16ターン）', () => {
   const E = loadEngine();
   for (const pol of ['cautious', 'forced']) {
     const s = simulate(E, 1000, pol);
-    assert.ok(s.avgTurns >= 25 && s.avgTurns <= 40, `${pol}：平均 ${s.avgTurns}`);
+    assert.ok(s.avgTurns >= 12 && s.avgTurns <= 22, `${pol}：平均 ${s.avgTurns}`);
     assert.ok(s.reachRate >= 0.9 && s.reachRate <= 1, `${pol}：40ターン内到達率 ${s.reachRate}`);
     assert.ok(s.avgStops.stat > 3 && s.avgStops.event > 1.5 && s.avgStops.battle > 1 && s.avgStops.treasure > 0.6, JSON.stringify(s.avgStops));
     assert.ok(s.maxTurns <= 40);
@@ -384,7 +386,7 @@ test('CH1-27：見せ方の config：バトルの目印は常設しない、背�
   assert.ok(cfg.motion.minMs >= 300 && cfg.motion.maxMs <= 800 && cfg.motion.terrain.forest.speed < 1 && cfg.motion.terrain.bridge.fixed, '1地点＝石板1つ：1地点 0.38〜0.76秒。森は少しゆっくり、橋はやや一定');
   for (const s of cfg.fieldScenes) { assert.ok(s.farBand && s.farBand.k < 1, `${s.name}：遠景の帯`); assert.ok(s.zoom.near >= 1.2 && s.zoom.far > s.zoom.near, '低いカメラ（近景の石板が大きい）'); }
   // Chapter開始の俯瞰図：正式な演出専用の画像（intro/ch1_intro_overview.webp。プレイの背景とは別のファイル。背景の順には入れない）
-  const I = cfg.intro; assert.ok(I && I.overviews && I.startFocus && I.goalFocus && I.zoom.to > I.zoom.from);
+  const I = cfg.intro, C = I.patterns.A.camera; assert.ok(I && I.overviews && C.from && C.to && C.to.zoom > C.from.zoom, 'Pattern ごとのカメラ（全景 → 開始地点）');
   assert.deepEqual(I.overviews, { A: './assets/fields/ch1a/intro/ch1_intro_overview.webp' }); assert.ok(existsSync(path.join(ROOT, I.overviews.A))); assert.ok(!cfg.fieldScenes.some((s) => s.bg === I.overviews.A));
   for (let k = 1; k <= 3; k++) assert.ok(existsSync(path.join(ROOT, `assets/fields/ch1a/intro/ch1_intro_overview_pattern${k}.webp`)), '旧の俯瞰図はファイルだけ残す（参照しない）');
   // START の操作欄：正式画像と押せる領域。STOP の画像（ui/deck_stop.webp）はファイルだけ残し、config からは参照しない（1タップで自動停止）
@@ -590,4 +592,49 @@ test('CH1-33：ソラモの後ろ向き歩行アニメ（2026-10-02 正式素材
   assert.match(code, /if \(state === 'walk' && !\(info && info\.calm\)\)/, '歩いている間だけループ');
   assert.match(code, /buildScene\(m, fieldId, true\);/, '背景の切り替え中は暗転を残す（新しい背景の上で明ける）'); assert.match(code, /keepVeil \? '\.chf-cam,\.chf-canopy'/);
   assert.match(code, /await switchField\(m, n\.field, id, cur\);\n\s+if \(last\) \{[^\n]*anim\('land'\)[^\n]*anim\('idle'\)/, '背景をまたいで止まるときも停止の姿勢へ');
+});
+
+
+test('CH1-34：空白で止まらない（2026-10-02 ユーザー判断）：効果の無い通常マス（何も割り当たらなかった候補ノード）は通過専用。出目は効果マス・ライバル・ゴールだけを数え、ターンは必ずそのどれかで終わる。60地点・座標・つながり・マスの中身は変えない', () => {
+  const { CH } = loadEngine(), cfg = CH.getConfig(1), g = CH.buildGraph(cfg);
+  assert.equal(cfg.rules.passNormal, true); assert.equal(CH.getConfig(2).rules.passNormal, undefined, 'Chapter 2 は従来どおり');
+  assert.equal(g.order.length, 60, '60地点はそのまま');
+  for (let seed = 1; seed <= 40; seed++) {
+    const E = onCh1(seed), A = E.m.raise.field.nodeAssignments, stopOK = (id) => !!A[id] || ['rival', 'goal'].includes(E.CH.graphFor(E.m).nodes[id].kind);
+    for (let k = 0; k < 40 && !E.m.raise.goal; k++) {
+      if (E.P8.boardPhase(E.m) !== 'roll') break;
+      if (E.CH.fatigue(E.m) >= 86) { E.P8.rest(E.S, E.m); continue; }
+      const v = 1 + (k % 3), before = E.m.raise.node, path = turn(E, v), stops = path.filter(stopOK);
+      assert.ok(stopOK(E.m.raise.node), `seed${seed}：${before} から出目${v} → ${E.m.raise.node} は効果マス／ライバル／ゴール（通過 ${path.join(' ')}）`);
+      assert.ok(stops.length === v || ['rival', 'goal'].includes(E.CH.graphFor(E.m).nodes[E.m.raise.node].kind), `seed${seed}：${before} 出目${v} は止まれるマスを ${v} 個数える（${stops.length}：${path.join(' ')}）`);
+      for (const id of path.slice(0, -1)) if (!stopOK(id)) assert.equal(E.CH.isWaypoint(E.m, id), true);
+      finishTurnAnyway(E);
+    }
+  }
+  // 通常マスにいる古い途中セーブ：そのまま次のターンから進める（止まれるマスまで歩く）
+  const E = onCh1(3), A = E.m.raise.field.nodeAssignments, g2 = E.CH.graphFor(E.m), blank = g2.order.find((id) => g2.nodes[id].kind === 'slot' && !A[id]);
+  E.m.raise.node = blank; E.m.raise.pend = null; const S2 = E.P8.migrateSave(j(E.S)); assert.equal(S2.m.raise.node, blank, '位置はそのまま');
+  const E3 = { ...E, S: S2, m: S2.m }; turn(E3, 1); assert.ok(!!S2.m.raise.field.nodeAssignments[S2.m.raise.node] || ['rival', 'goal'].includes(g2.nodes[S2.m.raise.node].kind));
+});
+
+
+test('CH1-35：Chapter開始の演出（2026-10-02 正式）：全景を止めて見せる →「Chapter 1」→「はじまりの草原」→ 消える → 開始地点へカメラ移動 → FIELD 1。約3〜4秒。Chapter・Pattern ごとの違いは config.intro だけ（コードに Chapter 専用の値なし）', () => {
+  const E = loadEngine(); new Function('window', rd('js/chapter/intro.js'))(E.w); const CI = E.w.MMCHI, cfg = E.CH.getConfig(1), I = cfg.intro;
+  const T = CI.TIMING, total = T.stillMs + T.chapterInMs + T.nameInMs + T.titleHoldMs + T.titleOutMs + T.moveMs + T.uiInMs;
+  assert.ok(total >= 3000 && total <= 4200, `全体 ${total}ms（3〜4秒程度）`);
+  assert.ok(T.stillMs >= 400 && T.stillMs <= 600 && T.chapterInMs >= 350 && T.chapterInMs <= 450 && T.nameInMs >= 300 && T.nameInMs <= 400 && T.titleHoldMs >= 800 && T.titleHoldMs <= 1000 && T.titleOutMs >= 300 && T.titleOutMs <= 400 && T.moveMs >= 1000 && T.moveMs <= 1500, JSON.stringify(T));
+  assert.deepEqual([I.label, I.name], ['Chapter 1', 'はじまりの草原']);
+  const c = CI.cameraOf(I, 'A'); assert.deepEqual(c.from, { x: 0.5, y: 0.5, zoom: 1 }); assert.ok(c.to.y > 0.85 && c.to.zoom > 2, '開始地点（全景の下端の小道）へ寄る');
+  assert.equal(CI.imageOf(cfg, 'A'), './assets/fields/ch1a/intro/ch1_intro_overview.webp');
+  // Pattern B／C は config に足すだけ（コードは同じ）：patterns[patternId] が優先、無ければ Chapter 全体の値
+  const fake = { ...cfg, intro: { ...I, patterns: { ...I.patterns, B: { overview: 'b.webp', camera: { from: { x: 0.4, y: 0.3 }, to: { x: 0.6, y: 0.9, zoom: 2 }, via: [{ x: 0.5, y: 0.6, zoom: 1.4 }] } } } } };
+  assert.equal(CI.imageOf(fake, 'B'), 'b.webp'); assert.deepEqual(CI.cameraOf(fake.intro, 'B').from, { zoom: 1, x: 0.4, y: 0.3 }); assert.equal(CI.cameraOf(fake.intro, 'B').via.length, 1);
+  // 旧形式（Chapter 2 の goalFocus・startFocus・zoom・via）もそのまま使える
+  const c2 = CI.cameraOf(E.CH.getConfig(2).intro, 'A'); assert.ok(c2.from.zoom === 1 && c2.to.zoom === 2.2 && c2.via.length === 2);
+  const SRC = rd('js/chapter/intro.js').split('\n').map((l) => l.replace(/\/\/.*$/, '')).join('\n');
+  assert.doesNotMatch(SRC, /はじまりの草原|chapterId\s*===|ch1_intro/, 'intro.js に Chapter 専用の値を書かない');
+  assert.match(SRC, /const skip = \(\) => \{ if \(skipped\) return;/, 'タップで飛ばす（何回押しても1回だけ）');
+  const FV = rd('js/chapter/field-view.js');
+  assert.match(FV, /if \(busyGet\(\) \|\| V\.intro\) return;/, '二重に始めない'); assert.match(FV, /w\.classList\.add\('chf-intro'\)/, 'イントロ中は UI・ソラモ・マスを出さない');
+  assert.match(rd('index.html'), /\.chfw\.chf-intro #chf-ui,\.chfw\.chf-intro \.chf-mon,\.chfw\.chf-intro \.chf-tile,\.chfw\.chf-intro \.chf-obj\{opacity:0!important\}/);
 });

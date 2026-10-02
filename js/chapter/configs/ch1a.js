@@ -86,7 +86,8 @@
     title: 'はじまりの草原',
     patternTitle: 'はじまりの草原',
     playable: true,
-    rules: { turnLimit: 40, diceSides: 3 },   // 2026-10-01 夜：通常 Chapter のサイコロは 1〜3・40ターン（Chapter 2 と同じ。4〜6 の素材・共通の仕組みは残す）【試遊用の値】
+    // passNormal（2026-10-02 ユーザー判断）：効果の無い通常マス（何も割り当たらなかった候補ノード）は通過専用。出目は効果マス・ライバル・ゴールだけを数え、ターンは必ずそのどれかで終わる（何も無い道の上で止まらない）
+    rules: { turnLimit: 40, diceSides: 3, passNormal: true },   // 2026-10-01 夜：通常 Chapter のサイコロは 1〜3・40ターン（Chapter 2 と同じ。4〜6 の素材・共通の仕組みは残す）【試遊用の値】
     forceStopKinds: ['rival'],
     tournamentDestination: 'official',
     // ---- ゴール（14 の最後のマス）に着いたあと：到着イベント専用の背景（マス・サイコロ・操作欄なし）→ フィナの短い会話 → 大会受付（ランク選択）。
@@ -108,9 +109,12 @@
     motion: { stepMs: 520, minMs: 380, maxMs: 760, baseLen: 170, terrain: { grass: { speed: 1 }, highland: { speed: 0.96 }, bridge: { speed: 1, fixed: true }, forest: { speed: 0.94 } } },
     parallax: { far: 0.95, back: 0.97, road: 1, front: 1.12, canopy: 0.6 },
 
-    // ---- Chapter開始の演出：正式な俯瞰図（intro/ch1_intro_overview.webp。演出専用）。大会会場（上）を見せてからスタート（下の草原の小道）へズーム／パン → 01 へ ----
-    intro: { overviews: { A: I + 'ch1_intro_overview.webp' },
-      goalFocus: { x: 0.66, y: 0.06 }, startFocus: { x: 0.5, y: 0.92 }, zoom: { from: 1.0, to: 2.2 }, holdMs: 1500, moveMs: 2200, fadeMs: 700, titleMs: 2200 },
+    // ---- Chapter開始の演出（js/chapter/intro.js。2026-10-02 正式の流れ）：全景を止めて見せる →「Chapter 1」→「はじまりの草原」→ 消える
+    //  → 全景の中を旅の開始地点（下端の草原の小道＝FIELD 1 の柵のある小道）へカメラが移動 → FIELD 1 へクロスフェード → ソラモ・マス・UI。
+    //  Pattern ごとの全景画像とカメラは patterns[patternId]（Pattern B／C はここに { overview, camera:{ from, to, via } } を足すだけ）。
+    //  camera の x・y は全景画像に対する割合、zoom は画面いっぱい（cover）に対する倍率。timing を書けば時間も変えられる（既定は intro.js の TIMING＝約3.9秒） ----
+    intro: { label: 'Chapter 1', name: 'はじまりの草原', overviews: { A: I + 'ch1_intro_overview.webp' },
+      patterns: { A: { overview: I + 'ch1_intro_overview.webp', camera: { from: { x: 0.5, y: 0.5, zoom: 1 }, to: { x: 0.5, y: 0.93, zoom: 2.3 } } } } },
 
     // ---- 操作欄：START の正式画像（STOP は使わない） ----
     deck: { start: U + 'deck_start.webp', aspect: 1100 / 353,

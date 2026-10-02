@@ -18,7 +18,8 @@ test.before(async () => { if (!SKIP) L = await H.launch(); });
 test.after(async () => { if (L) await L.close(); });
 // テストごとに開いたページを閉じる（開いたままだとアニメーションが重なり、後のテストが遅くなる）
 const OPEN = [];
-const openPage = async (o = {}) => { const p = await L.open(o); OPEN.push(p); return p; };
+const openPage = async (o = {}) => { const p = await L.open({ legacyStep: true, ...o });   // 1地点ずつ止まる進み方で確かめる（通常マスの通過専用は qa-e2e-journey の JR-16）
+ OPEN.push(p); return p; };
 test.afterEach(async () => { for (const p of OPEN.splice(0)) await p.ctx.close().catch(() => {}); });
 const T = (name, fn) => test(name, { skip: SKIP }, fn);
 

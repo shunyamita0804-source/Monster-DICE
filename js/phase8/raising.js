@@ -375,6 +375,8 @@
     if (x && x.toGoal) { r.goal = true; return { ...out, timeUp: true, goal: true }; }
     return { ...out, timeUp: true };
   }
+  /** 通過専用の地点（エンジンの Chapter の config で決まる。止まれない＝出目に数えない）。旧ボードには無い */
+  const isWaypoint = (m, id) => { const d = m && isObj(m.raise) ? driverFor(m.raise.ch) : null; return !!(d && d.isWaypoint && d.isWaypoint(m, id)); };
   /** 強制停止のマス（マップの node.stop）：出目が残っていてもここで止まり、残りの移動は消える（ライバル・強敵などの必須イベント。マス側の設定だけで決まる） */
   const isStopNode = (trk, id) => !!(trk && id != null && trk.nodes[id] && trk.nodes[id].stop === true);
   /** 1マス進んだあと：止まる（残り0・ゴール・強制停止）なら resolve へ、通過なら onPass（通過したマスは効果を出さない） */
@@ -391,7 +393,7 @@
     const opts = trk.conn[r.node] || [];
     if (p.left <= 0 || !opts.length) { p.left = 0; p.stage = 'resolve'; return { stage: 'resolve' }; }
     if (opts.length > 1) { p.stage = 'branch'; p.opts = [...opts]; return { stage: 'branch', opts: p.opts }; }
-    const from = r.node; r.node = opts[0]; p.left -= 1;
+    const from = r.node; r.node = opts[0]; if (!isWaypoint(m, r.node)) p.left -= 1;   // 通過専用の地点（ドライバの isWaypoint）は出目に数えない
     afterMove(S, m, trk, from);
     return { stage: p.stage, node: r.node };
   }
@@ -399,7 +401,7 @@
   function chooseBranch(S, m, id) {
     const r = m && m.raise, p = r && r.pend, trk = boardOf(m);
     if (!p || p.stage !== 'branch' || !Array.isArray(p.opts) || !p.opts.includes(id)) return { ok: false };
-    const from = r.node; r.node = id; p.left -= 1; delete p.opts;
+    const from = r.node; r.node = id; if (!isWaypoint(m, id)) p.left -= 1; delete p.opts;
     afterMove(S, m, trk, from);
     return { ok: true, stage: p.stage, node: id };
   }

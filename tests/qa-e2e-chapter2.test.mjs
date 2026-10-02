@@ -34,7 +34,7 @@ test('CH2-B1：Chapter 1 を終えた個体が出発準備から Chapter 2 へ�
   await toFarm(pg); await departUI(pg);
   await pg.waitForSelector('.chintro.on', { timeout: 8000 }); await pg.waitForTimeout(300);
   const a = await pg.evaluate(() => ({ src: document.querySelector('.chintro-img').getAttribute('src'), title: document.querySelector('.chintro-title').textContent.replace(/\s+/g, ' '), busy: bBusy, seen: S.m.raise.field.introSeen === true, ch: S.m.raise.field.chapterId }));
-  assert.equal(a.src, './assets/fields/ch2a/intro/ch2_intro_overview_v2.webp', '正式な俯瞰図（演出専用。プレイの背景ではない）'); assert.ok(!(await pg.evaluate(() => MMCH.getConfig(2).fieldScenes.some((s) => /intro/.test(s.bg)))), '俯瞰図は背景の順に入れない'); assert.match(a.title, /CHAPTER 2.*潮風の海岸/); assert.deepEqual([a.busy, a.seen, a.ch], [true, true, 2]);
+  assert.equal(a.src, './assets/fields/ch2a/intro/ch2_intro_overview_v2.webp', '正式な俯瞰図（演出専用。プレイの背景ではない）'); assert.ok(!(await pg.evaluate(() => MMCH.getConfig(2).fieldScenes.some((s) => /intro/.test(s.bg)))), '俯瞰図は背景の順に入れない'); assert.match(a.title, /Chapter 2.*潮風の海岸/); assert.deepEqual([a.busy, a.seen, a.ch], [true, true, 2]);
   await pg.waitForFunction(() => !document.querySelector('.chintro'), null, { timeout: 15000 }); await idle(pg);
   const b = await st(pg); assert.deepEqual([b.node, b.ch, b.bgKey, b.stage, b.name], ['s1_0', 2, '01', 'coast', '海辺の遊歩道']); assert.match(b.hud, /Chapter 2 \/ 4.*潮風の海岸/);
   assert.equal(await pg.evaluate(() => !document.querySelector('#brollbtn').disabled && document.querySelector('#brollbtn').textContent.trim() === 'START'), true);

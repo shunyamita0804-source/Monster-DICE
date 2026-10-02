@@ -21,7 +21,8 @@ async function start(p) {
   opened = [p];
   const pg = p.page;
   await H.newGame(pg, 'テスト');
-  await pg.evaluate(() => { const m = mk(0); m.name = 'ソラ'; MMP7.ensureProg(m); S.m = m; save(); MMP8.depart(S, m, () => 0.37); save(); board(); });
+  // 1地点ずつの進み方・位置を確かめるため、効果の無い通常マス（2026-10-02 から通過専用）を無くしてから始める（通過専用の確認は qa-e2e-journey の JR-16）
+  await pg.evaluate(() => { const m = mk(0); m.name = 'ソラ'; MMP7.ensureProg(m); S.m = m; save(); MMP8.depart(S, m, () => 0.37); const g = MMCH.graphFor(S.m), A = S.m.raise.field.nodeAssignments; for (const id of g.order) if (g.nodes[id].kind === 'slot' && !A[id]) A[id] = { t: 'stat', k: 'li' }; save(); board(); });
   await pg.waitForSelector('#chf .chf-bg'); await idle(pg);
 }
 const idle = (pg) => pg.waitForFunction(() => !bBusy && !MMCHD.isLocked() && !document.querySelector('.chpop,.chdz') && document.getAnimations().every((a) => a.playState !== 'running' || !Number.isFinite(a.effect && a.effect.getComputedTiming().endTime)), null, { timeout: 20000 }).then(() => pg.waitForTimeout(80));
@@ -81,7 +82,7 @@ test('CH1-B2：サイコロ：START の1タップで無地の正式サイコロ�
   const p = await L.open(); const pg = p.page;
   await start(p);
   await pg.evaluate(() => { window.__nodes = []; new MutationObserver(() => { const n = document.querySelector('#bmonw') && document.querySelector('#bmonw').dataset.node; if (n && window.__nodes[window.__nodes.length - 1] !== n) window.__nodes.push(n); }).observe(document.querySelector('#chf'), { subtree: true, attributes: true, attributeFilter: ['data-node'] }); });
-  await pg.evaluate(() => { delete S.m.raise.field.nodeAssignments.w1_3; save(); board(); }); await idle(pg);   // 止まる w1_3 は何も起きない地点にする（配置の seed によっては疲れ回復のイベントになるため）
+  await pg.evaluate(() => { S.m.raise.field.nodeAssignments.w1_3 = { t: 'stat', k: 'li' }; save(); board(); }); await idle(pg);   // 止まる w1_3 は疲れの変わらない能力マスにする（配置の seed によっては疲れ回復のイベントになるため。2026-10-02 から効果の無い通常マスは通過専用＝止まれない）
   await rollAs(pg, 3);
   await pg.waitForSelector('.chdz');
   const d = await pg.evaluate(() => ({ imgs: [...document.querySelectorAll('.chdz img')].map((i) => i.getAttribute('src')), locked: MMCHD.isLocked(), btn: [...document.querySelectorAll('.chstop')].every((b) => b.disabled), rest: document.querySelector('.chrest') && document.querySelector('.chrest').disabled }));

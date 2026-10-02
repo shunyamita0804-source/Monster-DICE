@@ -33,7 +33,7 @@
     parallax: { far: 0.94, back: 0.97, road: 1, front: 1.14, canopy: 0.6 },
   };
   const V = { key: null, field: null, cfg: null, g: null, sc: null, cam: { x: 0, y: 0, z: 1, S: 1, tx: 0, ty: 0 }, tgt: { x: 0, y: 0, z: 1 }, par0: null, raf: 0, last: 0, hold: 0,
-    moving: false, facing: 1, look: [0, -1], focus: null, skip: null, pre: new Set(), monPos: null, calm: false, animator: null, seedTuft: 1 };
+    moving: false, intro: false, facing: 1, look: [0, -1], focus: null, skip: null, pre: new Set(), monPos: null, calm: false, animator: null, seedTuft: 1 };
   const $ = (s) => document.querySelector(s);
   const esc = (t) => String(t).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const debug = () => { try { return /(^|[?&])chdebug=1(&|$)/.test(root.location.search); } catch (e) { return false; } };
@@ -542,12 +542,20 @@
     return true;
   }
   async function chfIntro(m, key) {
-    if (busyGet()) return;
+    if (busyGet() || V.intro) return;   // 二重に始めない
     const f = MMCH.fieldOf(m); if (!f) return;
     f.introSeen = true; doSave();   // 先に「見た」を保存（演出の途中で再読み込みしても二度出ない）。この個体のこの Chapter の配置と一緒に消える
-    busySet(true); lockUi(true);
-    try { await MMCHI.play(V.cfg, { key, host: $('#chfw'), chapterId: V.cfg.chapterId, title: V.cfg.title, patternId: MMCH.fieldOf(m).patternId, calm: V.calm }); }
-    catch (e) {} finally { busySet(false); }
+    const w = $('#chfw'); V.intro = true; busySet(true); lockUi(true);
+    if (w) w.classList.add('chf-intro');   // イントロ中は UI・ソラモ・マスを出さない
+    let res = null;
+    try { res = await MMCHI.play(V.cfg, { key, host: w, chapterId: V.cfg.chapterId, title: V.cfg.title, patternId: f.patternId, calm: V.calm }); }
+    catch (e) {}
+    finally {
+      // FIELD 1 の正式な開始状態：ソラモ・マス・UI を出す（飛ばしたときも同じ。途中の状態では止まらない）
+      const w2 = $('#chfw'); if (w2) { w2.classList.add('chf-uiin'); w2.classList.remove('chf-intro'); setTimeout(() => w2.classList.remove('chf-uiin'), 420); }
+      if (res && res.skipped) await wait(350);   // 飛ばしたタップが下の START に届かないよう少し待ってから操作できる
+      V.intro = false; busySet(false);
+    }
     if (onField() && chfActive(m) && P8().boardPhase(m) === 'roll') refreshDeck(m);
   }
   // ---------------------------------------------------------

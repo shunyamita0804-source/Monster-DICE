@@ -541,6 +541,12 @@
     return a.t === 'goal' ? { kind: 'none', note: 'goal' } : { kind: 'none', note: 'normal' };
   }
 
+  function isWaypoint(m, id) {
+    const cfg = configFor(m); if (!cfg || !rulesOf(cfg).passNormal) return false;
+    const g = graphFor(m), n = g && g.nodes[id], f = fieldOf(m); if (!n || !f || n.kind !== 'slot') return false;
+    const a = f.nodeAssignments[id]; return !(isObj(a) && SPECIAL.includes(a.t));
+  }
+
   // ---------------------------------------------------------
   // MMP8（raising.js）へのつなぎ（Chapter ドライバー）
   // ---------------------------------------------------------
@@ -551,6 +557,9 @@
     diceSides: (m) => rulesOf(configFor(m) || {}).diceSides,
     /** 通過した地点（効果なし。登録した通過処理があればそれだけ） */
     onPass: (S, m, id, from) => onPass(S, m, id, from),
+    /** 通過専用の地点か（rules.passNormal：効果の無い通常マス＝配置で何も割り当たらなかった候補ノードは止まれない。出目に数えず、歩く途中に通るだけ）。
+     *  出目は効果のあるマス（とライバル・ゴールなどの骨格）だけを数え、ターンは必ずそのどれかで終わる。60地点の座標・つながりは変えない */
+    isWaypoint: (m, id) => isWaypoint(m, id),
     /** 最後のターンの停止処理まで終えたとき：rules.onTimeUp が 'tournament' なら大会へ（ゴール扱い）。既定は従来どおり大会なしで終了 */
     onTurnsExhausted: (S, m) => ({ toGoal: rulesOf(configFor(m) || {}).onTimeUp === 'tournament' }),
     /** 出発：Pattern を選んで配置を確定（疲れは前Chapterから max(0, f − carry)） */
@@ -591,6 +600,6 @@
     buildGraph, trackOf, alongPersp, smoothCurve, measure, pointAt, routeBetween, depthOf, roadAt, clampToRoad, stepsToMerge, sceneNodes, nextFields, sceneOrder, routeLengths,
     validateLayout, generateLayout, initRun, fieldOf, configFor, graphFor, validField, sanitize, typeAt, nodeTypeName, assignOfType, turnInfo,
     fatigue, addFatigue, rollFatigue, canRoll, recover, carryFatigue, registerFatigueItem, fatigueItemEffect, useFatigueItem,
-    statGain, registerEventHandler, registerPassHandler, onPass, resolve, reactionKeyOf, registerReactionResolver, companionReaction, DRIVER, attach, rulesOf });
+    statGain, isWaypoint, registerEventHandler, registerPassHandler, onPass, resolve, reactionKeyOf, registerReactionResolver, companionReaction, DRIVER, attach, rulesOf });
   attach();
 })(typeof window !== 'undefined' ? window : globalThis);

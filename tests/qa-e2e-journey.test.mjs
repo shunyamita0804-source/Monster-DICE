@@ -13,9 +13,10 @@ test.before(async () => { if (!SKIP) L = await H.launch(); });
 test.after(async () => { if (L) await L.close(); });
 async function open(opt = {}) { for (const q of opened) await q.ctx.close().catch(() => {}); const p = await L.open(opt); opened = [p]; return p; }
 const idle = (pg) => pg.waitForFunction(() => !bBusy && !MMCHD.isLocked() && !document.querySelector('.chpop,.chdz'), null, { timeout: 30000 }).then(() => pg.waitForTimeout(250));
-async function toField(pg) {
+/** フィールドを開く。fill（既定）：効果の無い通常マス（2026-10-02 から通過専用）を無くして、1地点ずつの進み方・位置を確かめられるようにする（通過専用の確認は JR-16） */
+async function toField(pg, fill = true) {
   await H.newGame(pg, 'テスト');
-  await pg.evaluate(() => { const m = mk(0); m.name = 'ソラ'; MMP7.ensureProg(m); S.m = m; save(); MMP8.depart(S, m, () => 0.37); save(); board(); });
+  await pg.evaluate((fill) => { const m = mk(0); m.name = 'ソラ'; MMP7.ensureProg(m); S.m = m; save(); MMP8.depart(S, m, () => 0.37); if (fill) { const g = MMCH.graphFor(S.m), A = S.m.raise.field.nodeAssignments; for (const id of g.order) if (g.nodes[id].kind === 'slot' && !A[id]) A[id] = { t: 'stat', k: 'li' }; } save(); board(); }, fill);
   await pg.waitForSelector('#chf .chf-bg'); await idle(pg);
 }
 /** 出目を決めて START を1回押す（1タップ：サイコロは自動で止まる） */
@@ -182,30 +183,61 @@ for (const size of [H.SIZES.base, H.SIZES.se]) {
 // =========================================================
 // 2026-10-01 リアル巨大ボード方式：Chapter開始の俯瞰図 → ズーム／パン → 実プレイ画面、START の1タップ（自動停止）、ターン切れ（大会なし → ファーム → 次の Chapter）、フィナのリアクションの差し込み口
 // =========================================================
-test('JR-9：Chapter に入った瞬間、旅路全体の俯瞰図（演出専用の画像。Pattern A）が全画面に出て Chapter 名 → スタート地点へズーム／パン → 01 の実プレイ画面へ。その間は操作できない。1回だけ（再読み込みでは出ない）。タップで短縮', { skip: SKIP }, async () => {
+test('JR-9：Chapter開始の演出（2026-10-02 正式）：全景を止めて見せる →「Chapter 1」→「はじまりの草原」→ 消える → 全景の中を開始地点へカメラ移動 → FIELD 1 → ソラモ・マス・UI。約3〜4秒。演出中は UI を出さず操作できない。新しく Chapter に入ったときだけ（再読み込みでは出ない）。タップで飛ばす（連打しても1回・下の START に届かない）', { skip: SKIP }, async () => {
   const p = await open({ intro: true }); const pg = p.page;
   await H.newGame(pg, 'テスト');
-  await pg.evaluate(() => { window.__tf = []; const tick = () => { const c = document.querySelector('.chintro-cam'); if (c) { const m = /matrix\(([-\d.e]+)/.exec(getComputedStyle(c).transform); if (m) window.__tf.push(+m[1]); } if (window.__tf.length < 2000) setTimeout(tick, 50); }; tick(); });   // ズーム／パンは Web Animations なので、見た目の倍率（computed の matrix）を記録
-  await pg.evaluate(() => { const m = mk(0); m.name = 'ソラ'; MMP7.ensureProg(m); S.m = m; save(); MMP8.depart(S, m, () => 0.37); save(); board(); });
-  await pg.waitForSelector('.chintro.on', { timeout: 8000 }); await pg.waitForTimeout(400);
-  const a = await pg.evaluate(() => { const im = document.querySelector('.chintro-img'), r = im.getBoundingClientRect(), f = document.querySelector('#chfw').getBoundingClientRect(); return { src: im.getAttribute('src'), cover: r.width >= f.width - 1 && r.height >= f.height - 1, title: document.querySelector('.chintro-title').textContent.replace(/\s+/g, ' '), titleOn: document.querySelector('.chintro-title').classList.contains('on'), busy: bBusy, start: document.querySelector('#brollbtn') && document.querySelector('#brollbtn').disabled, bgUnder: !!document.querySelector('#chf .chf-bg'), z: getComputedStyle(document.querySelector('.chintro')).zIndex }; });
-  assert.equal(a.src, './assets/fields/ch1a/intro/ch1_intro_overview.webp', '正式な俯瞰図（プレイの背景の流用ではない）'); assert.ok(a.cover, '全画面'); assert.match(a.title, /CHAPTER 1.*はじまりの草原/); assert.equal(a.titleOn, true);
-  assert.deepEqual([a.busy, a.start, a.bgUnder], [true, true, true], '演出中は操作できない。下には実プレイの画面（01）が出来ている');
-  const t0 = await pg.evaluate(() => MMCHI.isPlaying()); assert.equal(t0, true);
-  await pg.waitForFunction(() => !document.querySelector('.chintro'), null, { timeout: 15000 });
-  const tf = await pg.evaluate(() => window.__tf);
-  assert.ok(tf.length >= 10 && Math.max(...tf) > tf[0] * 1.5, `俯瞰（引き）からスタート地点へ寄る（倍率 ${tf[0] && tf[0].toFixed(3)} → 最大 ${Math.max(...tf).toFixed(3)}）`);
-  await idle(pg);
-  const b = await pg.evaluate(() => ({ bg: document.querySelector('#chf .chf-bg').getAttribute('src'), node: S.m.raise.node, start: document.querySelector('#brollbtn').textContent.trim(), on: !document.querySelector('#brollbtn').disabled, busy: bBusy }));
-  assert.deepEqual(b, { bg: './assets/fields/ch1a/final/field/ch1_bg_01.webp', node: 'w1_0', start: 'START', on: true, busy: false }, '俯瞰図のあとは 01 の実プレイ画面で START が押せる');
-  // 再読み込みでは出ない：「見た」はこの個体のこの Chapter の配置（m.raise.field.introSeen）に保存（セーブ全体の項目や sessionStorage では判定しない）
-  assert.equal(await pg.evaluate(() => { const s = JSON.parse(localStorage.getItem('mr4v6')); return s.m.raise.field.introSeen === true && !Object.keys(s).some((k) => /intro/i.test(k)) && !Object.keys(s.m.raise).some((k) => /intro/i.test(k)); }), true, '見たかどうかは個体の Chapter の配置に持つ');
+  await pg.evaluate(() => { window.__iv = []; const tick = () => { const ov = document.querySelector('.chintro'); if (ov) { const c = ov.querySelector('.chintro-cam'), m = new DOMMatrix(getComputedStyle(c).transform); window.__iv.push({ t: performance.now(), s: m.a, ty: m.f, ch: ov.querySelector('.chintro-ch').classList.contains('on'), nm: ov.querySelector('.chintro-name').classList.contains('on'), title: getComputedStyle(ov.querySelector('.chintro-title')).opacity, ui: getComputedStyle(document.querySelector('#chf-ui')).opacity, mon: getComputedStyle(document.querySelector('#bmonw')).opacity }); } requestAnimationFrame(tick); }; requestAnimationFrame(tick); });
+  const t0 = await pg.evaluate(() => { const m = mk(0); m.name = 'ソラ'; MMP7.ensureProg(m); S.m = m; save(); MMP8.depart(S, m, () => 0.37); save(); const t = performance.now(); board(); return t; });
+  await pg.waitForSelector('.chintro', { timeout: 8000 });
+  const a = await pg.evaluate(() => { const im = document.querySelector('.chintro-img'), r = im.getBoundingClientRect(), f = document.querySelector('#chfw').getBoundingClientRect(); return { src: im.getAttribute('src'), cover: r.width >= f.width - 1 && r.height >= f.height - 1, ch: document.querySelector('.chintro-ch').textContent, nm: document.querySelector('.chintro-name').textContent, busy: bBusy, start: document.querySelector('#brollbtn').disabled, bgUnder: !!document.querySelector('#chf .chf-bg'), cls: document.querySelector('#chfw').className }; });
+  assert.equal(a.src, './assets/fields/ch1a/intro/ch1_intro_overview.webp', '正式な全景（プレイの背景の流用ではない）'); assert.ok(a.cover, '全画面');
+  assert.deepEqual([a.ch, a.nm], ['Chapter 1', 'はじまりの草原']); assert.deepEqual([a.busy, a.start, a.bgUnder], [true, true, true], '演出中は操作できない。下には FIELD 1 が出来ている'); assert.match(a.cls, /chf-intro/);
+  await pg.waitForFunction(() => !document.querySelector('.chintro') && !bBusy && !document.querySelector('#brollbtn').disabled, null, { timeout: 15000 });
+  const t1 = await pg.evaluate(() => performance.now()), iv = await pg.evaluate(() => window.__iv), rel = (x) => x.t - iv[0].t;
+  assert.ok(t1 - t0 >= 3000 && t1 - t0 <= 5200, `出発から操作できるまで ${Math.round(t1 - t0)}ms（3〜4秒程度＋読み込み）`);
+  assert.ok(iv.every((x) => +x.ui === 0 && +x.mon === 0), 'イントロ中は UI・ソラモを出さない');
+  const chAt = iv.find((x) => x.ch), nmAt = iv.find((x) => x.nm), first = chAt.s, ci = iv.indexOf(chAt);   // 基準は「Chapter 1」が出た時点のカメラ（それより前は全景の画像の読み込み待ちを含む）
+  assert.ok(chAt && nmAt && rel(chAt) >= 350 && rel(nmAt) > rel(chAt), `全景を止めてから「Chapter 1」→ Chapter 名（${chAt && Math.round(rel(chAt))}ms → ${nmAt && Math.round(rel(nmAt))}ms）`);
+  assert.ok(iv.slice(ci).filter((x) => rel(x) < rel(nmAt) + 800).every((x) => Math.abs(x.s - first) < 1e-3), 'タイトルを見せている間カメラは止まっている');
+  const moveFrom = iv.findIndex((x, i) => i > ci && Math.abs(x.s - first) > 1e-3); assert.ok(moveFrom > ci && iv.slice(ci, moveFrom).some((x) => +x.title < 0.05 && x.nm), 'タイトルが消えてからカメラが動く');
+  assert.ok(Math.max(...iv.map((x) => x.s)) > first * 1.8, '全景から開始地点へ寄る');
+  const b = await pg.evaluate(() => ({ bg: document.querySelector('#chf .chf-bg').getAttribute('src'), node: S.m.raise.node, cls: document.querySelector('#chfw').className, ui: getComputedStyle(document.querySelector('#chf-ui')).opacity, mon: !!document.querySelector('#bmonw img.on'), turns: S.m.raise.turnsUsed }));
+  assert.equal(b.bg, './assets/fields/ch1a/final/field/ch1_bg_01.webp'); assert.equal(b.node, 'w1_0'); assert.doesNotMatch(b.cls, /chf-intro/); assert.equal(b.mon, true); assert.equal(b.turns, 0);
+  // 再読み込み（Chapter の途中から）では出さない：「見た」はこの個体のこの Chapter の配置（m.raise.field.introSeen）
+  assert.equal(await pg.evaluate(() => JSON.parse(localStorage.getItem('mr4v6')).m.raise.field.introSeen), true);
   await pg.reload(); await pg.waitForFunction(() => typeof MMP8 === 'object'); await pg.click('.p15start'); await pg.waitForSelector('#chf .chf-bg'); await pg.waitForTimeout(600);
   assert.equal(await pg.evaluate(() => !!document.querySelector('.chintro')), false, '再読み込みでは出さない');
-  // タップで短縮：この Chapter の配置を作り直した状態（＝新しい出発）で出し直す
-  await pg.evaluate(() => { delete S.m.raise.field.introSeen; save(); document.querySelector('#app').innerHTML = ''; board(); });   // 演出は画面を作るときだけ（同じ画面の描き直しでは出ない）
-  await pg.waitForSelector('.chintro.on', { timeout: 8000 }); await pg.waitForTimeout(300); await pg.click('.chintro');
-  await pg.waitForFunction(() => !document.querySelector('.chintro'), null, { timeout: 4000 });
+  // タップで飛ばす：START の位置を連打しても、飛ばすのは1回・サイコロは振られない・正式な開始状態
+  for (const at of [300, 1500, 3100]) {
+    await pg.evaluate(() => { delete S.m.raise.field.introSeen; save(); document.querySelector('#app').innerHTML = ''; board(); });   // 新しい出発と同じ状態
+    await pg.waitForSelector('.chintro', { timeout: 8000 }); await pg.waitForTimeout(at);
+    const pos = await pg.evaluate(() => { const r = document.querySelector('#brollbtn').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; });
+    const tS = Date.now(); for (let i = 0; i < 6; i++) { await pg.mouse.click(pos[0], pos[1]); await pg.waitForTimeout(40); }
+    await pg.waitForFunction(() => !document.querySelector('.chintro') && !bBusy && !document.querySelector('#brollbtn').disabled, null, { timeout: 4000 });
+    assert.ok(Date.now() - tS < 1500, `飛ばすとすぐ（${Date.now() - tS}ms）`);
+    await pg.waitForTimeout(500);
+    const c = await pg.evaluate(() => ({ turns: S.m.raise.turnsUsed, pend: S.m.raise.pend, intros: document.querySelectorAll('.chintro').length, cls: document.querySelector('#chfw').className, tiles: document.querySelectorAll('#chf .chf-tile').length, mon: !!document.querySelector('#bmonw img.on'), node: S.m.raise.node }));
+    assert.deepEqual([c.turns, c.pend, c.intros, c.node, c.mon], [0, null, 0, 'w1_0', true], `${at}ms で飛ばす：飛ばしたタップでサイコロは振られない`); assert.doesNotMatch(c.cls, /chf-intro/); assert.ok(c.tiles > 0);
+  }
+  await pg.click('#brollbtn'); await pg.waitForFunction(() => S.m.raise.turnsUsed === 1, null, { timeout: 5000 });   // そのあと START は押せる
+  assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
+});
+
+test('JR-16：空白で止まらない（2026-10-02）：効果の無い通常マスは通過専用。出目1〜3のどれでも、止まるのは正式なマス（マスUIのある効果マス・ライバル・ゴール）。通常マスは歩いて通り過ぎる', { skip: SKIP }, async () => {
+  const p = await open(); const pg = p.page;
+  await toField(pg, false);
+  const blanks = await pg.evaluate(() => { const g = MMCH.graphFor(S.m), A = S.m.raise.field.nodeAssignments; return g.order.filter((id) => g.nodes[id].kind === 'slot' && !A[id]); });
+  assert.ok(blanks.length >= 20, `通常マス ${blanks.length}`);
+  await pg.evaluate(() => { window.__nodes = []; const t = () => { const w = document.querySelector('#bmonw'); if (w && w.dataset.node && window.__nodes[window.__nodes.length - 1] !== w.dataset.node) window.__nodes.push(w.dataset.node); requestAnimationFrame(t); }; requestAnimationFrame(t); });
+  let passed = 0;
+  for (const v of [1, 2, 3, 3, 2, 1, 3, 2]) {
+    if (await pg.evaluate(() => !!document.querySelector('.chbat'))) { await pg.evaluate(() => { MMP8.beginBattle(S, S.m, { kind: 'practice', rank: 0 }); save(); MMP8.markBattleDone(S); save(); after('試合終了'); }); await pg.waitForSelector('#chf .chf-bg'); await idle(pg); }
+    await rollAs(pg, v); await pg.waitForFunction(() => !bBusy || !!document.querySelector('.chbat'), null, { timeout: 30000 }); await pg.waitForTimeout(400); await idle(pg).catch(() => {});
+    const r = await pg.evaluate(() => { const id = S.m.raise.node, g = MMCH.graphFor(S.m), A = S.m.raise.field.nodeAssignments; return { id, ok: !!A[id] || ['rival', 'goal'].includes(g.nodes[id].kind), tile: !!document.querySelector(`#chf .chf-tile[data-id="${id}"]`) || !!document.querySelector('.chbat') }; });
+    assert.ok(r.ok && r.tile, `出目${v} → ${r.id} は正式なマス（マスUIあり）`);
+  }
+  const seen = await pg.evaluate(() => window.__nodes); passed = seen.filter((id) => blanks.includes(id)).length;
+  assert.ok(passed >= 3, `通常マスを歩いて通過（${passed}）`);
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
 });
 
