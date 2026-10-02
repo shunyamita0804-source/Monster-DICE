@@ -326,7 +326,7 @@ T('QA-RB4：サイコロの演出中・移動の途中で再読み込み → 出
   assert.deepEqual([r.node, r.pend, r.turnsUsed, r.fatigue], ['w1_2', null, 1, 5], '保存済みの出目2で w1_0 → w1_1 → w1_2（疲れは重ねない）');
   const s1 = await H.getS(pg);
   const gain = s1.m.po - before.m.po;
-  assert.ok(gain >= 10 && gain <= 23, `止まった「ちから」の地点で +10〜15（大成功は1.5倍）（実際 +${gain}）`);
+  assert.equal(gain, 5, `止まった「ちから」の地点で +5（ソラモのちから適性 C。2026-10-02 成長適性）（実際 +${gain}）`);
   assert.deepEqual({ ...statsOf(s1.m), po: before.m.po }, statsOf(before.m), 'ほかの能力（通過したライフの地点を含む）は変わらない');
   assert.match(await bmsg(pg), new RegExp(`ちから \\+${gain}$`));
   await assertSynced(pg);
@@ -365,7 +365,7 @@ T('QA-RB5：背景の切り替えをまたぐ移動の途中で再読み込み �
   assert.equal(await pg.evaluate(() => document.querySelector('#chf .chf-bg').getAttribute('src')), './assets/fields/ch1a/final/field/ch1_bg_02.webp');
   const s = await H.getS(pg);
   const gain = s.m.hi - before.m.hi;
-  assert.ok(gain >= 10 && gain <= 23, `命中 +10〜15（大成功は1.5倍）（実際 +${gain}）`);
+  assert.equal(gain, 5, `命中 +5（ソラモの命中適性 C）（実際 +${gain}）`);
   assert.deepEqual({ ...statsOf(s.m), hi: before.m.hi }, statsOf(before.m));
   await assertSynced(pg);
   noErrors(p);
@@ -382,7 +382,7 @@ T('QA-RB6：停止地点の効果の処理前（resolve）の保存から再開 
   await waitTurnDone(pg, 1);
   const s = await H.getS(pg);
   const gain = s.m.po - po0;
-  assert.ok(gain >= 10 && gain <= 23, `ちから +10〜15（大成功は1.5倍）（実際 +${gain}）`);
+  assert.equal(gain, 5, `ちから +5（ソラモのちから適性 C）（実際 +${gain}）`);
   assert.deepEqual([s.m.raise.node, s.m.raise.pend, s.m.raise.turnsUsed, s.m.raise.fatigue], ['w1_2', null, 1, 5]);
   assert.deepEqual(s.m.raise.field.clearedStats, ['w1_2']);
   await assertSynced(pg);
