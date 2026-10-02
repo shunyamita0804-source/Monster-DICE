@@ -415,7 +415,7 @@
       V.hold = performance.now() + (V.calm ? 0 : C.followDelay);   // 歩き出してから少し遅れて追いかける
     }
     await moveAlong(pts, stepDuration(pts, id), [first ? 0.3 : 0.05, last ? 0.3 : 0.05]);
-    if (w) w.dataset.node = id; markCur(id); feel('step', { id, last });   // 1マスごとの足音（出来事 step → SE STEP。音源が無ければ無音）
+    if (w) w.dataset.node = id; markCur(id); if (!last) feel('step', { id });   // 1マスごとの足音（出来事 step → SE STEP）。止まるマスでは鳴らさない（止まった音と重ねない）
     if (last) {   // 着地：小さな上下動のあと、目的地点へ軽く寄る
       V.moving = false; lean(0); anim('land'); camZoom('stop');
       await wait(V.calm ? 20 : M.landMs);
@@ -527,14 +527,14 @@
       // 画像の操作欄：画像は飾り、押せる領域は透明なボタン（文字は読み上げ・テスト用に残し、見た目は画像）。サイコロの絵は置かない（START を押したときだけ MMCHD が出す）
       const H = D.hit || {}, box = (k) => { const h = H[k] || {}; return `style="left:${(h.x * 100).toFixed(1)}%;top:${(h.y * 100).toFixed(1)}%;width:${(h.w * 100).toFixed(1)}%;height:${(h.h * 100).toFixed(1)}%"`; };
       const center = ph === 'roll'
-        ? `<div class="chstopw chstopw-img${rollOn ? ' on' : ''}" ${box('center')}><button class="chstop chstop-img" id="brollbtn" onclick="chfRoll()"${canRoll ? '' : ' disabled'} aria-label="START（サイコロを振る）"><b>START</b></button></div>`
+        ? `<div class="chstopw chstopw-img${rollOn ? ' on' : ''}" ${box('center')}><button class="chstop chstop-img" id="brollbtn" data-nsfx="1" onclick="chfRoll()"${canRoll ? '' : ' disabled'} aria-label="START（サイコロを振る）"><b>START</b></button></div>`
         : `<div class="chstopw chstopw-img" ${box('center')}><button class="chstop chstop-img wait" disabled aria-label="移動中"><b>${ph === 'move' || ph === 'resolve' ? r.pend.roll : '…'}</b></button></div>`;
       const wing = (c) => { const on = c.k === 'rest' ? canRest : idle; return `<button class="chwing chwing-img ${c.cls} chw-${c.pos}${c.k === 'rest' && tired ? ' must' : ''}" ${box(c.pos)} onclick="${c.on}"${on ? '' : ' disabled'}><b>${c.label}</b>${c.k === 'rest' ? `<small>疲れ −${R.rest}</small>` : ''}</button>`; };
       const ctl = `<div class="chcmd chcmd-img" style="--deckar:${D.aspect || 3.116}"><img class="chdeck-bg" src="${esc(D.start)}" alt="" draggable="false">${CMDS.map(wing).join('')}${center}</div>`;
       return `<div class="chdeck chdeck-img" id="chdock"><p class="chmsg" id="bmsg">${msg || def}</p>${ctl}</div>`;
     }
     const center = ph === 'roll'
-      ? `<div class="chstopw${rollOn ? ' on' : ''}"><button class="chstop" id="brollbtn" onclick="chfRoll()"${canRoll ? '' : ' disabled'} aria-label="START（サイコロを振る）"><span class="chstop-rim"></span><span class="chstop-dome"></span><b>START</b></button><small class="chstop-cap">サイコロを振る</small></div>`
+      ? `<div class="chstopw${rollOn ? ' on' : ''}"><button class="chstop" id="brollbtn" data-nsfx="1" onclick="chfRoll()"${canRoll ? '' : ' disabled'} aria-label="START（サイコロを振る）"><span class="chstop-rim"></span><span class="chstop-dome"></span><b>START</b></button><small class="chstop-cap">サイコロを振る</small></div>`
       : `<div class="chstopw"><button class="chstop wait" disabled aria-label="移動中"><span class="chstop-rim"></span><span class="chstop-dome"></span><b>${ph === 'move' || ph === 'resolve' ? r.pend.roll : '…'}</b></button></div>`;
     const wing = (c) => { const on = c.k === 'rest' ? canRest : idle; return `<button class="chwing ${c.cls} chw-${c.pos}${c.k === 'rest' && tired ? ' must' : ''}" onclick="${c.on}"${on ? '' : ' disabled'}>${ICON[c.k]}<b>${c.label}</b>${c.k === 'rest' ? `<small>疲れ −${R.rest}</small>` : ''}</button>`; };
     const ctl = `<div class="chcmd">${CMDS.filter((c) => c.pos[0] === 't').map(wing).join('')}${center}${CMDS.filter((c) => c.pos[0] === 'b').map(wing).join('')}</div>`;
@@ -643,13 +643,14 @@
     w.classList.add('arrive');
     if (f.arrivalSeen) { ov.classList.add('now', 'on'); ui.innerHTML = receptionHtml(m); return; }
     busySet(true);
+    if (root.bgm) root.bgm('chapter');   // 大会会場・受付の BGM（ゴールでは TOURNAMENT_ENTRY）
     try {
       if (fromField && !V.calm) await wait(500);   // ゴールに着いた姿を少し見せてから
       if (!fromField) ov.classList.add('now');
       ov.classList.add('on');
       await wait(V.calm || !fromField ? 0 : (A.fadeMs || 900) + 200);
       if (!$('#chfarr')) return;
-      feel('chapter.clear');
+      feel('tournament.arrive');   // 大会会場へ着いた音（TOURNAMENT_ARRIVAL）
       if (root.MMNPC && !root.MM_QA_NO_ARRIVAL && (A.talk || []).length) await MMNPC.talk(arrivalLines(A), { kind: 'event', presentation: 'major' });
       f.arrivalSeen = true; doSave();
     } finally { busySet(false); }

@@ -2206,17 +2206,21 @@ function loop(){clearInterval(AU.tm);AU.tm=null;if(!AU.ctx||!AU.on||!AU.sc)retur
 function bgmLegacy(sc){if(AU.sc==sc&&AU.tm)return;AU.sc=sc;loop()} // 合成音の BGM（MMAUDIO の legacy。正式な曲の無い場面だけ鳴る）
 function bgmLegacyStop(){clearInterval(AU.tm);AU.tm=null;AU.sc=null} // 正式な曲へ切り替えるとき合成音を止める（二重再生の防止）
 // BGM は場面（MMAUDIO.SCENES）で鳴らす（2026-10-02）。画面のコードの bgm("town") などは、画面の鍵 → 場面へ読み替える（audioSceneFor）。曲とファイルの対応は js/audio/audio-registry.js
-const BGM_SCENE={title:"TITLE",town:"TOWN",market:"MARKET",ranch:"RANCH",lab:"LABORATORY",farm:"FARM",train:"TRAINING",result:"RESULT",dojo:"SPECIAL_BATTLE"};
-const LEGACY_BGM={TITLE:"title",TOWN:"town",MARKET:"market",RANCH:"farm",LABORATORY:"market",FARM:"farm",TRAINING:"train",CHAPTER_1:"train",CHAPTER_2:"train",CHAPTER_3:"train",CHAPTER_4:"train",WILD_BATTLE:"battle",RARE_WILD_BATTLE:"battle",RIVAL_BATTLE:"battle",TOURNAMENT_LOBBY_LOW:"train",TOURNAMENT_LOBBY_HIGH:"train",TOURNAMENT_BATTLE_LOW:"battle",TOURNAMENT_BATTLE_HIGH:"battle",SPECIAL_BATTLE:"dojo",RESULT:"train"}; // 正式な曲の無い場面 → 合成音の曲
-const LEGACY_SE={UI_CONFIRM:5,UI_CANCEL:10,UI_ERROR:10,UI_OPEN:0,DICE_THROW:7,DICE_ROLL:7,DICE_LAND:9,STAT_UP:3,GOLD_GET:11,CHEST_OPEN:11,EVENT:3,WILD_ALERT:2,BATTLE_INTRO:12,BATTLE_START:3,BATTLE_ATTACK:9,BATTLE_HIT:1,BATTLE_CRIT:2,BATTLE_MISS:0,BUFF:11,DEBUFF:10,ROULETTE_TICK:7,VICTORY:3,SWOOSH:6,UNLOCK:11,REWARD:11}; // 正式な SE ファイルの無い出来事 → 合成音の番号（表に無いものは鳴らさない：STEP・TILE_STOP・CHAPTER_START など）
+const BGM_SCENE={title:"TITLE",town:"TOWN",market:"MARKET",ranch:"RANCH",lab:"LABORATORY",farm:"FARM",train:"TRAINING",entry:"TOURNAMENT_ENTRY",matchup:"TOURNAMENT_MATCHUP",result:"RESULT",dojo:"SPECIAL_BATTLE"};
+const LEGACY_BGM={TITLE:"title",TOWN:"town",MARKET:"market",RANCH:"farm",LABORATORY:"market",FARM:"farm",TRAINING:"train",CHAPTER_1:"train",CHAPTER_2:"train",CHAPTER_3:"train",CHAPTER_4:"train",WILD_BATTLE:"battle",RARE_WILD_BATTLE:"battle",RIVAL_BATTLE:"battle",TOURNAMENT_ENTRY:"train",TOURNAMENT_LOBBY_LOW:"train",TOURNAMENT_LOBBY_HIGH:"train",TOURNAMENT_MATCHUP:"battle",TOURNAMENT_BATTLE_LOW:"battle",TOURNAMENT_BATTLE_HIGH:"battle",SPECIAL_BATTLE:"dojo",RESULT:"train"}; // 正式な曲の無い場面 → 合成音の曲
+const LEGACY_SE={UI_CONFIRM:5,UI_CANCEL:10,UI_ERROR:10,UI_OPEN:0,DICE_THROW:7,DICE_ROLL:7,DICE_LAND:9,STAT_UP:3,GOLD_GET:11,CHEST_OPEN:11,EVENT:3,WILD_ALERT:2,BATTLE_INTRO:12,BATTLE_START:3,BATTLE_ATTACK:9,BATTLE_HIT:1,BATTLE_CRIT:2,BATTLE_MISS:0,BUFF:11,DEBUFF:10,ROULETTE_TICK:7,ROULETTE_STOP:9,VICTORY:3,SWOOSH:6,UNLOCK:11,REWARD:11}; // 正式な SE ファイルの無い出来事 → 合成音の番号（表に無いものは鳴らさない：STEP・TILE_STOP・CHAPTER_START など）
 // 合成音の番号（sfx(n)）→ 出来事の名前（[ふだん, バトル中]）。fight()（Phase 6・変更しない）の中の sfx(n) も、この読み替えで正式な SE へ届く
-const SFX_EVENT={0:["UI_ERROR","BATTLE_MISS"],1:["BATTLE_HIT","BATTLE_HIT"],2:["WILD_ALERT","BATTLE_CRIT"],3:["STAT_UP",null],5:["UI_CONFIRM","UI_CONFIRM"],6:["SWOOSH","SWOOSH"],7:["DICE_THROW","ROULETTE_TICK"],9:["BATTLE_ATTACK","BATTLE_ATTACK"],10:["UI_CANCEL","DEBUFF"],11:["GOLD_GET","BUFF"],12:["BATTLE_INTRO","BATTLE_INTRO"]};
-function sfxEventOf(t){const b=!!document.getElementById("bt"),e=SFX_EVENT[t];if(!e)return null;if(b&&t==3){AU.fight3=(AU.fight3||0)+1;return AU.fight3==1?"BATTLE_START":"VICTORY"}return e[b?1:0]} // バトル中の 3 は最初が FIGHT!（開始）、次が勝利
+const SFX_EVENT={0:["UI_ERROR","BATTLE_MISS"],1:["BATTLE_HIT","BATTLE_HIT"],2:["WILD_ALERT","BATTLE_CRIT"],3:["STAT_UP",null],5:["UI_CONFIRM","UI_CONFIRM"],6:["SWOOSH","SWOOSH"],7:["DICE_THROW","ROULETTE_TICK"],9:["BATTLE_ATTACK","ROULETTE_STOP"],10:["UI_CANCEL","DEBUFF"],11:["GOLD_GET","BUFF"],12:["BATTLE_INTRO","BATTLE_INTRO"]};
+function sfxEventOf(t){const b=!!document.getElementById("bt"),e=SFX_EVENT[t];if(!e)return null;if(b&&t==3){AU.fight3=(AU.fight3||0)+1;if(AU.fight3==1){setTimeout(battleBgmGo,450);return "BATTLE_START"}return "VICTORY"}return e[b?1:0]} // バトル中の 3 は最初が FIGHT!（開始の音 → 0.45秒後に戦闘の BGM）、次が勝利。9 はルーレットの STOP
+// 実戦の BGM（2026-10-03）：fight()（Phase 6・変更しない）の最初の bgm("battle") では曲を始めず、それまでの曲を止めて待つ（導入の演出は静かに）→「FIGHT!」の開始音のあとで戦闘の場面へ。開始音が来なかったときの保険は7秒
+function battleSceneFor(){const m=S&&S.m,r=m&&m.raise,b=r&&r.battle,t=r&&r.tour;if((b&&b.kind=="league")||(!b&&t&&t.status=="league"))return (b?b.rank:t.rank)>=3?"TOURNAMENT_BATTLE_HIGH":"TOURNAMENT_BATTLE_LOW";const bt=r&&r.pend&&r.pend.fx&&r.pend.fx.battleType;return bt=="rival"?"RIVAL_BATTLE":bt=="rare"?"RARE_WILD_BATTLE":"WILD_BATTLE"}
+function battleBgmArm(sc){AU.fight3=0;clearTimeout(AU.btT);AU.btScene=sc;MMAUDIO.stopBgm({fade:"quick"});AU.btT=setTimeout(battleBgmGo,7000)}
+function battleBgmGo(){clearTimeout(AU.btT);AU.btT=null;const sc=AU.btScene;AU.btScene=null;if(sc&&document.getElementById("bt"))MMAUDIO.scene(sc,{fade:"quick"})}
 /** 画面の鍵 → BGM の場面。battle＝今の戦闘の種類（野生・レア・ライバル・大会のランク帯）、chapter＝今の Chapter、tour＝大会のランク帯（E〜C／B〜S）。null＝今の場面のまま */
 function audioSceneFor(k){const m=S&&S.m,r=m&&m.raise;
- if(k=="battle"||k=="dojo")AU.fight3=0;
- if(k=="battle"){const b=r&&r.battle,t=r&&r.tour;if((b&&b.kind=="league")||(!b&&t&&t.status=="league"))return (b?b.rank:t.rank)>=3?"TOURNAMENT_BATTLE_HIGH":"TOURNAMENT_BATTLE_LOW";const bt=r&&r.pend&&r.pend.fx&&r.pend.fx.battleType;return bt=="rival"?"RIVAL_BATTLE":bt=="rare"?"RARE_WILD_BATTLE":"WILD_BATTLE"}
- if(k=="chapter")return "CHAPTER_"+Math.max(1,Math.min(4,(r&&r.ch)|0));
+ if(k=="dojo")AU.fight3=0;
+ if(k=="battle"){battleBgmArm(battleSceneFor());return null} // 実戦の曲は「FIGHT!」のあと（battleBgmGo）
+ if(k=="chapter"){let g=false;try{g=!!(r&&MMP8.boardPhase(m)=="goal")}catch(e){}return g?"TOURNAMENT_ENTRY":"CHAPTER_"+Math.max(1,Math.min(4,(r&&r.ch)|0))} // ゴール（大会会場・受付・ランク選択）は大会の受付の場面
  if(k=="tour"){const t=r&&r.tour;return t&&t.rank>=3?"TOURNAMENT_LOBBY_HIGH":"TOURNAMENT_LOBBY_LOW"}
  if(k=="farmmenu")return r&&r.state=="board"?null:"FARM"; // Chapter 中にボードから開くステータス・技管理は Chapter の曲のまま
  return BGM_SCENE[k]||"TOWN"}
@@ -2245,13 +2249,13 @@ function fanfare(){const c=AU.ctx;if(!c||!AU.on||!AU.wet)return;const n=c.curren
  [-24,-12].forEach(x=>piano(NT(x),m,2,.2));[0,4,7,12,16].forEach(x=>piano(NT(x),m+.02,2,.1));
  [-12,-5,0,4,7,12,16].forEach(x=>strg(NT(x),m,1.1,.05,{a:.06,r:1.6,snd:.8}));
  [0,4,7].forEach(x=>note(NT(x+12),m,1.3,LD.horn,.09));}
-function startGame(el){if(el&&el.dataset.go)return;if(el)el.dataset.go=1;unlock();clearInterval(AU.tm);AU.tm=null;AU.sc=null;fanfare();const p=$(".tpage");if(p){const d=document.createElement("div");d.className="tflash";p.appendChild(d)}setTimeout(()=>p8Resume(),900)}
+function startGame(el){if(el&&el.dataset.go)return;if(el)el.dataset.go=1;unlock();clearInterval(AU.tm);AU.tm=null;AU.sc=null;if(!MMAUDIO.se("TITLE_START"))fanfare();const p=$(".tpage");if(p){const d=document.createElement("div");d.className="tflash";p.appendChild(d)}setTimeout(()=>p8Resume(),900)}
 MMAUDIO.attachLegacy({bgm:sc=>{if(auBus())bgmLegacy(LEGACY_BGM[sc]||"town")},stop:bgmLegacyStop,sfx:(n,o)=>{const t=o&&o.legacy!=null?o.legacy:LEGACY_SE[n];if(t==null)return false;sfxSynth(t,o&&o.delay);return true},muted:()=>!AU.on,setMuted:on=>{if(AU.on===!on)return;AU.on=!on;try{localStorage.setItem("mr4a",AU.on?"1":"0")}catch(e){}const b=$("#snd");if(b)b.textContent=AU.on?"🔊":"🔇"}}); // 合成音（legacy）を MMAUDIO へつなぐ。sfx の o.legacy＝sfx(n) から来たときの元の番号（合成音は今までどおりの音）
 function auBus(){if(AU.ctx)return true;const c=MMAUDIO.context();if(!c)return false;AU.ctx=c;mkbus(c);return true} // AudioContext は MMAUDIO の1つだけ。合成音の出口（mkbus）はそこへつなぐ
 function unlock(){try{if(navigator.audioSession)navigator.audioSession.type="playback"}catch(e){}auBus();MMAUDIO.unlock()} // 最初の操作：AudioContext の作成・resume・保留した BGM の再開（表裏の suspend／resume も MMAUDIO）
 ["pointerdown","touchend","click","keydown"].forEach(e=>document.addEventListener(e,unlock));
 document.addEventListener("click",e=>{const b=e.target&&e.target.closest?e.target.closest("button,.skt,[role=button]"):null;if(b&&!b.disabled&&b.id!="snd"&&!(b.dataset&&b.dataset.nsfx))MMAUDIO.se("UI_CONFIRM")},true);
-function sndToggle(){AU.on=!AU.on;try{localStorage.setItem("mr4a",AU.on?"1":"0")}catch(e){}$("#snd").textContent=AU.on?"🔊":"🔇";unlock();MMAUDIO.setMuted(!AU.on);if(AU.on)setTimeout(()=>sfx(3),250)} // ミュートは MMAUDIO が全部の経路（ファイル BGM・合成 BGM・ファイル SE・合成 SE）へ反映する
+function sndToggle(){AU.on=!AU.on;try{localStorage.setItem("mr4a",AU.on?"1":"0")}catch(e){}$("#snd").textContent=AU.on?"🔊":"🔇";unlock();MMAUDIO.setMuted(!AU.on);if(AU.on)setTimeout(()=>MMAUDIO.se("UI_CONFIRM"),250)} // ミュートは MMAUDIO が全部の経路（ファイル BGM・合成 BGM・ファイル SE・合成 SE）へ反映する
 function sfx(t,dl){const n=sfxEventOf(t);if(n&&MMAUDIO.se(n,{delay:dl,legacy:t}))return;sfxSynth(t,dl)} // 合成音の番号 → 出来事の名前 → MMAUDIO（正式な SE があればファイル、無ければ今までの合成音）
 function sfxSynth(t,dl){const c=AU.ctx;if(!c||!AU.on||c.state!="running"||!AU.wet)return;const n=c.currentTime+(dl||0);
  const nz=(f0,f1,d,v,ty,sd,q)=>{const b=c.createBufferSource(),fl=c.createBiquadFilter(),g=c.createGain();b.buffer=AU.nb;b.loop=true;fl.type=ty||"bandpass";if(q)fl.Q.value=q;fl.frequency.setValueAtTime(f0,n);fl.frequency.exponentialRampToValueAtTime(f1,n+d);g.gain.setValueAtTime(.0001,n);g.gain.linearRampToValueAtTime(v,n+Math.min(.01,d/4));g.gain.exponentialRampToValueAtTime(.0001,n+d);b.connect(fl);fl.connect(g);out(g,0,sd??.25);b.start(n,Math.random());b.stop(n+d+.02)};
@@ -2395,7 +2399,7 @@ function lobby(msg,open){if(p8Blocked())return;if(S.playerNamePending)return p11
 }
 // ---- Phase 11：プレイヤー名（新規ゲームの最初に決める。空欄なら「アルト」） ----
 function p11Esc(t){return String(t).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
-function p11NameScr(msg){bgm("town");p9Immersive(false);const d=MMP11P.DEFAULT_NAME;
+function p11NameScr(msg){bgm("title");p9Immersive(false);const d=MMP11P.DEFAULT_NAME;
  $("#app").innerHTML=`<div class="p11reg"><div class="p11card"><div class="p11crest" aria-hidden="true">🐾</div><b class="p11t">ブリーダー登録</b>
  <p class="p11s">ミスティックモンスターズへようこそ！<br>あなたの名前を教えてください。</p>
  <label class="p11lb" for="p11nm">プレイヤー名（${MMP11P.MAX_LEN}文字まで）</label><input id="p11nm" maxlength="${MMP11P.MAX_LEN*2}" value="${p11Esc(S.playerName||d)}" autocomplete="off" enterkeyhint="done" onkeydown="if(event.key==='Enter'&&!event.isComposing)p11NameGo()">
@@ -3165,7 +3169,7 @@ function p8TourScr(msg){const m=S.m,t=m.raise.tour,lg=t.league;bgm(t.status=="se
  if(t.status=="settled")return p9TourResult(msg);
  const st=MMP8L.standings(lg),pm=MMP8.tourNext(m),o=p9Npc(lg,pm.opp);
  $("#app").innerHTML=`<div class="p9tour">${p9TourHead(m,t)}
- ${p9Ced(lg.round==0?CEDRIC_TALK.first:CEDRIC_TALK.next[lg.round%CEDRIC_TALK.next.length])}<div class="p9next"><div class="lb">第${pm.round+1}試合 / 全${lg.rounds.length}試合　次の相手</div><div class="vsrow">${p9Pt(m,"me")}<span class="p9vsl">VS</span>${p9Pt(o)}</div><div class="nm"><b>${p11Esc(m.name)}</b><span>vs</span><b>${p11Esc(o.name)}</b></div><button class="p9btn" onclick="p9VsScr()">⚔️ 対戦へ（能力をくらべる）</button></div>
+ ${p9Ced(lg.round==0?CEDRIC_TALK.first:CEDRIC_TALK.next[lg.round%CEDRIC_TALK.next.length])}<div class="p9next"><div class="lb">第${pm.round+1}試合 / 全${lg.rounds.length}試合　次の相手</div><div class="vsrow">${p9Pt(m,"me")}<span class="p9vsl">VS</span>${p9Pt(o)}</div><div class="nm"><b>${p11Esc(m.name)}</b><span>vs</span><b>${p11Esc(o.name)}</b></div><button class="p9btn" data-nsfx="1" onclick="p9VsScr()">⚔️ 対戦へ（能力をくらべる）</button></div>
  ${msg?`<div class="p9msg p9tmsg">${msg}</div>`:""}${p9Standings(lg,st,false)}${p9Matrix(lg)}
  <p class="p9prov">【暫定】大会参加者の名前・種族は仮のデータです。実際の試合では、ランク${RN[t.rank]}相当の相手と戦います。</p></div>`;try{window.scrollTo(0,0)}catch(e){}}
 function p9TourResult(msg){const m=S.m,t=m.raise.tour,lg=t.league,rs=t.result,w=rs.reward,st=MMP8L.standings(lg);
@@ -3188,7 +3192,7 @@ function p9BattleOpp(kind,rank){const st=(window.MMP8L&&MMP8L.PROVISIONAL_OPPONE
  return {...base,name:`ランク${RN[rank]}の対戦相手`,kind:"野生のモンスター",img:'<div class="pbtq">？</div>'}}
 function p9Species(x){const sp=window.MMP10M&&MMP10M.byId(x.sp);return sp?sp.kind:"―"}
 function p9TraitOf(m){return "―（未登録）"} // 個性スキル：正式データが同期されたらここで返す（表示だけ。Battle Engine の処理とは分ける）
-function p9PreBattle(kind,rank,go){const m=S.m;if(!m||window.MM_QA_NO_PREBATTLE)return go();const opp=p9BattleOpp(kind,rank),bg=(typeof BTB!="undefined"&&BTB[rank]&&BTB[rank][0])||"";
+function p9PreBattle(kind,rank,go){const m=S.m;bgm("matchup");if(!m||window.MM_QA_NO_PREBATTLE)return go();const opp=p9BattleOpp(kind,rank),bg=(typeof BTB!="undefined"&&BTB[rank]&&BTB[rank][0])||"";
  const old=$("#pbt");if(old)old.remove();const d=document.createElement("div");d.className="pbt";d.id="pbt";tapAt(d);
  d.innerHTML=`<div class="pbtbg" style="background-image:url(${bg})"></div><div class="pbtwrap"><div class="pbttl"><small>${kind=="league"?`公式ランク${RN[rank]}大会　第${MMP8.tourNext(m).round+1}試合`:"練習試合"}</small><b>BATTLE</b></div>
  <div class="pbtvs"><div class="pbtm me"><div class="mon">${msv(m)}</div><b>${p11Esc(m.name)}</b><small>${p9Species(m)}</small></div><span class="pbtx">VS</span><div class="pbtm op"><div class="mon">${opp.img}</div><b>${p11Esc(opp.name)}</b><small>${opp.kind}</small></div></div>
@@ -3198,7 +3202,7 @@ function p9PreBattle(kind,rank,go){const m=S.m;if(!m||window.MM_QA_NO_PREBATTLE)
  document.body.appendChild(d);P9_PRE=go;requestAnimationFrame(()=>d.classList.add("in"))}
 function p9PreBattleGo(){const d=$("#pbt");if(!d||tapSoon(d,350))return;const go=P9_PRE;P9_PRE=null;d.classList.add("out");setTimeout(()=>{d.remove();if(go)go()},220)}
 // ---- VS画面：試合の直前に、自分（左）と相手（右）の6能力をくらべる ----
-function p9VsScr(){const m=S.m,t=m&&m.raise&&m.raise.tour;if(!t||t.status!="league")return board();const lg=t.league,pm=MMP8.tourNext(m),o=p9Npc(lg,pm.opp);bgm("battle");p9Immersive(true);p9MenuClose();
+function p9VsScr(){const m=S.m,t=m&&m.raise&&m.raise.tour;if(!t||t.status!="league")return board();const lg=t.league,pm=MMP8.tourNext(m),o=p9Npc(lg,pm.opp);bgm("matchup");try{MMFEEL.emit("battle.matchup")}catch(e){}p9Immersive(true);p9MenuClose();
  const rows=P9_STAT.map(([k,lb,col])=>{const a=m[k]|0,b=o[k]|0,mx=Math.max(a,b,1);return `<div class="vr"><span class="v ${a>b?"hi":""}">${a}</span><span class="p9bar l"><i style="width:${(a/mx*100).toFixed(1)}%;background:${col}"></i></span><span class="lb">${lb}</span><span class="p9bar r"><i style="width:${(b/mx*100).toFixed(1)}%;background:${col}"></i></span><span class="v ${b>a?"hi":""}">${b}</span></div>`}).join("");
  $("#app").innerHTML=`<div class="p9vs p9vs-anim"><div class="p9vs-top"><small>公式ランク${RN[t.rank]}大会　CHAPTER ${m.raise.ch}</small><b>第${pm.round+1}試合 / 全${lg.rounds.length}試合</b></div>
  ${p9Ced(CEDRIC_TALK.vs)}<div class="p9vs-fr"><div class="fr me">${p9Pt(m,"l me")}<div class="np">${p11Esc(m.name)}</div></div><div class="vsx">VS</div><div class="fr">${p9Pt(o,"l")}<div class="np">${p11Esc(o.name)}</div></div></div>

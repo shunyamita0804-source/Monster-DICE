@@ -10,6 +10,7 @@
 //  AudioContext は1つだけ（context()）。最初の操作（unlock）で作って resume し、裏に回ったら suspend、戻ったら resume する。
 //  音源が無い・読み込めない・再生できない場面や出来事は、合成音（legacy）へ自動で落とす（ゲームは止めない。同じエラーは1回しか記録しない）。
 //  場面の名前は SCENES（旧名 FACILITY・BATTLE・TOURNAMENT・SPECIAL は SCENE_ALIAS で読み替える）。
+//  registry で { silent: true } と書いた場面・出来事は、ファイルも合成音も鳴らさない（「この音は合わない・後日差し替え」のとき。2026-10-03）。
 // =========================================================
 (function (root) {
   'use strict';
@@ -18,16 +19,16 @@
   const SCENES = fz(['TITLE', 'TOWN', 'MARKET', 'RANCH', 'LABORATORY', 'FARM', 'TRAINING',
     'CHAPTER_1', 'CHAPTER_2', 'CHAPTER_3', 'CHAPTER_4',
     'WILD_BATTLE', 'RARE_WILD_BATTLE', 'RIVAL_BATTLE',
-    'TOURNAMENT_LOBBY_LOW', 'TOURNAMENT_LOBBY_HIGH', 'TOURNAMENT_BATTLE_LOW', 'TOURNAMENT_BATTLE_HIGH',
+    'TOURNAMENT_ENTRY', 'TOURNAMENT_LOBBY_LOW', 'TOURNAMENT_LOBBY_HIGH', 'TOURNAMENT_MATCHUP', 'TOURNAMENT_BATTLE_LOW', 'TOURNAMENT_BATTLE_HIGH',
     'SPECIAL_BATTLE', 'RESULT']);
   /** 旧い場面名 → 正式名（既存の呼び出しを壊さない） */
   const SCENE_ALIAS = fz({ FACILITY: 'MARKET', BATTLE: 'WILD_BATTLE', TOURNAMENT: 'TOURNAMENT_LOBBY_LOW', SPECIAL: 'SPECIAL_BATTLE' });
   /** SE の種類（出来事の名前） */
   const SE = fz([
-    'UI_CONFIRM', 'UI_CANCEL', 'UI_ERROR', 'UI_OPEN', 'UI_SELECT', 'UI_TAB',
+    'UI_CONFIRM', 'UI_CANCEL', 'UI_ERROR', 'UI_OPEN', 'UI_SELECT', 'UI_TAB', 'TITLE_START',
     'DICE_THROW', 'DICE_ROLL', 'DICE_LAND', 'STEP', 'TILE_STOP', 'STAT_UP', 'GOLD_GET', 'CHEST_APPEAR', 'CHEST_OPEN', 'EVENT', 'WILD_ALERT',
-    'BATTLE_INTRO', 'BATTLE_START', 'BATTLE_ATTACK', 'BATTLE_HIT', 'BATTLE_CRIT', 'BATTLE_MISS', 'BATTLE_BLOCK', 'BUFF', 'DEBUFF', 'HEAL', 'ROULETTE_TICK', 'VICTORY', 'DEFEAT',
-    'SWOOSH', 'CHAPTER_START', 'CHAPTER_CLEAR', 'TOURNAMENT_START', 'UNLOCK', 'REWARD']);
+    'MATCHUP', 'BATTLE_INTRO', 'BATTLE_START', 'BATTLE_ATTACK', 'BATTLE_HIT', 'BATTLE_CRIT', 'BATTLE_MISS', 'BATTLE_BLOCK', 'BUFF', 'DEBUFF', 'HEAL', 'ROULETTE_TICK', 'ROULETTE_STOP', 'VICTORY', 'DEFEAT',
+    'SWOOSH', 'CHAPTER_START', 'CHAPTER_CLEAR', 'TOURNAMENT_ARRIVAL', 'TOURNAMENT_START', 'UNLOCK', 'REWARD']);
   /** フェードの長さ（ms）。通常の切り替えと、遭遇などの急な切り替え */
   const FADE = fz({ normal: 700, quick: 220, none: 0 });
   const DEF_VOL = fz({ bgm: 0.8, se: 0.9 });
@@ -56,14 +57,16 @@
   function registerBgm(scene, src, opts = {}) {
     const key = resolveScene(scene); if (!key) throw new Error('MMAUDIO：BGM の登録が不正です（場面）');
     const srcs = srcList(src), fb = opts.fallback ? resolveScene(opts.fallback) : null;
-    if (!srcs.length && !fb) throw new Error('MMAUDIO：BGM の登録が不正です（ファイルか fallback が要る）');
+    if (opts.silent) { BGM[key] = fz({ srcs: fz([]), gain: 1, loop: true, fallback: null, silent: true }); return; }   // この場面は BGM を鳴らさない（合成音も鳴らさない）
+    if (!srcs.length && !fb) throw new Error('MMAUDIO：BGM の登録が不正です（ファイルか fallback か silent が要る）');
     if (opts.fallback && !fb) throw new Error('MMAUDIO：BGM の fallback の場面が不正です');
     const g = opts.gain != null ? opts.gain : (opts.volume != null ? opts.volume : 1);
     BGM[key] = fz({ srcs: fz(srcs), gain: Number.isFinite(g) ? Math.max(0, g) : 1, loop: opts.loop !== false, fallback: fb });
   }
   function registerSe(name, src, opts = {}) {
     if (!SE.includes(name)) throw new Error('MMAUDIO：SE の登録が不正です（名前）');
-    const srcs = srcList(src); if (!srcs.length) throw new Error('MMAUDIO：SE の登録が不正です（ファイル）');
+    if (opts.silent) { SEF[name] = { srcs: fz([]), gain: 0, silent: true, data: null, buffer: null, failed: false, loading: false }; return; }   // この出来事は鳴らさない（合成音も鳴らさない）
+    const srcs = srcList(src); if (!srcs.length) throw new Error('MMAUDIO：SE の登録が不正です（ファイルか silent が要る）');
     const g = opts.gain != null ? opts.gain : (opts.volume != null ? opts.volume : 1);
     SEF[name] = { srcs: fz(srcs), gain: Number.isFinite(g) ? Math.max(0, g) : 1, data: null, buffer: null, failed: false, loading: false };
     loadSe(name);
@@ -71,8 +74,8 @@
   /** registry をまとめて登録する（js/audio/audio-registry.js から）。値は文字列（ファイル）か { src|srcs, gain, loop, fallback } */
   function registerAll(reg) {
     const r = reg || {}, out = { bgm: 0, se: 0 };
-    for (const [k, v] of Object.entries(r.bgm || r.BGM || {})) { const o = typeof v === 'string' ? { src: v } : (v || {}); registerBgm(k, o.srcs || o.src || [], o); out.bgm++; }
-    for (const [k, v] of Object.entries(r.se || r.SE || {})) { const o = typeof v === 'string' ? { src: v } : (v || {}); registerSe(k, o.srcs || o.src || [], o); out.se++; }
+    for (const [k, v] of Object.entries(r.bgm || r.BGM || {})) { const o = typeof v === 'string' ? { src: v } : (v || { silent: true }); registerBgm(k, o.srcs || o.src || [], o); out.bgm++; }
+    for (const [k, v] of Object.entries(r.se || r.SE || {})) { const o = typeof v === 'string' ? { src: v } : (v || { silent: true }); registerSe(k, o.srcs || o.src || [], o); out.se++; }
     return out;
   }
   function clearRegistry() { for (const k of Object.keys(BGM)) delete BGM[k]; for (const k of Object.keys(SEF)) delete SEF[k]; }
@@ -81,6 +84,7 @@
   /** 場面の BGM の登録（fallback の連鎖をたどる。登録が無ければ null） */
   function resolveBgm(key, depth = 0) {
     const e = BGM[key]; if (!e || depth > 8) return null;
+    if (e.silent) return { key, ...e };
     if (e.srcs.length) return { key, ...e };
     return e.fallback ? resolveBgm(e.fallback, depth + 1) : null;
   }
@@ -211,11 +215,12 @@
   function scene(name, opts = {}) {
     const key = resolveScene(name);
     if (!key) { note('scene', name); return false; }
-    if (st.scene === key && st.source !== 'none') return false;
+    if (st.scene === key && st.source !== 'none') return false;   // 同じ場面（無音の場面を含む）は何もしない
     const ms = FADE[opts.fade || 'normal'] != null ? FADE[opts.fade || 'normal'] : FADE.normal;
     st.scene = key; st.plays++;
     try {
       const entry = resolveBgm(key);
+      if (entry && entry.silent) { stopFiles(ms); legacyStop(); st.source = 'silent'; st.pendingScene = null; return true; }   // 無音の場面：ファイルも合成音も止める
       if (entry) context();   // ファイルの BGM は GainNode を通す（AudioContext は1つ。resume は最初の操作）
       if (entry && playFile(key, entry, ms)) return true;
       stopFiles(ms);
@@ -274,8 +279,10 @@
     const now = Date.now(); if (st.lastSe[name] && now - st.lastSe[name] < SE_DEBOUNCE_MS) return true; st.lastSe[name] = now;
     try {
       const f = SEF[name];
+      if (f && f.silent) return true;   // 鳴らさないと決めた出来事（合成音にも落とさない）
       if (f && !f.failed) {
-        if (f.buffer && st.ctx && st.ctx.state === 'running') { playBuffer(f, opts); return true; }
+        // running、または最初の操作で resume を頼んだ直後（iPhone は resume が少し遅れる。予約した音は resume と同時に鳴る）
+        if (f.buffer && st.ctx && (st.ctx.state === 'running' || (st.resuming && st.ctx.state === 'suspended' && !st.hidden))) { playBuffer(f, opts); return true; }
         if (!f.buffer) { if (!f.data) loadSe(name); else decodeSe(name); }
       }
       if (legacy && typeof legacy.sfx === 'function') return legacy.sfx(name, opts) !== false;
@@ -310,7 +317,7 @@
     st.unlocked = true;
     const c = context();
     if (c) {
-      if (c.state !== 'running') { try { const p = c.resume(); if (p && p.catch) p.catch((e) => note('resume', e)); } catch (e) { note('resume', e); } }
+      if (c.state !== 'running') { st.resuming = true; try { const p = c.resume(); const done = () => { st.resuming = false; }; if (p && p.then) p.then(done, (e) => { done(); note('resume', e); }); else done(); } catch (e) { st.resuming = false; note('resume', e); } }
       if (!st.ticked) { st.ticked = true; try { const b = c.createBuffer(1, 1, 22050), n = c.createBufferSource(); n.buffer = b; n.connect(st.master || c.destination); n.start(0); } catch (e) {} }
       for (const n of Object.keys(SEF)) decodeSe(n);
     }
@@ -329,10 +336,11 @@
   /** 今の状態（テスト・デバッグ用） */
   const status = () => ({ scene: st.scene, source: st.source, playing: !!(st.cur && st.cur.active) || st.source === 'legacy', plays: st.plays, volume: { ...st.vol }, muted: isMuted(), unlocked: st.unlocked,
     webAudio: st.webAudio, context: st.ctx ? st.ctx.state : null, pendingScene: st.pendingScene, errors: [...st.errors], failed: Object.keys(st.failed),
-    files: { bgm: Object.keys(BGM).filter((k) => BGM[k].srcs.length), se: Object.keys(SEF) }, inherits: Object.keys(BGM).filter((k) => !BGM[k].srcs.length),
-    se: Object.fromEntries(Object.keys(SEF).map((k) => [k, SEF[k].buffer ? 'ready' : (SEF[k].failed ? 'failed' : 'loading')])),
+    files: { bgm: Object.keys(BGM).filter((k) => BGM[k].srcs.length), se: Object.keys(SEF).filter((k) => !SEF[k].silent) }, inherits: Object.keys(BGM).filter((k) => !BGM[k].srcs.length && !BGM[k].silent),
+    silent: { bgm: Object.keys(BGM).filter((k) => BGM[k].silent), se: Object.keys(SEF).filter((k) => SEF[k].silent) },
+    se: Object.fromEntries(Object.keys(SEF).map((k) => [k, SEF[k].silent ? 'silent' : SEF[k].buffer ? 'ready' : (SEF[k].failed ? 'failed' : 'loading')])),
     slots: st.slots.map((s) => ({ i: s.i, src: s.src, scene: s.scene, active: s.active, paused: !!s.el.paused, time: Number.isFinite(s.el.currentTime) ? Math.round(s.el.currentTime * 100) / 100 : null, gain: s.gain ? s.gain.gain.value : s.el.volume })) });
-  const registryOf = (kind) => (kind === 'se' ? Object.fromEntries(Object.keys(SEF).map((k) => [k, { srcs: [...SEF[k].srcs], gain: SEF[k].gain }])) : Object.fromEntries(Object.keys(BGM).map((k) => [k, { ...BGM[k], srcs: [...BGM[k].srcs] }])));
+  const registryOf = (kind) => (kind === 'se' ? Object.fromEntries(Object.keys(SEF).map((k) => [k, { srcs: [...SEF[k].srcs], gain: SEF[k].gain, silent: !!SEF[k].silent }])) : Object.fromEntries(Object.keys(BGM).map((k) => [k, { ...BGM[k], srcs: [...BGM[k].srcs] }])));
 
   root.MMAUDIO = fz({ SCENES, SCENE_ALIAS, SE, FADE, registerBgm, registerSe, registerAll, clearRegistry, registryOf, attachLegacy, resolveScene, resolveBgm, scene, stopBgm, se, setVolume, setMuted, unlock, context, legacyInput, status });
   try { if (root.document) { ['pointerdown', 'touchend', 'keydown'].forEach((e) => root.document.addEventListener(e, unlock, { passive: true })); root.document.addEventListener('visibilitychange', onVisibility); } } catch (e) {}

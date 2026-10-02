@@ -227,7 +227,7 @@ test('AUDIO-13：registry の BGM：場面の名前が正しく、ファイル�
   assert.ok(Object.keys(got.bgm).length >= 8, 'BGM の登録がある');
   for (const [k, v] of Object.entries(got.bgm)) {
     assert.ok(A.SCENES.includes(k), `場面の名前：${k}`);
-    const srcs = srcsOf(v); if (!srcs.length) assert.ok(v.fallback && A.SCENES.includes(v.fallback), `${k}：曲か fallback が要る`);
+    const srcs = srcsOf(v); if (!srcs.length) assert.ok(v.silent === true || (v.fallback && A.SCENES.includes(v.fallback)), `${k}：曲か fallback か silent が要る`);
     for (const s of srcs) { assert.match(s, /^\.\/assets\/audio\/bgm\//, s); assert.ok(existsSync(onDisk(s)) && statSync(onDisk(s)).size > 1000, `ファイルが実在：${s}`); }
     if (v.gain != null) assert.ok(Number.isFinite(v.gain) && v.gain > 0 && v.gain <= 1.5, `${k} の gain`);
     if (v.fallback) assert.ok(srcsOf(got.bgm[v.fallback] || {}).length, `${k} の fallback（${v.fallback}）には曲がある`);
@@ -240,12 +240,12 @@ test('AUDIO-13：registry の BGM：場面の名前が正しく、ファイル�
   assert.doesNotMatch(rd('js/audio/audio-registry.js'), /\bfetch\s*\(|^\s*import\s|^\s*export\s/m);
 });
 
-test('AUDIO-14：registry の SE：出来事の名前が正しく、ファイルが実在し、gain が正の数。ふだんは鳴らない5つ（STEP…）にも候補がある', () => {
+test('AUDIO-14：registry の SE：出来事の名前が正しく、ファイルが実在し、gain が正の数。ふだんは鳴らない5つ（STEP…）も registry で決めてある（ファイルか silent）', () => {
   const { got } = loadRegistry(), { A } = env();
   assert.ok(Object.keys(got.se).length >= 15);
   for (const [k, v] of Object.entries(got.se)) {
     assert.ok(A.SE.includes(k), `出来事の名前：${k}`);
-    const srcs = srcsOf(v); assert.ok(srcs.length, k);
+    const srcs = srcsOf(v); assert.ok(srcs.length || v.silent === true, `${k}：ファイルか silent`);
     for (const s of srcs) { assert.match(s, /^\.\/assets\/audio\/se\//, s); assert.ok(existsSync(onDisk(s)) && statSync(onDisk(s)).size > 100, `ファイルが実在：${s}`); }
     if (v.gain != null) assert.ok(Number.isFinite(v.gain) && v.gain > 0 && v.gain <= 8, `${k} の gain`);
   }
@@ -273,4 +273,59 @@ test('AUDIO-16：場面の別名（旧名）は正式名へ読み替える。fal
   A.scene('BATTLE'); await tick(5); assert.equal(A.status().scene, 'WILD_BATTLE');
   A.scene('RIVAL_BATTLE'); await tick(5); assert.equal(A.status().scene, 'RIVAL_BATTLE'); assert.equal(log.audios.find((x) => x.src === './bgm/battle.ogg').plays, 1, '同じ曲は鳴らし直さない'); assert.equal(active(A).length, 1);
   assert.deepEqual(A.status().inherits, ['RARE_WILD_BATTLE', 'RIVAL_BATTLE']);
+});
+
+test('AUDIO-17：registry の silent：場面は BGM も合成 BGM も鳴らさない（ほかの曲は止める・同じ場面は何もしない）。出来事は合成音にも落とさない', async () => {
+  const { A, log } = env(); const L = legacySpy(A); BGM(A, 'MARKET', './bgm/m.ogg'); A.registerBgm('TOWN', [], { silent: true }); A.registerSe('STEP', [], { silent: true });
+  A.scene('MARKET'); await tick(5); A.scene('TOWN'); await tick(800);
+  assert.equal(A.status().source, 'silent'); assert.equal(active(A).length, 0); assert.ok(log.audios.find((x) => x.src === '' || x.paused), 'ほかの曲は止める'); assert.deepEqual(L.bgm, [], '合成 BGM も鳴らさない'); assert.ok(L.stop >= 1);
+  assert.equal(A.scene('TOWN'), false, '同じ無音の場面は何もしない');
+  A.setMuted(true); A.setMuted(false); assert.deepEqual(L.bgm, [], 'ミュート解除でも鳴らさない');
+  assert.equal(A.se('STEP'), true); assert.deepEqual(L.sfx, [], '合成音へ落とさない'); assert.deepEqual(A.status().silent, { bgm: ['TOWN'], se: ['STEP'] });
+  assert.doesNotThrow(() => A.registerAll({ bgm: { CHAPTER_1: { silent: true } }, se: { DICE_THROW: { silent: true } } }));
+});
+
+test('AUDIO-18：最初のタップ（AudioContext の resume を頼んだ直後・まだ suspended）でも、ファイルの SE は予約して1回だけ鳴る（合成音へ二重に落ちない）。裏に回っている間は予約しない', async () => {
+  const { A, log, doc } = env({ ctxState: 'suspended' }); const L = legacySpy(A); A.registerSe('TITLE_START', './se/start.ogg');
+  A.context(); await tick(20);
+  let resumed = 0; const c = A.context(); c.resume = () => { resumed++; return new Promise((ok) => setTimeout(() => { c.state = 'running'; ok(); }, 30)); };
+  A.unlock(); assert.equal(c.state, 'suspended');
+  assert.equal(A.se('TITLE_START'), true); assert.equal(log.plays, 1, 'resume を待たずに予約'); assert.deepEqual(L.sfx, [], '合成音は鳴らさない');
+  await tick(60); assert.equal(c.state, 'running'); assert.equal(resumed, 1);
+  c.state = 'suspended'; doc.hidden = true; doc.emit('visibilitychange'); await tick(5); assert.equal(A.se('TITLE_START'), true); assert.equal(log.plays, 1, '裏では予約しない（合成音へ）');
+});
+
+test('AUDIO-19：index.html：開始のタップは TITLE_START の1音だけ（ファイルが鳴らなければ合成のファンファーレ）。名前登録まで TITLE の曲。VS（対戦相手の発表）・能力比較は TOURNAMENT_MATCHUP、実戦の曲は「FIGHT!」の開始音のあと。ゴールは TOURNAMENT_ENTRY', () => {
+  assert.match(HTML, /unlock\(\);clearInterval\(AU\.tm\);AU\.tm=null;AU\.sc=null;if\(!MMAUDIO\.se\("TITLE_START"\)\)fanfare\(\);/);
+  assert.match(HTML, /class="p15start" data-nsfx="1"/, '開始ボタンは UI_CONFIRM を鳴らさない');
+  assert.match(HTML, /function p11NameScr\(msg\)\{bgm\("title"\);/);
+  assert.match(HTML, /bgm\("matchup"\);try\{MMFEEL\.emit\("battle\.matchup"\)\}catch\(e\)\{\}p9Immersive\(true\);/, 'VS は BGM を止めて発表の音');
+  assert.match(HTML, /data-nsfx="1" onclick="p9VsScr\(\)"/, 'VS へ進むボタンの決定音と発表の音を重ねない');
+  assert.match(HTML, /function p9PreBattle\(kind,rank,go\)\{const m=S\.m;bgm\("matchup"\);/, '能力比較は発表と同じ場面（音を重ねない）');
+  const fight = HTML.slice(HTML.indexOf('async function fight(i,teach){'), HTML.indexOf('$("#snd").textContent', HTML.indexOf('async function fight(i,teach){')));
+  assert.ok(fight.startsWith('async function fight(i,teach){if(document.getElementById("bt")||!S.m)return;bgm(teach!=null?"dojo":"battle");'), 'fight() は変えていない');
+  assert.match(fight, /sfx\(9\);done\(\)/, 'STOP は sfx(9)'); assert.match(fight, /ban\("FIGHT!","#ff5a3a"\);sfx\(3\);/, '開始は sfx(3)');
+  // 画面の鍵 → 場面・実戦の曲の予約（S・AU・MMAUDIO・document の偽物）
+  const src = HTML.match(/const BGM_SCENE=\{[^}]*\};/)[0] + HTML.match(/const SFX_EVENT=\{[^\n]*\};/)[0] + HTML.slice(HTML.indexOf('function sfxEventOf(t){'), HTML.indexOf('function bgm(sc){'));
+  const mk = (raise, bt) => { const calls = [], timers = [], AU = {}, S = { m: raise ? { raise } : null };
+    const env = { S, AU, MMAUDIO: { scene: (s, o) => calls.push(['scene', s]), stopBgm: (o) => calls.push(['stop', o && o.fade]) }, MMP8: { boardPhase: (m) => (m.raise.goal ? 'goal' : 'roll') },
+      document: { getElementById: (id) => (id === 'bt' && bt ? {} : null) }, setTimeout: (f, ms) => { timers.push([f, ms]); return timers.length; }, clearTimeout: () => {} };
+    const f = new Function(...Object.keys(env), src + 'return { audioSceneFor, sfxEventOf, battleSceneFor };')(...Object.values(env));
+    return { ...f, calls, timers, AU };
+  };
+  const t = mk({ ch: 1, goal: true }); assert.equal(t.audioSceneFor('chapter'), 'TOURNAMENT_ENTRY'); assert.equal(mk({ ch: 2 }).audioSceneFor('chapter'), 'CHAPTER_2');
+  assert.equal(t.audioSceneFor('matchup'), 'TOURNAMENT_MATCHUP'); assert.equal(t.audioSceneFor('entry'), 'TOURNAMENT_ENTRY');
+  const b = mk({ battle: { kind: 'league', rank: 4 }, tour: { status: 'league', rank: 4 } }, true);
+  assert.equal(b.audioSceneFor('battle'), null, 'fight() の最初では曲を始めない'); assert.deepEqual(b.calls, [['stop', 'quick']], 'それまでの曲は短く止める'); assert.equal(b.AU.btScene, 'TOURNAMENT_BATTLE_HIGH');
+  assert.equal(b.sfxEventOf(9), 'ROULETTE_STOP'); assert.equal(b.sfxEventOf(7), 'ROULETTE_TICK');
+  assert.equal(b.sfxEventOf(3), 'BATTLE_START'); const go = b.timers.find((x) => x[1] === 450); assert.ok(go, '開始音の0.45秒後に実戦の曲');
+  go[0](); assert.deepEqual(b.calls.at(-1), ['scene', 'TOURNAMENT_BATTLE_HIGH']); assert.equal(b.sfxEventOf(3), 'VICTORY');
+  assert.equal(mk({ battle: { kind: 'league', rank: 1 }, tour: { status: 'league', rank: 1 } }).battleSceneFor(), 'TOURNAMENT_BATTLE_LOW');
+  for (const [bt, sc] of [['wild', 'WILD_BATTLE'], ['rare', 'RARE_WILD_BATTLE'], ['rival', 'RIVAL_BATTLE']]) assert.equal(mk({ pend: { fx: { battleType: bt } }, battle: { kind: 'practice', rank: 0 } }).battleSceneFor(), sc);
+  assert.equal(mk({}, false).sfxEventOf(9), 'BATTLE_ATTACK', 'バトルの外の 9');
+  // field-view：止まるマスでは足音を鳴らさない・大会会場は専用の出来事と受付の場面
+  const FV = rd('js/chapter/field-view.js');
+  assert.match(FV, /markCur\(id\); if \(!last\) feel\('step', \{ id \}\);/);
+  assert.equal((FV.match(/id="brollbtn" data-nsfx="1"/g) || []).length, 2, 'START は決定音を鳴らさない（投げる音だけ）');
+  assert.match(HTML, /if\(AU\.on\)setTimeout\(\(\)=>MMAUDIO\.se\("UI_CONFIRM"\),250\)\}/, '音を戻した合図は UI_CONFIRM（バトル中の sfx(3)＝開始・勝利と取り違えない）'); assert.match(FV, /feel\('tournament\.arrive'\);/); assert.match(FV, /if \(root\.bgm\) root\.bgm\('chapter'\);/);
 });

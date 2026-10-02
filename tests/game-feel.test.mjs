@@ -50,7 +50,8 @@ test('GF-03：Audio Registry（js/audio/audio-registry.js）：BGM・SE の対�
   const w = loadAudio(); new Function('window', rd('js/audio/audio-registry.js'))(w);
   const A = w.MMAUDIO, R = w.MMAUDIO_REGISTRY;
   assert.ok(R && R.bgm && R.se);
-  const s = A.status(); assert.ok(s.files.bgm.includes('TOWN') && s.files.bgm.includes('WILD_BATTLE') && s.files.se.includes('UI_CONFIRM'));
+  const s = A.status(); assert.ok(s.files.bgm.includes('MARKET') && s.files.bgm.includes('WILD_BATTLE') && s.files.se.includes('UI_CONFIRM'));
+  assert.ok(s.silent.bgm.includes('TOWN') && s.silent.se.includes('STEP'), '試遊で NG の音は silent（追加パック待ち）');
   assert.ok(s.inherits.includes('RARE_WILD_BATTLE') && s.inherits.includes('RIVAL_BATTLE'), '専用曲が無い場面は fallback で曲を引き継ぐ（registry に明記）');
   assert.equal(A.resolveBgm('RARE_WILD_BATTLE').key, 'WILD_BATTLE');
   assert.equal(A.resolveBgm('CHAPTER_2'), null, '曲の無い場面は合成音（明日のパックで選定）');
@@ -58,7 +59,7 @@ test('GF-03：Audio Registry（js/audio/audio-registry.js）：BGM・SE の対�
   assert.deepEqual(JSON.parse(w.localStorage.getItem('mmaudio') || 'null'), null, '読み込んだだけでは何も保存しない');
 });
 
-test('GF-04：index.html の音：画面の bgm("…") は画面の鍵 → 場面（audioSceneFor）。battle は戦闘の種類、chapter は Chapter 番号、tour はランク帯。fight()（Phase 6）は変えていない', () => {
+test('GF-04：index.html の音：画面の bgm("…") は画面の鍵 → 場面（audioSceneFor）。battle は戦闘の種類（実戦の曲は FIGHT! のあと）、chapter は Chapter 番号（ゴールは受付）、tour はランク帯。fight()（Phase 6）は変えていない', () => {
   assert.match(HTML, /function bgm\(sc\)\{const s=audioSceneFor\(sc\);if\(s\)MMAUDIO\.scene\(s\)\}/);
   assert.match(HTML, / bgm\("chapter"\); \/\/ Chapter ごとの BGM/, 'Chapter に入ると Chapter の場面へ（街の BGM のままにしない）');
   assert.match(HTML, /MMAUDIO\.attachLegacy\(\{bgm:sc=>\{if\(auBus\(\)\)bgmLegacy\(LEGACY_BGM\[sc\]\|\|"town"\)\},stop:bgmLegacyStop,/);
@@ -70,19 +71,20 @@ test('GF-04：index.html の音：画面の bgm("…") は画面の鍵 → 場�
   for (const k of ['STEP', 'TILE_STOP', 'CHAPTER_START', 'CHAPTER_CLEAR', 'TOURNAMENT_START']) assert.equal(S[k], undefined, `${k} は合成音では鳴らさない（正式な SE は registry）`);
   assert.doesNotMatch(HTML, /new Audio\(|\.mp3|\.ogg|\.wav/, 'index.html に音源ファイルを書かない');
   // 画面の鍵 → 場面（S・AU の偽物で確かめる）
-  const src = HTML.match(/const BGM_SCENE=\{[^}]*\};/)[0] + HTML.slice(HTML.indexOf('function audioSceneFor(k){'), HTML.indexOf('function bgm(sc){'));
-  const mk = (raise) => new Function('S', 'AU', src + 'return audioSceneFor;')({ m: raise ? { raise } : null }, {});
-  const f0 = mk(null);
-  assert.deepEqual(['title', 'town', 'market', 'ranch', 'lab', 'farm', 'train', 'result', 'dojo', 'nope'].map(f0), ['TITLE', 'TOWN', 'MARKET', 'RANCH', 'LABORATORY', 'FARM', 'TRAINING', 'RESULT', 'SPECIAL_BATTLE', 'TOWN']);
-  assert.equal(mk({ ch: 3 })('chapter'), 'CHAPTER_3'); assert.equal(f0('chapter'), 'CHAPTER_1');
-  assert.equal(mk({ pend: { fx: { battleType: 'wild' } }, battle: { kind: 'practice', rank: 0 } })('battle'), 'WILD_BATTLE');
-  assert.equal(mk({ pend: { fx: { battleType: 'rare' } }, battle: { kind: 'practice', rank: 0 } })('battle'), 'RARE_WILD_BATTLE');
-  assert.equal(mk({ pend: { fx: { battleType: 'rival' } }, battle: { kind: 'practice', rank: 0 } })('battle'), 'RIVAL_BATTLE');
-  assert.equal(mk({ battle: { kind: 'league', rank: 2 }, tour: { status: 'league', rank: 2 } })('battle'), 'TOURNAMENT_BATTLE_LOW', 'E〜C は共通のバトル曲');
-  assert.equal(mk({ battle: { kind: 'league', rank: 3 }, tour: { status: 'league', rank: 3 } })('battle'), 'TOURNAMENT_BATTLE_HIGH', 'B〜S は上位の曲');
-  assert.equal(mk({ tour: { status: 'league', rank: 5 } })('battle'), 'TOURNAMENT_BATTLE_HIGH', 'VS 画面（戦闘の記録はまだ無い）も大会のランク帯');
-  assert.equal(mk({ tour: { status: 'league', rank: 1 } })('tour'), 'TOURNAMENT_LOBBY_LOW'); assert.equal(mk({ tour: { status: 'league', rank: 4 } })('tour'), 'TOURNAMENT_LOBBY_HIGH');
-  assert.equal(mk({ state: 'board' })('farmmenu'), null, 'Chapter 中にボードから開くステータスは曲を変えない'); assert.equal(mk({ state: 'farm' })('farmmenu'), 'FARM');
+  const src = HTML.match(/const BGM_SCENE=\{[^}]*\};/)[0] + HTML.slice(HTML.indexOf('function battleSceneFor(){'), HTML.indexOf('function bgm(sc){'));
+  const mk = (raise) => new Function('S', 'AU', 'MMP8', src + 'return { audioSceneFor, battleSceneFor };')({ m: raise ? { raise } : null }, {}, { boardPhase: () => 'roll' });
+  const f0 = mk(null).audioSceneFor;
+  assert.deepEqual(['title', 'town', 'market', 'ranch', 'lab', 'farm', 'train', 'entry', 'matchup', 'result', 'dojo', 'nope'].map(f0), ['TITLE', 'TOWN', 'MARKET', 'RANCH', 'LABORATORY', 'FARM', 'TRAINING', 'TOURNAMENT_ENTRY', 'TOURNAMENT_MATCHUP', 'RESULT', 'SPECIAL_BATTLE', 'TOWN']);
+  assert.equal(mk({ ch: 3 }).audioSceneFor('chapter'), 'CHAPTER_3'); assert.equal(f0('chapter'), 'CHAPTER_1');
+  const bs = (raise) => mk(raise).battleSceneFor();   // 実戦の場面（fight() の bgm("battle") は「FIGHT!」まで待ってからこの場面へ。AUDIO-19）
+  assert.equal(bs({ pend: { fx: { battleType: 'wild' } }, battle: { kind: 'practice', rank: 0 } }), 'WILD_BATTLE');
+  assert.equal(bs({ pend: { fx: { battleType: 'rare' } }, battle: { kind: 'practice', rank: 0 } }), 'RARE_WILD_BATTLE');
+  assert.equal(bs({ pend: { fx: { battleType: 'rival' } }, battle: { kind: 'practice', rank: 0 } }), 'RIVAL_BATTLE');
+  assert.equal(bs({ battle: { kind: 'league', rank: 2 }, tour: { status: 'league', rank: 2 } }), 'TOURNAMENT_BATTLE_LOW', 'E〜C は共通のバトル曲');
+  assert.equal(bs({ battle: { kind: 'league', rank: 3 }, tour: { status: 'league', rank: 3 } }), 'TOURNAMENT_BATTLE_HIGH', 'B〜S は上位の曲');
+  assert.equal(bs({ tour: { status: 'league', rank: 5 } }), 'TOURNAMENT_BATTLE_HIGH', '戦闘の記録がまだ無くても大会のランク帯');
+  assert.equal(mk({ tour: { status: 'league', rank: 1 } }).audioSceneFor('tour'), 'TOURNAMENT_LOBBY_LOW'); assert.equal(mk({ tour: { status: 'league', rank: 4 } }).audioSceneFor('tour'), 'TOURNAMENT_LOBBY_HIGH');
+  assert.equal(mk({ state: 'board' }).audioSceneFor('farmmenu'), null, 'Chapter 中にボードから開くステータスは曲を変えない'); assert.equal(mk({ state: 'farm' }).audioSceneFor('farmmenu'), 'FARM');
 });
 
 /** Game Feel を Node で読む（document なし＝入力の層は付かない） */

@@ -120,6 +120,6 @@ test('FE-7：BGM の場面：街＝TOWN、市場＝MARKET、Chapter＝CHAPTER_1�
   await pg.evaluate(() => market()); await pg.waitForTimeout(300); assert.equal(await pg.evaluate(() => MMAUDIO.status().scene), 'MARKET');
   await pg.evaluate(() => { const m = mk(0); m.name = 'ソラ'; MMP7.ensureProg(m); S.m = m; save(); MMP8.depart(S, m, () => 0.37); save(); board(); }); await pg.waitForSelector('#chf .chf-bg');
   const c = await pg.evaluate(() => { const n = MMAUDIO.status().plays; board(); board(); return [MMAUDIO.status(), n]; });
-  assert.equal(c[0].scene, 'CHAPTER_1'); assert.equal(c[0].plays, c[1], '同じ場面は鳴らし直さない'); assert.deepEqual(c[0].errors, []); assert.ok(c[0].files.bgm.includes('TOWN') && c[0].files.se.includes('UI_CONFIRM'), '正式な音源は registry から登録されている');
+  assert.equal(c[0].scene, 'CHAPTER_1'); assert.equal(c[0].plays, c[1], '同じ場面は鳴らし直さない'); assert.deepEqual(c[0].errors, []); assert.ok(c[0].files.bgm.includes('MARKET') && c[0].files.se.includes('UI_CONFIRM'), '正式な音源は registry から登録されている'); assert.equal(c[0].source, 'silent', 'Chapter 1 の曲は試遊で NG → 追加パック待ちの間は無音（合成音にも落とさない）');
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
 });

@@ -27,8 +27,8 @@
     'dice.throw': { level: 1, se: 'DICE_THROW', haptic: 'light' }, 'dice.land': { level: 2, se: 'DICE_LAND', haptic: 'medium' }, 'dice.result': { level: 2, se: 'DICE_ROLL' },
     'step': { level: 0, se: 'STEP' }, 'tile.stop': { level: 1, se: 'TILE_STOP' }, 'stat.up': { level: 3, se: 'STAT_UP', haptic: 'success' }, 'gold.get': { level: 3, se: 'GOLD_GET', haptic: 'light' },
     'chest.open': { level: 3, se: 'CHEST_OPEN', haptic: 'medium' }, 'event': { level: 2, se: 'EVENT' }, 'wild.alert': { level: 4, se: 'WILD_ALERT', haptic: 'heavy' },
-    'battle.start': { level: 4, se: 'BATTLE_START', haptic: 'heavy' }, 'victory': { level: 5, se: 'VICTORY', haptic: 'success' }, 'chapter.start': { level: 5, se: 'CHAPTER_START' },
-    'chapter.clear': { level: 5, se: 'CHAPTER_CLEAR', haptic: 'success' }, 'tournament.start': { level: 5, se: 'TOURNAMENT_START' }, 'unlock': { level: 5, se: 'UNLOCK', haptic: 'success' },
+    'battle.matchup': { level: 4, se: 'MATCHUP', haptic: 'medium' }, 'battle.start': { level: 4, se: 'BATTLE_START', haptic: 'heavy' }, 'victory': { level: 5, se: 'VICTORY', haptic: 'success' }, 'chapter.start': { level: 5, se: 'CHAPTER_START' },
+    'chapter.clear': { level: 5, se: 'CHAPTER_CLEAR', haptic: 'success' }, 'tournament.arrive': { level: 5, se: 'TOURNAMENT_ARRIVAL', haptic: 'success' }, 'tournament.start': { level: 5, se: 'TOURNAMENT_START' }, 'unlock': { level: 5, se: 'UNLOCK', haptic: 'success' },
   });
   const LOG = [];
   let haptics = null;

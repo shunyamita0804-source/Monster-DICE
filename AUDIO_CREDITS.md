@@ -25,59 +25,59 @@ CC0 の2つは表記不要だが、礼儀として載せる。
 
 - PGS Fantasy RPG Music Pack の README には CC BY 4.0 と並んで「DO NOT REPOST OR SELL THIS MUSIC」とある。このリポジトリは公開（GitHub Pages）なので、採用した OGG ファイルは誰でも取得できる状態になる。ゲームの素材として置くことは CC BY の範囲（表記つき）だが、「パックの再配布」と受け取られないよう、**ZIP 全体や未採用の曲は置かない**（今は採用した10曲だけ）。公開のままでよいかは仕様側の判断。
 
-## 使用したファイル
+## 使用したファイル（2026-10-03 の iPhone 試遊の結果で見直し）
 
 ### BGM（PGS Fantasy RPG Music Pack → assets/audio/bgm/pgs_fantasy_rpg/）
 
+PGS の曲は「暫定の試遊用」。新しく採用しない（公開リポジトリから直接取得できるため。正式リリース前に再配布条件のはっきりした素材への置き換えを検討）。
+
 | ZIP の元ファイル | リポジトリのファイル | 場面（registry） | 長さ | 元の音量（LUFS） | gain |
 |---|---|---|---:|---:|---:|
-| Event Music 1.ogg | event_music_1.ogg | TITLE | 80秒 | -16.4 | 0.85 |
-| Town-Village Theme 1.ogg | town_village_theme_1.ogg | TOWN | 64秒 | -20.0 | 1.2 |
-| Town-Village Theme 2.ogg | town_village_theme_2.ogg | MARKET | 61秒 | -16.9 | 0.9 |
+| Event Music 1.ogg | event_music_1.ogg | TITLE（名前登録の画面まで） | 80秒 | -16.4 | 0.85 |
+| Town-Village Theme 2.ogg | town_village_theme_2.ogg | MARKET（試遊で OK） | 61秒 | -16.9 | 0.9 |
 | Town-Village Theme 3.ogg | town_village_theme_3.ogg | RANCH | 77秒 | -16.1 | 0.8 |
 | Event Music 2.ogg | event_music_2.ogg | LABORATORY | 103秒 | -14.3 | 0.65 |
-| Event Music 3.ogg | event_music_3.ogg | FARM | 65秒 | -19.6 | 1.0 |
-| Dungeon-Exploration Music 1.ogg | dungeon_exploration_music_1.ogg | CHAPTER_1 | 65秒 | -13.8 | 0.62 |
 | Battle Music 1.ogg | battle_music_1.ogg | WILD_BATTLE（RARE_WILD_BATTLE・RIVAL_BATTLE は fallback で同じ曲） | 104秒 | -13.1 | 0.58 |
 | Battle Music 2.ogg | battle_music_2.ogg | TOURNAMENT_BATTLE_LOW（HIGH は fallback で同じ曲） | 92秒 | -13.3 | 0.57 |
-| Event Music 4.ogg | event_music_4.ogg | TOURNAMENT_LOBBY_LOW（HIGH・RESULT は fallback で同じ曲） | 88秒 | -14.6 | 0.68 |
+| Event Music 4.ogg | event_music_4.ogg | TOURNAMENT_LOBBY_LOW（TOURNAMENT_ENTRY・LOBBY_HIGH・RESULT は fallback で同じ曲） | 88秒 | -14.6 | 0.68 |
 
-使っていない：Album.jpg（ジャケット画像）。11曲中10曲を採用（1曲＝1場面。使い回しは fallback として registry に明記）。
+外した曲（2026-10-03 の試遊で NG。ファイルも削除）：Town-Village Theme 1（TOWN）、Event Music 3（FARM）、Dungeon-Exploration Music 1（CHAPTER_1）。これらの場面は追加パックで選び直すまで無音（registry の silent）。
 
 ### SE（Interface SFX Pack 1 → assets/audio/se/interface_sfx_pack_1/）
 
 | ファイル | 出来事 |
 |---|---|
-| confirm_style_4_002.ogg | UI_CONFIRM |
+| confirm_style_1_004.ogg | TITLE_START（開始画面のタップ） |
+| confirm_style_5_001.ogg | UI_CONFIRM（ボタン全般・街のコマンド） |
 | confirm_style_4_001.ogg | UI_OPEN |
 | back_style_4_002.ogg | UI_CANCEL |
 | error_style_4_002.ogg | UI_ERROR |
 | cursor_style_2.ogg | UI_SELECT |
 | cursor_style_4.ogg | UI_TAB |
-| confirm_style_6_001.ogg | CHEST_OPEN・CHAPTER_START |
+| confirm_style_3_004.ogg | STAT_UP |
+| confirm_style_2_004.ogg | ROULETTE_STOP（技ルーレットの STOP） |
+| confirm_style_6_001.ogg | CHEST_OPEN |
 | confirm_style_6_004.ogg | VICTORY・CHAPTER_CLEAR |
 | confirm_style_6_002.ogg | UNLOCK・REWARD |
 | confirm_style_1_001.ogg | TOURNAMENT_START |
 
-222ファイル中10を採用。ほかは置いていない。
+外した（試遊で NG）：confirm_style_4_002（旧 UI_CONFIRM）。
 
 ### SE（Mix of SFX by Ivokard → assets/audio/se/ivokard/）
 
 | ファイル | 出来事 |
 |---|---|
-| jump_2.ogg | DICE_THROW |
-| bass_thud.ogg | DICE_LAND |
+| pluck_3.ogg | DICE_LAND |
 | ping.ogg | DICE_ROLL・EVENT |
-| pluck_4.ogg | STEP |
 | pluck_5.ogg | TILE_STOP |
-| powerup.ogg | STAT_UP |
 | bell.ogg | GOLD_GET |
-| bass_thud_electric.ogg | WILD_ALERT |
-| hit_2.ogg | BATTLE_START・BATTLE_CRIT |
+| bass_thud.ogg | MATCHUP（対戦相手の発表） |
+| bass_thud_electric.ogg | BATTLE_START（実戦の開始「FIGHT!」） |
 | attack_1.ogg | BATTLE_ATTACK |
 | hit_1.ogg | BATTLE_HIT |
+| hit_2.ogg | BATTLE_CRIT |
 
-21ファイル中11を採用。ほかは置いていない。
+外した（試遊で NG）：jump_2（DICE_THROW）・pluck_4（STEP）・powerup（STAT_UP）。追加パック待ちで無音（silent）：DICE_THROW・STEP・WILD_ALERT・CHAPTER_START・TOURNAMENT_ARRIVAL。
 
 ## 受け取ったが今回は使っていない素材
 
