@@ -37,22 +37,29 @@
       params: fz({ chance: 0.1, surviveAtLife: 1, uses: 1 }), hiddenParams: fz(['chance']) }),
   });
 
+  // ---- 成長適性（2026-10-02 正式）：6能力それぞれに A〜E。能力マスに止まったときの上昇量はこの表だけで決まる（ランダム幅・失敗・大成功なし）。
+  //  イベントによる能力変化（賢者 +20・薬草 +6 など）は適性の影響を受けない（イベント側の数値のまま）。
+  const GROWTH_GRADES = fz(['A', 'B', 'C', 'D', 'E']);
+  const GROWTH_GAIN = fz({ A: 7, B: 6, C: 5, D: 4, E: 3 });
+  const G6 = (li, po, iN, hi, ev, de) => fz({ li, po, in: iN, hi, ev, de });
   // ---- 正式主要原種 ----
   //  tagline：市場などで使う短い紹介文。ソラモ・ガウルは既存ゲーム内の説明文、ノビトンは正式プロフィール資料の文。未提供は null。
   const SPECIES = fz([
     fz({ id: 0, key: 'solamo', name: 'ソラモ', en: 'SORAMO', kind: '獣種', personality: null, formerNames: fz([]),
       base: fz({ li: 100, po: 100, in: 100, hi: 100, ev: 100, de: 100 }), speed: 5, uniqueSkill: 'unique_solamo', tagline: 'バランス型',
+      growth: G6('C', 'C', 'C', 'C', 'C', 'C'),
       image: fz({ src: './assets/monsters/solamo.png', w: 720, h: 664 }), }),
     fz({ id: 1, key: 'gauru', name: 'ガウル', en: 'GAURU', kind: '鳥種', personality: null, formerNames: fz(['ハヤテ']),
       base: fz({ li: 80, po: 110, in: 110, hi: 90, ev: 90, de: 60 }), speed: 7, uniqueSkill: 'unique_gauru', tagline: '攻撃に特化したアタッカー',
+      growth: G6('D', 'B', 'B', 'C', 'B', 'E'),
       image: fz({ src: './assets/monsters/gauru.png', w: 720, h: 647 }), }),
     fz({ id: 2, key: 'nobiton', name: 'ノビトン', en: 'NOBITON', kind: '獣種', personality: null, formerNames: fz([]),
-      base: fz({ li: 120, po: 80, in: 80, hi: 80, ev: 50, de: 100 }), speed: 2, uniqueSkill: 'unique_nobiton', tagline: 'のびる・たれる・くっつく。不思議な鼻（くち）を持つ、マイペースなモンスター。',
+      base: fz({ li: 120, po: 80, in: 80, hi: 80, ev: 50, de: 100 }), speed: 2, uniqueSkill: 'unique_nobiton', growth: null, tagline: 'のびる・たれる・くっつく。不思議な鼻（くち）を持つ、マイペースなモンスター。',
       image: fz({ src: './assets/monsters/nobiton.png', w: 720, h: 658 }),
       silhouette: fz({ src: './assets/monsters/nobiton_silhouette.png', w: 720, h: 658 }) }),
     // ジオル：英字表記は正式仕様に未記載のため null（推測で決めない）
     fz({ id: 3, key: 'jiol', name: 'ジオル', en: null, kind: '岩石種', personality: 'のんびり・おとなしい', formerNames: fz([]),
-      base: fz({ li: 90, po: 120, in: 40, hi: 50, ev: 30, de: 150 }), speed: 1, uniqueSkill: 'unique_jiol', tagline: null,
+      base: fz({ li: 90, po: 120, in: 40, hi: 50, ev: 30, de: 150 }), speed: 1, uniqueSkill: 'unique_jiol', tagline: null, growth: null,   // 成長適性は未登録（正式データ待ち）
       image: fz({ src: './assets/monsters/jiol.png', w: 720, h: 531 }), }),
   ]);
   // ---- 種族IDの役割（二重管理にしない：1つの種族レコードが両方を持つ） ----
@@ -71,6 +78,17 @@
   const baseOf = (sp) => { const s = byId(sp); return s ? { ...s.base } : null; };
   const skillOf = (sp) => { const s = byId(sp); return s ? UNIQUE_SKILLS[s.uniqueSkill] : null; };
   /** プレイヤー向けの固有スキル説明（内部専用の数値は出さない。説明文自体が内部数値を含まない） */
+  // 成長適性：個体に正式な適性（m.growth＝合体個体など将来用）があればそれ、無ければ種族の適性。種族の適性が未登録（ノビトン・ジオル）なら
+  //  GROWTH_UNREGISTERED（C＝【暫定】。正式データが届いたら SPECIES の growth を書くだけ）。上昇量は GROWTH_GAIN の1か所だけで決める
+  const GROWTH_UNREGISTERED = 'C';
+  const isGrade = (g) => GROWTH_GRADES.includes(g);
+  function growthOf(m, key) {
+    const own = m && m.growth && typeof m.growth === 'object' ? m.growth[key] : null; if (isGrade(own)) return own;
+    const s = m ? byId(m.sp) : null, g = s && s.growth ? s.growth[key] : null;
+    return isGrade(g) ? g : GROWTH_UNREGISTERED;
+  }
+  const growthGain = (m, key) => GROWTH_GAIN[growthOf(m, key)];
+  const growthRegistered = (sp) => { const s = byId(sp); return !!(s && s.growth); };
   const skillText = (sp) => { const k = skillOf(sp); return k ? { name: k.name, desc: k.desc } : null; };
 
   /**
@@ -209,5 +227,6 @@
 
   root.MMP10M = fz({ STAT_KEYS, STAT_LABELS, STAT_MAX, SPEED_MIN, SPEED_MAX, isValidSpeed, UNIQUE_SKILLS, SPECIES,
     byId, byKey, keyOf, idOf, imageOf, silhouetteOf, speedOf, baseOf, skillOf, skillText, ensureSpeed, ECONOMY, MARKET_CATALOG,
+    GROWTH_GRADES, GROWTH_GAIN, GROWTH_UNREGISTERED, growthOf, growthGain, growthRegistered,
     OWN_LIMIT, marketItem, canPurchase, purchase, FUSION_COST, setFusionAccess, fusionAvailable, continueRescueApplies, SELL, sellQuote, canSell, sell, NOBITON_STOCK_RAISES, nobitonStock });
 })(typeof window !== 'undefined' ? window : globalThis);

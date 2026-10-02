@@ -407,7 +407,8 @@
   // ---- マス効果（マスの種類ごと。将来の正式マップのマスは registerSquareEffect で追加できる） ----
   // 【暫定】能力マス・イベントの値は旧CH1（Phase 7.1の暫定マップ）由来。正式マップ制作時に見直す。
   // 疲労・ストレス（Phase 8で廃止）に作用していたイベント・休息マスは、新しい育成では効果なし。
-  const PROVISIONAL_STAT_SQUARE = Object.freeze([5, 7]);
+  // 能力マスの上昇量（2026-10-02 正式）：そのモンスターの成長適性 A〜E（js/phase10/monsters.js の growthGain＝表は GROWTH_GAIN の1か所）。ランダム幅なし
+  const growthGain = (m, key) => { const P = root.MMP10M; if (!P || !P.growthGain) throw new Error('MMP8：成長適性（js/phase10/monsters.js）が読み込まれていません'); return P.growthGain(m, key); };
   const STAT_SQUARE_KEY = Object.freeze({ power: 'po', wisdom: 'in', hit: 'hi', evasion: 'ev', toughness: 'de' });
   const FIVE = Object.freeze(['po', 'in', 'hi', 'ev', 'de']);
   const pickOf = (arr, rnd) => arr[Math.floor(rnd() * arr.length)];
@@ -424,8 +425,8 @@
   ]);
   const noEffect = (note) => () => ({ kind: 'none', note });
   const statSquare = (type) => (S, m, rnd) => {
-    const key = STAT_SQUARE_KEY[type], [lo, hi] = PROVISIONAL_STAT_SQUARE;
-    return { kind: 'stat', key, amount: addStat(m, key, lo + Math.floor(rnd() * (hi - lo + 1))) };
+    const key = STAT_SQUARE_KEY[type];
+    return { kind: 'stat', key, amount: addStat(m, key, growthGain(m, key)) };
   };
   const SQUARE_EFFECTS = {
     normal: noEffect('normal'),        // 何も起きないマス
@@ -681,13 +682,12 @@
 
   // =========================================================
   // Phase 9：正式Chapterマップ用のマス（ライフ・宝箱）
-  //  能力マスの上昇量は既存の【暫定】値（旧CH1由来の+5〜7）をそのまま使う（正式値は未確定）。
+  //  能力マスの上昇量は成長適性（2026-10-02 正式。A+7〜E+3）。
   //  宝箱は【暫定】で所持金のみ（正式アイテムが未確定のため）：旧イベント「お宝発見」+50G／「幸運のお守り」+150G と同じ値。
   // =========================================================
   const PROVISIONAL_CHEST = Object.freeze([{ w: 4, gold: 50 }, { w: 1, gold: 150 }]);
   SQUARE_EFFECTS.life = (S, m, rnd) => {
-    const [lo, hi] = PROVISIONAL_STAT_SQUARE;
-    return { kind: 'stat', key: 'li', amount: addStat(m, 'li', lo + Math.floor(rnd() * (hi - lo + 1))) };
+    return { kind: 'stat', key: 'li', amount: addStat(m, 'li', growthGain(m, 'li')) };
   };
   SQUARE_EFFECTS.treasure = (S, m, rnd) => {
     const tot = PROVISIONAL_CHEST.reduce((a, x) => a + x.w, 0); let t = rnd() * tot, pick = PROVISIONAL_CHEST[0];

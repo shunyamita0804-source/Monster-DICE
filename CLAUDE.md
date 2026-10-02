@@ -23,19 +23,19 @@ Claude Code は作業の前に毎回このファイルを読むこと。ここ�
 | js/phase8/league.js | 大会の総当たりリーグ。`MMP8L` |
 | js/phase8/raising.js | 育成進行・Chapter・大会・セーブv6・育成完了回数・最終ルートの代替処理。`MMP8` |
 | js/phase9/chapters.js、js/phase9/board-art.js | Chapter 1〜4 の正式マップ（ノード・分岐・マス）と描画。`MMP9C` |
-| js/phase10/monsters.js | 正式モンスターデータ・市場・購入救済・売却。`MMP10M` |
+| js/phase10/monsters.js | 正式モンスターデータ（成長適性 A〜E と上昇量の表 GROWTH_GAIN を含む）・市場・購入救済・売却。`MMP10M` |
 | js/phase11/player.js | プレイヤー名。`MMP11P` |
 | js/phase12/scenes.js、js/phase12/dice.js | 背景・サイコロ演出 |
 | js/phase13/field.js | 旧 Chapter 1 のフィールド表示（試作。Chapter 1 は js/chapter/ が担当するため、今は表示されない） |
 | js/chapter/engine.js | Chapterフィールドの共通エンジン `MMCH`（config の登録・ノードの組み立て・配置の生成と検証・疲れ・能力マス・イベント・宝箱・バトル）。MMP8.registerChapterDriver で raising.js へつなぐ。Chapter ごとの分岐（if chapter===N）は書かない |
-| js/chapter/configs/ch1a.js | Chapter 1「はじまりの草原」Pattern A の config（データだけ。2026-10-02 から正式背景14枚＝final/field/ch1_bg_01〜14 を 01→14 の順に1回ずつ通る1本道。BACKGROUNDS＝背景ごとの backgroundId・image・表示名【暫定】・地形・道の中央線 road [y, x, 半幅]（目視）・nodes＝その背景のマスの座標 [x, y]（背景ごとに個数が違う。合計60＝59歩）。マスUI＝tileUI（正式素材は未着＝sprites は空、位置確認専用の仮表示）。エンジンは path.nodePts でその座標をそのままマスにする。ノードID は w1_〜w14_。強敵 w9_3（天空の大橋）・ライバル w14_0（強制停止）・ゴール w14_2（大会会場の門前）。ゴールのあとは arrival（到着イベント専用の背景 final/event/ch1_bg_15_event・フィナの会話 → 大会受付）。1〜3・40ターン・カメラ near 1.45／far 2.15・操作欄 deck（START だけ）。俯瞰図は intro/ch1_intro_overview.webp のまま。旧 field/ 10枚・road/ 15枚・journey/ 13枚はファイルだけ残す）。新しい Chapter／パターンは configs/ にファイルを足して MMCH.registerConfig する |
+| js/chapter/configs/ch1a.js | Chapter 1「はじまりの草原」Pattern A の config（データだけ。2026-10-02 から正式背景14枚＝final/field/ch1_bg_01〜14 を 01→14 の順に1回ずつ通る1本道。BACKGROUNDS＝背景ごとの backgroundId・image・表示名【暫定】・地形・道の中央線 road [y, x, 半幅]（目視）・nodes＝その背景のマスの座標 [x, y]（背景ごとに個数が違う。合計60＝59歩）。マスUI＝tileUI（2026-10-02 正式素材 assets/fields/ch1a/tiles/。通常マスは何も置かない）。エンジンは path.nodePts でその座標をそのままマスにする。ノードID は w1_〜w14_。強敵 w9_3（天空の大橋）・ライバル w14_0（強制停止）・ゴール w14_2（大会会場の門前）。ゴールのあとは arrival（到着イベント専用の背景 final/event/ch1_bg_15_event・フィナの会話 → 大会受付）。1〜3・40ターン・カメラ near 1.45／far 2.15・操作欄 deck（START だけ）。俯瞰図は intro/ch1_intro_overview.webp のまま。旧 field/ 10枚・road/ 15枚・journey/ 13枚はファイルだけ残す）。新しい Chapter／パターンは configs/ にファイルを足して MMCH.registerConfig する |
 | js/chapter/configs/ch2a.js | Chapter 2「潮風の海岸」Pattern A の config（2026-10-01 夜から正式背景：field/ch2_field_01〜09 → arena/ch2_arena_approach の10枚を この順に1回ずつ通る1本道。海上 01〜05 → 海中 06〜08 → 海上 09 → 会場前。背景ごとに目視で読んだ道の中央線と半幅 [y, x, 半幅]（BG）の上に NODES（5〜9【暫定】）のマス。サイコロ 1〜3。06〜07 で左右の分岐（A 68歩・B 70歩 → 合流 m7_0。branches・paths[].branch）。カメラは約10%寄せる。強敵 s4_4（海上の大橋）・ライバル sa_2（強制停止）・ゴール sa_4。俯瞰図は intro/ch2_intro_overview_v2.webp（演出専用。config.intro.via で海上・海中を経由）。目印・サイコロ・操作欄は ch1a の素材を共用。旧 road/ 10枚・旧俯瞰図はファイルだけ残す） |
 | assets/fields/ch2a/ | Chapter 2 の素材：正式（2026-10-01 夜）＝field/ch2_field_01〜09.webp・arena/ch2_arena_approach.webp（864×1536・WebP 品質86）と intro/ch2_intro_overview_v2.webp（導入演出専用）。旧構成の road/ 10枚・intro/ch2_intro_overview.webp は参照しない。README.md に順・表示名・元ファイル |
 | js/chapter/dice-renderer.js | サイコロ `MMCHD`（出目 rollDice と演出 play を分ける。回転中の面（2026-10-01 夜）：停止画像 dice_stop_1〜6 を回転に合わせて切り替え（spinFaces。先読みが終わった面だけ）、着地の少し前から出目の面に落ち着く＝無地の宝石に見せない。2026-10-01 正式＝1タップ：`play(v)` は START の位置から出現 → 飛び上がって速く回る → 落ちながら減速 → 着地・小さく跳ねる（ms 980）→ 最後の約0.18秒で正式の角度（0°）へ収束 → 停止面（resultMs 420）→ 消える、まで自動（合計約1.7秒。実測は `lastTiming()`）。旧 `manualStop:true`（STOP で止める）は API だけ残し、通常の Chapter では使わない。停止画像は resultSprites に登録するだけ） |
 | js/chapter/intro.js | Chapter開始の演出 `MMCHI`（旅路全体の俯瞰図 → Chapter 名 → スタート地点へズーム／パン → 実プレイ画面へクロスフェード。config.intro。「育成個体 × Chapter の初回」に1回＝判定は field-view が `m.raise.field.introSeen`（その Chapter の配置と一緒に作られ・消える）で行う（2026-10-01。MMCHI.shown／mark は演出モジュール内の記憶で、判定には使わない）・タップで短縮・自動テストは MM_QA_NO_INTRO） |
 | js/chapter/field-view.js | Chapterフィールドの画面（`MMCHV`・chf*。2026-10-02：ゴールで config.arrival があれば chfArrive＝到着イベント専用の背景へクロスフェード（HUD・操作欄・マスの UI を消す）→ フィナの会話（{name}＝プレイヤー名。この個体のこの Chapter で1回＝m.raise.field.arrivalSeen。自動テストは MM_QA_NO_ARRIVAL）→ 大会受付（index.html の p9ReceptionHtml）。2026-10-01：操作欄は config.deck の画像（START だけ。STOP は廃止）、1タップの流れ chfRoll（START → 出目を保存 → サイコロ出現・自動停止 → 移動 → START）、サイコロは START を押すまで出さない、モンスターの x は道の安全域に収める（roadX → MMCH.clampToRoad）、フィナの吹き出し .chf-fina。層分け・視差・rAF のカメラ追従・道の曲線に沿った歩き・止まる位置と目印の分離・停止の演出・背景の切り替え・HUD・下の操作欄＝中央 STOP＋左右の弧。歩行アニメの差し込み口 registerMonsterAnimator） |
 | js/battle/fit.js | バトル画面の表示だけの補正 `MMBF`（#bt が出たら、HUD と技UIの間に収まる「切れない最大の大きさ」を計算して .mw／.mon にインラインの寸法を入れる。fight()・.bt 系 CSS は変えない） |
-| assets/fields/ch1a/ | Chapter 1 Pattern A の素材：正式（2026-10-02）＝final/field/ch1_bg_01〜14.webp（762×1536・WebP 品質86。進行する背景）・final/event/ch1_bg_15_event.webp（大会会場への到着イベント専用。マスなし）と intro/ch1_intro_overview.webp（final/README.md）。その前の正式（2026-10-01 夜）＝field/ch1_field_01〜10.webp（ファイルだけ残す）。それ以前の構成（road/＝背景15枚、intro/＝俯瞰図 pattern1〜3、dice/dice_stop_1〜6.webp＋dice_blank.webp、ui/＝操作欄（deck_start.webp を使う。deck_stop.webp はファイルだけ残し使わない）。road/README.md）。旧：背景13枚（journey/。README.md に旅の順と元ファイルの対応）・止まる地点の絵・環境素材・サイコロ（dice/dice_rolling.webp と暫定の停止面 dice_stop_1〜3.svg）。旧背景 bg_01〜03.webp は互換のため残すが参照しない（README.md） |
+| assets/fields/ch1a/ | Chapter 1 Pattern A の素材：正式マスUI（2026-10-02）＝tiles/（13枚。透過 WebP。tiles/README.md）、正式（2026-10-02）＝final/field/ch1_bg_01〜14.webp（762×1536・WebP 品質86。進行する背景）・final/event/ch1_bg_15_event.webp（大会会場への到着イベント専用。マスなし）と intro/ch1_intro_overview.webp（final/README.md）。その前の正式（2026-10-01 夜）＝field/ch1_field_01〜10.webp（ファイルだけ残す）。それ以前の構成（road/＝背景15枚、intro/＝俯瞰図 pattern1〜3、dice/dice_stop_1〜6.webp＋dice_blank.webp、ui/＝操作欄（deck_start.webp を使う。deck_stop.webp はファイルだけ残し使わない）。road/README.md）。旧：背景13枚（journey/。README.md に旅の順と元ファイルの対応）・止まる地点の絵・環境素材・サイコロ（dice/dice_rolling.webp と暫定の停止面 dice_stop_1〜3.svg）。旧背景 bg_01〜03.webp は互換のため残すが参照しない（README.md） |
 | js/npc/npc.js | 共通NPC表示・共通会話。`MMNPC` |
 | assets/monsters/ | 4原種の正式画像 |
 | assets/title/ | 開始画面の正式画像（README.md に出どころ） |
@@ -81,6 +81,7 @@ Claude Code は作業の前に毎回このファイルを読むこと。ここ�
 - 2026-10-01 夜の Chapter 2 進行の再設計（サイコロ 1〜3・約70歩・分岐）の後：ふだんの実行は 865件（合格642・skip 223・失敗0。tests/chapter-engine.test.mjs の CH2-01・02 を書き直し、CH2-04＝分岐の選択・合流・分岐中のセーブ）。実ブラウザ tests/qa-e2e-chapter2.test.mjs に CH2-B4（分岐の見え方・再読み込み・合流。2サイズ×A／B）
 - 2026-10-01 夜の Chapter 1・2 の統一（1〜3・40ターン）と Chapter の解放条件の後：ふだんの実行は 868件（合格645・skip 223・失敗0。tests/qa-raising-logic.test.mjs に QA-RL39〜41＝Chapter 3・4 の条件と育成完了）。Chapter 3・4 へ進む前提の古いテストは、出発のときだけ条件を満たした実績にして規則を確かめる形に直した。実ブラウザ tests/qa-e2e-chapter2.test.mjs に CH2-B5（解放条件の画面・2サイズ）
 - 2026-10-02 の Chapter 1 正式背景14枚・60マス・大会到着・マスUIの仮表示の後：ふだんの実行は 873件（合格647・skip 226・失敗0。tests/chapter-engine.test.mjs の CH-ENGINE-01 を14枚・背景ごとのマス数・合計60・座標データ・到着イベントに書き直し、CH1-29＝到着と大会受付の作り、CH1-30＝マスUIの仮表示と差し替えの構造）。実ブラウザの Chapter 1 テスト（qa-e2e-chapter1・journey・raising・save・save-reload）を w1_〜w14_ と大会受付に合わせて書き直し、tests/qa-e2e-journey.test.mjs に JR-13（到着の背景・フィナの会話・再読み込み）・JR-14（マスUIの仮表示と素材の差し替え）。harness は到着の会話を出さない（MM_QA_NO_ARRIVAL。open({ arrival: true }) で出す）
+- 2026-10-02 の正式マスUI・成長適性・レア野生の後：ふだんの実行は 874件（合格648・skip 226・失敗0。tests/chapter-engine.test.mjs の CH1-08・09 を成長適性に書き直し、CH1-30＝正式マスUI、CH1-31＝レア野生 10%）。Chapter 1 の実ブラウザテスト（qa-e2e-chapter1 の CH1-B1・B11、qa-e2e-journey の JR-14）を正式マスUIに合わせて書き直し。旧ボードの能力マスのテスト（qa-raising-logic の QA-RL5）は適性の値に合わせた。テストの読み込みに js/phase10/monsters.js を足した（ゲームと同じ）
 - **テスト運用（2026-10-01 正式）**：ふだんの開発は「実装 → 関連テスト → commit → push → public-check」。51ファイルの全件実ブラウザテストを push の前提にしない（大きな節目では push の後に全件を回す）。既知の不安定なテストが落ちたら、変更との関係を確かめ、明らかに不安定なものだけ1回再実行して合格なら既知として報告する（何度も再実行しない）。小さな修正では公開版の手動操作確認は不要で public-check を基本にする。
 
 ### ホーム画面アイコン
@@ -131,6 +132,7 @@ Claude Code は作業の前に毎回このファイルを読むこと。ここ�
 - species ID（solamo・gauru・nobiton・jiol）は表示名と別の安定したIDとして使う。
 - 素早さは 1〜10 で、10 が最速。
 - 正式画像は assets/monsters/ を使う。CSS の filter・hue-rotate などで色を変えない。
+- **成長適性（2026-10-02 正式）**：各モンスターの6能力それぞれに A〜E（A が最も伸びやすい）。能力マスの上昇量は A +7・B +6・C +5・D +4・E +3（表は js/phase10/monsters.js の GROWTH_GAIN の1か所。SPECIES[].growth、個体ごとの m.growth（合体個体など将来用）があれば優先）。ソラモ＝C/C/C/C/C/C、ガウル＝ライフ D・ちから B・かしこさ B・命中 C・回避 B・丈夫さ E。ノビトン・ジオルは未登録（【暫定】C として扱う＝GROWTH_UNREGISTERED。正式データが届いたら SPECIES の growth を書くだけ）。
 
 ### 能力と色
 
@@ -149,12 +151,12 @@ Claude Code は作業の前に毎回このファイルを読むこと。ここ�
 - 育成を始めると、育成完了か育成放棄まで街へ戻れない（中断・再開はできる）。
 - Chapterボード上に NPC（フィナを含む）を置かない。
 - **Chapterフィールド（2026-09-30。Chapter 1 から）**：Chapter 1 は js/chapter/ のエンジン＋config（Pattern A「大橋と清流の草原」）で動く。Chapter 2 は 2026-10-01 から同じエンジン（ch2a.js「潮風の海岸」Pattern A「海岸地方」）。Chapter 3〜4 は従来のボード（20ターン）のまま。
-  - **Chapter 1 Pattern A の正式背景・60マス・大会到着・マスUIの仮表示（2026-10-02。正式。下の「Chapter 1 の新しい正式背景（2026-10-01 夜）」の背景10枚・ノードID f1_〜f10_ は旧構成の記録）**：
+  - **Chapter 1 Pattern A の正式背景・60マス・大会到着・正式マスUI（2026-10-02。正式。下の「Chapter 1 の新しい正式背景（2026-10-01 夜）」の背景10枚・ノードID f1_〜f10_ は旧構成の記録）**：
     - 背景14枚（assets/fields/ch1a/final/field/ch1_bg_01〜14。762×1536）を 01→14 の順に1回ずつ通る1本道。表示名は【暫定】（final/README.md）。ノードID は w1_〜w14_（旧構成と重ならない ID にし、古い途中セーブは既存の安全処理で Chapter 1 の開始地点（0ターン）から＝能力・所持金・疲れは保つ）。
     - **総マス数 60（59歩）**：最初の指定は「01〜14 で合計90マス」だったが、40ターン・サイコロ1〜3 では 90マスに届かない（休まなくても到達 約3%、疲れ込みでほぼ0%）ため、ユーザー判断（2026-10-02・案B → 追加指示で 60）。背景ごとのマス数＝01 5・02 5・03 5・04 5・05 3・06 3・07 3・08 4・09 6・10 5・11 5・12 4・13 4・14 3（各画像の使う範囲の道の長さ（奥行き補正込み）に比例。同じ数にはしない）。
     - マスの座標はデータ（config の BACKGROUNDS[].nodes＝[x, y]。エンジンの path.nodePts）。各背景の道の中央線（目視の [y, x, 半幅]）の上に、手前 y 0.87 から「道が細くなりすぎる手前」まで奥行き補正で等間隔（奥ほど間隔が狭い）。背景の最奥（遠景の道）まではマスを置かない。背景ごとのカメラは BACKGROUNDS[].camera で上書きできる（今は全部 near 1.45・far 2.15）。
     - シミュレーション 1000回（`node tests/chapter-sim.mjs 1000`）：cautious＝到達 99.9%・平均 32.3・中央値 32、forced＝到達 100%・平均 31.7。
-    - **マスUI（config.tileUI。正式素材は未着）**：各マスの座標（ノードの止まる位置）の地面に、マス種別ごとの表示素材を置く層（field-view の tilesHtml）。sprites に種別名（MMCH.NODE_TYPES：stat_life〜stat_toughness・event・rest・treasure・wild・strong・rival・special・start・goal・normal）または まとめた種類（stat・event・battle・normal）の画像を書くだけで差し替わる（60個の座標は作り直さない）。素材が無い種類は位置確認専用の仮表示（マゼンタの点線の楕円と「仮 #通し番号」。正式デザインではない。placeholder:false で消せる）。既存の目印（道端の石碑・宝箱など＝nodeLook）はマスUIとは別で、今までどおり。
+    - **マスUI（config.tileUI。2026-10-02 正式素材）**：各マスの座標（ノードの止まる位置）の地面に、マス種別ごとの正式素材（assets/fields/ch1a/tiles/。ZIP mystic-monsters-board-ui-assets-complete-2026-10-02 の JPEG に焼き込まれた市松模様を取り除いて透過 WebP にしたもの。tiles/README.md）を置く（field-view の tilesHtml）。能力6種（stat_life〜stat_toughness）・野生 wild・ライバル rival・宝 treasure・休憩 rest（回復イベント）・？イベント event・ゴール goal。強敵 strong は野生と同じ素材【要確認】。通常マス・スタートは正式素材が未着のため何も置かない。60個の座標・背景ごとのマス数は変えず、sprites に種別ごとの画像を書くだけで差し替わる（探す順＝種別名 → まとめた種類（stat・event・battle）→ normal）。大きさ＝基準 230px × 奥行き^0.65（size.depthPow。手前 約250px・奥 約130px＝背景の画素。縦は 0.46 に潰して地面に置いた見え方）。止まったマスが光り（.hit）、使ったマス（能力・イベント・宝箱）は少し暗く（.used）。位置確認の仮表示（マゼンタの点線と「仮 #番号」）は ?chdebug=1 のときだけ。tileUI.replacesLandmarks：同じ意味の旧目印（道端の石碑・イベントの物・道端の宝箱＝nodeLook）は出さない（素材ファイルは残す）。
     - **大会会場への到着（config.arrival）**：14 の最後のマス（ゴール w14_2）に着くと通常のフィールド進行は終わり、到着イベント専用の背景（final/event/ch1_bg_15_event＝公式大会会場・正門前。マス・サイコロ・操作欄なし）へクロスフェード → フィナの会話3行（「やっと着いたね、{name}さん！」「ここが公式大会の会場だよ。」「さあ、早速受付に行こう！」。{name}＝プレイヤー名、初期名アルト。この個体のこの Chapter で1回＝m.raise.field.arrivalSeen。再読み込みでは受付から）→ 大会受付。
     - **大会受付（index.html の p9ReceptionHtml。config.arrival のある Chapter だけ。Chapter 2 以降は従来の p8GoalHtml）**：参考画像（ZIP の tournament_rank_select_reference.jpg）の方向性で HTML/CSS で作った画面。上部「公式大会」の幕、上から S→E のランク（参考画像のとおり。参加できる下位ランクが下の「参加する」ボタンの近く）。参加できるランク（既存の MMP8.eligibleRanks＝解放条件は変えていない）は「参加可能」の札（人数・試合数・初回賞金）、それ以外は鎖と錠の「参加不可」（押せない）。ランクを選ぶ（フィナは見立てを話すだけ＝FINA_RANK_TALK）→「この大会に参加する」（選ぶまで押せない。選んだ直後0.35秒は無視）→ 既存の startTournament → 開始演出 → 大会本編（セドリックの進行）。下に「大会に参加しない」（既存の辞退＝2度押し）。
     - 大会開始の演出（p9TourIntro。E〜S 共通）：ランクのロゴを大きく（光の輪・月桂樹・金の「RANK」の帯・「公式ランクE大会」）→ セドリックの一言 → 順位表。フィナは受付まで、大会本編はセドリック。
@@ -201,7 +203,8 @@ Claude Code は作業の前に毎回このファイルを読むこと。ここ�
   - 30ターン・サイコロ1〜3。FIELD 2 で大きな分岐（大橋ルート＝短い・バトル多め／森の小道＝長い・能力・イベント・宝箱多め）。合流してゴール → 公式大会 → ファーム。30ターン切れは大会なしで Chapter 終了（失敗ではない）。
   - 配置は固定の骨組み＋ランダム割り当て。Chapter 開始時に seed で決めてセーブ（m.raise.field：chapterId・patternId・fieldId・layoutSeed・nodeAssignments・consumedEvents・openedTreasures・clearedStats・branch）。再読込・バトルから戻っても引き直さない。
   - 疲れ（m.raise.fatigue、0〜100）：出目確定時に 1→+3・2→+5・3→+7、ボードのバトル +5、大会は0。100 でサイコロ不可 → 休む（−30・1ターン・移動なし・ライフ回復なし）。次の Chapter へは max(0, 疲れ−50)。
-  - 能力マス：+10〜15。疲れの帯で失敗（+0）・大成功（×1.5）の確率が変わる（0〜19：0%／20%、20〜39：0／15、40〜59：10／10、60〜79：20／5、80〜100：30／0）。
+  - **能力マス（2026-10-02 正式。旧「+10〜15・疲れの帯で失敗／大成功」は廃止）**：止まったら、そのモンスターの該当能力の成長適性 A〜E の値だけ上がる（A +7・B +6・C +5・D +4・E +3）。ランダム幅・失敗・大成功なし、疲れの影響なし（疲れのシステム自体は存続）。イベントによる能力変化（賢者 +20・薬草 +6 など）は適性の影響を受けない（イベントの数値のまま）。コードは js/chapter/engine.js の statGain → js/phase10/monsters.js の growthGain。旧ボード（Chapter 3〜4）の能力マス・ライフマス（旧【暫定】+5〜7）も同じ成長適性（js/phase8/raising.js の statSquare）。
+  - **レア野生（2026-10-02 正式）**：野生のマスに止まった瞬間に抽選して 通常 90%・レア 10%（engine の rules.rareWildRate＝0.1、結果は pend.fx.rare＝MMCH.isRareEncounter）。盤面にレア専用のマスは置かない（マスは通常の野生）。強敵（strong）・ライバルとは別。レアの敵データ・専用の遭遇演出は未登録（今は判定と記録だけで、バトルは通常の野生と同じ。素材は config.assets.rare_wild に登録）。
   - イベント・宝箱は config のデータ（handler 名＋params）。疲れ回復イベントは1〜3個（−10／−20／−30／全回復）。能力・所持金のイベントの値と宝箱の中身（50G／150G）は【暫定】。回復アイテム（小−10・中−30・大＝全回復）は API（MMCH.registerFatigueItem）だけで、品名・入手は未決。
   - 平均到達ターンの確認：`node tests/chapter-sim.mjs 1000`。
 - **次期Chapter「リアル巨大ボード方式」の内部基盤（2026-09-30。見た目・新背景・新UIは未着＝config と画像を差し替えるだけで移行できる土台。現行 Chapter 1 の挙動・乱数列・セーブ形式は変えていない）**：
@@ -470,7 +473,7 @@ Claude Code は作業の前に毎回このファイルを読むこと。ここ�
 - 能力選択イベント（3つから1つ選ぶ）の上昇量・出現率：未決
 - 特訓チケット地点の出現条件：未決
 - 分岐ルート用 1〜6 サイコロを振る場面：未決（未実装）
-- Chapter 1 Pattern A（2026-10-02）：マスUIの正式素材（未着。今は位置確認専用の仮表示）・既存の目印（石碑・宝箱など）をマスUIと別に残すか・総マス数（今は 60）・背景の表示名・到着の会話の文面・受付でのフィナの一言（FINA_RANK_TALK）・Chapter 2 以降にも到着イベント／新しい受付を使うか・俯瞰図（旧10枚の旅の絵のまま）の差し替え：未決（試遊後に判断）
+- Chapter 1 Pattern A（2026-10-02）：通常マス・スタートの正式素材（未着＝何も置かない）・強敵（strong）のマス素材（今は野生と同じ。ZIP の board_node_strong_enemy は深紅の素材としてレア野生に登録）【要確認】・レア野生の敵データと遭遇演出（未登録）・ノビトン・ジオルの成長適性（未登録＝暫定 C）・宝箱の虹色／通常の素材と宝箱の段階（normal／rare／special）の対応・演出候補（03_board_effects）・分岐素材（Chapter 1 は分岐なし）・ランク条件ゲート A／B（未決）・総マス数（今は 60）・背景の表示名・到着の会話の文面・受付でのフィナの一言（FINA_RANK_TALK）・Chapter 2 以降にも到着イベント／新しい受付／マスUIを使うか・俯瞰図（旧10枚の旅の絵のまま）の差し替え：未決
 - Chapter 1・2 のターン数（今は試遊用の 40）・マス数・カメラ・Chapter 1 の分岐・分岐 A／B の報酬差（lean）と表示名：未決（ユーザーの試遊後に判断）。Chapter の解放条件に届かなかったときの演出・フィナの会話・育成終了の流れの今後の変更：未決（今は既存の育成完了につなぐ最小のUI）
 - リアル巨大ボード方式（Chapter 1 に 2026-10-01 適用）：背景1枚あたりのマス数（NODES）＝総マス数の最終確定（今は【暫定】橋59／森69。tests/chapter-balance.mjs の比較結果で判断）・出目 4〜6 の疲れ（今は +7）・配置の数（counts）・フィナのリアクションの本文・フィナの会話UI・ダンの出発時の掛け合いの文面（DAN_TALK.handoff「ダン、この子のことお願いしてもいい？／ああ。こっちは任せてくれ。」がダンへ預けて旅立つように読める。最小修正案：フィナ「ダン、この子と一緒に行ってくるね。」→ダン「ああ。気をつけてな。ファームで待ってる。」＝仕様側の判断待ち）・同じ背景を周回で続けて通る見え方（試遊で確認）：未決
 - Chapterフィールドの素材待ち：泉・祠（イベント）の自然物、ライバル本人の立ち姿、正式な歩行アニメ（idle／walk／run）、Pattern B／C の config（俯瞰図 pattern2・3 は登録済み）。いずれも config／registerMonsterAnimator で差し替えるだけ（2026-09-30）

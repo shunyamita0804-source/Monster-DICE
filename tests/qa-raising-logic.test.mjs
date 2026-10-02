@@ -14,12 +14,12 @@ import path from 'node:path';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, '..');
 const rd = (p) => readFileSync(path.join(ROOT, p), 'utf8');
-const SRC = { p7: rd('js/phase7/progression.js'), lg: rd('js/phase8/league.js'), p8: rd('js/phase8/raising.js'), ch: rd('js/phase9/chapters.js') };
+const SRC = { p7: rd('js/phase7/progression.js'), lg: rd('js/phase8/league.js'), p8: rd('js/phase8/raising.js'), ch: rd('js/phase9/chapters.js'), p10: rd('js/phase10/monsters.js') };
 
 /** 毎回まっさらなモジュールを読み込む（登録・差し替えがテスト間で混ざらない） */
 function load() {
   const w = {};
-  for (const k of ['p7', 'lg', 'p8', 'ch']) new Function('window', SRC[k])(w);
+  for (const k of ['p7', 'lg', 'p8', 'ch', 'p10']) new Function('window', SRC[k])(w);
   for (const c of w.MMP9C.CHAPTERS) w.MMP7.registerChapterBoard(c.no, c.track, { provisional: false });
   return { P7: w.MMP7, P8: w.MMP8, LG: w.MMP8L, C: w.MMP9C };
 }
@@ -194,7 +194,7 @@ test('QA-RL5：通過したマスでは効果が出ず、最後に止まった�
     P8.roll(S, S.m, die(3)); move(P8, S);
     const x = P8.resolveLanding(S, S.m, () => 0);
     assert.equal(x.fx.kind, 'none'); assert.deepEqual(wallet(S), w0); assert.equal(S.m.raise.pend, null); assert.equal(S.m.raise.turnsUsed, 1); }
-  // Chapter 2：ライフ(a1)・何も起きない(a2)を通過して かしこさ(a3)に止まる → かしこさだけ上がる（【暫定】+5〜7、乱数0で+5）
+  // Chapter 2：ライフ(a1)・何も起きない(a2)を通過して かしこさ(a3)に止まる → かしこさだけ上がる（成長適性：ソラモ C＝+5）
   { const ctx = load(); const { P8 } = ctx; const S = departTo(ctx, 2); const w0 = wallet(S);
     P8.roll(S, S.m, die(3)); assert.deepEqual(move(P8, S), ['a1', 'a2', 'a3']);
     const x = P8.resolveLanding(S, S.m, () => 0);
@@ -203,7 +203,7 @@ test('QA-RL5：通過したマスでは効果が出ず、最後に止まった�
   { const ctx = load(); const { P8 } = ctx; const S = departTo(ctx, 4); const w0 = wallet(S);
     P8.roll(S, S.m, die(2)); assert.deepEqual(move(P8, S), ['a1', 'a2']);
     P8.resolveLanding(S, S.m, () => 0.99);
-    assert.deepEqual(wallet(S), { ...w0, li: w0.li + 7 }); }
+    assert.deepEqual(wallet(S), { ...w0, li: w0.li + 5 }, 'ソラモのライフ適性 C＝+5（2026-10-02：乱数に関係なく適性の値）'); }
   // Chapter 2：分岐Aで寄り道（砂浜の海岸線）を選び、宝箱(c1)・ちから(c2)を通過して修行チケット(c3)に止まる → チケット+1だけ
   { const ctx = load(); const { P8 } = ctx; const S = departTo(ctx, 2); S.m.raise.node = 'A'; const w0 = wallet(S);
     P8.roll(S, S.m, die(3)); assert.deepEqual(move(P8, S, () => 'c1'), ['c1', 'c2', 'c3']);

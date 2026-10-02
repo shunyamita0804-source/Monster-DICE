@@ -13,7 +13,7 @@ const ROOT = path.join(__dirname, '..');
 const rd = (p) => readFileSync(path.join(ROOT, p), 'utf8');
 const HTML = rd('index.html');
 const between = (a, b) => { const i = HTML.indexOf(a), k = HTML.indexOf(b, i + a.length); if (i < 0 || k < 0) throw new Error('抽出失敗: ' + a); return HTML.slice(i, k); };
-function load() { const w = {}; for (const f of ['js/phase7/progression.js', 'js/phase8/league.js', 'js/phase8/raising.js', 'js/phase9/chapters.js', 'js/phase13/field.js']) new Function('window', rd(f))(w); return { P8: w.MMP8, C: w.MMP9C, F: w.MMP13F }; }
+function load() { const w = {}; for (const f of ['js/phase7/progression.js', 'js/phase8/league.js', 'js/phase8/raising.js', 'js/phase10/monsters.js', 'js/phase9/chapters.js', 'js/phase13/field.js']) new Function('window', rd(f))(w); return { P8: w.MMP8, C: w.MMP9C, F: w.MMP13F }; }
 
 test('B1-1：Chapter 1の40ノードすべてをフィールド上に配置（位置は表示用データのみ）。区間は既存のつながりと一致', () => {
   const { C, F } = load(); const t = C.byNo(1).track, L = F.layout(1, t);
@@ -63,7 +63,7 @@ test('B1-4：停止地点は大きな丸マスではなく地形になじむ目�
 // ---------------------------------------------------------
 const j = (o) => JSON.parse(JSON.stringify(o));
 function mon(w) { const m = { sp: 0, name: 'テスト', age: 0, span: 30, h: 0, rk: 0, fa: 0, st: 0, last: null, li: 100, po: 100, in: 100, hi: 100, ev: 100, de: 100, sk: [0, 1, 2, 3], eq: [0, 1, 2, 3, -1, -1] }; w.MMP7.ensureProg(m); return m; }
-function fresh() { const w = {}; for (const f of ['js/phase7/progression.js', 'js/phase8/league.js', 'js/phase8/raising.js', 'js/phase9/chapters.js']) new Function('window', rd(f))(w); for (const c of w.MMP9C.CHAPTERS) w.MMP7.registerChapterBoard(c.no, c.track, { provisional: false }); const S = w.MMP8.newSave(); S.m = w.MMP8.initIndividual(S, mon(w)); w.MMP8.depart(S, S.m); return { w, P8: w.MMP8, S }; }
+function fresh() { const w = {}; for (const f of ['js/phase7/progression.js', 'js/phase8/league.js', 'js/phase8/raising.js', 'js/phase10/monsters.js', 'js/phase9/chapters.js']) new Function('window', rd(f))(w); for (const c of w.MMP9C.CHAPTERS) w.MMP7.registerChapterBoard(c.no, c.track, { provisional: false }); const S = w.MMP8.newSave(); S.m = w.MMP8.initIndividual(S, mon(w)); w.MMP8.depart(S, S.m); return { w, P8: w.MMP8, S }; }
 const dice = (v) => () => ({ 1: 0.05, 2: 0.5, 3: 0.95 })[v];
 
 test('A1-1：正式地理の順番（旅立ちの草原→第一分岐→清流地帯→第二分岐→森の入口→第三分岐→大会前の高原→門）。3か所で分岐し、すべて再合流', () => {

@@ -8,7 +8,8 @@
 //    候補ノード（slot）へ種類をシード付き乱数で割り当てる（generateLayout）。結果は個体の m.raise.field に保存し、
 //    再読み込み・セーブ／ロード・バトルからの復帰では引き直さない
 //  ・疲れ（0〜100）：出目で +3/+5/+7、ボード上のバトル後 +5、休む −30（1ターン消費・移動なし）、100 ならサイコロ不可
-//  ・能力地点：疲れ（出目を足した後）で 失敗／成功／大成功 を1回の抽選で決める。成功 +statGainRange、大成功 ×1.5（四捨五入）
+//  ・能力地点（2026-10-02 正式）：そのモンスターの該当能力の成長適性 A〜E（MMP10M.growthGain＝A+7・B+6・C+5・D+4・E+3）をそのまま加算。ランダム幅・失敗・大成功なし（疲れは影響しない）
+//  ・野生バトル（2026-10-02 正式）：野生のマスに止まったとき rules.rareWildRate（10%）でレア野生（fx.rare）。強敵（strong）とは別。レアの敵データ・専用演出は未登録
 //  ・イベント：イベントの種類（handler）ごとの処理を EVENT_HANDLERS に登録する（巨大な switch にしない）
 //  ・宝箱：tier（normal / rare / special）と開封まで。中身は未決（config.treasurePool.contents が null のあいだは何も渡さない）
 //  ・バトル：type（wild / strong / rival）。絵の asset key は type ごとに分ける（同じ絵でも差し替えは config だけ）
@@ -38,17 +39,8 @@
     diceSides: 3,                 // サイコロの面の数（1〜diceSides を等確率）。次期Chapterは config の rules.diceSides: 6
     onTimeUp: 'end',              // ターンを使い切った時：'end'＝大会なしで Chapter 終了（現行）／'tournament'＝最後のターンの停止処理のあと大会へ（次期Chapter）
     dice: fz({ min: 1, max: 3 }),
-    statGainRange: fz([10, 15]),
-    greatMultiplier: 1.5,
     fatigueRules: fz({ max: 100, roll: fz({ 1: 3, 2: 5, 3: 7 }), battle: 5, rest: 30, carry: 50 }),
-    // 疲れの帯ごとの能力結果（%）。1回の抽選で 失敗 → 大成功 → 成功 の順に排他的に決める
-    statOdds: fz([
-      fz({ max: 19, fail: 0, great: 20 }),
-      fz({ max: 39, fail: 0, great: 15 }),
-      fz({ max: 59, fail: 10, great: 10 }),
-      fz({ max: 79, fail: 20, great: 5 }),
-      fz({ max: 100, fail: 30, great: 0 }),
-    ]),
+    rareWildRate: 0.1,            // 野生のマスに止まったときのレア野生の確率（通常 90%・レア 10%）
     fatigueItems: fz({ small: fz({ amount: 10 }), medium: fz({ amount: 30 }), large: fz({ full: true }) }),
   });
 
@@ -441,10 +433,10 @@
   // ---------------------------------------------------------
   // 能力地点
   // ---------------------------------------------------------
-  function statOdds(cfg, f) { const R = rulesOf(cfg || {}); return R.statOdds.find((b) => f <= b.max) || R.statOdds[R.statOdds.length - 1]; }
-  /** 1回の抽選で 失敗／大成功／成功 を排他的に決める */
-  function statOutcome(cfg, f, r) { const o = statOdds(cfg, f), x = r() * 100; return x < o.fail ? 'fail' : x < o.fail + o.great ? 'great' : 'ok'; }
-  function statAmount(cfg, outcome, r) { const R = rulesOf(cfg || {}), [lo, hi] = R.statGainRange; if (outcome === 'fail') return 0; const base = randInt(lo, hi, r); return outcome === 'great' ? Math.round(base * R.greatMultiplier) : base; }
+  /** 能力地点の上昇量：成長適性（MMP10M.growthOf／growthGain。表は monsters.js の GROWTH_GAIN の1か所）。{ grade, amount } */
+  function statGain(m, k) { const P = root.MMP10M; if (!P || !P.growthGain) throw new Error('MMCH：成長適性（js/phase10/monsters.js）が読み込まれていません'); return { grade: P.growthOf(m, k), amount: P.growthGain(m, k) }; }
+  /** 今のバトル待ち（pend.fx）がレア野生か。レアの敵データ・専用の遭遇演出が登録されたら、ここを見て分岐する（今は判定と記録だけ） */
+  const isRareEncounter = (m) => !!(m && m.raise && m.raise.pend && m.raise.pend.fx && m.raise.pend.fx.rare === true);
   const STAT_MAX = 999;
   function addStat(m, k, n) { const b = m[k] || 0; m[k] = clamp(b + n, 0, STAT_MAX); return m[k] - b; }
 
@@ -507,9 +499,9 @@
     if (!f || !cfg || !a) return null;
     f.fieldId = graphFor(m).nodes[id].field;
     if (a.t === 'stat') {
-      const outcome = statOutcome(cfg, fatigue(m), rnd), amount = addStat(m, a.k, statAmount(cfg, outcome, rnd));
+      const G = statGain(m, a.k), amount = addStat(m, a.k, G.amount);
       if (!f.clearedStats.includes(id)) f.clearedStats.push(id);
-      return { kind: 'chstat', key: a.k, outcome, amount, fatigue: fatigue(m) };
+      return { kind: 'chstat', key: a.k, outcome: 'ok', grade: G.grade, amount, fatigue: fatigue(m) };
     }
     if (a.t === 'event') {
       if (f.consumedEvents.includes(id)) return { kind: 'none', note: 'consumed' };
@@ -526,7 +518,12 @@
       const reward = h ? h(S, m, (c.byTier && c.byTier[a.tier]) || c.params || {}, rnd) : null;
       return { kind: 'treasure', tier: a.tier, reward };
     }
-    if (a.t === 'battle') return { kind: 'battle', battleType: a.bt || 'wild' };
+    if (a.t === 'battle') {
+      const bt = a.bt || 'wild', fx = { kind: 'battle', battleType: bt };
+      // レア野生：通常の野生のマスに止まった瞬間に抽選（盤面にレア専用のマスは置かない）。強敵・ライバルは対象外
+      if (bt === 'wild' && rnd() < rulesOf(cfg).rareWildRate) fx.rare = true;
+      return fx;
+    }
     if (a.t === 'special') {   // Chapter固有の固定イベント（config.specials[nodeId]＝{ handler, params, text, once }）。once（既定）なら1回だけ
       if (a.once !== false && f.consumedEvents.includes(id)) return { kind: 'none', note: 'consumed' };
       const h = a.handler && EVENT_HANDLERS[a.handler];
@@ -587,6 +584,6 @@
     buildGraph, trackOf, alongPersp, smoothCurve, measure, pointAt, routeBetween, depthOf, roadAt, clampToRoad, stepsToMerge, sceneNodes, nextFields, sceneOrder, routeLengths,
     validateLayout, generateLayout, initRun, fieldOf, configFor, graphFor, validField, sanitize, typeAt, nodeTypeName, assignOfType, turnInfo,
     fatigue, addFatigue, rollFatigue, canRoll, recover, carryFatigue, registerFatigueItem, fatigueItemEffect, useFatigueItem,
-    statOdds, statOutcome, statAmount, registerEventHandler, registerPassHandler, onPass, resolve, reactionKeyOf, registerReactionResolver, companionReaction, DRIVER, attach, rulesOf });
+    statGain, isRareEncounter, registerEventHandler, registerPassHandler, onPass, resolve, reactionKeyOf, registerReactionResolver, companionReaction, DRIVER, attach, rulesOf });
   attach();
 })(typeof window !== 'undefined' ? window : globalThis);

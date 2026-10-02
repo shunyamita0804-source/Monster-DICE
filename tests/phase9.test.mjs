@@ -12,11 +12,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, '..');
 const rd = (p) => readFileSync(path.join(ROOT, p), 'utf8');
 const HTML = rd('index.html');
-const SRC = { p7: rd('js/phase7/progression.js'), lg: rd('js/phase8/league.js'), p8: rd('js/phase8/raising.js'), ch: rd('js/phase9/chapters.js'),
+const SRC = { p7: rd('js/phase7/progression.js'), lg: rd('js/phase8/league.js'), p8: rd('js/phase8/raising.js'), ch: rd('js/phase9/chapters.js'), p10: rd('js/phase10/monsters.js'),
   art: existsSync(path.join(ROOT, 'js/phase9/board-art.js')) ? rd('js/phase9/board-art.js') : '' };
 /** 本番と同じ順で読み込み、index.html と同じ方法で正式Chapterを登録する */
 function load({ register = true } = {}) {
-  const w = {}; for (const k of ['p7', 'lg', 'p8', 'ch', 'art']) if (SRC[k]) new Function('window', SRC[k])(w);
+  const w = {}; for (const k of ['p7', 'lg', 'p8', 'ch', 'art', 'p10']) if (SRC[k]) new Function('window', SRC[k])(w);
   if (register) for (const c of w.MMP9C.CHAPTERS) w.MMP7.registerChapterBoard(c.no, c.track, { provisional: false });
   return { P7: w.MMP7, P8: w.MMP8, LG: w.MMP8L, C: w.MMP9C, ART: w.MMP9ART };
 }

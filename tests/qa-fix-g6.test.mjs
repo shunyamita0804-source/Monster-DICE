@@ -28,7 +28,7 @@ const LINES = HTML.split('\n');
 const lineOf = (prefix) => { const l = LINES.find((x) => x.startsWith(prefix)); assert.ok(l, '抽出失敗: ' + prefix); return l; };
 const between = (a, b) => { const i = HTML.indexOf(a), k = HTML.indexOf(b, i + a.length); assert.ok(i >= 0 && k > i, '抽出失敗: ' + a); return HTML.slice(i, k); };
 const J = (o) => JSON.parse(JSON.stringify(o));
-function load() { const w = {}; for (const f of ['js/phase7/progression.js', 'js/phase8/league.js', 'js/phase8/raising.js']) new Function('window', rd(f))(w); return { P7: w.MMP7, P8: w.MMP8, LG: w.MMP8L }; }
+function load() { const w = {}; for (const f of ['js/phase7/progression.js', 'js/phase8/league.js', 'js/phase8/raising.js', 'js/phase10/monsters.js']) new Function('window', rd(f))(w); return { P7: w.MMP7, P8: w.MMP8, LG: w.MMP8L }; }
 function mon(P7, over = {}) {
   const m = { sp: 0, name: 'テスト', age: 0, span: 30, h: 0, rk: 0, fa: 0, st: 0, last: null, li: 100, po: 100, in: 100, hi: 100, ev: 100, de: 100, sk: [0, 1, 2, 3], eq: [0, 1, 2, 3, -1, -1], ...over };
   P7.ensureProg(m); return m;

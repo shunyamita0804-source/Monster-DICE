@@ -20,7 +20,7 @@ const P7SRC = rd('js/phase7/progression.js');
 const P8SRC = rd('js/phase8/raising.js');
 const LGSRC = existsSync(path.join(ROOT, 'js/phase8/league.js')) ? rd('js/phase8/league.js') : '';
 /** 毎回まっさらな MMP7／MMP8L／MMP8 を作る（src8を差し替えると定数変更の検証ができる） */
-function load(src8 = P8SRC) { const w = {}; new Function('window', P7SRC)(w); if (LGSRC) new Function('window', LGSRC)(w); new Function('window', src8)(w); return { P7: w.MMP7, P8: w.MMP8, LG: w.MMP8L }; }
+function load(src8 = P8SRC) { const w = {}; new Function('window', P7SRC)(w); if (LGSRC) new Function('window', LGSRC)(w); new Function('window', src8)(w); new Function('window', rd('js/phase10/monsters.js'))(w); return { P7: w.MMP7, P8: w.MMP8, LG: w.MMP8L }; }
 const seq = (...xs) => { let i = 0; return () => xs[Math.min(i++, xs.length - 1)]; };
 function mon(P7, over = {}) {
   const m = { sp: 0, name: 'テスト', age: 0, span: 30, h: 0, rk: 0, fa: 0, st: 0, last: null, li: 100, po: 100, in: 100, hi: 100, ev: 100, de: 100, sk: [0, 1, 2, 3], eq: [0, 1, 2, 3, -1, -1], ...over };

@@ -120,29 +120,45 @@ test('CH1-07：疲れ100ならサイコロは振れない（休むだけ）。99
   m.raise.fatigue = 99; assert.equal(P8.canRoll(m), true); P8.roll(S, m, () => DIE[3]); assert.equal(E.CH.fatigue(m), 100, '上限100');
 });
 
-test('CH1-08：能力の結果：疲れの帯ごとの確率（1回の抽選で失敗／大成功／成功を排他的に決める）', () => {
-  const { CH } = loadEngine(), cfg = CH.getConfig(1);
-  const table = [[0, 0, 20], [19, 0, 20], [20, 0, 15], [39, 0, 15], [40, 10, 10], [59, 10, 10], [60, 20, 5], [79, 20, 5], [80, 30, 0], [100, 30, 0]];
-  for (const [f, fail, great] of table) {
-    const o = CH.statOdds(cfg, f); assert.deepEqual([o.fail, o.great], [fail, great], `疲れ${f}`);
-    // 境界：抽選値（0〜100）が fail 未満→失敗、fail＋great 未満→大成功、それ以外→成功
-    if (fail) assert.equal(CH.statOutcome(cfg, f, () => (fail - 0.01) / 100), 'fail');
-    if (great) assert.equal(CH.statOutcome(cfg, f, () => (fail + great - 0.01) / 100), 'great');
-    assert.equal(CH.statOutcome(cfg, f, () => (fail + great + 0.01) / 100), 'ok');
-  }
-  const r = lcg(99), cnt = { ok: 0, great: 0, fail: 0 }; for (let i = 0; i < 20000; i++) cnt[CH.statOutcome(cfg, 45, r)]++;
-  assert.ok(Math.abs(cnt.fail / 20000 - 0.1) < 0.01 && Math.abs(cnt.great / 20000 - 0.1) < 0.01, JSON.stringify(cnt));
+test('CH1-08：能力マスの上昇量＝成長適性（A+7・B+6・C+5・D+4・E+3。2026-10-02 正式）。ランダム幅・失敗・大成功なし、疲れの影響なし。表は monsters.js の GROWTH_GAIN の1か所', () => {
+  const { w, CH } = loadEngine(), M = w.MMP10M;
+  assert.deepEqual({ ...M.GROWTH_GAIN }, { A: 7, B: 6, C: 5, D: 4, E: 3 }); assert.deepEqual([...M.GROWTH_GRADES], ['A', 'B', 'C', 'D', 'E']);
+  const K = ['li', 'po', 'in', 'hi', 'ev', 'de'], of = (sp) => K.map((k) => M.growthOf({ sp }, k)).join(''), gain = (sp) => K.map((k) => M.growthGain({ sp }, k));
+  assert.equal(of(0), 'CCCCCC', 'ソラモ'); assert.deepEqual(gain(0), [5, 5, 5, 5, 5, 5]);
+  assert.equal(of(1), 'DBBCBE', 'ガウル'); assert.deepEqual(gain(1), [4, 6, 6, 5, 6, 3]);
+  assert.deepEqual([M.growthRegistered(0), M.growthRegistered(1), M.growthRegistered(2), M.growthRegistered(3)], [true, true, false, false], 'ノビトン・ジオルは未登録（【暫定】C）');
+  assert.equal(M.growthOf({ sp: 0, growth: { po: 'A' } }, 'po'), 'A', '個体ごとの適性（合体個体など将来用）を優先'); assert.equal(M.growthGain({ sp: 0, growth: { po: 'Z' } }, 'po'), 5, '不正な値は種族の適性');
+  const SRC = rd('js/chapter/engine.js'); assert.ok(!/statGainRange|greatMultiplier|statOdds/.test(SRC.replace(/^\s*\/\/.*$/gm, '')), '旧仕様（+10〜15・疲れの失敗／大成功）は残さない');
+  assert.ok(!/A:\s*7/.test(SRC) && !/\bE:\s*3\b/.test(rd('js/phase8/raising.js')), '上昇量の表を重複して書かない');
+  assert.equal(CH.statGain({ sp: 1 }, 'de').amount, 3);
 });
 
-test('CH1-09：能力：成功 +10〜15、大成功は base×1.5（四捨五入）、失敗 +0', () => {
-  const { CH } = loadEngine(), cfg = CH.getConfig(1);
-  for (let base = 10; base <= 15; base++) { const r = () => (base - 10 + 0.5) / 6; assert.equal(CH.statAmount(cfg, 'ok', r), base); assert.equal(CH.statAmount(cfg, 'great', r), Math.round(base * 1.5)); }
-  assert.equal(CH.statAmount(cfg, 'fail', () => 0.5), 0);
-  assert.deepEqual([10, 11, 12, 13, 14, 15].map((b) => Math.round(b * 1.5)), [15, 17, 18, 20, 21, 23]);
-  // 停止地点で実際に上がる（能力地点は対応能力固定）
-  const E = onCh1(); const g = E.CH.graphFor(E.m), id = g.order.find((x) => E.m.raise.field.nodeAssignments[x] && E.m.raise.field.nodeAssignments[x].t === 'stat');
-  const k = E.m.raise.field.nodeAssignments[id].k, b = E.m[k]; E.m.raise.node = id; E.m.raise.pend = { roll: 1, left: 0, stage: 'resolve' };
-  const fx = E.P8.resolveLanding(E.S, E.m, () => 0.5).fx; assert.equal(fx.kind, 'chstat'); assert.equal(fx.key, k); assert.equal(E.m[k] - b, fx.amount);
+test('CH1-09：能力マスに止まる → その能力だけ 適性の値ぶん上がる（どの疲れ・どの乱数でも同じ）。イベントの能力変化は適性の影響を受けない', () => {
+  for (const [sp, want] of [[0, { li: 5, po: 5, in: 5, hi: 5, ev: 5, de: 5 }], [1, { li: 4, po: 6, in: 6, hi: 5, ev: 6, de: 3 }]]) {
+    for (const k of Object.keys(want)) for (const [fat, rv] of [[0, 0.01], [55, 0.5], [99, 0.99]]) {
+      const E = onCh1(); E.m.sp = sp; const g = E.CH.graphFor(E.m), id = g.order.find((x) => x !== g.start && g.nodes[x].kind === 'slot');
+      E.m.raise.field.nodeAssignments[id] = { t: 'stat', k }; E.m.raise.node = id; E.m.raise.pend = { roll: 1, left: 0, stage: 'resolve' }; E.m.raise.fatigue = fat;
+      const before = { ...E.m }, fx = E.P8.resolveLanding(E.S, E.m, () => rv).fx;
+      assert.deepEqual([fx.kind, fx.key, fx.outcome, fx.amount, E.m[k] - before[k]], ['chstat', k, 'ok', want[k], want[k]], `sp${sp} ${k} 疲れ${fat}`);
+      for (const o of Object.keys(want)) if (o !== k) assert.equal(E.m[o], before[o], 'ほかの能力は変わらない');
+    }
+  }
+  // イベント（賢者 +20）は適性に関係なくイベントの数値のまま（ガウルの丈夫さ E でも +20）
+  const E = onCh1(); E.m.sp = 1; const g = E.CH.graphFor(E.m), id = g.order.find((x) => x !== g.start && g.nodes[x].kind === 'slot');
+  E.m.raise.field.nodeAssignments[id] = { t: 'event', ev: 'sage', tier: 'rare' }; E.m.raise.node = id; E.m.raise.pend = { roll: 1, left: 0, stage: 'resolve' };
+  const fx = E.P8.resolveLanding(E.S, E.m, () => 0.99).fx; assert.equal(fx.amount, 20, '賢者 +20');
+});
+
+test('CH1-31：レア野生（2026-10-02 正式）：通常の野生のマスに止まった瞬間に抽選して 10%（盤面にレア専用のマスは無い）。強敵・ライバルは対象外。結果はバトル待ち（pend.fx.rare）に記録', () => {
+  const { CH } = loadEngine(); assert.equal(CH.rulesOf(CH.getConfig(1)).rareWildRate, 0.1);
+  const at = (bt, rv) => { const E = onCh1(); const g = E.CH.graphFor(E.m), id = g.order.find((x) => x !== g.start && g.nodes[x].kind === 'slot'); E.m.raise.field.nodeAssignments[id] = { t: 'battle', bt }; E.m.raise.node = id; E.m.raise.pend = { roll: 1, left: 0, stage: 'resolve' }; const r = E.P8.resolveLanding(E.S, E.m, () => rv); return { fx: r.fx, rare: E.CH.isRareEncounter(E.m), stage: E.m.raise.pend && E.m.raise.pend.stage }; };
+  const a = at('wild', 0.05), b = at('wild', 0.1), c = at('strong', 0.01), d = at('rival', 0.01);
+  assert.deepEqual([a.fx.rare, a.rare, a.stage], [true, true, 'battle'], '0.05 < 10% → レア'); assert.deepEqual([b.fx.rare, b.rare], [undefined, false], '0.10 は通常');
+  assert.deepEqual([c.fx.battleType, c.fx.rare, d.fx.rare], ['strong', undefined, undefined], '強敵・ライバルはレアにならない');
+  { const E = onCh1(); const g = E.CH.graphFor(E.m), id = g.order.find((x) => x !== g.start && g.nodes[x].kind === 'slot'), r = lcg(31); E.m.raise.field.nodeAssignments[id] = { t: 'battle', bt: 'wild' }; let n = 0;
+    for (let i = 0; i < 5000; i++) { E.m.raise.node = id; E.m.raise.pend = { roll: 1, left: 0, stage: 'resolve' }; if (E.P8.resolveLanding(E.S, E.m, r).fx.rare) n++; }
+    assert.ok(Math.abs(n / 5000 - 0.1) < 0.015, `野生 5000回でレア 約10%（${n}）`); }
+  const cfg = CH.getConfig(1); assert.equal(cfg.assets.rare_wild, './assets/fields/ch1a/tiles/tile_strong_enemy.webp', 'レア野生の素材は登録だけ（盤面には出さない）'); assert.ok(!Object.values(cfg.tileUI.sprites).includes(cfg.assets.rare_wild), '盤面のマスにはレア素材を使わない');
 });
 
 test('CH1-10：配置はシードで決まり、Chapter開始時に確定して保存される（同じシード＝同じ配置）', () => {
@@ -367,13 +383,21 @@ test('CH1-29：大会会場への到着（config.arrival）と大会受付：到
   const { CH } = loadEngine(); assert.ok(CH.getConfig(1).arrival); assert.equal(CH.getConfig(2).arrival, undefined, 'Chapter 2 は従来どおり（ゴールのシートでランク選択）');
 });
 
-test('CH1-30：マスUI（config.tileUI）：正式素材は未着なので素材は登録しない（sprites は空）。素材が無い種類は位置確認専用の仮表示。座標は BACKGROUNDS[].nodes（60個）のまま、種別ごとの素材だけを差し替えられる', () => {
-  const { CH } = loadEngine(), cfg = CH.getConfig(1), FV = rd('js/chapter/field-view.js'), HTML = rd('index.html');
-  assert.deepEqual(cfg.tileUI.sprites, {}, '正式素材を推測して登録しない'); assert.equal(cfg.tileUI.placeholder, true);
+test('CH1-30：マスUI（config.tileUI。2026-10-02 正式素材）：能力6種・野生・宝・休憩・ライバル・？イベント・ゴールに正式素材。60個の座標はそのまま（素材は種別だけで決まる）。仮表示は通常プレイに出さない（?chdebug=1 だけ）。同じ意味の旧目印は出さない', () => {
+  const { CH } = loadEngine(), cfg = CH.getConfig(1), FV = rd('js/chapter/field-view.js'), T = cfg.tileUI.sprites, TL = './assets/fields/ch1a/tiles/';
+  assert.deepEqual(T, { stat_life: TL + 'tile_stat_life.webp', stat_power: TL + 'tile_stat_power.webp', stat_intelligence: TL + 'tile_stat_intelligence.webp', stat_accuracy: TL + 'tile_stat_accuracy.webp', stat_evasion: TL + 'tile_stat_evasion.webp', stat_toughness: TL + 'tile_stat_toughness.webp',
+    wild: TL + 'tile_wild_battle.webp', strong: TL + 'tile_wild_battle.webp', rival: TL + 'tile_rival.webp', treasure: TL + 'tile_treasure.webp', rest: TL + 'tile_rest.webp', event: TL + 'tile_event.webp', goal: TL + 'tile_chapter_goal.webp' });
+  for (const f of new Set([...Object.values(T), cfg.assets.rare_wild])) assert.ok(existsSync(path.join(ROOT, f)), f);
+  assert.equal(T.normal, undefined, '通常マスの正式素材は未着（何も置かない）'); assert.equal(T.start, undefined);
+  assert.deepEqual([cfg.tileUI.placeholder, cfg.tileUI.replacesLandmarks], [false, true]);
+  assert.match(FV, /T\.placeholder === false && !debug\(\) \? '' :/, '仮表示は ?chdebug=1 のときだけ');
+  assert.match(FV, /if \(cfg\.tileUI && cfg\.tileUI\.replacesLandmarks && \['stat', 'event', 'treasure'\]\.includes\(a\.t\)\) return null;/, '旧目印（石碑・イベントの物・道端の宝箱）は出さない');
   assert.match(FV, /function tileSpriteOf\(cfg, key\) \{ const T = \(cfg && cfg\.tileUI && cfg\.tileUI\.sprites\) \|\| \{\}; return T\[key\] \|\| T\[TILE_GROUP\[key\]\] \|\| T\.normal \|\| null; \}/, '種別名 → まとめた種類 → normal');
   assert.match(FV, /left:\$\{\(n\.mx \* sc\.w\)\.toFixed\(1\)\}px;top:\$\{\(n\.my \* sc\.h\)\.toFixed\(1\)\}px/, 'マスUIの位置はノードの座標（止まる位置）');
-  assert.match(FV, /<b>仮 #\$\{no\}<\/b>/, '仮表示は「仮 #通し番号」'); assert.match(HTML, /\.chf-tile\.ph\{border:2px dashed/, '仮表示は点線（正式デザインではない）');
-  for (const k of ['normal', 'stat', 'event', 'battle', 'stat_life', 'rest', 'wild', 'strong', 'rival', 'treasure', 'start', 'goal']) assert.ok(k in CH.NODE_TYPES || ['stat', 'battle'].includes(k), `種別キー ${k}`);
+  // 60個の座標・背景ごとのマス数は変えていない（2026-10-02 の確定値）
+  const g = CH.buildGraph(cfg); assert.equal(g.order.length, 60);
+  assert.deepEqual(cfg.nodesPerBackground, { '01': 5, '02': 5, '03': 5, '04': 5, '05': 3, '06': 3, '07': 3, '08': 4, '09': 6, '10': 5, '11': 5, '12': 4, '13': 4, '14': 3 });
+  assert.deepEqual([g.nodes.w1_0.x, g.nodes.w1_0.y, g.nodes.w9_3.x, g.nodes.w9_3.y, g.nodes.w14_2.x, g.nodes.w14_2.y], [0.483, 0.87, 0.461, 0.575, 0.5, 0.68]);
   assert.equal(CH.getConfig(2).tileUI, undefined, 'Chapter 2 は従来どおり（マスUIを出さない）');
 });
 

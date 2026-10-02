@@ -53,7 +53,7 @@ for (const size of [H.SIZES.base, H.SIZES.se]) {
       const filt = []; for (let e = document.querySelector('#bmonw .mon img'); e && e !== document.body; e = e.parentElement) { const f = getComputedStyle(e).filter; if (f && f !== 'none' && !/^drop-shadow/.test(f)) filt.push(e.className); }
       return { sh: document.documentElement.scrollHeight, H: innerHeight, sw: document.documentElement.scrollWidth, W: innerWidth, cams: document.querySelectorAll('.chf-cam').length, bgs: [...document.querySelectorAll('.chf-bg')].map((i) => i.getAttribute('src')),
         dbg: document.querySelectorAll('.chf-dbg,.p9n,.p13n,svg line,svg path.p9ln').length, mon: [mon.top, mon.bottom, mon.left, mon.right], dockTop: dock.top, hudBottom: hud.bottom, broken, filt,
-        objs: document.querySelectorAll('#chf .chf-obj').length, objsWant: (() => { const g = MMCH.graphFor(S.m), a = S.m.raise.field.nodeAssignments, f = MMCHV.state().field; return g.order.filter((id) => g.nodes[id].field === f && a[id] && ['stat', 'event', 'treasure'].includes(a[id].t)).length; })(), env: [...document.querySelectorAll('#chf .chf-env')].map((e) => e.dataset.asset), text: document.querySelector('#chf-ui').innerText,
+        objs: document.querySelectorAll('#chf .chf-obj').length, objsWant: 0, tiles: document.querySelectorAll('#chf .chf-tile:not(.ph)').length, ph: document.querySelectorAll('#chf .chf-tile.ph').length, tilesWant: (() => { const g = MMCH.graphFor(S.m), f = MMCHV.state().field; return g.order.filter((id) => g.nodes[id].field === f && MMCHV.tileSpriteOf(MMCH.configFor(S.m), MMCHV.tileKeyOf(S.m, id))).length; })(), env: [...document.querySelectorAll('#chf .chf-env')].map((e) => e.dataset.asset), text: document.querySelector('#chf-ui').innerText,
         battleObjs: document.querySelectorAll('#chf .chf-obj[data-t="battle"]').length, fg: document.querySelectorAll('#chf .chf-fg').length, layers: ['.chf-far', '.chf-bg', '.chf-back', '.chf-road', '.chf-front', '.chf-fx'].map((c) => !!document.querySelector('#chf ' + c)),
         stop: (() => { const b = document.querySelector('#brollbtn'), r = b.getBoundingClientRect(); return { w: r.width, h: r.height, radius: getComputedStyle(b).borderRadius, text: b.textContent.trim() }; })(),
         deckImg: (() => { const i = document.querySelector('.chdeck-bg'); return i && i.complete && i.naturalWidth > 0 ? i.getAttribute('src') : null; })(),
@@ -65,7 +65,7 @@ for (const size of [H.SIZES.base, H.SIZES.se]) {
     assert.equal(r.dbg, 0, 'ノード・線・番号の表示は無い');
     assert.ok(r.mon[1] <= r.dockTop + 8 && r.mon[0] >= r.hudBottom - 20 && r.mon[2] >= 0 && r.mon[3] <= r.W, `モンスターは画面の中でUIに隠れない（${r.mon}・操作欄 ${r.dockTop}）`);
     assert.deepEqual(r.broken, []); assert.deepEqual(r.filt, [], '正式モンスター画像に色のフィルタをかけない');
-    assert.equal(r.objs, r.objsWant, '停止地点は世界の中の物として置く（この背景の分だけ）'); assert.deepEqual(r.env, [], '街道の背景に素材は重ねない');
+    assert.equal(r.objs, r.objsWant, '旧目印（石碑・宝箱・イベントの物）は出さない（2026-10-02：正式マスUIが種別を示す）'); assert.ok(r.tiles === r.tilesWant && r.tiles > 0 && r.ph === 0, `種類のあるマスに正式素材（${r.tiles}/${r.tilesWant}）・仮表示なし（${r.ph}）`); assert.deepEqual(r.env, [], '街道の背景に素材は重ねない');
     assert.equal(r.battleObjs, 0, 'バトル地点の石碑は常設しない'); assert.equal(r.fg, 0, '手前を横切る草も置かない（石の街道）'); assert.deepEqual(r.layers, [true, true, true, true, true, true], '遠景・背景・奥・道・手前・効果の層');
     assert.match(r.text, /Chapter 1 \/ 4/); assert.match(r.text, /Turn\s*1\s*\/ 40/); assert.match(r.text, /疲れ\s*0/); assert.match(r.text, /アイテム/); assert.match(r.text, /休む/); assert.match(r.text, /サイコロ/);
     // 下の操作欄：正式画像（START の状態）。中央＝START（押せる領域は画像の球の上）、左右＝アイテム・休む（疲れ −30）・技設定・ステータス。フィールドは 80〜82%、操作欄は 18〜20%
@@ -241,7 +241,7 @@ test('CH1-B10：歩き：石板から石板へ道筋の点列で歩く（瞬間�
   assert.deepEqual(p.errors, []);
 });
 
-test('CH1-B11：止まる位置と目印の位置は別：能力の石碑・宝箱・イベントの物は石板の脇にあり、そこに止まったモンスターと重ならない。目印は影を持ち（石の道なので足元の草は無し）、普段は光らず、止まったときだけ光る', { skip: SKIP }, async () => {
+test('CH1-B11：正式マスUI（2026-10-02）：マスは止まる位置（ノードの座標）の地面にあり、モンスターはマスの上に立つ。旧目印（道端の石碑など）は無い。止まったときだけマスが光り、使ったマスは少し暗くなる', { skip: SKIP }, async () => {
   const p = await L.open(); const pg = p.page;
   await start(p);
   const ids = await pg.evaluate(() => { const g = MMCH.graphFor(S.m), a = S.m.raise.field.nodeAssignments; return g.order.filter((id) => a[id] && ['stat', 'treasure', 'event'].includes(a[id].t) && g.nodes[id].field <= 3); });
@@ -249,24 +249,18 @@ test('CH1-B11：止まる位置と目印の位置は別：能力の石碑・宝�
   for (const id of ids) {
     await place(pg, id); await idle(pg);
     const r = await pg.evaluate((id) => {
-      const o = document.querySelector(`#chf .chf-obj[data-id="${id}"]`), oi = o.querySelector('img').getBoundingClientRect(), mi = document.querySelector('#bmonw .mon img').getBoundingClientRect();
-      const ix = Math.max(0, Math.min(oi.right, mi.right) - Math.max(oi.left, mi.left)), iy = Math.max(0, Math.min(oi.bottom, mi.bottom) - Math.max(oi.top, mi.top));
-      const lm = MMCHV.landmarkPos(id), n = MMCH.graphFor(S.m).nodes[id], sc = MMCH.configFor(S.m).fieldScenes[0];
-      return { overlap: (ix * iy) / Math.min(oi.width * oi.height, mi.width * mi.height), dist: Math.hypot(lm.x - n.mx * sc.w, lm.y - n.my * sc.h) * MMCHV.state().cam.S, tuft: !!o.querySelector('.chf-tuft'), shadow: !!o.querySelector('.chf-osh'), glow: getComputedStyle(o.querySelector('.chf-glow')).opacity, hit: o.classList.contains('hit'), t: o.dataset.t, sink: getComputedStyle(o).getPropertyValue('--sink').trim(), hid: o.classList.contains('hid') };
+      const t = document.querySelector(`#chf .chf-tile[data-id="${id}"]`), ti = t.getBoundingClientRect(), mi = document.querySelector('#bmonw .mon img').getBoundingClientRect();
+      return { objs: document.querySelectorAll('#chf .chf-obj').length, cx: Math.abs((ti.left + ti.right) / 2 - (mi.left + mi.right) / 2), feet: mi.bottom - ti.top, th: ti.height, tw: ti.width, mw: mi.width, hit: t.classList.contains('hit'), ok: t.querySelector('img').naturalWidth > 0 };
     }, id);
-    assert.ok(r.overlap < 0.15, `${id}（${r.t}）：モンスターと目印が食い込まない（絵の枠の重なり ${(r.overlap * 100).toFixed(0)}%）`);
-    assert.ok(r.dist >= 24, `${id}：目印は道の脇（止まる位置から ${r.dist.toFixed(0)}px）`);
-    assert.ok(!r.tuft && r.shadow && parseFloat(r.sink) > 0, `${id}：影・少し埋める（草は置かない）`); assert.equal(r.glow, '0', `${id}：普段は光らない`); assert.equal(r.hit, false);
-    assert.equal(r.hid, r.t !== 'treasure', `${id}（${r.t}）：石碑・イベントの物は着くまで見えない。宝箱は最初から`);
+    assert.equal(r.objs, 0, '旧目印は無い'); assert.ok(r.ok && !r.hit, `${id}：正式素材・普段は光らない`);
+    assert.ok(r.cx < r.tw * 0.12 && r.feet > 0 && r.feet < r.th * 1.2, `${id}：モンスターはマスの上（中心のずれ ${r.cx.toFixed(0)}px・足元 ${r.feet.toFixed(0)}/${r.th.toFixed(0)}px）`);
+    assert.ok(r.tw >= r.mw * 0.7 && r.tw <= r.mw * 2.2, `${id}：マスの大きさはモンスターに見合う（マス ${r.tw.toFixed(0)}px・モンスター ${r.mw.toFixed(0)}px）`);
   }
-  // 止まったときだけ光る（0.5〜0.7秒）
+  // 止まったときだけ光る → 使ったマスは少し暗く
   const id = ids[0]; await place(pg, await pg.evaluate((id) => Object.keys(MMCH.graphFor(S.m).conn).find((k) => MMCH.graphFor(S.m).conn[k].includes(id)), id)); await idle(pg);
-  await rollAs(pg, 1); await pg.waitForFunction((id) => document.querySelector(`#chf .chf-obj[data-id="${id}"]`).classList.contains('hit'), id, { timeout: 15000 });
-  assert.equal(await pg.evaluate((id) => document.querySelector(`#chf .chf-obj[data-id="${id}"]`).classList.contains('hid'), id), false, '着いたときに現れる');
-  const glow = await pg.evaluate((id) => { const g = document.querySelector(`#chf .chf-obj[data-id="${id}"] .chf-glow`), a = g.getAnimations()[0]; return a ? a.effect.getComputedTiming().duration : 0; }, id);
-  assert.ok(glow >= 500 && glow <= 700, `光る時間 ${glow}ms`);
-  await idle(pg);
-  assert.deepEqual(p.errors, []);
+  await rollAs(pg, 1); await pg.waitForFunction((id) => document.querySelector(`#chf .chf-tile[data-id="${id}"]`).classList.contains('hit'), id, { timeout: 15000 });
+  await idle(pg); assert.equal(await pg.evaluate((id) => document.querySelector(`#chf .chf-tile[data-id="${id}"]`).classList.contains('used'), id), true, '使ったマスは少し暗く');
+  assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
 });
 
 test('CH1-B12：背景の切り替え：フィールドの端からそのまま進む向きへ歩き続け、短い暗転のあと次のフィールドの入口の少し手前から歩いて入る（ワープしない）。前の背景の DOM は残さない', { skip: SKIP }, async () => {

@@ -14,7 +14,7 @@
 // =========================================================
 (function (root) {
   'use strict';
-  const A = './assets/fields/ch1a/', FN = A + 'final/', F = FN + 'field/', I = A + 'intro/', U = A + 'ui/', D = A + 'dice/';
+  const A = './assets/fields/ch1a/', TL = A + 'tiles/', FN = A + 'final/', F = FN + 'field/', I = A + 'intro/', U = A + 'ui/', D = A + 'dice/';
   const W = 762, H = 1536;   // 背景画像の大きさ
   const DEPTH = [[0.98, 1.22], [0.9, 1.1], [0.84, 1], [0.72, 0.84], [0.6, 0.62], [0.535, 0.5], [0.47, 0.4], [0.425, 0.34], [0.38, 0.28], [0.3, 0.2]];
   const BACKGROUNDS = [
@@ -156,6 +156,7 @@
       treasure_normal: A + 'nodes/treasure_normal.webp', treasure_rare: A + 'nodes/treasure_rare.webp', treasure_special: A + 'nodes/treasure_special.webp',
       battle_wild: A + 'nodes/battle_wild.webp', battle_rival: A + 'nodes/battle_rival.webp', battle_strong: A + 'nodes/battle_wild.webp',
       grass_front: A + 'env/grass_flower_border.webp',
+      rare_wild: TL + 'tile_strong_enemy.webp',   // レア野生（10%）の素材：登録だけ（盤面のマスには使わない。遭遇の演出・敵データは未登録）
     },
     // 目印：石板の脇（道の中央の輪にモンスター、目印は輪の横。奥の輪でもモンスターに重ならない距離 gap）。足元の草は置かない（石の道）
     nodeLook: {
@@ -167,11 +168,20 @@
       figure: { h: 190, side: 1, gap: 150, sink: 0.02, tuft: false },
       tuft: 'grass_front',
     },
-    // ---- マスUI：正式素材は未着（2026-10-02）。届いたら sprites にマス種別ごとの画像を書くだけ（60個の座標は BACKGROUNDS[].nodes のまま）。
-    //  種別名は MMCH.NODE_TYPES（stat_life〜stat_toughness・event・rest・treasure・wild・strong・rival・special・start・goal・normal）。
-    //  まとめて書くなら stat（能力6種）・event（rest も）・battle（wild・strong・rival）、全部同じなら normal。探す順＝種別名 → まとめた種類 → normal。
-    //  素材が無い種類は「位置確認専用の仮表示」（点線の楕円＋「仮 #通し番号」。正式デザインではない）。placeholder:false で仮表示を消せる ----
-    tileUI: { sprites: {}, size: { w: 170, flat: 0.34 }, placeholder: true },
+    // ---- マスUI（2026-10-02 正式素材：assets/fields/ch1a/tiles/。ZIP mystic-monsters-board-ui-assets-complete-2026-10-02 の 01_board_nodes・05_goal_and_treasure を透過化）。
+    //  60個の座標は BACKGROUNDS[].nodes のまま、種別ごとの素材だけを差し替える。種別名は MMCH.NODE_TYPES。探す順＝種別名 → まとめた種類（stat・event・battle）→ normal。
+    //  通常マス（normal）・スタート（start）の正式素材は未着（ZIP の MISSING_OR_PENDING）＝何も置かない。位置確認の仮表示は ?chdebug=1 のときだけ。
+    //  強敵（strong）は野生と同じ素材（board_node_strong_enemy の深紅の素材はレア野生として登録＝assets.rare_wild。盤面には出さない）【要確認】
+    //  replacesLandmarks：マスUIが種別を示すので、同じ意味の旧目印（道端の石碑・宝箱・イベントの物）は出さない ----
+    tileUI: {
+      sprites: {
+        stat_life: TL + 'tile_stat_life.webp', stat_power: TL + 'tile_stat_power.webp', stat_intelligence: TL + 'tile_stat_intelligence.webp',
+        stat_accuracy: TL + 'tile_stat_accuracy.webp', stat_evasion: TL + 'tile_stat_evasion.webp', stat_toughness: TL + 'tile_stat_toughness.webp',
+        wild: TL + 'tile_wild_battle.webp', strong: TL + 'tile_wild_battle.webp', rival: TL + 'tile_rival.webp',
+        treasure: TL + 'tile_treasure.webp', rest: TL + 'tile_rest.webp', event: TL + 'tile_event.webp', goal: TL + 'tile_chapter_goal.webp',
+      },
+      size: { w: 230, flat: 0.46, depthPow: 0.65 }, placeholder: false, replacesLandmarks: true,   // 表示の大きさ：基準 230px × 奥行き^0.65（手前 約250px・奥 約130px＝背景の画素。縦は 0.46 に潰して地面に置いた見え方）
+    },
     battleMarkers: false,
     landmarkVisibility: { stat: 'arrive', event: 'arrive', treasure: 'always' },
     monster: { h: 180, w: 150 },   // w＝体の幅（道の安全域の計算に使う。画像の見た目の幅）

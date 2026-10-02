@@ -63,6 +63,7 @@
   function lookOf(cfg, a) {
     const L = cfg.nodeLook || {};
     if (!a) return null;
+    if (cfg.tileUI && cfg.tileUI.replacesLandmarks && ['stat', 'event', 'treasure'].includes(a.t)) return null;   // マスUIが種別を示す：同じ意味の旧目印は出さない
     if (a.t === 'stat') return { ...L.stat, key: `stat_${a.k}`, cls: `st st-${a.k}` };
     if (a.t === 'event') {
       const e = (cfg.eventPool || []).find((x) => x.id === a.ev), tier = a.tier || 'normal';
@@ -147,12 +148,12 @@
   function tileSpriteOf(cfg, key) { const T = (cfg && cfg.tileUI && cfg.tileUI.sprites) || {}; return T[key] || T[TILE_GROUP[key]] || T.normal || null; }
   function tilesHtml(cfg, g, sc, m, ids) {
     const T = cfg.tileUI; if (!T) return '';
-    const W0 = (T.size && T.size.w) || 170, flat = (T.size && T.size.flat) || 0.34;
+    const W0 = (T.size && T.size.w) || 170, flat = (T.size && T.size.flat) || 0.34, dp = (T.size && T.size.depthPow) != null ? T.size.depthPow : 1;   // 大きさ＝基準の幅 × 奥行き^depthPow（1 未満で奥のマスが小さくなりすぎない）
     return ids.map((id) => {
-      const n = g.nodes[id], key = tileKeyOf(m, id), src = tileSpriteOf(cfg, key), w = W0 * n.d, h = w * flat, no = g.order.indexOf(id) + 1;
+      const n = g.nodes[id], key = tileKeyOf(m, id), src = tileSpriteOf(cfg, key), w = W0 * Math.pow(n.d, dp), h = w * flat, no = g.order.indexOf(id) + 1;
       const box = `left:${(n.mx * sc.w).toFixed(1)}px;top:${(n.my * sc.h).toFixed(1)}px;width:${w.toFixed(1)}px;height:${h.toFixed(1)}px;--d:${n.d}`;
-      if (src) return `<i class="chf-tile" data-id="${id}" data-type="${key}" style="${box}"><img src="${esc(src)}" alt="" draggable="false" decoding="async"></i>`;
-      return T.placeholder === false ? '' : `<i class="chf-tile ph" data-id="${id}" data-type="${key}" style="${box}" title="仮表示（位置確認用）"><b>仮 #${no}</b></i>`;
+      if (src) return `<i class="chf-tile" data-id="${id}" data-type="${key}" style="${box}"><img src="${esc(src)}" alt="" draggable="false" decoding="async"></i>`;   // 使ったマス（能力・イベント・宝箱）は chfBoard で .used（少し暗く）
+      return T.placeholder === false && !debug() ? '' : `<i class="chf-tile ph" data-id="${id}" data-type="${key}" style="${box}" title="仮表示（位置確認用）"><b>仮 #${no}</b></i>`;
     }).join('');
   }
   /** 分岐の道（config.branches[].options の id）どうしが同じ分かれ道か */
@@ -479,7 +480,7 @@
       anim('rest');
     } else { const w = $('#bmonw'); if (w && w.dataset.node !== r.node) placeMon(r.node, true); }
     // 停止地点の状態（開けた宝箱・使ったイベント）を反映
-    document.querySelectorAll('#chf .chf-obj').forEach((e) => { const id = e.dataset.id; e.classList.toggle('used', f.consumedEvents.includes(id) || f.openedTreasures.includes(id) || f.clearedStats.includes(id)); });
+    document.querySelectorAll('#chf .chf-obj,#chf .chf-tile').forEach((e) => { const id = e.dataset.id; e.classList.toggle('used', f.consumedEvents.includes(id) || f.openedTreasures.includes(id) || f.clearedStats.includes(id)); });
     // ゴールに着いたあと：config.arrival があれば到着イベント（専用の背景・フィナの会話）→ 大会受付。マス・サイコロ・操作欄は出さない
     if (ph === 'goal' && V.cfg.arrival) { chfArrive(m, same); return true; }
     $('#chfw').classList.remove('arrive'); { const o = $('#chfarr'); if (o) o.remove(); }
@@ -639,8 +640,7 @@
   }
   function fxText(fx) {
     const L = (k) => labOf(k);
-    if (fx.kind === 'chstat') return fx.outcome === 'fail' ? { h: `<small>古代の石碑…</small><b>力は目覚めなかった</b>`, c: 'fail', t: '石碑の力は目覚めなかった…' }
-      : fx.outcome === 'great' ? { h: `<small>古代の石碑が強く輝いた！</small><b>${L(fx.key)} +${fx.amount}</b>`, c: 'great', t: `大成功！ ${L(fx.key)} +${fx.amount}` } : { h: `<small>古代の石碑を見つけた</small><b>${L(fx.key)} +${fx.amount}</b>`, c: 'ok', t: `${L(fx.key)} +${fx.amount}` };
+    if (fx.kind === 'chstat') return { h: `<small>${L(fx.key)}のマス</small><b>${L(fx.key)} +${fx.amount}</b>`, c: 'ok', t: `${L(fx.key)} +${fx.amount}` };   // 能力マス：成長適性の値だけ上がる（失敗・大成功なし）
     if (fx.kind === 'treasure') { const tl = { normal: '宝箱', rare: '珍しい宝箱', special: '特別な宝箱' }[fx.tier] || '宝箱', gain = fx.reward && fx.reward.kind === 'gold' ? `+${fx.reward.amount}G` : ''; return { h: `<small>道端で${tl}を見つけた！</small><b>${gain || '…'}</b>`, c: `tr tr-${fx.tier}`, t: `${tl}を開けた！ ${gain}` }; }
     if (fx.ev) {
       let eff = '';
@@ -668,16 +668,17 @@
     let tail = '';
     try {
       const id = m.raise.node, r = P8().resolveLanding(gS(), m); doSave();
-      const fx = r.fx || {}, T = fxText(fx), obj = $(`#chf .chf-obj[data-id="${id}"]`);
+      const fx = r.fx || {}, T = fxText(fx), obj = $(`#chf .chf-obj[data-id="${id}"]`), tile = $(`#chf .chf-tile[data-id="${id}"]`);
+      if (tile && fx.kind !== 'none') { tile.classList.remove('hit'); void tile.offsetWidth; tile.classList.add('hit'); }   // 止まったマスが光る（素材の色は変えない）
       refreshHud(m);
       if (fx.kind === 'chstat' || (fx.ev && fx.kind !== 'none') || fx.kind === 'treasure') {
-        if (root.sfx && (fx.kind !== 'chstat' || fx.outcome !== 'fail')) root.sfx(3);
+        if (root.sfx) root.sfx(3);
         const P = objPoint(obj);
         if (P) camFocus(P, fx.kind === 'treasure' ? 0.45 : 0.36, CA().zoom.focus);   // 物のほうへ少し寄る（大きくズームしない）
         if (obj && obj.classList.contains('hid')) { obj.classList.remove('hid'); await wait(V.calm ? 0 : 240); }   // 道端の物が現れる（発見）
         if (obj) { obj.classList.add('hit'); if (fx.kind === 'treasure') { await wait(V.calm ? 0 : 180); obj.classList.add('open'); } }
         setMsg(T ? T.t : '');
-        await popup(T ? T.h : '', T ? T.c : '', fx.kind === 'chstat' ? (fx.outcome === 'ok' ? 850 : 1150) : 1300);
+        await popup(T ? T.h : '', T ? T.c : '', fx.kind === 'chstat' ? 850 : 1300);
         if (obj) { obj.classList.remove('hit'); obj.classList.add('used'); }
         camFocus(null);
         tail = T ? T.t : '';

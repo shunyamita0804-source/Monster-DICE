@@ -74,7 +74,7 @@ test('G3-2：修行ボードは修行の種類ごとの正式背景をはっき�
 // ---------------------------------------------------------
 // 正式サイコロ（通常用1〜3・分岐ルート用1〜6）
 // ---------------------------------------------------------
-function loadDice() { const w = {}; for (const f of ['js/phase7/progression.js', 'js/phase8/league.js', 'js/phase8/raising.js', 'js/phase12/dice.js']) new Function('window', rd(f))(w); return { P7: w.MMP7, P8: w.MMP8, D: w.MMP12D }; }
+function loadDice() { const w = {}; for (const f of ['js/phase7/progression.js', 'js/phase8/league.js', 'js/phase8/raising.js', 'js/phase10/monsters.js', 'js/phase12/dice.js']) new Function('window', rd(f))(w); return { P7: w.MMP7, P8: w.MMP8, D: w.MMP12D }; }
 const webp = (p) => { const b = readFileSync(path.join(ROOT, p)); return b.slice(0, 4).toString() === 'RIFF' && b.slice(8, 12).toString() === 'WEBP'; };
 
 test('D1-1：正式サイコロ20コマを登録（通常用1〜3と分岐ルート用1〜6を区別・各10コマ・対応表は1か所）', () => {
@@ -128,7 +128,7 @@ test('D2-2：演出の部品は見せ方だけ（出目を決めない）。分�
 // ---------------------------------------------------------
 const J = (o) => JSON.parse(JSON.stringify(o));
 function trEnv(save0, { rollGuard = false, hook = null } = {}) {
-  const w = {}; for (const f of ['js/phase7/progression.js', 'js/phase8/league.js', 'js/phase8/raising.js']) new Function('window', rd(f))(w);
+  const w = {}; for (const f of ['js/phase7/progression.js', 'js/phase8/league.js', 'js/phase8/raising.js', 'js/phase10/monsters.js']) new Function('window', rd(f))(w);
   const P7 = w.MMP7, P8 = w.MMP8, S = P8.migrateSave(J(save0)), saves = [], screens = []; let rolls = 0;
   const M7 = { ...P7, rollDice: (...a) => { rolls++; if (rollGuard) throw new Error('振り直してはいけない'); return P7.rollDice(...a); } };
   const src = HTML.slice(HTML.indexOf('async function trRoll(){'), HTML.indexOf('\n// ---- 出発準備'));
@@ -138,7 +138,7 @@ function trEnv(save0, { rollGuard = false, hook = null } = {}) {
   return { P7, P8, S, trRoll, saves, screens, rolls: () => rolls };
 }
 function trainingSave(pos = 0, pending = null) {
-  const w = {}; for (const f of ['js/phase7/progression.js', 'js/phase8/league.js', 'js/phase8/raising.js']) new Function('window', rd(f))(w);
+  const w = {}; for (const f of ['js/phase7/progression.js', 'js/phase8/league.js', 'js/phase8/raising.js', 'js/phase10/monsters.js']) new Function('window', rd(f))(w);
   const P7 = w.MMP7, P8 = w.MMP8, S = P8.newSave(); const m = { sp: 0, name: 'テスト', age: 0, span: 30, h: 0, rk: 0, fa: 0, st: 0, last: null, li: 100, po: 100, in: 100, hi: 100, ev: 100, de: 100, sk: [0, 1, 2, 3], eq: [0, 1, 2, 3, -1, -1] };
   P7.ensureProg(m); S.m = P8.initIndividual(S, m); Object.assign(S.m.raise, { state: 'farm', ch: 2, log: [{ ch: 1 }] }); S.trainTix = 3;
   assert.equal(P7.startTraining(S, S.m, 'po').ok, true); S.m.raise.trainRun.pos = pos; if (pending != null) S.m.raise.trainRun.roll = pending; return J(S);
