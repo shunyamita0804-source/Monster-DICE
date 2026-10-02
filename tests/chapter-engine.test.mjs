@@ -588,5 +588,6 @@ test('CH1-33：ソラモの後ろ向き歩行アニメ（2026-10-02 正式素材
   const FV = rd('js/chapter/field-view.js'), code = FV.split('\n').map((l) => l.replace(/\/\/.*$/, '')).join('\n');
   assert.doesNotMatch(code, /\.chf-spr[^\n]*setAttribute\('src'/, 'コマの切り替えで src を差し替えない（再読み込み・ちらつきなし）');
   assert.match(code, /if \(state === 'walk' && !\(info && info\.calm\)\)/, '歩いている間だけループ');
+  assert.match(code, /buildScene\(m, fieldId, true\);/, '背景の切り替え中は暗転を残す（新しい背景の上で明ける）'); assert.match(code, /keepVeil \? '\.chf-cam,\.chf-canopy'/);
   assert.match(code, /await switchField\(m, n\.field, id, cur\);\n\s+if \(last\) \{[^\n]*anim\('land'\)[^\n]*anim\('idle'\)/, '背景をまたいで止まるときも停止の姿勢へ');
 });

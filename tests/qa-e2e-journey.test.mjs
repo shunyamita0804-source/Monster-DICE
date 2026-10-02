@@ -348,8 +348,11 @@ test('JR-15：ソラモの後ろ向き歩行（390×844）：止まっている�
   const ch = a.seen.map(Number).filter((f, i, A) => i === 0 || f !== A[i - 1]), d = ch.slice(1).map((f, i) => (f - ch[i] + 8) % 8);
   assert.ok(d.every((x) => x >= 1 && x <= 3), `コマは前へだけ進む（${ch.join('')}）`);
   assert.deepEqual([a.end.f, a.end.walk], ['1', false], '着いたら 01');
-  // 背景 01 → 02 をまたいで止まる
+  // 背景 01 → 02 をまたいで止まる。暗転は新しい背景に切り替わる瞬間も残り、そこから明けていく（2026-10-02：以前は暗転ごと消えて、真っ暗から新しい背景へ一瞬で切り替わっていた）
+  await pg.evaluate(() => { window.__sw = []; const t = () => { const bg = document.querySelector('.chf-bg'), v = document.querySelector('.chf-veil'); window.__sw.push([bg ? bg.getAttribute('src') : '', v ? +getComputedStyle(v).opacity : -1]); requestAnimationFrame(t); }; requestAnimationFrame(t); });
   const b = await walkSample(3);
+  const sw = await pg.evaluate(() => window.__sw), k = sw.findIndex((x, i) => i && x[0] !== sw[i - 1][0]);
+  assert.ok(k > 0, '背景が切り替わった'); assert.ok(sw[k][1] >= 0.8, `切り替わる瞬間も暗転が残っている（${sw[k][1]}）`); assert.ok(sw.slice(k).some((x) => x[1] >= 0 && x[1] < 0.3) && sw[sw.length - 1][1] === -1, '暗転は新しい背景の上で明けて、最後は消える');
   assert.equal(b.end.node, 'w2_1'); assert.ok(new Set(b.seen).size >= 6); assert.deepEqual([b.end.f, b.end.walk, b.end.n], ['1', false, 1], '背景をまたいで止まっても 01');
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
 });

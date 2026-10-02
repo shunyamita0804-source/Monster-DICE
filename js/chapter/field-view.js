@@ -201,11 +201,11 @@
     V.pre.add(`${cfg.chapterId}:${cfg.patternId}:${fieldId}`);
     [sc.bg, ...(cfg.landmarks[fieldId] || []).map((L) => asset(cfg, L.asset))].forEach((src) => { const im = new Image(); im.decoding = 'async'; im.src = src; });
   }
-  function buildScene(m, fieldId) {
+  function buildScene(m, fieldId, keepVeil) {
     const fv = $('#chf'); if (!fv) return;
     V.field = fieldId; V.sc = sceneOf(V.cfg, fieldId); V.seedTuft = (MMCH.fieldOf(m).layoutSeed + fieldId * 97) >>> 0;
     SPR.set = spriteSetOf(m); SPR.frame = -1;   // 歩行スプライト（種族ごと。無ければ従来の画像）
-    fv.querySelectorAll('.chf-cam,.chf-canopy,.chf-veil').forEach((e) => e.remove());   // 前のフィールドの DOM は捨てる（画像を積み上げない）
+    fv.querySelectorAll(keepVeil ? '.chf-cam,.chf-canopy' : '.chf-cam,.chf-canopy,.chf-veil').forEach((e) => e.remove());   // 前のフィールドの DOM は捨てる（画像を積み上げない）。背景の切り替え中（keepVeil）は暗転を残し、新しい背景の上で明けていく（以前は暗転ごと消えて、真っ暗から新しい背景へ一瞬で切り替わっていた）
     fv.insertAdjacentHTML('afterbegin', sceneHtml(m, fieldId) + overlayHtml(V.cfg, m));
     V.par0 = null; V.focus = null;
     for (const f of MMCH.nextFields(V.g, fieldId)) preloadField(V.cfg, f);   // 次に入る背景（つながりの先。背景IDの連番は前提にしない）
@@ -416,7 +416,7 @@
     await moveAlong([p0, p1], V.calm ? 40 : M.fadeMs, [0.05, 0.4]);
     await wait(half * 0.3);
     // 2) 次のフィールド：入口の少し手前（進む向きの後ろ）に置き、カメラはその場で合わせる
-    buildScene(m, fieldId);
+    buildScene(m, fieldId, true);
     const n = V.g.nodes[id], nx = (V.g.conn[id] || []).map((k) => V.g.nodes[k]).find((q) => q && q.field === fieldId);
     let dir = [0, -1]; if (nx) { const dx = (nx.mx - n.mx) * V.sc.w, dy = (nx.my - n.my) * V.sc.h, L = Math.hypot(dx, dy) || 1; dir = [dx / L, dy / L]; }
     V.look = dir; face(dir[0]);
