@@ -41,7 +41,7 @@ test('MS-4：カレンのセリフに「〜わよ」「〜だわ」を使わな�
 
 test('MS-2：会話中（.p10mk.talk）は操作UIを隠す。カレンのボタンは初回のあいさつの後だけ出す', () => {
   assert.match(HTML, /\.p10mk\.talk \.p10arw,\.p10mk\.talk \.p10dots,\.p10mk\.talk \.p10plate,\.p10mk\.talk \.p10det,\.p10mk\.talk \.p10karen,\.p10mk\.talk \.p10kbar,\.p10mk\.talk \.p10msg\{visibility:hidden\}/);
-  assert.match(HTML, /function karenSay\(lines\)\{if\(!window\.MMNPC\|\|!lines\)return Promise\.resolve\(\);const mk=\$\("\.p10mk"\);if\(mk\)mk\.classList\.add\("talk"\);return MMNPC\.talk\(lines\)\.then\(\(\)=>\{if\(mk\)mk\.classList\.remove\("talk"\)\}\)\}/);
+  assert.match(HTML, /function karenSay\(lines,o\)\{if\(!window\.MMNPC\|\|!lines\)return Promise\.resolve\(\);const mk=\$\("\.p10mk"\);if\(mk\)mk\.classList\.add\("talk"\);return MMNPC\.talk\(lines,\{kind:"npc",\.\.\.\(o\|\|\{\}\)\}\)\.then\(\(\)=>\{if\(mk\)mk\.classList\.remove\("talk"\)\}\)\}/);
   assert.match(HTML, /<div class="p10kbar\$\{finaFlags\(\)\.karenIntro\?"":" wait"\}" id="p10kbar"><button class="p10karen" onclick="p10KarenTalk\(\)"/, '案内欄（顔のボタン＋一言）は初回のあいさつの後だけ');
   assert.match(HTML, /\.p10mk\.det\.talk \.p10detp\{visibility:hidden\}/, '詳細を開いたままでも会話中は隠す');
 });

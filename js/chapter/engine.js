@@ -598,6 +598,40 @@
   }
 
   // ---------------------------------------------------------
+  // Chapter のイベント（会話・リアクション）：データ駆動（config.story）。2026-10-02
+  //  config.story＝[{ id, trigger:'start'|'land', when:{ field:[背景…], node:[…], branch, fx:'battle'|…, battleType, species:[…], fatigueMin, raiseMin, chance }, lines:[{ speaker, expression, text }], presentation:'bubble'|'talk', once:true, priority }]
+  //   field は「今回の移動で通った背景」か今いる背景のどれか。once（既定）は「この個体のこの Chapter で1回」（m.raise.field.storySeen。配置と一緒に消える）。
+  //   本文は config に書く（エンジンには書かない）。条件の種類を足すときは STORY_CONDS に足すだけ
+  // ---------------------------------------------------------
+  const STORY_CONDS = {
+    field: (w, c) => { const fs = [c.field, ...(c.visitedFields || [])]; return w.some((x) => fs.includes(x)); },
+    node: (w, c) => w.includes(c.node),
+    branch: (w, c) => c.branch === w,
+    fx: (w, c) => !!c.fx && c.fx.kind === w,
+    battleType: (w, c) => !!c.fx && c.fx.battleType === w,
+    tier: (w, c) => !!c.fx && c.fx.tier === w,
+    species: (w, c) => w.includes(c.species),
+    fatigueMin: (w, c) => c.fatigue >= w,
+    raiseMin: (w, c) => c.raiseCount >= w,
+    chance: (w, c) => (c.rnd || Math.random)() < w,
+  };
+  /** 今の状態で起きるイベント（優先度の高い順。見たものは除く）。ctx＝{ trigger, visitedFields, fx, species, raiseCount, rnd } */
+  function storyEvents(m, trigger, ctx = {}) {
+    const f = fieldOf(m), cfg = configFor(m), g = graphFor(m); if (!f || !cfg || !Array.isArray(cfg.story) || !g) return [];
+    const seen = Array.isArray(f.storySeen) ? f.storySeen : [], node = m.raise.node, n = g.nodes[node];
+    const c = { ...ctx, node, field: n ? n.field : null, branch: f.branch, fatigue: fatigue(m) };
+    const out = [];
+    for (const e of cfg.story) {
+      if (!e || e.trigger !== trigger || (e.once !== false && seen.includes(e.id))) continue;
+      const W = e.when || {}; let ok = true;
+      for (const [k, v] of Object.entries(W)) { const fn = STORY_CONDS[k]; if (!fn || !fn(v, c)) { ok = false; break; } }
+      if (ok) out.push(e);
+    }
+    return out.sort((a, b) => (b.priority || 0) - (a.priority || 0));
+  }
+  function markStory(m, id) { const f = fieldOf(m); if (!f) return; if (!Array.isArray(f.storySeen)) f.storySeen = []; if (!f.storySeen.includes(id)) f.storySeen.push(id); }
+
+  // ---------------------------------------------------------
   // MMP8（raising.js）へのつなぎ（Chapter ドライバー）
   // ---------------------------------------------------------
   const DRIVER = fz({
@@ -650,6 +684,6 @@
     SKELETON, tileCensus, censusErrors, buildGraph, trackOf, alongPersp, smoothCurve, measure, pointAt, routeBetween, depthOf, roadAt, clampToRoad, stepsToMerge, sceneNodes, nextFields, sceneOrder, routeLengths,
     validateLayout, generateLayout, initRun, fieldOf, configFor, graphFor, validField, sanitize, typeAt, nodeTypeName, assignOfType, turnInfo,
     fatigue, addFatigue, rollFatigue, canRoll, recover, carryFatigue, registerFatigueItem, fatigueItemEffect, useFatigueItem,
-    statGain, isWaypoint, registerEventHandler, registerPassHandler, onPass, resolve, reactionKeyOf, registerReactionResolver, companionReaction, DRIVER, attach, rulesOf });
+    statGain, isWaypoint, storyEvents, markStory, STORY_CONDS: fz(Object.keys(STORY_CONDS)), registerEventHandler, registerPassHandler, onPass, resolve, reactionKeyOf, registerReactionResolver, companionReaction, DRIVER, attach, rulesOf });
   attach();
 })(typeof window !== 'undefined' ? window : globalThis);

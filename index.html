@@ -172,7 +172,17 @@ button.go:disabled{filter:grayscale(.6)}
 .bub{position:relative;background:linear-gradient(var(--card),var(--card2))}
 .bub::before{content:"";position:absolute;left:-10px;top:50%;margin-top:-8px;border:8px solid transparent;border-right:10px solid var(--line);border-left:0}
 .bub b{display:block;font-size:.78rem;color:var(--acc);margin-bottom:2px}
-#app>*{animation:scr .3s ease-out both}@keyframes scr{from{opacity:0;transform:translateY(12px)}}
+#app>*{animation:scr var(--mm-enter-light,.22s) var(--mm-ease-out,ease-out) both}@keyframes scr{from{opacity:0;transform:translateY(6px)}}
+/* Game Feel（2026-10-02。js/feel/game-feel.js の MMFEEL）：画面の入りかたを遷移の種類で変える（html[data-mmtr]）。施設へ＝少し奥から、戻る＝横から軽く、特別＝暗いところからゆっくり */
+html[data-mmtr="facility"] #app>*{animation:scrfac var(--mm-enter-facility,.28s) var(--mm-ease-out,ease-out) both}@keyframes scrfac{from{opacity:0;transform:scale(.985)}}
+html[data-mmtr="back"] #app>*{animation:scrback var(--mm-enter-back,.2s) var(--mm-ease-out,ease-out) both}@keyframes scrback{from{opacity:0;transform:translateX(-10px)}}
+html[data-mmtr="special"] #app>*{animation:scrsp var(--mm-enter-special,.52s) var(--mm-ease-ui,ease-out) both}@keyframes scrsp{from{opacity:0;filter:brightness(.4)}}
+/* 押下の手ごたえ：指が触れた瞬間にごく軽く沈む（scale だけ。transform は使わない＝位置合わせの transform と重ならない。絵の色は変えない）。画面を移るボタンは押下の反応を少し見せてから移る（.mm-go） */
+button,[role="button"],.skt{transition:scale var(--mm-press-ms,.11s) var(--mm-ease-ui,ease-out)}
+.mm-press:not(:disabled){scale:var(--mm-press-scale,.97)}
+.mm-go{scale:var(--mm-press-scale,.97);box-shadow:0 0 0 2px rgba(255,226,140,.55),0 0 16px rgba(255,214,110,.35)!important}
+.mm-bump{animation:mmbump .5s var(--mm-ease-snap,ease-out)}@keyframes mmbump{30%{scale:1.14}100%{scale:1}}
+@media (prefers-reduced-motion:reduce){html[data-mmtr] #app>*{animation:none}.mm-press,.mm-go{scale:none}.mm-bump{animation:none}}
 .hn{position:absolute;right:-20px;top:-8px;width:40px;height:40px;border-radius:50%;background:#fff8e6;border:2px solid #3a2a1a;object-fit:cover;object-position:top}
 .ttl{text-align:center;padding:26px 12px 18px;background:linear-gradient(#8fd3ff,#e8f6ff 55%,#fff1c9);border:3px solid #8a5a2b;border-radius:22px;color:#3a2a1a;box-shadow:0 0 0 4px #e8c86a,0 6px 0 4px #8a5a2b}
 .tlogo{font-size:2.1rem;font-weight:800;color:#5a2d0c;text-shadow:0 3px 0 #fff,0 5px 0 #e8c86a}.tsub{letter-spacing:.3em;font-size:.8rem;margin:2px 0 14px}
@@ -1292,7 +1302,7 @@ button.mkc b{font-size:.9rem}button.mkc small{font-size:.66rem;color:#ffe9b0}
 .chfw.chf-intro #chf-ui,.chfw.chf-intro .chf-mon,.chfw.chf-intro .chf-tile,.chfw.chf-intro .chf-obj{opacity:0!important}
 .chfw.chf-uiin #chf-ui,.chfw.chf-uiin .chf-mon,.chfw.chf-uiin .chf-tile{transition:opacity .3s ease}
 .chintro-tap{position:absolute;left:0;right:0;bottom:calc(var(--chdeck) + 14px);margin:0;text-align:center;font:600 11px/1 var(--mm-font-body);color:rgba(255,246,216,.8);letter-spacing:.1em;text-shadow:0 1px 2px rgba(0,0,0,.7);pointer-events:none}
-.chf-fina{position:absolute;left:10px;right:10px;bottom:calc(var(--chdeck) + 10px);z-index:9;display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:14px;border:1.5px solid #d9b465;background:linear-gradient(180deg,rgba(20,36,82,.96),rgba(8,18,46,.97));color:#fff;box-shadow:0 6px 18px rgba(0,0,0,.45);animation:chsheet .26s ease-out;pointer-events:none}
+.chf-fina{position:absolute;left:10px;right:10px;bottom:calc(var(--chdeck) + 10px);z-index:9;display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:14px;border:1.5px solid #d9b465;background:linear-gradient(180deg,rgba(20,36,82,.96),rgba(8,18,46,.97));color:#fff;box-shadow:0 6px 18px rgba(0,0,0,.45);animation:chsheet .26s ease-out;pointer-events:auto;cursor:pointer}
 .chf-fina img{flex:none;width:40px;height:40px;border-radius:50%;object-fit:cover;object-position:50% 12%;border:1.5px solid #d9b465;background:#0b1636}
 .chf-fina b{display:block;font:800 11px/1 var(--mm-font-head);color:#f3d98e;margin-bottom:3px}
 .chf-fina span{font-size:12.5px;line-height:1.35}
@@ -1336,6 +1346,10 @@ button.mkc b{font-size:.9rem}button.mkc small{font-size:.66rem;color:#ffe9b0}
 .chdz-img.off{opacity:0}
 .chdz-stop{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 6px 8px rgba(0,0,0,.35));opacity:0;transition:opacity .16s}
 .chdz-stop.on{opacity:1}
+.chdz-stop.pop{animation:chdzpop .34s var(--mm-ease-snap,ease-out)}@keyframes chdzpop{0%{scale:1.22}100%{scale:1}}
+.chdz-glow{position:absolute;left:50%;top:50%;width:130%;height:130%;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;background:radial-gradient(closest-side,rgba(255,228,150,.0) 55%,rgba(255,220,130,.55) 72%,rgba(255,214,110,0));animation:chdzglow .5s ease-out forwards}@keyframes chdzglow{0%{opacity:0;scale:.6}40%{opacity:1}100%{opacity:0;scale:1.25}}
+.chdz.landed .chdz-sh{opacity:.6}
+@media (prefers-reduced-motion:reduce){.chdz-stop.pop,.chdz-glow{animation:none}.chdz-glow{display:none}}
 .chdz-sh{position:absolute;width:80px;height:16px;margin-top:40px;border-radius:50%;background:radial-gradient(closest-side,rgba(0,0,0,.45),rgba(0,0,0,0));transform:translate(-50%,-50%)}
 .chdz-res{position:absolute;transform:translate(-50%,-50%);display:flex;align-items:baseline;justify-content:center;width:88px;height:88px;animation:chdzres .32s cubic-bezier(.2,1.5,.4,1)}
 .chdz-res b{position:relative;z-index:1;margin-top:12px;font:900 44px/1 var(--mm-font-head);color:#fff5d0;text-shadow:0 0 6px rgba(255,200,80,.9),0 2px 0 #7a4a10,0 3px 8px rgba(0,0,0,.5)}
@@ -1377,6 +1391,13 @@ button.mkc b{font-size:.9rem}button.mkc small{font-size:.66rem;color:#ffe9b0}
 .svs button.ghost{margin:auto auto 0;padding:6px 16px;border:1px dashed rgba(217,180,101,.6);border-radius:999px;background:rgba(0,0,0,.25);color:#e8cf8e;font-size:12px;box-shadow:none}
 /* 共通会話：退場は短くフェード（立ち絵は少し下へ） */
 .mmtalk.mmtalk-out{animation:mmtalkOut .22s ease-in forwards;pointer-events:none}
+/* 会話の見せ方（2026-10-02）：compact＝短い一言（暗幕なし・小さな窓と立ち絵＝背景を隠さない）、major＝重要な出来事（背景を少し暗くして会話に集中） */
+.mmtalk.mmtalk-compact{background:linear-gradient(rgba(4,10,32,0) 60%,rgba(4,10,32,.28))}
+.mmtalk.mmtalk-compact .mmtalk-stage{width:min(100% - 24px,440px)}
+.mmtalk.mmtalk-compact .mmtalk-fig.closeup{height:min(26vh,210px)}
+.mmtalk.mmtalk-compact .mmtalk-win{min-height:0;padding:20px 16px 14px}
+.mmtalk.mmtalk-compact .mmtalk-text{min-height:1.75em;font-size:15px}
+.mmtalk.mmtalk-major{background:linear-gradient(rgba(4,10,32,.18),rgba(4,10,32,.62))}
 .mmtalk.mmtalk-out .mmtalk-fig{transition:transform .22s ease-in;transform:translate(-10px,12px)}
 @keyframes mmtalkOut{to{opacity:0}}
 /* 大会：ランク選択（未解放は鎖と錠で封印）・フィナの案内・開始演出・参加者の登場・次の対戦相手 */
@@ -1430,15 +1451,27 @@ button.mkc b{font-size:.9rem}button.mkc small{font-size:.66rem;color:#ffe9b0}
 @keyframes chtilehit{0%{opacity:0}25%{opacity:1}100%{opacity:0}}
 @keyframes chtilepop{0%{transform:scale(1)}40%{transform:scale(1.06)}100%{transform:scale(1)}}
 @media (prefers-reduced-motion:reduce){.chf-tile.hit::before,.chf-tile.hit img{animation:none}}
-/* 共通の台座（2026-10-02 の60マス再設計。tileUI.pedestal）：地面 → 薄く短い接地影（.chf-tsh）→ 石の台座の厚み＋金属の縁（.chf-tped）→ マスの絵（img）。
-   大きさ・縦の潰れ（奥ほど平たい楕円）は field-view の tileBox が style に書く（--th＝台座の厚み、--rim＝縁の太さ。px）。通常マスは絵が無く、台座の石の面だけ（.k-normal。控えめ） */
+/* 道に刻まれたマス（2026-10-02 商用品質化で台座を作り直し。tileUI.pedestal）：分厚い石の円盤は使わない。地面 → ごく薄い接地影（.chf-tsh）→ 細い金属の縁（.chf-tped）→ マスの絵（img）。
+   側面の厚みは見せない（「道に置いた円盤」ではなく「道に刻まれた魔法の印」）。奥のマスほど控えめ（--op）。今いるマスだけ少し明るい縁（.cur） */
+.chf-tile.ped{opacity:var(--op,1)}
 .chf-tile.ped img{position:relative}
-.chf-tile.ped .chf-tsh{position:absolute;left:-9%;right:-9%;top:-4%;bottom:-20%;border-radius:50%;background:radial-gradient(closest-side,rgba(30,22,12,.34),rgba(30,22,12,.16) 70%,rgba(30,22,12,0));pointer-events:none}
-.chf-tile.ped .chf-tped{position:absolute;left:-3%;right:-3%;top:-4%;bottom:-4%;border-radius:50%;box-sizing:border-box;border:var(--rim,3px) solid #94733a;background:radial-gradient(ellipse at 50% 34%,#d2c5a6 0%,#b09f7e 48%,#8a7a5c 84%,#6a5d46 100%);box-shadow:inset 0 calc(var(--rim,3px) * .8) 0 rgba(255,236,186,.35),inset 0 calc(var(--rim,3px) * -1) 0 rgba(48,34,14,.4),0 var(--th,4px) 0 -1px rgba(92,80,60,.95),0 calc(var(--th,4px) + .5px) calc(var(--th,4px) * .9) rgba(20,14,6,.28);pointer-events:none}
-.chf-tile.ped.k-normal{opacity:.94}
-.chf-tile.ped.k-normal .chf-tped{border-color:#8a7650;background:radial-gradient(ellipse at 50% 36%,#cdbf9f 0%,#ad9c7b 52%,#857558 88%,#6a5d46 100%)}
-.chf-tile.ped.k-normal .chf-tface{position:absolute;left:22%;right:22%;top:24%;bottom:24%;border-radius:50%;border:1px solid rgba(78,62,38,.45);box-shadow:inset 0 1px 0 rgba(40,30,16,.25),0 1px 0 rgba(255,240,205,.35);pointer-events:none}
-.chf-tile.ped.k-normal.hit .chf-tped{border-color:#c9a14f}
+.chf-tile.ped .chf-tsh{position:absolute;left:-6%;right:-6%;top:6%;bottom:-12%;border-radius:50%;background:radial-gradient(closest-side,rgba(30,22,12,.26),rgba(30,22,12,.1) 70%,rgba(30,22,12,0));pointer-events:none}
+.chf-tile.ped .chf-tped{position:absolute;left:-2.5%;right:-2.5%;top:-3%;bottom:-3%;border-radius:50%;box-sizing:border-box;border:var(--rim,2px) solid rgba(196,160,92,.55);box-shadow:inset 0 0 0 1px rgba(40,28,12,.28),0 1px 0 rgba(255,240,200,.18);pointer-events:none}
+.chf-tile.ped.k-normal .chf-tped{border-color:rgba(176,148,96,.5);background:radial-gradient(ellipse at 50% 45%,rgba(60,48,30,.05) 0%,rgba(60,48,30,.14) 62%,rgba(60,48,30,.2) 100%)}
+.chf-tile.ped.k-normal .chf-tface{position:absolute;left:24%;right:24%;top:26%;bottom:26%;border-radius:50%;border:1px solid rgba(120,96,58,.38);pointer-events:none}
+.chf-tile.ped.cur{opacity:1}
+.chf-tile.ped.cur .chf-tped{border-color:rgba(255,226,150,.85);box-shadow:inset 0 0 0 1px rgba(40,28,12,.28),0 0 10px rgba(255,214,110,.45)}
+.chf-tile.touch .chf-tped{animation:chftouch .5s ease-out}@keyframes chftouch{0%{box-shadow:0 0 0 0 rgba(255,226,150,.7)}100%{box-shadow:0 0 0 calc(var(--rim,2px) * 8) rgba(255,226,150,0)}}
+/* Chapter の出来事の演出（2026-10-02）：モンスターの反応（小さく跳ねる＋足元の光の輪）・宝箱の揺れ・所持金へ飛ぶ「+NG」・数値のカウントアップ */
+.chf-mon.react .chf-flip{animation:chfreact .52s var(--mm-ease-snap,ease-out)}@keyframes chfreact{25%{translate:0 -12%}55%{translate:0 0}75%{translate:0 -4%}100%{translate:0 0}}
+.chf-mring{position:absolute;width:calc(190px * var(--d,1));height:calc(62px * var(--d,1));transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;border:2px solid rgba(255,226,150,.85);box-shadow:0 0 14px rgba(255,214,110,.6),inset 0 0 10px rgba(255,214,110,.45);animation:chfmring .85s ease-out forwards;z-index:2}
+.chf-mring.k-rest{border-color:rgba(170,230,255,.85);box-shadow:0 0 14px rgba(140,210,255,.55),inset 0 0 10px rgba(140,210,255,.4)}
+.chf-mring.k-down{border-color:rgba(200,200,210,.6);box-shadow:none}
+@keyframes chfmring{0%{opacity:0;scale:.5}30%{opacity:1}100%{opacity:0;scale:1.35}}
+.chf-obj.shake img{animation:chfshake .32s ease-in-out}@keyframes chfshake{20%{rotate:-6deg}45%{rotate:5deg}70%{rotate:-3deg}100%{rotate:0deg}}
+.chf-gfly{position:absolute;z-index:40;transform:translate(-50%,-50%);padding:3px 10px;border-radius:999px;background:linear-gradient(#fff3c4,#e9bf55);color:#5a3a06;font:800 15px/1.2 var(--mm-font-head);box-shadow:0 2px 8px rgba(0,0,0,.35),0 0 12px rgba(255,214,110,.6);pointer-events:none;white-space:nowrap}
+.chpop .cnt{display:inline-block;min-width:2.2em;font-variant-numeric:tabular-nums}
+@media (prefers-reduced-motion:reduce){.chf-mon.react .chf-flip,.chf-mring,.chf-obj.shake img,.chf-tile.touch .chf-tped{animation:none}}
 .chf-tile.ph{border:2px dashed rgba(255,255,255,.9);border-radius:50%;background:rgba(255,0,170,.16);box-shadow:0 0 0 1.5px rgba(0,0,0,.45),inset 0 0 0 1.5px rgba(0,0,0,.35)}
 .chf-tile.ph b{position:absolute;left:50%;top:100%;transform:translate(-50%,2px) scale(calc(.55 + var(--d,1) * .45));transform-origin:50% 0;padding:1px 5px;border-radius:4px;background:rgba(255,0,170,.85);color:#fff;font:700 11px/1.3 var(--mm-font-body);white-space:nowrap;letter-spacing:.02em}
 /* 大会会場への到着（config.arrival）：到着イベント専用の背景をフィールドの上に重ねる（マス・サイコロ・操作欄は出さない） */
@@ -2002,6 +2035,8 @@ main>h1{flex:none}
 #app>.tlow.on{display:block;position:absolute;z-index:2;left:0;right:0;bottom:calc(var(--tbar) + env(safe-area-inset-bottom,0px) + 6px);padding:0 12px;pointer-events:none}
 #app>.tlow.on>*{pointer-events:auto}
 #app>.tlow .dlg{margin:0 0 6px}
+/* システム通知（2026-10-02）：話者の顔を付けない（以前はモンスターの絵が付き、「育成を放棄しました」をモンスターが話しているように見えた）。小さな金の菱形の印だけ */
+.dlg.sys .dsys{flex:none;width:12px;height:12px;margin:4px 6px 0 2px;transform:rotate(45deg);border:2px solid #e8c86a;background:rgba(232,200,106,.25);box-sizing:border-box}
 #app>.tlow .vgsay{margin:0}
 /* 下のバー：2段目は ファーム 55%・プロフィール 22.5%・セーブ・ロード 22.5%（40列のグリッド：1段目 10・10・10・10／2段目 22・9・9。外から見た大きさ・すき間は従来どおり） */
 .tbar button.hz.tcmd.tprof,.tbar button.hz.tcmd.tsave{grid-column:span 9;gap:2px;padding:2px}
@@ -2042,6 +2077,8 @@ main>h1{flex:none}
 <script src="./js/phase9/chapters.js"></script>
 <script src="./js/phase9/board-art.js"></script>
 <script src="./js/npc/npc.js"></script>
+<script src="./js/audio/audio-manager.js"></script>
+<script src="./js/feel/game-feel.js"></script>
 <!-- Chapterフィールドエンジン（共通エンジン＋Chapterごとの config。Chapter 1 Pattern A から。window.MMCH・MMCHD）と画面（chfBoard） -->
 <script src="./js/chapter/engine.js"></script>
 <script src="./js/chapter/configs/ch1a.js"></script>
@@ -2165,7 +2202,12 @@ function plays(M,i,t,sd){
  if(M.hn!=null&&st==0)note(NT(r+ch[M.hn]+K),t,sd*15,LD.hn,LD.hn.v*.7)}
 function loop(){clearInterval(AU.tm);AU.tm=null;if(!AU.ctx||!AU.on||!AU.sc)return;const M=MUS[AU.sc],sd=60/M.b/4;prep(M);if(AU.out)AU.out.gain.setValueAtTime(.72*(M.vol||1),AU.ctx.currentTime);AU.i=0;AU.nt=AU.ctx.currentTime+.1;
  AU.tm=setInterval(()=>{const c=AU.ctx;if(c.state!="running"){AU.nt=Math.max(AU.nt,c.currentTime+.05);return}while(AU.nt<c.currentTime+.16){plays(M,AU.i,AU.nt,sd);AU.i++;AU.nt+=sd}},30)}
-function bgm(sc){if(AU.sc==sc&&AU.tm)return;AU.sc=sc;loop()}
+function bgmLegacy(sc){if(AU.sc==sc&&AU.tm)return;AU.sc=sc;loop()} // 今の合成音の BGM（MMAUDIO の legacy。正式な BGM ファイルを MMAUDIO.registerBgm で登録すれば、その場面はファイルで鳴る）
+// BGM は場面（MMAUDIO.SCENES）で鳴らす（2026-10-02）。画面のコードの bgm("town") などは場面へ読み替える。Chapter は field-view が CHAPTER_N を指定する
+const BGM_SCENE={title:"TITLE",town:"TOWN",market:"FACILITY",farm:"FARM",train:"TRAINING",battle:"BATTLE",dojo:"SPECIAL",tour:"TOURNAMENT",result:"RESULT"};
+const LEGACY_BGM={TITLE:"title",TOWN:"town",FACILITY:"market",FARM:"farm",TRAINING:"train",CHAPTER_1:"train",CHAPTER_2:"train",CHAPTER_3:"train",CHAPTER_4:"train",BATTLE:"battle",TOURNAMENT:"train",RESULT:"train",SPECIAL:"dojo"};
+const LEGACY_SE={UI_CONFIRM:5,UI_CANCEL:10,UI_ERROR:10,UI_OPEN:0,DICE_THROW:7,DICE_ROLL:7,DICE_LAND:9,STAT_UP:3,GOLD_GET:11,CHEST_OPEN:11,EVENT:3,WILD_ALERT:2,BATTLE_START:12,VICTORY:3,UNLOCK:11}; // 正式な SE ファイルが無い出来事は今の合成音（無いものは鳴らさない：STEP・TILE_STOP・CHAPTER_START など）
+function bgm(sc){MMAUDIO.scene(BGM_SCENE[sc]||"TOWN")}
 function mkbus(c){AU.out=c.createGain();AU.out.gain.value=.72;
  const ls=c.createBiquadFilter();ls.type="lowshelf";ls.frequency.value=140;ls.gain.value=2.5;const hs=c.createBiquadFilter();hs.type="highshelf";hs.frequency.value=7500;hs.gain.value=-4;
  const cp=c.createDynamicsCompressor();cp.threshold.value=-18;cp.ratio.value=3;cp.knee.value=12;cp.attack.value=.012;cp.release.value=.28;
@@ -2191,10 +2233,11 @@ function fanfare(){const c=AU.ctx;if(!c||!AU.on||!AU.wet)return;const n=c.curren
  [-12,-5,0,4,7,12,16].forEach(x=>strg(NT(x),m,1.1,.05,{a:.06,r:1.6,snd:.8}));
  [0,4,7].forEach(x=>note(NT(x+12),m,1.3,LD.horn,.09));}
 function startGame(el){if(el&&el.dataset.go)return;if(el)el.dataset.go=1;unlock();clearInterval(AU.tm);AU.tm=null;AU.sc=null;fanfare();const p=$(".tpage");if(p){const d=document.createElement("div");d.className="tflash";p.appendChild(d)}setTimeout(()=>p8Resume(),900)}
+MMAUDIO.attachLegacy({bgm:sc=>bgmLegacy(LEGACY_BGM[sc]||"town"),sfx:n=>{const t=LEGACY_SE[n];if(t==null)return false;sfx(t);return true},muted:()=>!AU.on,setMuted:on=>{if(AU.on===!on)return;sndToggle()}});
 function unlock(){try{if(navigator.audioSession)navigator.audioSession.type="playback"}catch(e){}if(!AU.ctx){const C=window.AudioContext||window.webkitAudioContext;if(!C)return;AU.ctx=new C();mkbus(AU.ctx);loop()}if(AU.ctx.state!="running")AU.ctx.resume();try{const b=AU.ctx.createBuffer(1,1,22050),n=AU.ctx.createBufferSource();n.buffer=b;n.connect(AU.ctx.destination);n.start(0)}catch(e){}}
 ["pointerdown","touchend","click","keydown"].forEach(e=>document.addEventListener(e,unlock));
 document.addEventListener("visibilitychange",()=>{if(AU.ctx)document.hidden?AU.ctx.suspend():AU.ctx.resume()});
-document.addEventListener("click",e=>{const b=e.target&&e.target.closest?e.target.closest("button,.skt,[role=button]"):null;if(b&&!b.disabled&&b.id!="snd"&&!(b.dataset&&b.dataset.nsfx))sfx(5)},true);
+document.addEventListener("click",e=>{const b=e.target&&e.target.closest?e.target.closest("button,.skt,[role=button]"):null;if(b&&!b.disabled&&b.id!="snd"&&!(b.dataset&&b.dataset.nsfx))MMAUDIO.se("UI_CONFIRM")},true);
 function sndToggle(){AU.on=!AU.on;try{localStorage.setItem("mr4a",AU.on?"1":"0")}catch(e){}$("#snd").textContent=AU.on?"🔊":"🔇";unlock();loop();if(AU.on)setTimeout(()=>sfx(3),250)}
 function sfx(t,dl){const c=AU.ctx;if(!c||!AU.on||c.state!="running"||!AU.wet)return;const n=c.currentTime+(dl||0);
  const nz=(f0,f1,d,v,ty,sd,q)=>{const b=c.createBufferSource(),fl=c.createBiquadFilter(),g=c.createGain();b.buffer=AU.nb;b.loop=true;fl.type=ty||"bandpass";if(q)fl.Q.value=q;fl.frequency.setValueAtTime(f0,n);fl.frequency.exponentialRampToValueAtTime(f1,n+d);g.gain.setValueAtTime(.0001,n);g.gain.linearRampToValueAtTime(v,n+Math.min(.01,d/4));g.gain.exponentialRampToValueAtTime(.0001,n+d);b.connect(fl);fl.connect(g);out(g,0,sd??.25);b.start(n,Math.random());b.stop(n+d+.02)};
@@ -2334,7 +2377,7 @@ function gameScroller(){const a=document.getElementById("app");if(!a)return null
 function lobby(msg,open){if(p8Blocked())return;if(S.playerNamePending)return p11NameScr(msg); // Phase 11：新規ゲームは最初にプレイヤー名を決める
  const h1=$("h1");if(h1)h1.style.display="";bgm("town");const m=S.m; // 街では見出し（h1）を CSS で隠す（main:has(>#app>.map.town)）。ほかの画面へ移れば元どおり
  $("#app").innerHTML=`<div class="map town" style="--town-bg:url(${TOWN_BG})"><div class="tbg" aria-hidden="true"></div>${TOWN_SVG}<button class="tround tnews" onclick="newsScr()" aria-label="お知らせ" title="お知らせ"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="#tic-news"/></svg></button><button class="tround tconf" onclick="confScr()" aria-label="設定" title="設定"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="#tic-conf"/></svg></button>${TOWN_LABELS.map(l=>`<div class="tlbl" style="--x:${l[1]};--y:${l[2]}"><span>${l[0]}</span><i></i></div>`).join("")}</div><nav class="tcmds tbar" aria-label="街の施設">${TOWN_CMDS(m).map((c,i)=>`<button class="hz tcmd ${c[4]=="ok"?"":c[4]}${i==4?" tsub tfarm":i==5?" tsub tprof":i==6?" tsub tsave svb":""}" ${c[4]=="dis"?"disabled":""} onclick="${c[3]}" aria-label="${c[0]}${c[4]=="lock"?"（未開放）":""}" title="${c[1]}"><span class="ti">${townIcon(c[2])}</span><b>${c[5]||c[0]}</b></button>`).join("")}</nav>
- <div class="tlow${msg||!m?" on":""}"><div class="dlg${msg&&/class="fmsg"/.test(msg)?" fina":""}">${msg&&/class="fmsg"/.test(msg)?`<img class="dmf" src="${finaFaceSrc()}" alt="">`:`<div class="mon dm">${svg(0,0)}</div>`}<div class="dbub" id="msg">${msg&&/class="fmsg"/.test(msg)?`<span class="dnm">フィナ</span>`:""}${msg||(m?"行きたい場所をタップしよう！":"モンスターがいません。まずは市場で選ぼう。")}</div></div></div>`;try{window.scrollTo(0,0)}catch(e){} // 街は1画面で固定（2026-09-30）：案内文は知らせることがあるときだけ背景の上に出す。セーブ・ロードは下のバー、大会・育成完了の回数はプロフィールへ
+ <div class="tlow${msg||!m?" on":""}"><div class="dlg${msg&&/class="fmsg"/.test(msg)?" fina":" sys"}">${msg&&/class="fmsg"/.test(msg)?`<img class="dmf" src="${finaFaceSrc()}" alt="">`:`<i class="dsys" aria-hidden="true"></i>`}<div class="dbub" id="msg">${msg&&/class="fmsg"/.test(msg)?`<span class="dnm">フィナ</span>`:""}${msg||(m?"行きたい場所をタップしよう！":"モンスターがいません。まずは市場で選ぼう。")}</div></div></div>`;try{window.scrollTo(0,0)}catch(e){} // 街は1画面で固定（2026-09-30）：案内文は知らせることがあるときだけ背景の上に出す。セーブ・ロードは下のバー、大会・育成完了の回数はプロフィールへ
 }
 // ---- Phase 11：プレイヤー名（新規ゲームの最初に決める。空欄なら「アルト」） ----
 function p11Esc(t){return String(t).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
@@ -2674,7 +2717,7 @@ const NP={m:{n:"リナ",t:["モンスターたち、今日もとっても元気�
 // 立ち絵は js/npc/npc.js の register('dan')。小さい顔（ファームの吹き出し・Chapter間ファーム・メッセージ欄）は立ち絵 normal から切り出した face.webp
 const DAN_FACE="assets/npc/dan/face.webp";
 const DAN_TALK={
- handoff:[{npc:"fina",expression:"smile",side:"left",text:"ダン、この子のことお願いしてもいい？"},{npc:"dan",expression:"smile",side:"right",text:"ああ。こっちは任せてくれ。"}],
+ handoff:[{npc:"fina",expression:"smile",side:"left",text:"ダン、この子と一緒に行ってくるね！"},{npc:"dan",expression:"smile",side:"right",text:"ああ。準備はできてるな。気をつけて行ってこい。"}], // 2026-10-02：ダンはファームで送り出す側（Chapter には同行しない）。冒険するのはプレイヤーと育成中のモンスター（フィナは案内）
  farm:["今日も落ち着いてるな。いい調子だ。","少しずつだが、顔つきが変わってきた。","無理はさせない。この子のペースで育てよう。","この子のことは、ちゃんと見ておく。"],
  chapter:n=>`残り${n}ターンか。焦らずゴールを目指そう。`,
  interval:"次に進む前に、特訓や持ち物を整えておきたいところだな。"};
@@ -2926,8 +2969,9 @@ function board(msg){
  {const fx=MMP8.ensureBoardPosition(S,m);if(fx.changed)save();if(fx.rescued)return hall("t","このChapterのマップは準備中のため、Chapter間ファームで待機します。")}
  const r=m.raise,trk=bTrackFor(m),n=trk.nodes[r.node],ph=MMP8.boardPhase(m),c=p9Ch(r.ch);
  if(ph=="tour"||ph=="tour_done")return p8TourScr(msg); // 公式ランク大会（総当たりリーグ）の途中・結果
- bgm("train");p9MenuClose();p9Immersive(true);
- if(window.chfActive&&chfActive(m))return chfBoard(msg); // Chapterフィールドエンジン（js/chapter/）が担当するChapter：フィールドの中を旅する正式画面
+ p9MenuClose();p9Immersive(true);
+ if(window.chfActive&&chfActive(m)){MMAUDIO.scene("CHAPTER_"+Math.max(1,Math.min(4,r.ch|0)));return chfBoard(msg)} // Chapter は Chapter ごとの BGM（2026-10-02。正式な曲は未着＝今は合成音）
+ bgm("train"); // Chapterフィールドエンジン（js/chapter/）が担当するChapter：フィールドの中を旅する正式画面
  let ctl="",def=r.turnsUsed==0&&ph=="roll"&&c&&c.desc?`<b>${MMP8.chapterName(r.ch)}</b>　${c.desc}`:"サイコロを振って進もう！";
  if(ph=="roll")ctl=`<button class="p9dice" id="brollbtn" onclick="bRoll()" aria-label="サイコロを振る"><span class="dz" id="bdice"><img class="p12dicon" src="${MMP12D.icon("std")}" alt=""></span><span class="t1">サイコロを振る</span><span class="t2">1・2・3のみ</span></button>`;
  else if(ph=="move"||ph=="resolve"){def="移動中…";ctl=`<button class="p9dice" disabled><span class="dz" id="bdice">${r.pend.roll}</span><span class="t1">移動中</span></button>`}
@@ -3103,7 +3147,7 @@ function p9Matrix(lg){const mk={win:"○",loss:"×",self:"",next:"◎",pending:"
  return `<section class="p9board2"><h3>対戦表</h3><div class="p9mx-w"><table class="p9mx"><thead><tr><th class="stk">参加者</th>${lg.entrants.map((e,i)=>`<th>${i+1}</th>`).join("")}</tr></thead><tbody>${lg.entrants.map(e=>{
   return `<tr class="${e.player?"me":""}"><th class="stk"><span class="no">${e.id+1}</span>${p9Pt(p9Npc(lg,e.id),"xs")}<span class="nm">${p11Esc(p9Short(lg,e.id))}</span></th>${lg.entrants.map(o=>{const c=MMP8L.resultCell(lg,e.id,o.id);return `<td class="c-${c}">${mk[c]}</td>`}).join("")}</tr>`}).join("")}</tbody></table></div>
  <div class="p9mx-lg"><span><b class="c-win">○</b>勝ち</span><span><b class="c-loss">×</b>負け</span><span><b class="c-next">◎</b>次の試合</span><span><b class="c-pending">・</b>未対戦</span></div></section>`}
-function p8TourScr(msg){const m=S.m,t=m.raise.tour,lg=t.league;bgm("train");p9Immersive(true);p9MenuClose();
+function p8TourScr(msg){const m=S.m,t=m.raise.tour,lg=t.league;bgm("tour");p9Immersive(true);p9MenuClose();
  if(t.status=="settled")return p9TourResult(msg);
  const st=MMP8L.standings(lg),pm=MMP8.tourNext(m),o=p9Npc(lg,pm.opp);
  $("#app").innerHTML=`<div class="p9tour">${p9TourHead(m,t)}
@@ -3309,12 +3353,12 @@ const KAREN_TALK={
 function karenTalk(key){if(window.MM_QA_NO_KAREN)return Promise.resolve(); // 自動テスト専用：カレンの会話を出さない（ゲーム中は設定されない。tests/e2e/harness.mjs）
  return karenSay(KAREN_TALK[key])}
 /** カレンの会話を出す。市場では会話の間、操作UI（詳細・矢印・ドット・名札・カレンのボタン）を隠す */
-function karenSay(lines){if(!window.MMNPC||!lines)return Promise.resolve();const mk=$(".p10mk");if(mk)mk.classList.add("talk");return MMNPC.talk(lines).then(()=>{if(mk)mk.classList.remove("talk")})}
+function karenSay(lines,o){if(!window.MMNPC||!lines)return Promise.resolve();const mk=$(".p10mk");if(mk)mk.classList.add("talk");return MMNPC.talk(lines,{kind:"npc",...(o||{})}).then(()=>{if(mk)mk.classList.remove("talk")})}
 /** 購入確認：シートの上にカレンのアップ画像、シートの中に名前と一言（会話ウィンドウは出さない＝押す回数を増やさない） */
 function karenLine(key){const l=KAREN_TALK[key][0],im=window.MMNPC&&MMNPC.imageOf("karen","closeup",l.expression);return `<div class="kup">${im?`<img class="kupf" src="${im.src}" alt="カレン">`:""}<div class="kupw"><b>カレン</b><p>${l.text}</p></div></div>`}
 // 2回目以降の来店：カレンのアップ画像で1行だけ（説明はくり返さない）。3つから毎回1つを選ぶ
 const KAREN_AGAIN=["いらっしゃい。またモンスターを見に来たの？","新しい子が欲しくなったの？","今日はどの子を見ていく？"];
-function karenAgain(rnd=Math.random){if(window.MM_QA_NO_KAREN)return;karenSay([{npc:"karen",expression:"smile",text:KAREN_AGAIN[Math.floor(rnd()*KAREN_AGAIN.length)%KAREN_AGAIN.length]}])}
+function karenAgain(rnd=Math.random){if(window.MM_QA_NO_KAREN)return;karenSay([{npc:"karen",expression:"smile",text:KAREN_AGAIN[Math.floor(rnd()*KAREN_AGAIN.length)%KAREN_AGAIN.length]}],{presentation:"compact"})} // 2回目以降の一言は小さな窓（背景＝市場を隠さない）
 /** 市場に入ったとき：初回はカレンの説明（2行）、2回目以降は1行のあいさつ。初回（先に「表示済み」を保存してから出す＝再読込しても二度出ない） */
 function karenIntro(){const f=finaFlags();if(f.karenIntro)return karenAgain();f.karenIntro=1;save();karenTalk("intro").then(()=>{const b=$("#p10kbar");if(b)b.classList.remove("wait");p10KarenHint()})} // あいさつが終わってから、カレンの案内欄を出す
 // 市場の案内欄の一言（種族ごと。無ければ「○○ね。」）。選択を切り替えるたびに出す（会話ウィンドウは開かない＝テンポを止めない）
@@ -3331,7 +3375,8 @@ const FINA_TALK={
  raiseAgain:[{npc:"fina",expression:"normal",text:"この子の育成を始める？",choices:[{id:"start",label:"始める"},{id:"cancel",label:"まだやめておく"}]}],
  done:[{npc:"fina",expression:"happy",text:"お疲れさまでした！　育成完了です！"},{expression:"smile",text:"ここまで育ててきた時間が、この子の力になっていますね。"},{expression:"guide",text:"育て終わったモンスターは、牧場でいつでも確認できますよ。"}]};
 function finaFlags(){if(!S.npcFlags||typeof S.npcFlags!="object"||Array.isArray(S.npcFlags))S.npcFlags={};return S.npcFlags}
-function finaTalk(key,branches){return window.MMNPC&&FINA_TALK[key]?MMNPC.talk(FINA_TALK[key],branches?{branches}:undefined):Promise.resolve(null)} // branches：選択肢ごとの続きの行（同じ会話ウィンドウで続ける）。選んだ id で解決
+const FINA_PRES={raiseAgain:"compact",done:"major"}; // 会話の見せ方（短い確認は小さな窓・育成完了は重要イベント。ほかは通常）
+function finaTalk(key,branches){return window.MMNPC&&FINA_TALK[key]?MMNPC.talk(FINA_TALK[key],{kind:"fina",presentation:FINA_PRES[key]||"standard",...(branches?{branches}:{})}):Promise.resolve(null)} // branches：選択肢ごとの続きの行（同じ会話ウィンドウで続ける）。選んだ id で解決
 /** 名前登録の直後に1度だけ：先に「表示済み」を保存してから会話を出す（再読込しても二度出ない） */
 function finaIntro(){const f=finaFlags();if(f.finaIntro)return;f.finaIntro=1;save();finaTalk("intro")}
 function p7Depart(b){const m=S.m;if(!m)return lobby();

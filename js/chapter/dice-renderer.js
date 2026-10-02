@@ -16,7 +16,7 @@
   //  1タップ（2026-10-01 正式）：play(value) は START の1回の押下で「出現 → 飛び上がって速く回る（約0.3秒）→ 落ちながら減速（約0.6秒）→ 着地・小さく跳ねる → 停止面（約0.42秒）→ 消える」まで
   //   自動で進む（合計約1.7秒。ms＝回転〜着地、resultMs＝停止面を見せる時間）。出目は play を呼ぶ前に決まっている（演出の長さ・止まる瞬間は確率を変えない）。
   //  manualStop:true（旧 START／STOP。通常の Chapter では使わない）：宙で回り続け、requestStop() で落ちて止まる。API は互換のため残す
-  const C = { rollingSprite: './assets/fields/ch1a/dice/dice_rolling.webp', resultSprites: {}, min: 1, max: 3, sides: 3, ms: 980, resultMs: 420, settleMs: 180, upMs: 360, landMs: 640 };
+  const C = { rollingSprite: './assets/fields/ch1a/dice/dice_rolling.webp', resultSprites: {}, min: 1, max: 3, sides: 3, ms: 980, resultMs: 520, settleMs: 180, upMs: 360, landMs: 640 };
   let locked = false, cache = null, phase = null, stopResolve = null, lastTiming = null;
   function configure(o) {
     if (o && typeof o === 'object') {
@@ -69,10 +69,12 @@
     img.dataset.faces = String(sched.length);
   }
   /** 見せ方だけ（出目は決まっている）。DOM・アニメーションが使えない環境では何もせず true */
+  const feel = (n) => { try { if (root.MMFEEL) root.MMFEEL.emit(n); } catch (e) {} };   // 出来事（音・ハプティクス）は MMFEEL へ
   async function play(value, opts = {}) {
     if (!valid(value)) return false;
     if (typeof document === 'undefined' || !document.body) return true;
     preload(); locked = true;
+    let landT = 0;
     const tStart = (typeof performance !== 'undefined' ? performance.now() : Date.now()), tick = () => (typeof performance !== 'undefined' ? performance.now() : Date.now()) - tStart; let tSpin = 0, tFace = 0;
     const host = opts.host || document.body, calm = !!(root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches);
     const hw = host.clientWidth || 390, hh = host.clientHeight || 700;
@@ -115,6 +117,7 @@
       } else if (!calm && mv.animate) {
         // 1タップ：START の位置から飛び上がって速く回る → 落ちながら減速 → 着地 → 小さく跳ねて止まる（自動。止める操作は無い）
         phase = 'auto'; ov.dataset.phase = 'auto';
+        feel('dice.throw'); landT = setTimeout(() => { ov.classList.add('landed'); feel('dice.land'); }, T * 0.6);   // 着地の瞬間（音・将来のハプティクス）
         spinFaces(img, value, T);   // 回転中も各面（1〜sides の停止画像）が一瞬ずつ見える。着地の前から出目の面に落ち着く
         const a1 = mv.animate([
           { transform: 'translate(-50%,-50%) translate(0px,0px) scale(.9)', opacity: 1, offset: 0, easing: 'cubic-bezier(.2,.6,.4,1)' },
@@ -132,13 +135,13 @@
         ], { duration: T, easing: 'linear', fill: 'forwards' });
         await Promise.race([a1.finished.catch(() => {}), wait(T + 200)]);
       } else { phase = 'auto'; ov.dataset.phase = 'auto'; mv.style.transform = `translate(-50%,-50%) translate(${lx.toFixed(1)}px,${ly.toFixed(1)}px)`; await wait(T); }
-      tSpin = tick(); phase = 'result'; ov.dataset.phase = 'result';
+      tSpin = tick(); phase = 'result'; ov.dataset.phase = 'result'; feel('dice.result');
       // 停止：停止画像があれば差し替え、無ければ金色の光の輪＋数字
       //  停止面（出目ごとの画像）があれば、回転中の絵から停止面へ短くクロスフェード（急に差し替えない）。無ければ金色の光の輪＋数字
       const rs = resultSprite(value), res = ov.querySelector('.chdz-res');
       if (rs) {
         const stop = document.createElement('img'); stop.className = 'chdz-stop'; stop.alt = `出目 ${value}`; stop.src = rs; stop.draggable = false; mv.appendChild(stop);
-        void stop.offsetWidth; stop.classList.add('on'); img.classList.add('off');
+        void stop.offsetWidth; stop.classList.add('on', 'pop'); img.classList.add('off'); mv.insertAdjacentHTML('beforeend', '<i class="chdz-glow"></i>');   // 出目の面が小さく弾み、金の光の輪＝「3が出た」と分かる間（resultMs）
         ov.dataset.face = 'sprite'; await wait(calm ? 0 : 160);
       } else { res.hidden = false; ov.dataset.face = 'number'; }
       await wait(opts.fast ? 120 : C.resultMs);
@@ -146,7 +149,7 @@
       ov.classList.add('out'); await wait(160);
       lastTiming = { value, spinMs: Math.round(tSpin), faceMs: Math.round(tFace), totalMs: Math.round(tick()), calm, manual: !!opts.manualStop };
       return true;
-    } catch (e) { if (root.MM_QA_DEBUG) console.warn('MMCHD.play', e); return false; } finally { ov.remove(); locked = false; phase = null; stopResolve = null; }
+    } catch (e) { if (root.MM_QA_DEBUG) console.warn('MMCHD.play', e); return false; } finally { clearTimeout(landT); ov.remove(); locked = false; phase = null; stopResolve = null; }
   }
   /** STOP：宙で回っているサイコロを止める（出目は既に決まっている）。回っていなければ false */
   function requestStop() { if (!stopResolve) return false; const f = stopResolve; stopResolve = null; f(); return true; }

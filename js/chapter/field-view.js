@@ -169,7 +169,8 @@
     let flat = S.flat || 0.34;
     if (isObj(flat)) { const t = clamp((n.d - (flat.dFar != null ? flat.dFar : 0.4)) / ((flat.dNear != null ? flat.dNear : 1.12) - (flat.dFar != null ? flat.dFar : 0.4)), 0, 1); flat = flat.far + (flat.near - flat.far) * t; }
     const w = W0 * Math.pow(n.d, dp) * (L.s || 1) * (key === 'normal' && S.normal ? S.normal : 1), f = L.f || flat;
-    return { w, h: w * f, f, th: Math.max(2, w * f * (S.thick != null ? S.thick : 0.12)), rim: Math.max(1.5, w * (S.rim != null ? S.rim : 0.018)) };
+    const t = clamp((n.d - 0.4) / (1.12 - 0.4), 0, 1), op = S.farOpacity != null ? S.farOpacity + (1 - S.farOpacity) * t : 1;   // 奥のマスほど控えめ（UI のアイコンに見えない）
+    return { w, h: w * f, f, op, th: Math.max(0, w * f * (S.thick != null ? S.thick : 0.12)), rim: Math.max(1.2, w * (S.rim != null ? S.rim : 0.018)) };
   }
   function tilesHtml(cfg, g, sc, m, ids) {
     const T = cfg.tileUI; if (!T) return '';
@@ -177,13 +178,15 @@
     return ids.map((id) => {
       const n = g.nodes[id], key = tileKeyOf(m, id); if (key === 'start') return '';
       const src = tileSpriteOf(cfg, key), B = tileBox(T, n, key), no = g.order.indexOf(id) + 1;
-      const box = `left:${(n.mx * sc.w).toFixed(1)}px;top:${(n.my * sc.h).toFixed(1)}px;width:${B.w.toFixed(1)}px;height:${B.h.toFixed(1)}px;--d:${n.d};--f:${B.f.toFixed(3)}${ped ? `;--th:${B.th.toFixed(1)}px;--rim:${B.rim.toFixed(1)}px` : ''}`;
+      const box = `left:${(n.mx * sc.w).toFixed(1)}px;top:${(n.my * sc.h).toFixed(1)}px;width:${B.w.toFixed(1)}px;height:${B.h.toFixed(1)}px;--d:${n.d};--f:${B.f.toFixed(3)}${ped ? `;--th:${B.th.toFixed(1)}px;--rim:${B.rim.toFixed(1)}px;--op:${B.op.toFixed(2)}` : ''}`;
       const under = ped ? '<i class="chf-tsh"></i><i class="chf-tped"></i>' : '';
       if (src) return `<i class="chf-tile${ped ? ' ped' : ''}" data-id="${id}" data-type="${key}" style="${box}">${under}<img src="${esc(src)}" alt="" draggable="false" decoding="async"></i>`;   // 使ったマス（能力・イベント・宝箱）は chfBoard で .used（少し暗く）
       if (ped && key === 'normal') return `<i class="chf-tile ped k-normal" data-id="${id}" data-type="normal" style="${box}">${under}<i class="chf-tface"></i></i>`;   // 通常マス：絵は無く、台座の石の面だけ（控えめ）
       return T.placeholder === false && !debug() ? '' : `<i class="chf-tile ph" data-id="${id}" data-type="${key}" style="${box}" title="仮表示（位置確認用）"><b>仮 #${no}</b></i>`;
     }).join('');
   }
+  /** 今いるマスだけ縁を少し明るく（.cur） */
+  function markCur(id) { document.querySelectorAll('#chf .chf-tile.cur').forEach((e) => { if (e.dataset.id !== id) e.classList.remove('cur'); }); const t = document.querySelector(`#chf .chf-tile[data-id="${id}"]`); if (t) t.classList.add('cur'); }
   /** 分岐の道（config.branches[].options の id）どうしが同じ分かれ道か */
   function sameBranchGroup(cfg, a, b) { return (cfg.branches || []).some((B) => B.options.some((o) => o.id === a) && B.options.some((o) => o.id === b)); }
   /** 分岐の道の上の物を隠すか：その分かれ道でまだ道を選んでいない間は、どちらの道の物も隠す（選ぶ前に両方の道の全体を見せない） */
@@ -412,7 +415,7 @@
       V.hold = performance.now() + (V.calm ? 0 : C.followDelay);   // 歩き出してから少し遅れて追いかける
     }
     await moveAlong(pts, stepDuration(pts, id), [first ? 0.3 : 0.05, last ? 0.3 : 0.05]);
-    if (w) w.dataset.node = id;
+    if (w) w.dataset.node = id; markCur(id);
     if (last) {   // 着地：小さな上下動のあと、目的地点へ軽く寄る
       V.moving = false; lean(0); anim('land'); camZoom('stop');
       await wait(V.calm ? 20 : M.landMs);
@@ -448,7 +451,7 @@
     if (oldPos && nm && !V.calm) { const r = nm.getBoundingClientRect(), S = V.cam.S || 1; V.cam.x += ((r.left + r.width / 2) - (oldPos.left + oldPos.width / 2)) / S; V.cam.y += (r.bottom - oldPos.bottom) / S; camApply(); camKick(); }
     if (old) { if (xf) { old.style.transition = `opacity ${xf}ms ease-in-out`; void old.offsetWidth; old.style.opacity = '0'; setTimeout(() => old.remove(), xf + 40); } else old.remove(); }
     await moveAlong([[sx, sy], [ex, ey]], V.calm ? 40 : Math.max(M.enterMs, T.enterMs || 0), [0.05, last ? 0.3 : 0.05]);
-    if (nm) nm.dataset.node = id;
+    if (nm) nm.dataset.node = id; markCur(id);
     const fd = $('#chfd'); if (fd) fd.textContent = V.sc.name;
   }
   async function switchField(m, fieldId, id, fromId, last) {
@@ -474,7 +477,7 @@
     const veil2 = fv.querySelector('.chf-veil'); if (veil2) { veil2.classList.add('on'); void veil2.offsetWidth; veil2.classList.remove('on'); setTimeout(() => veil2.remove(), V.calm ? 60 : ms * 0.6); }
     // 3) 入口へ歩いて入る（向きはそのまま）
     await moveAlong([[sx, sy], [ex, ey]], V.calm ? 40 : M.enterMs, [0.05, 0.3]);
-    const w = $('#bmonw'); if (w) w.dataset.node = id;
+    const w = $('#bmonw'); if (w) w.dataset.node = id; markCur(id);
     V.moving = false;
     const fd = $('#chfd'); if (fd) fd.textContent = V.sc.name;
   }
@@ -576,6 +579,7 @@
     } else { const w = $('#bmonw'); if (w && w.dataset.node !== r.node) placeMon(r.node, true); }
     // 停止地点の状態（開けた宝箱・使ったイベント）を反映
     document.querySelectorAll('#chf .chf-obj,#chf .chf-tile').forEach((e) => { const id = e.dataset.id; e.classList.toggle('used', f.consumedEvents.includes(id) || f.openedTreasures.includes(id) || f.clearedStats.includes(id)); });
+    markCur(r.node);
     // ゴールに着いたあと：config.arrival があれば到着イベント（専用の背景・フィナの会話）→ 大会受付。マス・サイコロ・操作欄は出さない
     if (ph === 'goal' && V.cfg.arrival) { chfArrive(m, same); return true; }
     $('#chfw').classList.remove('arrive'); { const o = $('#chfarr'); if (o) o.remove(); }
@@ -587,6 +591,7 @@
     //  sessionStorage などセーブの外の記録では判定しない（タブが閉じられると消え、新旧の個体の区別も保証できないため）
     if (!same && ph === 'roll' && r.turnsUsed === 0 && r.node === V.g.start && root.MMCHI && V.cfg.intro && !f.introSeen && !root.MM_QA_NO_INTRO) chfIntro(m, key);   // MM_QA_NO_INTRO：自動テスト専用（tests/e2e/harness.mjs）
     if (ph === 'roll' && !V.intro) turnWarning(m);
+    if (ph === 'roll' && r.turnsUsed === 0 && !V.intro && !(f.storySeen || []).length) setTimeout(() => { if (onField() && !V.intro && !busyGet()) storyAt(m, 'start'); }, 450);   // Chapter に入った最初の一言（導入演出のあと）
     // 再開した移動・停止地点の処理は少し後で。その間に別の画面へ移ったら何もしない（次にフィールドを開いたとき1回だけ処理する）
     if (ph === 'move') setTimeout(() => { if (onField()) chfContinue(); }, 300); else if (ph === 'resolve') setTimeout(() => { if (onField()) chfResolve(); }, 300);
     return true;
@@ -617,7 +622,7 @@
       if (res && res.skipped) await wait(350);   // 飛ばしたタップが下の START に届かないよう少し待ってから操作できる
       V.intro = false; busySet(false);
     }
-    if (onField() && chfActive(m) && P8().boardPhase(m) === 'roll') refreshDeck(m);
+    if (onField() && chfActive(m) && P8().boardPhase(m) === 'roll') { refreshDeck(m); feel('chapter.start'); setTimeout(() => { if (onField() && !busyGet()) storyAt(m, 'start'); }, 350); }
   }
   // ---------------------------------------------------------
   // 大会会場への到着（config.arrival）：最後のマス（ゴール）に着いたら、通常のフィールド進行を終える。
@@ -644,7 +649,8 @@
       ov.classList.add('on');
       await wait(V.calm || !fromField ? 0 : (A.fadeMs || 900) + 200);
       if (!$('#chfarr')) return;
-      if (root.MMNPC && !root.MM_QA_NO_ARRIVAL && (A.talk || []).length) await MMNPC.talk(arrivalLines(A));
+      feel('chapter.clear');
+      if (root.MMNPC && !root.MM_QA_NO_ARRIVAL && (A.talk || []).length) await MMNPC.talk(arrivalLines(A), { kind: 'event', presentation: 'major' });
       f.arrivalSeen = true; doSave();
     } finally { busySet(false); }
     const u2 = $('#chf-ui'); if ($('#chfarr') && u2 && chfActive(m) && P8().boardPhase(m) === 'goal') u2.innerHTML = receptionHtml(m);
@@ -722,12 +728,13 @@
     const m = gS() && gS().m; if (!chfActive(m) || busyGet() || !m.raise.pend) return;
     busySet(true);
     try {
-      let first = true;
+      let first = true; V.lastFields = [];
+      const seenField = () => { const n = V.g.nodes[m.raise.node]; if (n && !V.lastFields.includes(n.field)) V.lastFields.push(n.field); };
       // 分かれ道で選んだ道の最初の地点（chooseBranch で地点は進んでいる）：まずそこまで歩く。残りの出目が 0 ならそこで止まる（以前は歩かずに、前の背景のまま停止処理をしていた）
       if (picked && $('#bmonw') && $('#bmonw').dataset.node !== m.raise.node) { await walkTo(m, m.raise.node, true, m.raise.pend.stage !== 'move'); first = false; }
       while (m.raise.pend && m.raise.pend.stage === 'move') {
         if (!$('#bmonw')) break;
-        const s = P8().step(gS(), m); doSave();
+        const s = P8().step(gS(), m); doSave(); seenField();
         const last = !(m.raise.pend && m.raise.pend.stage === 'move');
         if (s.node) await walkTo(m, s.node, first, last);
         first = false;
@@ -766,13 +773,46 @@
     if (onField()) chfBoard(`ひと休みした。疲れ ${MMCH.fatigue(m)}` + (res && res.timeUp ? '　ターンを使い切った…' : ''));
   }
   // ---- 停止地点の結果（短く。タップで早送り） ----
-  function popup(html, cls, ms, frame) {
+  /**
+   * 結果の小さな窓（.chpop）。onShow(d)＝出たあとの演出（数値のカウントアップなど。終わるまで閉じる時計を始めない）。
+   *  ms＝見せる時間（MMFEEL の LEVEL の余韻）。タップで早く閉じられる（V.skip）
+   */
+  function popup(html, cls, ms, frame, onShow) {
     const ui = $('#chf-ui'); if (!ui) return wait(0);
     const d = document.createElement('div'); d.className = `chpop ${cls || ''}${frame ? ' framed' : ''}`; d.innerHTML = html; ui.appendChild(d);
     if (frame) d.style.backgroundImage = `url(${frame})`;   // 演出の枠（画像に文字は入れない。能力名・数値は HTML）
     return new Promise((ok) => { let done = false; const end = () => { if (done) return; done = true; d.classList.add('out'); setTimeout(() => { d.remove(); ok(); }, 160); };
-      V.skip = end; setTimeout(end, ms); d.addEventListener('click', end); });
+      V.skip = end; d.addEventListener('click', end);
+      Promise.resolve(onShow ? onShow(d) : null).catch(() => {}).then(() => { if (!done) setTimeout(end, ms); }); });
   }
+  // ---- Game Feel（2026-10-02。js/feel/game-feel.js の MMFEEL）：出来事の重さ（LEVEL）ごとに「間」と「余韻」を変える。値は MMFEEL.MOTION の1か所 ----
+  const FEEL = () => root.MMFEEL || null;
+  const feel = (n, d) => { try { const F = FEEL(); if (F) F.emit(n, d); } catch (e) {} };
+  const beatOf = (lv) => (V.calm ? 0 : (FEEL() ? FEEL().beat(lv) : 0));
+  const holdOf = (lv, def) => (V.calm ? Math.min(400, def || 400) : (FEEL() ? FEEL().hold(lv) : def));
+  const countUp = (el, a, b, ms, f) => (FEEL() && !V.calm ? FEEL().countUp(el, a, b, ms, f) : (el && (el.textContent = f ? f(b) : String(b)), Promise.resolve()));
+  const bump = (el) => { if (FEEL()) FEEL().bump(el); };
+  /** モンスターの反応：小さく跳ねて、足元に光の輪（能力が上がった・宝を見つけた）。絵の色は変えない */
+  function monReact(kind) {
+    const w = $('#bmonw'), fx = $('#chffx'); if (!w) return;
+    w.classList.remove('react'); void w.offsetWidth; w.classList.add('react'); setTimeout(() => w.classList.remove('react'), 700);
+    if (fx && V.monPos && !V.calm) { fx.insertAdjacentHTML('beforeend', `<i class="chf-mring k-${kind || 'up'}" style="left:${V.monPos.x.toFixed(1)}px;top:${V.monPos.y.toFixed(1)}px;--d:${V.monPos.d}"></i>`); const r = fx.querySelector('.chf-mring:last-child'); setTimeout(() => r && r.remove(), 900); }
+  }
+  /** 所持金：報酬の「+N G」が HUD の所持金へ飛んで、HUD の数字が増えて小さく弾む（from＝HUD に出していた額） */
+  async function goldToHud(from, to, srcEl) {
+    const g = $('#chgold'), b = g && g.querySelector('b'); if (!g || !b || to === from) { if (b) b.textContent = String(to); return; }
+    const ui = $('#chf-ui');
+    if (ui && srcEl && !V.calm && g.animate) {
+      const hr = ui.getBoundingClientRect(), sr = srcEl.getBoundingClientRect(), gr = g.getBoundingClientRect();
+      const chip = document.createElement('div'); chip.className = 'chf-gfly'; chip.textContent = `+${to - from}G`; chip.style.left = `${sr.left + sr.width / 2 - hr.left}px`; chip.style.top = `${sr.top + sr.height * 0.6 - hr.top}px`; ui.appendChild(chip);
+      const dx = gr.left + gr.width / 2 - (sr.left + sr.width / 2), dy = gr.top + gr.height / 2 - (sr.top + sr.height * 0.6);
+      const a = chip.animate([{ transform: 'translate(-50%,-50%) scale(1)', opacity: 1 }, { transform: `translate(calc(-50% + ${(dx * 0.5).toFixed(0)}px), calc(-50% + ${(dy * 0.5 - 30).toFixed(0)}px)) scale(1.05)`, opacity: 1, offset: 0.45 }, { transform: `translate(calc(-50% + ${dx.toFixed(0)}px), calc(-50% + ${dy.toFixed(0)}px)) scale(.6)`, opacity: 0.2 }], { duration: 520, easing: 'cubic-bezier(.4,0,.6,1)', fill: 'forwards' });
+      await Promise.race([a.finished.catch(() => {}), wait(700)]); chip.remove();
+    }
+    feel('gold.get'); bump(g); await countUp(b, from, to, 420);
+  }
+  /** 疲れの HUD：回復・増加を数字の動きで見せる */
+  async function fatigueHud(from, to) { const f = $('#chfat'), b = f && f.querySelector('b'); if (!b || from === to) return; bump(f); await countUp(b, from, to, 360); }
   function fxText(fx) {
     const L = (k) => labOf(k);
     if (fx.kind === 'chstat') return { h: `<small>${L(fx.key)}のマス</small><b>${L(fx.key)} +${fx.amount}</b>`, c: 'ok stat', frame: 'statUp', t: `${L(fx.key)} +${fx.amount}` };   // 能力マス：成長適性の値だけ上がる（失敗・大成功なし）
@@ -786,41 +826,73 @@
     return null;
   }
   const objPoint = (obj) => obj ? { x: parseFloat(obj.style.left), y: parseFloat(obj.style.top) } : null;
-  /** バトル地点：草むらが揺れて、旅の途中で出会う（目印は常設しない） */
+  /**
+   * 野生・ライバルとの遭遇（LEVEL 4）：止まって一瞬の静止 → 草むらが揺れて「！」（予兆）→ 野生はカットイン → バトルの案内。
+   *  音は WILD_ALERT（将来ここで BGM をバトルへ切り替えられる＝MMAUDIO.scene('BATTLE', { fade:'quick' }) はバトル開始のとき）
+   */
   async function encounter(m, bt) {
     const fx = $('#chffx'), w = $('#bmonw'); if (!fx || !w || !V.monPos) return;
+    V.moving = false; anim('idle');
+    await wait(beatOf(4));   // 止まった直後の静止（「何かいる…」の間）
     const d = V.monPos.d, side = V.facing >= 0 ? 1 : -1, x = V.monPos.x + side * 92 * d, y = V.monPos.y + 10 * d, src = asset(V.cfg, (V.cfg.nodeLook && V.cfg.nodeLook.tuft) || 'grass_front');
-    fx.insertAdjacentHTML('beforeend', `<i class="chf-rustle" style="left:${x.toFixed(1)}px;top:${y.toFixed(1)}px;width:${(190 * d).toFixed(0)}px;height:${(72 * d).toFixed(0)}px;background-image:url(${src});background-position:${(-rnd01() * 700).toFixed(0)}px 100%"></i><i class="chf-alert" style="left:${V.monPos.x.toFixed(1)}px;top:${(V.monPos.y - monH() * d * 1.02).toFixed(1)}px;--d:${d}">！</i>`);
-    V.moving = false; camFocus({ x, y }, 0.3, CA().zoom.focus);
-    if (root.sfx) root.sfx(2);
+    fx.insertAdjacentHTML('beforeend', `<i class="chf-rustle" style="left:${x.toFixed(1)}px;top:${y.toFixed(1)}px;width:${(190 * d).toFixed(0)}px;height:${(72 * d).toFixed(0)}px;background-image:url(${src});background-position:${(-rnd01() * 700).toFixed(0)}px 100%"></i>`);
+    camFocus({ x, y }, 0.3, CA().zoom.focus);
+    await wait(V.calm ? 0 : 260);   // 草むらが揺れる（予兆）
+    fx.insertAdjacentHTML('beforeend', `<i class="chf-alert" style="left:${V.monPos.x.toFixed(1)}px;top:${(V.monPos.y - monH() * d * 1.02).toFixed(1)}px;--d:${d}">！</i>`);
+    feel('wild.alert', { battleType: bt });
     const cut = effectAsset(((V.cfg.battleTypes || {})[bt] || {}).cutin);   // 野生バトル突入のカットイン（config.battleTypes.wild.cutin。レア・ライバルには付けない）
+    await wait(V.calm ? 0 : 280);
     if (cut && !V.calm) { const ui = $('#chf-ui'); if (ui) { ui.insertAdjacentHTML('beforeend', `<div class="chf-cutin"><img src="${esc(cut)}" alt="" draggable="false"></div>`); const c = ui.querySelector('.chf-cutin:last-child'); setTimeout(() => c && c.remove(), 700); } }
-    await wait(V.calm ? 120 : 640);
+    await wait(V.calm ? 120 : 620);
     fx.querySelectorAll('.chf-rustle,.chf-alert').forEach((e) => e.remove());
   }
+  /** 通常マス（LEVEL 1）：足元のマスが軽く光るだけ（何も起きない。テンポを落とさない） */
+  function touchTile(tile) { if (!tile) return; tile.classList.remove('touch'); void tile.offsetWidth; tile.classList.add('touch'); feel('tile.stop'); }
   async function chfResolve() {
     const m = gS() && gS().m; if (!chfActive(m) || busyGet() || !onField() || !m.raise.pend || m.raise.pend.stage !== 'resolve') return;
     busySet(true);
     let tail = '';
     try {
-      const id = m.raise.node, r = P8().resolveLanding(gS(), m); doSave();
+      const id = m.raise.node, g0 = (gS().g) | 0, f0 = MMCH.fatigue(m), r = P8().resolveLanding(gS(), m); doSave();
       const fx = r.fx || {}, T = fxText(fx), obj = $(`#chf .chf-obj[data-id="${id}"]`), tile = $(`#chf .chf-tile[data-id="${id}"]`);
-      if (tile && fx.kind !== 'none') { tile.classList.remove('hit'); void tile.offsetWidth; tile.classList.add('hit'); }   // 止まったマスが光る（素材の色は変えない）
       refreshHud(m);
-      if (fx.kind === 'chstat' || (fx.ev && fx.kind !== 'none') || fx.kind === 'treasure') {
-        if (root.sfx) root.sfx(3);
-        const P = objPoint(obj);
-        if (P) camFocus(P, fx.kind === 'treasure' ? 0.45 : 0.36, CA().zoom.focus);   // 物のほうへ少し寄る（大きくズームしない）
-        if (obj && obj.classList.contains('hid')) { obj.classList.remove('hid'); await wait(V.calm ? 0 : 240); }   // 道端の物が現れる（発見）
-        if (obj) { obj.classList.add('hit'); if (fx.kind === 'treasure') { await wait(V.calm ? 0 : 180); const im = obj.querySelector('img[data-open]'); if (im && im.dataset.open) im.src = im.dataset.open; obj.classList.add('open'); } }   // 正式の宝箱は開いた絵へ
-        setMsg(T ? T.t : '');
-        await popup(T ? T.h : '', T ? T.c : '', fx.kind === 'chstat' ? 850 : 1300, T && T.frame ? effectAsset(T.frame) : null);
+      // HUD は結果の演出が届くまで前の値（所持金・疲れ）を見せ、演出に合わせて動かす
+      const g1 = (gS().g) | 0, f1 = MMCH.fatigue(m), gb = $('#chgold b'), fb = $('#chfat b'); if (gb) gb.textContent = String(g0); if (fb && fx.kind === 'fatigue') fb.textContent = String(f0);
+      const gold = g1 - g0;
+      if (fx.kind === 'chstat') {
+        // 能力UP（LEVEL 3）：間 → マスが光る → モンスターが反応 → 能力UPの枠（数値は +0 から上がる）→ 余韻
+        await wait(beatOf(3)); if (tile) { tile.classList.remove('hit'); void tile.offsetWidth; tile.classList.add('hit'); }
+        await wait(V.calm ? 0 : 160); monReact('up'); feel('stat.up', { key: fx.key, amount: fx.amount });
+        await wait(V.calm ? 0 : 150);   // モンスターの反応を見せてから枠
+        setMsg(T.t);
+        await popup(`<small>${esc(labOf(fx.key))}のマス</small><b>${esc(labOf(fx.key))} <span class="cnt">+0</span></b>`, T.c, holdOf(3, 800), T.frame ? effectAsset(T.frame) : null,
+          (d) => countUp(d.querySelector('.cnt'), 0, fx.amount, (FEEL() ? FEEL().MOTION.count[3] : 500), (v) => `+${v}`));
+        tail = T.t;
+      } else if (fx.kind === 'treasure') {
+        // 宝箱（LEVEL 3）：間 → 宝箱が現れる → 揺れて開く → 報酬 → 所持金へ
+        await wait(beatOf(3)); if (tile) { tile.classList.remove('hit'); void tile.offsetWidth; tile.classList.add('hit'); }
+        const P = objPoint(obj); if (P) camFocus(P, 0.45, CA().zoom.focus);
+        if (obj && obj.classList.contains('hid')) { obj.classList.remove('hid'); await wait(V.calm ? 0 : 300); }
+        if (obj) { obj.classList.add('shake'); await wait(V.calm ? 0 : 320); obj.classList.remove('shake'); const im = obj.querySelector('img[data-open]'); if (im && im.dataset.open) im.src = im.dataset.open; obj.classList.add('open', 'hit'); }
+        feel('chest.open', { tier: fx.tier }); monReact('treasure');
+        setMsg(T.t);
+        await popup(T.h, T.c, holdOf(3, 900), null, async (d) => { await wait(V.calm ? 0 : 260); if (gold > 0) await goldToHud(g0, g1, d.querySelector('b') || d); });
         if (obj) { obj.classList.remove('hit'); obj.classList.add('used'); }
-        camFocus(null);
-        tail = T ? T.t : '';
-      } else if (fx.kind === 'battle') await encounter(m, fx.battleType);
+        camFocus(null); tail = T.t;
+      } else if (fx.ev && fx.kind !== 'none') {
+        // イベント（LEVEL 2〜3）：間 → マスが光る → 出来事の文 → 結果（所持金・疲れは HUD まで動かす）
+        await wait(beatOf(2)); if (tile) { tile.classList.remove('hit'); void tile.offsetWidth; tile.classList.add('hit'); }
+        feel('event', { ev: fx.ev }); if (fx.kind === 'stat' || fx.kind === 'multi') monReact(fx.amount < 0 ? 'down' : 'up'); else if (fx.kind === 'fatigue') monReact('rest');
+        setMsg(T.t);
+        await popup(T.h, T.c, holdOf(fx.tier === 'special' ? 3 : 2, 1200), null, async (d) => { await wait(V.calm ? 0 : 200); if (gold > 0) await goldToHud(g0, g1, d.querySelector('b') || d); if (fx.kind === 'fatigue') await fatigueHud(f0, f1); });
+        tail = T.t;
+      } else if (fx.kind === 'battle') { if (tile) { tile.classList.remove('hit'); void tile.offsetWidth; tile.classList.add('hit'); } await encounter(m, fx.battleType); }
+      else touchTile(tile);   // 通常マス・分かれ道・合流：最小限
+      if (fx.kind !== 'battle' && V.focus) camFocus(null);   // 寄り・ズームを戻す（次の操作の前にいつもの見え方へ）
+      if (gb && gold > 0 && gb.textContent !== String(g1)) gb.textContent = String(g1);   // 念のため（演出を飛ばしたとき）
       if (r.goal) tail = `${tail}　大会会場に着いた！`.trim(); else if (r.timeUp) tail = `${tail}　ターンを使い切った…`.trim();
       await showReaction(m, fx);
+      await storyAt(m, 'land', { fx });
     } finally { busySet(false); }
     if (onField()) chfBoard(tail || undefined);
   }
@@ -833,7 +905,22 @@
     const d = document.createElement('div'); d.className = 'chf-fina'; d.setAttribute('aria-live', 'polite');
     d.innerHTML = `<img src="${FINA_FACE}${esc(rx.expression || 'normal')}.webp" alt=""><div><b>フィナ</b><span>${esc(rx.text)}</span></div>`;
     ui.appendChild(d);
-    await wait(V.calm ? 900 : 1600); d.classList.add('out'); await wait(220); d.remove();
+    // 読める長さだけ見せる（文字数に合わせる・タップで次へ）。通常マスでは出さない（節目だけ）
+    const ms = V.calm ? 900 : Math.min(3200, 1100 + 70 * String(rx.text).length);
+    await new Promise((ok) => { const t = setTimeout(ok, ms); d.addEventListener('click', () => { clearTimeout(t); ok(); }); });
+    d.classList.add('out'); await wait(220); d.remove();
+  }
+  /**
+   * Chapter のイベント（config.story。MMCH.storyEvents）：節目のフィナの一言など。trigger＝'start'（Chapter に入った最初）／'land'（止まったあと）。
+   *  1つ選んで（優先度の高いもの）その行を順に出す。見たら記録（この個体のこの Chapter で1回）。自動テストでは出さない（MM_QA_NO_STORY）
+   */
+  async function storyAt(m, trigger, ctx = {}) {
+    if (!root.MMCH || !MMCH.storyEvents || root.MM_QA_NO_STORY || !onField()) return;
+    const P = root.MMP10M, ev = MMCH.storyEvents(m, trigger, { ...ctx, visitedFields: V.lastFields || [], species: P && P.keyOf ? P.keyOf(m.sp) : null, raiseCount: (gS() && gS().raiseRec) | 0 })[0];
+    if (!ev) return;
+    MMCH.markStory(m, ev.id); doSave();
+    if (ev.presentation === 'talk' && root.MMNPC) { await MMNPC.talk((ev.lines || []).map((l, i) => ({ npc: l.speaker || 'fina', expression: l.expression || 'normal', text: l.text, ...(i ? {} : {}) })), { kind: 'fina', presentation: 'compact' }); return; }
+    for (const l of ev.lines || []) { if (!onField()) break; await finaBubble({ text: l.text, expression: l.expression || 'normal' }); }
   }
   let reactionRenderer = (rx) => finaBubble(rx);
   function registerReactionRenderer(fn) { reactionRenderer = typeof fn === 'function' ? fn : null; }

@@ -156,7 +156,7 @@ const SEL = {
   hall: ['button.back', '.fmb', '[onclick="prepScr()"]'],   // ファーム（育成開始前）：街へ戻る・4コマンド・進行ボタン「育成を始める」
   prep: ['.dback', '[onclick*="p7Depart"]'],
   board: ['.p9mbtn', '#brollbtn'],
-  goal: ['.p9mbtn', '.p9rank', '.p9btn2'],
+  goal: ['#chrcv .rcv-row.ok', '.rcv-join', '.rcv-dec'],   // 2026-10-02：Chapter 1 のゴールは大会会場への到着 → 大会受付（p9ReceptionHtml）
   farmInterval: ['.fmb', '.fmgo', '.fmrd', '.fmab'],   // Chapter間ファーム：4コマンド・進行ボタン・中断・育成放棄
   trainMenu: ['.dback', '.p12tc:not([disabled])'],
   trainBoard: ['#p7roll'],
@@ -288,9 +288,9 @@ describe('QA-TS：390×844 の通し（JS エラー・読み込み・壊れた�
   T('QA-TS7：ゴール → 大会（2度押し）→ 順位表 → VS（2度押し）→ 試合 → 試合中の再読み込みで試合はやり直し（順位表に戻る）', async () => {
     // ゴールまでの移動は、ゲームの状態を直接ゴールにして描き直す（マスの効果・分岐は qa の別ファイルで確かめる）
     await pg.evaluate(() => { const m = S.m, trk = MMP8.trackOf(m.raise.ch); Object.assign(m.raise, { node: trk.goal, goal: true, pend: null }); save(); board(); });
-    await waitSel(pg, '.p9rank');
-    await check(pg, 'ゴール（大会の選択）', SEL.goal, { fixed: ['.p9rank', '.p9btn2'] });
-    await press2(pg, '.p9rank');
+    await waitSel(pg, '#chrcv .rcv-row.ok');
+    await check(pg, 'ゴール（大会受付）', SEL.goal, { fixed: ['.rcv-join', '.rcv-dec'] });
+    await pg.click('#chrcv .rcv-row.ok'); await pg.waitForTimeout(450); await pg.click('.rcv-join');   // ランクを選んで「この大会に参加する」（選んだ直後0.35秒は無視）
     await waitSel(pg, '[onclick="p9VsScr()"]');
     await check(pg, '大会の順位表', ['.p9mbtn', '[onclick="p9VsScr()"]']);
     await pg.click('[onclick="p9VsScr()"]');
@@ -407,8 +407,8 @@ for (const [key, label] of [['se', 'iPhone SE 相当'], ['android', 'Android 相
     await waitSel(pg, '#brollbtn');
     await check(pg, 'Chapter 1 ボード', SEL.board, { fixed: ['#brollbtn'] });
     await pg.evaluate(() => { const m = S.m, trk = MMP8.trackOf(1); Object.assign(m.raise, { node: trk.goal, goal: true, pend: null }); save(); board(); });
-    await waitSel(pg, '.p9rank');
-    await check(pg, 'ゴール（大会の選択）', SEL.goal, { fixed: ['.p9rank', '.p9btn2'] });
+    await waitSel(pg, '#chrcv .rcv-row.ok');
+    await check(pg, 'ゴール（大会受付）', SEL.goal, { fixed: ['.rcv-join', '.rcv-dec'] });
     await pg.evaluate(() => { MMP8.declineTournament(S, S.m); S.trainTix = 3; save(); hall('t'); });
     await waitSel(pg, '.fmgo.p9c-go');
     await check(pg, 'Chapter間ファーム', SEL.farmInterval);

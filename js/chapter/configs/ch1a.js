@@ -164,6 +164,23 @@
       rare: { label: 'レアモンスター', asset: 'battle_wild' },   // レアモンスターマス（10%）。敵データ・報酬・遭遇演出は未登録＝【暫定】バトルの中身は野生と同じ
       rival: { label: 'ライバル', asset: 'battle_rival', figure: null },
     },
+    // ---- Chapter のイベント（2026-10-02。MMCH.storyEvents のデータ。本文は【暫定】）：フィナは節目だけ話す（通常マスごとには話さない）。
+    //  trigger：'start'＝Chapter に入った最初、'land'＝止まったあと。when：field＝今回の移動で通った背景・今いる背景、branch＝選んだ道、fx／battleType＝止まったマスの結果、species＝種族、fatigueMin＝疲れ、chance＝確率。
+    //  once（既定）＝この個体のこの Chapter で1回。priority＝同時に満たしたときの順（高いほうを1つだけ）。presentation：'bubble'（既定・フィナの小さな吹き出し）／'talk'（小さな会話窓） ----
+    story: [
+      { id: 'ch1_start', trigger: 'start', lines: [{ expression: 'happy', text: 'いよいよ出発だね！ 大会会場まで、一緒にがんばろう。' }] },
+      { id: 'ch1_first_wild', trigger: 'land', priority: 30, when: { fx: 'battle', battleType: 'wild' }, lines: [{ expression: 'surprised', text: '野生のモンスターだ！ 気をつけて！' }] },
+      { id: 'ch1_first_rare', trigger: 'land', priority: 31, when: { fx: 'battle', battleType: 'rare' }, lines: [{ expression: 'surprised', text: 'あの子、見たことない色…！ めずらしいモンスターかも！' }] },
+      { id: 'ch1_fork_near', trigger: 'land', priority: 10, when: { field: [5] }, lines: [{ expression: 'guide', text: '滝の向こうで、道が二つに分かれてるみたい。' }] },
+      { id: 'ch1_forest', trigger: 'land', priority: 12, when: { branch: 'forest', field: [6] }, lines: [{ expression: 'surprised', text: '大きな木…！ 森の中は、空気がひんやりしてるね。' }] },
+      { id: 'ch1_bridge', trigger: 'land', priority: 12, when: { branch: 'bridge', field: [9] }, lines: [{ expression: 'surprised', text: '見て、空まで続いてるみたいな大きな橋！' }] },
+      { id: 'ch1_bridge_gauru', trigger: 'land', priority: 13, when: { branch: 'bridge', field: [9], species: ['gauru'] }, lines: [{ expression: 'smile', text: 'ガウル、風が気持ちいいのかな。うれしそう！' }] },
+      { id: 'ch1_merge', trigger: 'land', priority: 11, when: { field: [10] }, lines: [{ expression: 'smile', text: '道がひとつに戻ったね。大会会場はもうすぐだよ。' }] },
+      { id: 'ch1_castle', trigger: 'land', priority: 11, when: { field: [13] }, lines: [{ expression: 'happy', text: 'お城が見えてきた！ あそこが大会会場だよ。' }] },
+      { id: 'ch1_rival_before', trigger: 'land', priority: 20, when: { field: [14] }, lines: [{ expression: 'serious', text: '門の前に誰かいる…。もしかして、ライバル？' }] },
+      { id: 'ch1_special_event', trigger: 'land', priority: 25, when: { tier: 'special' }, lines: [{ expression: 'surprised', text: 'すごい…！ 今のは、めったに起きないことだよ！' }] },
+      { id: 'ch1_tired', trigger: 'land', priority: 5, when: { fatigueMin: 80 }, lines: [{ expression: 'worried', text: 'だいぶ疲れてきたみたい。無理しないで、休もうね。' }] },
+    ],
     // 同行者（フィナ）のリアクション：本文は未決（空＝何も出さない）。例：gold: ['50G拾ったよ。ラッキーだね。']。key は MMCH.REACTION_KEYS
     companion: { npc: 'fina', reactions: {} },
 
@@ -209,8 +226,8 @@
       // 宝箱のマスに止まったとき、マスの脇に現れて開く宝箱（tier ごと。書いていない tier＝rare は従来の表示＝マスUIだけ）
       chests: { normal: { closed: 'chest_normal_closed', open: 'chest_normal_open', w: 128 }, special: { closed: 'chest_special_closed', open: 'chest_special_open', w: 134 } },
       // 大きさ：基準 w × 奥行き^depthPow（背景の画素）。flat＝縦の潰れ（奥 far ほど平たい楕円・手前 near ほど円に近い。奥行き d で補間）。normal＝通常マスの大きさの倍率（控えめ）。
-      //  pedestal＝共通の台座（接地影・石の台座の厚み thick・金属の縁 rim。CSS だけ）。ノードごとの上書きは BACKGROUNDS[].nodes の4番目 { s, f }
-      size: { w: 190, depthPow: 0.7, flat: { near: 0.52, far: 0.3, dNear: 1.12, dFar: 0.4 }, normal: 0.8, thick: 0.06, rim: 0.016 }, pedestal: true, placeholder: false, replacesLandmarks: true,
+      //  pedestal＝道に刻まれたマス（ごく薄い接地影・細い金属の縁 rim。厚みは見せない＝thick 0。CSS だけ）。farOpacity＝いちばん奥のマスの濃さ（奥ほど控えめ）。ノードごとの上書きは BACKGROUNDS[].nodes の4番目 { s, f }
+      size: { w: 186, depthPow: 0.82, flat: { near: 0.5, far: 0.28, dNear: 1.12, dFar: 0.4 }, normal: 0.78, thick: 0, rim: 0.011, farOpacity: 0.62 }, pedestal: true, placeholder: false, replacesLandmarks: true,
       gates: { gate_left: TL + 'branch_gate_left.webp', gate_right: TL + 'branch_gate_right.webp' },   // 分かれ道で道の先に立てる左右の門（branches[].options[].gate）   // 表示の大きさ：基準 230px × 奥行き^0.65（手前 約250px・奥 約130px＝背景の画素。縦は 0.46 に潰して地面に置いた見え方）
     },
     // 演出の割り当て（config.assets のキー）。statUp＝能力マスの結果の枠（文字は HTML）。turnWarning.at＝警告を出す残りターン（未決＝空＝出さない。例：[5, 1]）

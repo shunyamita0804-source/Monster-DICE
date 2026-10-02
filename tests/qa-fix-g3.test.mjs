@@ -380,8 +380,8 @@ test('QA-G3-B6：実ブラウザ：ボードを出してすぐ別の画面へ移
   const M = load(), E = loadEngine();
   const board2 = j(onBoard(M)); Object.assign(board2.m.raise, { ch: 3, node: 'S', log: [{ ch: 1, reachedGoal: true, turnsUsed: 14, turnLimit: 30, declined: true, tour: null }, { ch: 2, reachedGoal: true, turnsUsed: 16, turnLimit: 30, declined: true, tour: null }] });   // 2026-10-01：従来のボードは Chapter 3 で確認（Chapter 2 はエンジン）
   const field = j(onBoard(M)); E.CH.initRun(field.m, E.CH.getConfig(1, 'A'), chLcg(3), 516106998);
-  field.m.raise.field.nodeAssignments.f1_2 = { t: 'stat', k: 'po' }; Object.assign(field.m.raise, { node: 'f1_0', turnLimit: 30, fatigue: 5 });
-  for (const [label, save0, sel, node] of [['Chapter 3（従来のボード）', board2, '.p9board #brollbtn', null], ['Chapter 1（Chapterフィールド）', field, '#chf-ui #brollbtn', 'f1_2']]) {
+  field.m.raise.field.nodeAssignments.p1_2 = { t: 'stat', k: 'po' }; Object.assign(field.m.raise, { node: 'p1_0', turnLimit: 30, fatigue: 5 });
+  for (const [label, save0, sel, node] of [['Chapter 3（従来のボード）', board2, '.p9board #brollbtn', null], ['Chapter 1（Chapterフィールド）', field, '#chf-ui #brollbtn', 'p1_2']]) {
     const p = await L.open({ save: save0 }); const pg = p.page;
     await start(p, sel);
     const s0 = await pg.evaluate((node) => { const m = S.m; if (node) m.raise.node = node; m.raise.pend = { roll: 1, left: 0, stage: 'resolve' }; save(); const c = JSON.parse(JSON.stringify(S)); board(); hall('st'); return c; }, node);
@@ -393,7 +393,7 @@ test('QA-G3-B6：実ブラウザ：ボードを出してすぐ別の画面へ移
     await pg.evaluate(() => board());
     await pg.waitForFunction(() => S.m.raise.pend == null && !bBusy && !document.querySelector('.chpop'), null, { timeout: 15000 });
     S = await H.getS(pg);
-    if (node) { const d = S.m.po - s0.m.po; assert.ok(d >= 10 && d <= 23, `${label}：ちからの地点の効果は1回だけ（+${d}）`); }
+    if (node) { const d = S.m.po - s0.m.po; assert.ok(d >= 3 && d <= 7, `${label}：ちからの地点の効果は1回だけ（+${d}）`); }
     assert.deepEqual(await H.storedSave(pg), S, `${label}：処理した結果を保存`);
     await pg.waitForTimeout(600); assert.deepEqual(await H.getS(pg), S, `${label}：二重には適用しない`);
     assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);

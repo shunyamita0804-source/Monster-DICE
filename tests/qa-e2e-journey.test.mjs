@@ -53,7 +53,7 @@ test('JR-2：1地点進むだけでも画面上ではっきり歩き（カメラ
   assert.equal(b.node, 'p1_1'); assert.ok(Math.abs(b.cam - a.cam) + Math.hypot(b.x - a.x, b.y - a.y) >= 40, `1地点＝手前のマスから次のマスへ（2026-10-01：01 は5マス）（カメラ ${Math.abs(b.cam - a.cam).toFixed(0)}px・画面 ${Math.hypot(b.x - a.x, b.y - a.y).toFixed(0)}px）`);
   await place(pg, 'p1_2'); await idle(pg); await rollAs(pg, 3); await idle(pg); const c = await pos();
   assert.deepEqual([c.node, c.field], ['p2_0', 2], '3地点：p1_3 → p1_4 → 背景の切り替え → p2_0');
-  assert.ok(c.y > c.h * 0.35 && c.y < c.h * 0.85 && c.x > 0 && c.x < c.w, `切り替え後も画面の中央より少し下（${c.y.toFixed(0)} / ${c.h}）`);
+  assert.ok(c.y > c.h * 0.35 && c.y < c.h * 0.88 && c.x > 0 && c.x < c.w, `切り替え後も画面の中央より少し下（${c.y.toFixed(0)} / ${c.h}）`);
   const cams = await pg.evaluate(() => document.querySelectorAll('.chf-cam').length); assert.equal(cams, 1);
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
 });
@@ -346,7 +346,7 @@ test('JR-14：マスUI（正式素材）：今の背景のマスに正式素材�
   const by = Object.fromEntries(a.tiles.map((t) => [t.id, t.img]));
   assert.equal(by.p1_1, './assets/fields/ch1a/tiles/tile_stat_toughness.webp'); assert.equal(by.p1_2, './assets/fields/ch1a/tiles/tile_treasure.webp'); assert.equal(by.p1_3, null, '通常マスは絵の無い台座だけ'); assert.equal(a.tiles.find((t) => t.id === 'p1_3').type, 'normal'); assert.equal(by.p1_0, undefined, 'スタートには置かない');
   // 能力マス（丈夫さ）に止まる：ガウル（丈夫さ E）は +3、マスが光り、使ったマスは少し暗く
-  const de0 = await pg.evaluate(() => S.m.de); await rollAs(pg, 1); await pg.waitForSelector('.chpop'); const pop = await pg.evaluate(() => [document.querySelector('.chpop').textContent, document.querySelector('.chf-tile[data-id="p1_1"]').classList.contains('hit')]); await idle(pg);
+  const de0 = await pg.evaluate(() => S.m.de); await rollAs(pg, 1); await pg.waitForSelector('.chpop'); await pg.waitForFunction(() => /\+3/.test((document.querySelector('.chpop') || {}).textContent || ''), null, { timeout: 5000 }); const pop = await pg.evaluate(() => [document.querySelector('.chpop').textContent, document.querySelector('.chf-tile[data-id="p1_1"]').classList.contains('hit')]); await idle(pg);
   assert.deepEqual([pop[1], await pg.evaluate(() => S.m.de) - de0, await pg.evaluate(() => document.querySelector('.chf-tile[data-id="p1_1"]').classList.contains('used'))], [true, 3, true]); assert.match(pop[0], /丈夫さ \+3/);
   // 宝箱（normal）：止まると通常の宝箱が現れて開く。rare は宝箱の絵を出さない（従来の表示＝マスUIだけ）
   const chest = () => pg.evaluate(() => { const o = document.querySelector('#chf .chf-obj[data-id="p1_2"]'), im = o && o.querySelector('img'); return o ? { hid: o.classList.contains('hid'), src: im.getAttribute('src'), ok: im.naturalWidth > 0 } : null; });

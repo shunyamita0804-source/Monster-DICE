@@ -159,7 +159,11 @@
     if (typeof document === 'undefined') return Promise.resolve();
     close();
     return new Promise((resolve) => {
-      const ov = h('div', 'mmtalk'), stage = h('div', 'mmtalk-stage'), fig = h('div', 'mmtalk-fig'), img = h('img'), win = h('div', 'mmtalk-win'), nm = h('div', 'mmtalk-name'), tx = h('p', 'mmtalk-text'), nx = h('span', 'mmtalk-next'), ch = h('div', 'mmtalk-choices');
+      // 表示の種類（2026-10-02）：opts.presentation＝'compact'（短い一言。背景を隠さない小さな窓・小さな立ち絵・暗幕なし）／'standard'（既定）／'major'（重要な出来事。背景を少し暗くして会話に集中）。
+      //  opts.kind＝話の種類（'npc'＝NPC会話・'fina'＝フィナの案内・'event'＝重要イベント）。見た目と読み上げの区別に使う（システム通知は会話ウィンドウにしない）
+      const pres = ['compact', 'major'].includes(opts.presentation) ? opts.presentation : 'standard';
+      const ov = h('div', `mmtalk mmtalk-${pres}`), stage = h('div', 'mmtalk-stage'), fig = h('div', 'mmtalk-fig'), img = h('img'), win = h('div', 'mmtalk-win'), nm = h('div', 'mmtalk-name'), tx = h('p', 'mmtalk-text'), nx = h('span', 'mmtalk-next'), ch = h('div', 'mmtalk-choices');
+      ov.dataset.pres = pres; if (opts.kind) ov.dataset.kind = String(opts.kind);
       ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); img.alt = ''; img.draggable = false; nx.textContent = '▼'; nx.setAttribute('aria-hidden', 'true');
       ch.hidden = true; ch.setAttribute('role', 'group'); let chKey = '';
       fig.appendChild(img); win.append(nm, tx, ch, nx); stage.append(fig, win); ov.appendChild(stage); document.body.appendChild(ov);

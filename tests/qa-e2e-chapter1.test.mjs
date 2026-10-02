@@ -352,7 +352,7 @@ test('CH1-B15：1タップ：START を押すまでサイコロは画面に無い
   assert.ok(tm.spin >= 600 && tm.spin <= 1700, `出現〜停止面 ${tm.spin.toFixed(0)}ms（設計 約0.98秒＋クロスフェード。負荷で伸びることがある）`);
   assert.ok(tm.face >= 300 && tm.face <= 1100, `停止面を見せる時間 ${tm.face.toFixed(0)}ms（設計 0.42秒＋消える0.16秒）`);
   assert.ok(tm.moveAfterGone >= -50, `サイコロが消えてから歩き出す（${tm.moveAfterGone.toFixed(0)}ms）`);
-  assert.ok(tm.last && tm.last.value === 2 && tm.last.manual === false && tm.last.spinMs >= 700 && tm.last.spinMs <= 1400 && tm.last.faceMs >= 300 && tm.last.faceMs <= 700, `実測 ${JSON.stringify(tm.last)}`);
+  assert.ok(tm.last && tm.last.value === 2 && tm.last.manual === false && tm.last.spinMs >= 700 && tm.last.spinMs <= 1400 && tm.last.faceMs >= 400 && tm.last.faceMs <= 900, `実測 ${JSON.stringify(tm.last)}`);
   assert.deepEqual([tm.dice, tm.text, tm.on, tm.busy], [0, 'START', true, false], '移動が終わるとサイコロは消え、START が押せる');
   assert.deepEqual(await look(), wingLook0, '通常時とサイコロ処理中で4コマンドの見た目（色・画像・装飾）が同じ');
   assert.deepEqual((({ node, turns }) => ({ node, turns }))(await st(pg)), { node: 'p1_2', turns: 1 }, '1回の START で1ターン・2地点');

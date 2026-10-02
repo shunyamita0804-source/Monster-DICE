@@ -61,7 +61,7 @@ test('DAN-4：旧コウのデータは互換のため残す（NP.b の名前と�
 
 test('DAN-5：セリフは DAN_TALK。育成開始はフィナ→ダン（左右で話者を分ける）。ファームの一言は落ち着いた口調（「〜ぜ！」・寿命・疲労なし）で、使う表情は登録済み', () => {
   const T = danTalk(), M = loadNpc();
-  assert.deepEqual(T.handoff.map((l) => [l.npc, l.side, l.text]), [['fina', 'left', 'ダン、この子のことお願いしてもいい？'], ['dan', 'right', 'ああ。こっちは任せてくれ。']]);
+  assert.deepEqual(T.handoff.map((l) => [l.npc, l.side, l.text]), [['fina', 'left', 'ダン、この子と一緒に行ってくるね！'], ['dan', 'right', 'ああ。準備はできてるな。気をつけて行ってこい。']]);
   for (const l of T.handoff) assert.ok(M.expressionsOf(l.npc, 'closeup').includes(l.expression), `${l.npc}:${l.expression}`);
   const all = [...T.farm, T.chapter(3), T.interval];
   assert.equal(T.chapter(3), '残り3ターンか。焦らずゴールを目指そう。');
@@ -162,7 +162,7 @@ test('DAN-B2：育成開始：フィナの確認と選択肢。「まだやめ�
     assert.equal(await pg.evaluate(() => S.m.raise.state), 'none', '掛け合いの間はまだ出発しない');
     await pg.waitForTimeout(120); await pg.click('.mmtalk');
   }
-  assert.deepEqual(seen.map((x) => x.slice(0, 3)), [['フィナ', 'left', 'ダン、この子のことお願いしてもいい？'], ['ダン', 'right', 'ああ。こっちは任せてくれ。']]);
+  assert.deepEqual(seen.map((x) => x.slice(0, 3)), [['フィナ', 'left', 'ダン、この子と一緒に行ってくるね！'], ['ダン', 'right', 'ああ。準備はできてるな。気をつけて行ってこい。']]);
   assert.match(seen[1][3], /assets\/npc\/dan\/closeup\/smile\.webp$/);
   await pg.waitForSelector('#brollbtn');
   assert.equal(await pg.evaluate(() => S.m.raise.state), 'board', '掛け合いのあと出発');

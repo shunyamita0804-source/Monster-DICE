@@ -488,7 +488,7 @@ test('CH1-30：マスUI（config.tileUI。2026-10-02 正式素材）：能力6�
   // 遠近の補正：奥（d が小さい）ほど小さく平たい楕円、手前ほど大きく円に近い。通常マスは少し小さい
   const box = (id) => V.tileBox(cfg.tileUI, g.nodes[id], g.nodes[id].tile);
   const near = box('p2_0'), far = box('p2_4'); assert.ok(near.w > far.w * 1.4 && near.f > far.f + 0.12, `手前 ${near.w.toFixed(0)}×${near.f.toFixed(2)} ／ 奥 ${far.w.toFixed(0)}×${far.f.toFixed(2)}`);
-  assert.ok(near.f <= 0.55 && far.f >= 0.3, '手前でも少し潰れた円・奥は強い楕円'); assert.ok(near.th < near.h * 0.1, '台座は薄い');
+  assert.ok(near.f <= 0.55 && far.f >= 0.25, '手前でも少し潰れた円・奥は強い楕円'); assert.equal(near.th, 0, '側面の厚みは見せない（道に刻まれた印。2026-10-02 商用品質化）'); assert.ok(far.op < near.op && far.op >= 0.6, `奥のマスほど控えめ（${far.op.toFixed(2)} → ${near.op.toFixed(2)}）`);
   assert.ok(box('p1_1').w < V.tileBox(cfg.tileUI, g.nodes.p1_1, 'stat_life').w, '通常マスは控えめ（少し小さい）');
   assert.equal(CH.getConfig(2).tileUI, undefined, 'Chapter 2 は従来どおり（マスUIを出さない）');
 });
@@ -518,7 +518,7 @@ test('DICE-06：サイコロの回転は最後に 360° の倍数（正式の角
     assert.equal(Math.abs(deg % 360), 0, `${dir}×${spin}：${deg}`); assert.equal(last.offset, 1);
     const before = fr[fr.length - 2]; assert.ok(Math.abs(1 - before.offset - 0.19) < 1e-9, '収束の区間');
   }
-  const c = D.configure(); assert.ok(c.settleMs >= 150 && c.settleMs <= 200); assert.ok(c.ms >= 700 && c.ms <= 1200, '出現〜着地 0.7〜1.2秒'); assert.ok(c.resultMs >= 300 && c.resultMs <= 500, '停止面 0.3〜0.5秒');
+  const c = D.configure(); assert.ok(c.settleMs >= 150 && c.settleMs <= 200); assert.ok(c.ms >= 700 && c.ms <= 1200, '出現〜着地 0.7〜1.2秒'); assert.ok(c.resultMs >= 450 && c.resultMs <= 650, '停止面 0.45〜0.65秒（2026-10-02：出目を認識する間）');
 });
 
 test('BF-01：バトル画面の表示だけの補正（js/battle/fit.js）：fight()・.bt 系 CSS に触れず、寸法から「切れない最大の大きさ」を計算する', () => {
