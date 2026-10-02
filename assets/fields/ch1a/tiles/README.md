@@ -35,8 +35,20 @@
 
 宝箱の4枚は長辺 384px。treasure_rainbow_closed は市松模様ではなく白地だったため、外周から白地をたどって切り抜いた。
 
+## 分岐・合流・左右の門（2026-10-02 の60マス再設計で追加）
+
+元：ZIP `mystic_monsters_board_ui_assets_2026-10-01_v2/02_branching/`（ブロンズ／アンティークゴールドの現行版）。上と同じ手順で市松模様を取り除いて透過 WebP（長辺 512px・品質88）にした。左右の門はアーチの内側（大きな穴）を透明のまま残した（本体の小さな穴だけ埋める）。
+
+| ファイル | 元ファイル | 用途 |
+|---|---|---|
+| tile_branch.webp | board_node_branch.jpeg | 分かれ道のマス（05 の最後のマス p5_3） |
+| tile_merge.webp | board_node_merge.jpeg | 合流のマス（10 の最初のマス p10_0） |
+| branch_gate_left.webp | branch_gate_left.jpeg | 分かれ道の左の門（森の道）。config.tileUI.gates.gate_left |
+| branch_gate_right.webp | branch_gate_right.jpeg | 分かれ道の右の門（大橋の道）。config.tileUI.gates.gate_right |
+
+通常マスの専用素材は無いので、共通の台座（CSS。index.html の .chf-tile.ped）の石の面だけを置く。
+
 ## 使っていない ZIP の素材（このフォルダには入れていない。ユーザーの ZIP に元がある）
 
-- 02_branching（分岐・合流・左右ゲート）：Chapter 1 は1本道のため
 - 03_board_effects（宝箱取得・能力UPフレーム・大成功・残りターン警告・遭遇）：「実装方法・最終採用は未確定」の候補。大成功は今の仕様に無い
 - 04_progression_gate_candidates（A／B）：正式採用が未決定

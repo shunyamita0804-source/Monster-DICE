@@ -67,7 +67,7 @@ function ch1Field(assign = {}) {
 function seed(raise = {}, top = {}, assign = {}) {
   const s = clone(BASE);
   s.npcFlags = { ...s.npcFlags, raiseIntro: 1 };
-  Object.assign(s.m.raise, { state: 'board', ch: 1, node: 'w1_0', turnsUsed: 0, turnLimit: 40, pend: null, goal: false, tour: null, battle: null, trainRun: null, log: [], startStats: statsOf(s.m), fatigue: 0, field: ch1Field(assign) }, raise);
+  Object.assign(s.m.raise, { state: 'board', ch: 1, node: 'p1_0', turnsUsed: 0, turnLimit: 40, pend: null, goal: false, tour: null, battle: null, trainRun: null, log: [], startStats: statsOf(s.m), fatigue: 0, field: ch1Field(assign) }, raise);
   return Object.assign(s, top);
 }
 /** サイコロの出目だけを固定する仕掛け（window.__dice に入れた出目を MMP7.rollDie／rollDice の呼び出しで順に使う（面の数は今の個体の Chapter から：Chapter 1 は 6・旧ボードは 3）） */
@@ -225,7 +225,7 @@ T('QA-RB1：市場で購入 → ファーム → 出発準備：1回目の押下
   await pg.waitForSelector('#chf-ui #brollbtn');
   const r = await raiseOf(pg);
   const { startStats, field, ...rest } = r;
-  assert.deepEqual(rest, { state: 'board', ch: 1, node: 'w1_0', turnsUsed: 0, turnLimit: 40, pend: null, goal: false, tour: null, battle: null, trainRun: null, log: [], fatigue: 0 });
+  assert.deepEqual(rest, { state: 'board', ch: 1, node: 'p1_0', turnsUsed: 0, turnLimit: 40, pend: null, goal: false, tour: null, battle: null, trainRun: null, log: [], fatigue: 0 });
   assert.deepEqual([field.chapterId, field.patternId, field.fieldId, field.branch, field.consumedEvents, field.openedTreasures, field.clearedStats], [1, 'A', 1, null, [], [], []], 'Chapter 1 Pattern A の配置を出発時に確定');
   assert.ok(Number.isInteger(field.layoutSeed) && Object.keys(field.nodeAssignments).length >= 20, '配置（シードと割り当て）はセーブに入る');
   assert.deepEqual(startStats, statsOf(s0.m), '育成開始時の能力値を記録する');
@@ -244,7 +244,7 @@ T('QA-RB1：市場で購入 → ファーム → 出発準備：1回目の押下
 // 育成中は街へ戻れない
 // ---------------------------------------------------------
 T('QA-RB2：育成中（Chapterフィールド）は街・市場・牧場・博物館・セーブ画面などの関数を直接呼んでも拒否され、フィールドに留まる（セーブは1文字も変わらない）', async () => {
-  const p = await boot(seed({ node: 'w1_3', turnsUsed: 1 }, { g: 777 }), '#chf-ui #brollbtn'); const pg = p.page;
+  const p = await boot(seed({ node: 'p1_3', turnsUsed: 1 }, { g: 777 }), '#chf-ui #brollbtn'); const pg = p.page;
   const raw0 = await rawSave(pg);
   assert.equal(await pg.evaluate(() => p8Blocked()), true);
   for (const call of ['lobby()', 'market()', 'farm()', 'museum()', 'savescr()', 'mkd(0)', 'dep()', 'wd(0)', "adopt(0,'X')", 'mkgo(0)', 'selm(0)']) {
@@ -263,7 +263,7 @@ T('QA-RB2：育成中（Chapterフィールド）は街・市場・牧場・博�
     assert.equal(await rawSave(pg), raw0, `${call} でセーブは変わらない`);
   }
   const s = await H.getS(pg);
-  assert.deepEqual([s.g, s.box.length, s.m.name, s.m.raise.node, s.m.raise.turnsUsed], [777, 0, 'ソラモ', 'w1_3', 1]);
+  assert.deepEqual([s.g, s.box.length, s.m.name, s.m.raise.node, s.m.raise.turnsUsed], [777, 0, 'ソラモ', 'p1_3', 1]);
   // Chapter中に使えるファーム機能はステータス・わざだけ。戻り先はボード（街へ戻るボタンは無い）
   await pg.evaluate(() => hall('st'));
   await pg.waitForSelector('.ds-st .dback');
@@ -282,7 +282,7 @@ T('QA-RB2：育成中（Chapterフィールド）は街・市場・牧場・博�
 // サイコロと移動（1歩ごとの保存・通過地点は効果なし）
 // ---------------------------------------------------------
 T('QA-RB3：サイコロ（出目3）→ 1地点ずつ移動し1歩ごとに保存 → 最終停止地点だけ効果（通過したライフ・ちからの地点は効果なし）→ 再読み込みしても同じ地点・同じ配置', async () => {
-  const p = await boot(seed({}, { g: 50 }, { w1_1: { t: 'stat', k: 'li' }, w1_2: { t: 'stat', k: 'po' }, w1_3: null }), '#chf-ui #brollbtn'); const pg = p.page;
+  const p = await boot(seed({}, { g: 50 }, { p1_1: { t: 'stat', k: 'li' }, p1_2: { t: 'stat', k: 'po' }, p1_3: null }), '#chf-ui #brollbtn'); const pg = p.page;
   const before = await H.getS(pg);
   await traceSaves(pg);
   await setDice(pg, [3]);
@@ -290,15 +290,15 @@ T('QA-RB3：サイコロ（出目3）→ 1地点ずつ移動し1歩ごとに保�
   await pg.click('#brollbtn');
   await stopDice(pg);
     await waitTurnDone(pg, 1);
-  // w1_0 → w1_1（ライフ）→ w1_2（ちから）→ w1_3（何も起きない）。出目とターン消費は最初の保存で確定
-  assert.deepEqual(await readTrace(pg), [['w1_0', 'move', 3, 1], ['w1_1', 'move', 2, 1], ['w1_2', 'move', 1, 1], ['w1_3', 'resolve', 0, 1], ['w1_3', null, null, 1]]);
+  // p1_0 → p1_1（ライフ）→ p1_2（ちから）→ p1_3（何も起きない）。出目とターン消費は最初の保存で確定
+  assert.deepEqual(await readTrace(pg), [['p1_0', 'move', 3, 1], ['p1_1', 'move', 2, 1], ['p1_2', 'move', 1, 1], ['p1_3', 'resolve', 0, 1], ['p1_3', null, null, 1]]);
   const after = await H.getS(pg);
   assert.deepEqual(statsOf(after.m), statsOf(before.m), '通過した地点の効果は出ない');
   assert.deepEqual([after.g, after.trainTix], [before.g, before.trainTix]);
   assert.equal(after.m.raise.fatigue, 7, '出目3で疲れ +7');
   assert.equal(await bmsg(pg), 'START でサイコロを振る。休むこともできる。');
   assert.match(await pg.evaluate(() => document.querySelector('.chh-turn').textContent), /Turn\s*2\s*\/\s*40/);
-  assert.equal(await pg.evaluate(() => document.querySelector('#bmonw').dataset.node), 'w1_3', 'モンスターの表示位置も w1_3');
+  assert.equal(await pg.evaluate(() => document.querySelector('#bmonw').dataset.node), 'p1_3', 'モンスターの表示位置も p1_3');
   assert.equal(await pg.evaluate(() => !document.querySelector('#brollbtn').disabled), true, '次のターンを振れる');
   await assertSynced(pg);
   // 移動が終わったあとの再読み込み → 同じ地点・同じターン数・同じ配置から
@@ -310,59 +310,59 @@ T('QA-RB3：サイコロ（出目3）→ 1地点ずつ移動し1歩ごとに保�
 });
 
 T('QA-RB4：サイコロの演出中・移動の途中で再読み込み → 出目・ターン消費・疲れは保存済みのまま（振り直しなし）→ 保存済みの地点から残りだけ進み、止まった地点の効果は1回だけ（視差効果を減らす設定）', async () => {
-  const p = await boot(seed({}, {}, { w1_1: { t: 'stat', k: 'li' }, w1_2: { t: 'stat', k: 'po' }, w1_3: { t: 'stat', k: 'hi' }, w1_4: { t: 'stat', k: 'in' }, w2_0: null }), '#chf-ui #brollbtn', { calm: true }); const pg = p.page;
+  const p = await boot(seed({}, {}, { p1_1: { t: 'stat', k: 'li' }, p1_2: { t: 'stat', k: 'po' }, p1_3: { t: 'stat', k: 'hi' }, p1_4: { t: 'stat', k: 'in' }, p2_0: null }), '#chf-ui #brollbtn', { calm: true }); const pg = p.page;
   const before = await H.getS(pg);
   // (1) 出目2：演出中（まだ移動していない）に再読み込み
   await setDice(pg, [2]);
   await pg.waitForTimeout(SETTLE);
   await pg.click('#brollbtn');
   const st = await storedRaise(pg);
-  assert.deepEqual([st.node, st.pend, st.turnsUsed, st.fatigue], ['w1_0', { roll: 2, left: 2, stage: 'move', fatigueAdded: 5 }, 1, 5], '出目・ターン消費・疲れは演出より前に保存');
+  assert.deepEqual([st.node, st.pend, st.turnsUsed, st.fatigue], ['p1_0', { roll: 2, left: 2, stage: 'move', fatigueAdded: 5 }, 1, 5], '出目・ターン消費・疲れは演出より前に保存');
   await pg.reload();
   await pg.waitForFunction(() => typeof window.MMP8 === 'object' && typeof S === 'object');
   assert.deepEqual(await storedRaise(pg), st, '開始画面を表示しただけでは何も進まない');
   await startFromTitle(pg, '#chf');
   await waitTurnDone(pg, 1);
   let r = await raiseOf(pg);
-  assert.deepEqual([r.node, r.pend, r.turnsUsed, r.fatigue], ['w1_2', null, 1, 5], '保存済みの出目2で w1_0 → w1_1 → w1_2（疲れは重ねない）');
+  assert.deepEqual([r.node, r.pend, r.turnsUsed, r.fatigue], ['p1_2', null, 1, 5], '保存済みの出目2で p1_0 → p1_1 → p1_2（疲れは重ねない）');
   const s1 = await H.getS(pg);
   const gain = s1.m.po - before.m.po;
   assert.equal(gain, 5, `止まった「ちから」の地点で +5（ソラモのちから適性 C。2026-10-02 成長適性）（実際 +${gain}）`);
   assert.deepEqual({ ...statsOf(s1.m), po: before.m.po }, statsOf(before.m), 'ほかの能力（通過したライフの地点を含む）は変わらない');
   assert.match(await bmsg(pg), new RegExp(`ちから \\+${gain}$`));
   await assertSynced(pg);
-  // (2) 出目3：1歩進んだところ（w1_3）で再読み込み → 残り2歩（w1_4 → 背景02 の w2_0）だけ進む
+  // (2) 出目3：1歩進んだところ（p1_3）で再読み込み → 残り2歩（p1_4 → 背景02 の p2_0）だけ進む
   await setDice(pg, [3]);
   await pg.waitForTimeout(SETTLE);
   await pg.click('#brollbtn');
   await stopDice(pg);
-  await pg.waitForFunction(() => JSON.parse(localStorage.getItem('mr4v6')).m.raise.node === 'w1_3', null, { timeout: 15000, polling: 10 });
+  await pg.waitForFunction(() => JSON.parse(localStorage.getItem('mr4v6')).m.raise.node === 'p1_3', null, { timeout: 15000, polling: 10 });
   const st2 = await storedRaise(pg);
-  assert.deepEqual([st2.node, st2.pend, st2.turnsUsed, st2.fatigue], ['w1_3', { roll: 3, left: 2, stage: 'move', fatigueAdded: 7 }, 2, 12]);
+  assert.deepEqual([st2.node, st2.pend, st2.turnsUsed, st2.fatigue], ['p1_3', { roll: 3, left: 2, stage: 'move', fatigueAdded: 7 }, 2, 12]);
   await reloadAndStart(pg, '#chf');
   await waitTurnDone(pg, 2);
   r = await raiseOf(pg);
-  assert.deepEqual([r.node, r.pend, r.turnsUsed, r.fatigue], ['w2_0', null, 2, 12], 'w1_3 から残り2歩 → w2_0。振り直していない');
-  assert.deepEqual(statsOf((await H.getS(pg)).m), statsOf(s1.m), 'ちからの効果は重ならず、通過した w1_3・w1_4 も効果なし');
+  assert.deepEqual([r.node, r.pend, r.turnsUsed, r.fatigue], ['p2_0', null, 2, 12], 'p1_3 から残り2歩 → p2_0。振り直していない');
+  assert.deepEqual(statsOf((await H.getS(pg)).m), statsOf(s1.m), 'ちからの効果は重ならず、通過した p1_3・p1_4 も効果なし');
   assert.equal(await bmsg(pg), 'START でサイコロを振る。休むこともできる。');
   await assertSynced(pg);
   noErrors(p);
 });
 
 T('QA-RB5：背景の切り替えをまたぐ移動の途中で再読み込み → 残りの移動だけ進み、次の背景の最初の地点で止まって効果は1回だけ（視差効果を減らす設定）', async () => {
-  const p = await boot(seed({ node: 'w1_3', turnsUsed: 3 }, {}, { w1_4: null, w2_0: { t: 'stat', k: 'hi' } }), '#chf-ui #brollbtn', { calm: true }); const pg = p.page;
+  const p = await boot(seed({ node: 'p1_3', turnsUsed: 3 }, {}, { p1_4: null, p2_0: { t: 'stat', k: 'hi' } }), '#chf-ui #brollbtn', { calm: true }); const pg = p.page;
   const before = await H.getS(pg);
   await setDice(pg, [2]);
   await pg.waitForTimeout(SETTLE);
   await pg.click('#brollbtn');
   await stopDice(pg);
-  await pg.waitForFunction(() => JSON.parse(localStorage.getItem('mr4v6')).m.raise.node === 'w1_4', null, { timeout: 15000, polling: 10 });
+  await pg.waitForFunction(() => JSON.parse(localStorage.getItem('mr4v6')).m.raise.node === 'p1_4', null, { timeout: 15000, polling: 10 });
   const st1 = await storedRaise(pg);
-  assert.deepEqual([st1.node, st1.pend, st1.turnsUsed], ['w1_4', { roll: 2, left: 1, stage: 'move', fatigueAdded: 5 }, 4], '1歩進んだところで保存済み');
+  assert.deepEqual([st1.node, st1.pend, st1.turnsUsed], ['p1_4', { roll: 2, left: 1, stage: 'move', fatigueAdded: 5 }, 4], '1歩進んだところで保存済み');
   await reloadAndStart(pg, '#chf');
   await waitTurnDone(pg, 4);
   const r = await raiseOf(pg);
-  assert.deepEqual([r.node, r.pend, r.turnsUsed, r.field.branch], ['w2_0', null, 4, null], '残り1歩で w2_0（命中）に止まる。振り直しなし');
+  assert.deepEqual([r.node, r.pend, r.turnsUsed, r.field.branch], ['p2_0', null, 4, null], '残り1歩で p2_0（命中）に止まる。振り直しなし');
   assert.equal(await pg.evaluate(() => document.querySelector('#chf .chf-bg').getAttribute('src')), './assets/fields/ch1a/final/field/ch1_bg_02.webp');
   const s = await H.getS(pg);
   const gain = s.m.hi - before.m.hi;
@@ -374,7 +374,7 @@ T('QA-RB5：背景の切り替えをまたぐ移動の途中で再読み込み �
 
 
 T('QA-RB6：停止地点の効果の処理前（resolve）の保存から再開 → 開始画面では何も起きず、再開後に1回だけ効果 → 再読み込みしても重ならない', async () => {
-  const p = await openPage({ size: H.SIZES.base, save: seed({ node: 'w1_2', turnsUsed: 1, fatigue: 5, pend: { roll: 2, left: 0, stage: 'resolve', fatigueAdded: 5 } }, {}, { w1_2: { t: 'stat', k: 'po' } }) }); const pg = p.page;
+  const p = await openPage({ size: H.SIZES.base, save: seed({ node: 'p1_2', turnsUsed: 1, fatigue: 5, pend: { roll: 2, left: 0, stage: 'resolve', fatigueAdded: 5 } }, {}, { p1_2: { t: 'stat', k: 'po' } }) }); const pg = p.page;
   const raw0 = await rawSave(pg);
   const po0 = (await H.getS(pg)).m.po;
   await pg.waitForTimeout(500);
@@ -384,8 +384,8 @@ T('QA-RB6：停止地点の効果の処理前（resolve）の保存から再開 
   const s = await H.getS(pg);
   const gain = s.m.po - po0;
   assert.equal(gain, 5, `ちから +5（ソラモのちから適性 C）（実際 +${gain}）`);
-  assert.deepEqual([s.m.raise.node, s.m.raise.pend, s.m.raise.turnsUsed, s.m.raise.fatigue], ['w1_2', null, 1, 5]);
-  assert.deepEqual(s.m.raise.field.clearedStats, ['w1_2']);
+  assert.deepEqual([s.m.raise.node, s.m.raise.pend, s.m.raise.turnsUsed, s.m.raise.fatigue], ['p1_2', null, 1, 5]);
+  assert.deepEqual(s.m.raise.field.clearedStats, ['p1_2']);
   await assertSynced(pg);
   await reloadAndStart(pg, '#chf-ui #brollbtn');
   assert.equal((await H.getS(pg)).m.po, s.m.po);
@@ -396,7 +396,7 @@ T('QA-RB6：停止地点の効果の処理前（resolve）の保存から再開 
 // 中断と再開
 // ---------------------------------------------------------
 T('QA-RB7：☰メニュー →「中断」→ 開始画面（つづきから）→ はじめる → 同じ地点・同じターン・同じ疲れから再開。移動中はメニューも中断も受け付けない（視差効果を減らす設定）', async () => {
-  const p = await boot(seed({ node: 'w1_3', turnsUsed: 1, fatigue: 7 }, {}, { w1_4: null }), '#chf-ui #brollbtn', { calm: true }); const pg = p.page;
+  const p = await boot(seed({ node: 'p1_3', turnsUsed: 1, fatigue: 7 }, {}, { p1_4: null }), '#chf-ui #brollbtn', { calm: true }); const pg = p.page;
   const r0 = await raiseOf(pg);
   const raw0 = await rawSave(pg);
   await pg.waitForTimeout(SETTLE);
@@ -423,7 +423,7 @@ T('QA-RB7：☰メニュー →「中断」→ 開始画面（つづきから）
   assert.deepEqual(during, { busy: true, menu: false, title: false });
   await stopDice(pg);
   await waitTurnDone(pg, 2);
-  assert.equal((await raiseOf(pg)).node, 'w1_4');
+  assert.equal((await raiseOf(pg)).node, 'p1_4');
   assert.equal(await pg.evaluate(() => !!document.querySelector('.p15start')), false, '移動のあとで開始画面へ飛ばない');
   await assertSynced(pg);
   noErrors(p);
@@ -433,7 +433,7 @@ T('QA-RB7：☰メニュー →「中断」→ 開始画面（つづきから）
 // Chapter 1 のゴール → 辞退 → Chapter間ファーム → 次のChapter
 // ---------------------------------------------------------
 T('QA-RB8：Chapter 1 のゴール（大会会場。残りの移動は消える）：挑戦できるのは E・D だけ → 辞退（2度押し）→ Chapter間ファーム → 次のChapterへは1回押すだけで出発（フィナの会話なし・疲れは −50 して持ち越す・視差効果を減らす設定）', async () => {
-  const p = await boot(seed({ node: 'w14_1', turnsUsed: 20, fatigue: 64, field: { ...ch1Field({}), fieldId: 14 } }), '#chf-ui #brollbtn', { calm: true }); const pg = p.page;
+  const p = await boot(seed({ node: 'p14_1', turnsUsed: 20, fatigue: 64, field: { ...ch1Field({}), fieldId: 14 } }), '#chf-ui #brollbtn', { calm: true }); const pg = p.page;
   const ss0 = (await raiseOf(pg)).startStats;
   await setDice(pg, [3]);
   await pg.waitForTimeout(SETTLE);
@@ -441,7 +441,7 @@ T('QA-RB8：Chapter 1 のゴール（大会会場。残りの移動は消える�
   await stopDice(pg);
   await pg.waitForSelector('#chrcv .rcv-row', { timeout: 20000 });
   let r = await raiseOf(pg);
-  assert.deepEqual([r.node, r.goal, r.pend, r.turnsUsed, r.fatigue], ['w14_2', true, null, 21, 71], 'w14_1 → w14_2（ゴール）で止まり、残り2歩は消える');
+  assert.deepEqual([r.node, r.goal, r.pend, r.turnsUsed, r.fatigue], ['p14_2', true, null, 21, 71], 'p14_1 → p14_2（ゴール）で止まり、残り2歩は消える');
   assert.equal(await pg.evaluate(() => document.querySelector('#chfarr img').getAttribute('src')), './assets/fields/ch1a/final/event/ch1_bg_15_event.webp', '大会会場（到着イベント専用の背景）');
   const ranks = await pg.evaluate(() => [...document.querySelectorAll('.rcv-row.ok')].map((b) => +b.dataset.rank).sort());
   assert.deepEqual(ranks, [0, 1], 'Chapter 1 の挑戦上限は D');

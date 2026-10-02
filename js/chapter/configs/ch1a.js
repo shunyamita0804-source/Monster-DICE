@@ -2,83 +2,96 @@
 // Chapter 1「はじまりの草原」Pattern A の config（Chapterフィールドエンジン js/chapter/engine.js 用）
 //  このファイルはデータだけ。背景を決まった順にだけ1回ずつ通り、各背景の実際の道の中央線の上にマスを置く。
 //  2026-10-02（正式背景）：assets/fields/ch1a/final/field/ch1_bg_01〜14（出どころは assets/fields/ch1a/final/README.md）。
-//   進行するのは 01〜14 の14枚だけ（1本道）。14 の最後のマス＝ゴール（大会会場の門前）に着いたら、
-//   到着イベント専用の背景 final/event/ch1_bg_15_event（公式大会会場・正門前。マス・サイコロなし）へ切り替え → フィナの会話 → 大会受付（config.arrival）。
+//  2026-10-02（60マス再設計）：共通区間 01〜05 → 05 の最後のマス＝分かれ道 → 森の道（06 大樹の森・07 深い森の小道）／大橋の道（08 水道橋の見える道・09 天空の大橋）
+//   → 10 風の丘の最初のマス＝合流 → 終盤 11〜13 → 14 大会会場の門前（ライバル → ゴール）。1回の旅で通る背景は12枚（森か大橋のどちらか）。
+//   14 の最後のマス＝ゴールに着いたら、到着イベント専用の背景 final/event/ch1_bg_15_event（マス・サイコロなし）→ フィナの会話 → 大会受付（config.arrival）。
 //   旧構成の背景（field/ 10枚・road/ 15枚・journey/ 13枚）はファイルを残すが参照しない。
-//  BACKGROUNDS：背景ごとに backgroundId・image・表示名【暫定】・地形・道の中央線 road [y, x, 半幅]（画像を目視で読んだ値。背景に対する割合）・
-//   nodes＝その背景が担当するマスの座標 [x, y]（背景に対する割合。手前 → 奥）。マス数＝nodes の数（背景ごとに違ってよい）。
-//   マスは道の中央線の上に、手前 y 0.87 から「道が細くなりすぎる手前」まで、奥行き補正で等間隔（奥ほど画面上の間隔が狭い）。
-//   背景の最奥（遠景の道）まではマスを置かない（この先にも世界が続く景観として残す）。
-//   必要なら背景ごとに camera（{ zoom:{ near, far } } など）を書ける。ずれていたら数字を直すだけ。
-//  合計 60 マス（59歩）・40ターン・サイコロ 1〜3（2026-10-02 ユーザー判断：90マスは 40ターン・1〜3 では到達できないため 60）。
+//  BACKGROUNDS：背景ごとに backgroundId・route・image・表示名【暫定】・地形・道の中央線 road [y, x, 半幅]（画像を目視で読んだ値。背景に対する割合）・
+//   nodes＝その背景のマス [x, y, 種類]（背景に対する割合。手前 → 奥）。マス数は背景ごとに違ってよい（道の長さ・見え方で決めた。固定の「1枚 N マス」は無い）。
+//   背景の最奥（遠景の道）まではマスを置かない（この先にも世界が続く景観として残す）。必要なら背景ごとに camera を書ける。ずれていたら数字を直すだけ。
+//  公式マス 60（スタートを含まない。通常19・能力18（6能力×3）・野生6・イベント6・宝4・休む3・ライバル1・分岐／合流2・ゴール1）・40ターン・サイコロ 1〜3。
 // =========================================================
 (function (root) {
   'use strict';
   const A = './assets/fields/ch1a/', TL = A + 'tiles/', FN = A + 'final/', F = FN + 'field/', I = A + 'intro/', U = A + 'ui/', D = A + 'dice/';
   const W = 762, H = 1536;   // 背景画像の大きさ
   const DEPTH = [[0.98, 1.22], [0.9, 1.1], [0.84, 1], [0.72, 0.84], [0.6, 0.62], [0.535, 0.5], [0.47, 0.4], [0.425, 0.34], [0.38, 0.28], [0.3, 0.2]];
+  // route：common（共通区間 01〜05）→ 05 の最後のマス＝分かれ道（branch）→ forest（森の道 06〜07）／bridge（大橋の道 08〜09）→ late（合流 10 の最初のマス＝merge → 終盤 → 14 の大会会場の門前）。
+  //  nodes＝[x, y, マスの種類]（手前 → 奥。種類は MMCH.NODE_TYPES の名前＋branch・merge・start。通常マス normal も止まれる公式のマス）。座標は道の中央線の上（画像を見て置いた値。等間隔ではない）
   const BACKGROUNDS = [
-    { backgroundId: '01', image: F + 'ch1_bg_01.webp', name: '旅立ちの小道', terrain: 'grass',
+    { backgroundId: '01', route: 'common', image: F + 'ch1_bg_01.webp', name: '旅立ちの小道', terrain: 'grass',
       road: [[0.97,0.5,0.45],[0.85,0.48,0.4],[0.75,0.47,0.33],[0.65,0.48,0.26],[0.58,0.52,0.18],[0.52,0.57,0.12],[0.47,0.58,0.08],[0.43,0.56,0.05]],
-      nodes: [[0.483,0.87],[0.471,0.74],[0.489,0.634],[0.541,0.555],[0.576,0.49]] },
-    { backgroundId: '02', image: F + 'ch1_bg_02.webp', name: '木漏れ日の森道', terrain: 'forest',
+      nodes: [[0.483,0.87,'start'],[0.471,0.74,'normal'],[0.489,0.634,'stat_life'],[0.541,0.555,'normal'],[0.576,0.49,'stat_power']] },
+    { backgroundId: '02', route: 'common', image: F + 'ch1_bg_02.webp', name: '木漏れ日の森道', terrain: 'forest',
       road: [[0.97,0.53,0.43],[0.85,0.51,0.37],[0.75,0.49,0.29],[0.65,0.49,0.21],[0.57,0.5,0.13],[0.52,0.53,0.09],[0.48,0.56,0.06]],
-      nodes: [[0.513,0.87],[0.49,0.751],[0.49,0.65],[0.5,0.571],[0.537,0.51]] },
-    { backgroundId: '03', image: F + 'ch1_bg_03.webp', name: '清流の石橋', terrain: 'bridge',
+      nodes: [[0.513,0.87,'event'],[0.49,0.751,'stat_intelligence'],[0.49,0.65,'normal'],[0.5,0.571,'treasure'],[0.537,0.51,'stat_accuracy']] },
+    { backgroundId: '03', route: 'common', image: F + 'ch1_bg_03.webp', name: '清流の石橋', terrain: 'bridge',
       road: [[0.97,0.5,0.46],[0.85,0.5,0.4],[0.75,0.5,0.33],[0.65,0.51,0.27],[0.55,0.5,0.2],[0.48,0.52,0.13],[0.44,0.56,0.09]],
-      nodes: [[0.5,0.87],[0.501,0.742],[0.509,0.638],[0.5,0.555],[0.517,0.49]] },
-    { backgroundId: '04', image: F + 'ch1_bg_04.webp', name: '遺跡の門', terrain: 'forest',
+      nodes: [[0.5,0.87,'normal'],[0.501,0.742,'stat_evasion'],[0.509,0.638,'wild'],[0.5,0.555,'normal'],[0.517,0.49,'stat_toughness']] },
+    { backgroundId: '04', route: 'common', image: F + 'ch1_bg_04.webp', name: '遺跡の門', terrain: 'forest',
       road: [[0.97,0.5,0.48],[0.85,0.5,0.43],[0.75,0.51,0.36],[0.65,0.52,0.28],[0.57,0.52,0.21],[0.51,0.52,0.14],[0.47,0.53,0.1]],
-      nodes: [[0.5,0.87],[0.51,0.752],[0.52,0.653],[0.52,0.573],[0.52,0.51]] },
-    { backgroundId: '05', image: F + 'ch1_bg_05.webp', name: '滝の見える道', terrain: 'forest',
+      nodes: [[0.5,0.87,'rest'],[0.51,0.752,'stat_life'],[0.52,0.653,'normal'],[0.52,0.573,'wild'],[0.52,0.51,'event']] },
+    { backgroundId: '05', route: 'common', image: F + 'ch1_bg_05.webp', name: '滝の見える道', terrain: 'forest',
       road: [[0.97,0.5,0.45],[0.85,0.5,0.38],[0.75,0.49,0.3],[0.68,0.5,0.24],[0.62,0.52,0.17],[0.59,0.53,0.13]],
-      nodes: [[0.5,0.87],[0.494,0.725],[0.523,0.61]] },
-    { backgroundId: '06', image: F + 'ch1_bg_06.webp', name: '大樹の森', terrain: 'forest',
+      nodes: [[0.5,0.87,'normal'],[0.49,0.753,'stat_intelligence'],[0.502,0.675,'normal'],[0.528,0.595,'branch']] },
+    // ---- 森の道（分かれ道の左）：大樹の森 → 深い森の小道。能力・イベント・休む・宝が多い ----
+    { backgroundId: '06', route: 'forest', image: F + 'ch1_bg_06.webp', name: '大樹の森', terrain: 'forest',
       road: [[0.97,0.5,0.45],[0.85,0.5,0.38],[0.75,0.51,0.31],[0.68,0.54,0.21],[0.63,0.57,0.12],[0.59,0.6,0.07]],
-      nodes: [[0.5,0.87],[0.519,0.73],[0.578,0.62]] },
-    { backgroundId: '07', image: F + 'ch1_bg_07.webp', name: '深い森の小道', terrain: 'forest',
+      nodes: [[0.5,0.87,'stat_evasion'],[0.509,0.759,'event'],[0.538,0.685,'stat_life'],[0.585,0.61,'rest']] },
+    { backgroundId: '07', route: 'forest', image: F + 'ch1_bg_07.webp', name: '深い森の小道', terrain: 'forest',
       road: [[0.97,0.5,0.46],[0.85,0.5,0.4],[0.75,0.5,0.33],[0.68,0.51,0.25],[0.63,0.54,0.16],[0.6,0.56,0.11]],
-      nodes: [[0.5,0.87],[0.503,0.73],[0.547,0.62]] },
-    { backgroundId: '08', image: F + 'ch1_bg_08.webp', name: '水道橋の見える道', terrain: 'highland',
+      nodes: [[0.5,0.87,'treasure'],[0.5,0.773,'stat_intelligence'],[0.515,0.671,'normal'],[0.557,0.605,'stat_accuracy']] },
+    // ---- 大橋の道（分かれ道の右）：水道橋の見える道 → 天空の大橋。野生バトルが多い ----
+    { backgroundId: '08', route: 'bridge', image: F + 'ch1_bg_08.webp', name: '水道橋の見える道', terrain: 'highland',
       road: [[0.97,0.5,0.48],[0.85,0.5,0.45],[0.75,0.51,0.4],[0.67,0.53,0.33],[0.61,0.56,0.25],[0.56,0.6,0.15],[0.53,0.62,0.09]],
-      nodes: [[0.5,0.87],[0.512,0.742],[0.545,0.639],[0.6,0.56]] },
-    { backgroundId: '09', image: F + 'ch1_bg_09.webp', name: '天空の大橋', terrain: 'bridge',
+      nodes: [[0.5,0.87,'normal'],[0.512,0.742,'wild'],[0.545,0.639,'stat_power'],[0.6,0.56,'event']] },
+    { backgroundId: '09', route: 'bridge', image: F + 'ch1_bg_09.webp', name: '天空の大橋', terrain: 'bridge',
       road: [[0.97,0.5,0.48],[0.85,0.5,0.46],[0.75,0.49,0.42],[0.65,0.48,0.37],[0.57,0.46,0.3],[0.5,0.44,0.19],[0.46,0.45,0.12],[0.43,0.46,0.07]],
-      nodes: [[0.5,0.87],[0.49,0.752],[0.48,0.653],[0.461,0.575],[0.444,0.513],[0.45,0.46]] },
-    { backgroundId: '10', image: F + 'ch1_bg_10.webp', name: '風の丘', terrain: 'highland',
+      nodes: [[0.5,0.87,'normal'],[0.49,0.752,'treasure'],[0.48,0.653,'normal'],[0.461,0.575,'wild'],[0.444,0.513,'stat_toughness'],[0.45,0.46,'normal']] },
+    // ---- 合流後（終盤）：風の丘の最初のマス＝合流 → 古塔の遺跡 → 遺跡の高台 → 城へ続く道 → 大会会場の門前（ライバル → ゴール） ----
+    { backgroundId: '10', route: 'late', image: F + 'ch1_bg_10.webp', name: '風の丘', terrain: 'highland',
       road: [[0.97,0.5,0.48],[0.85,0.5,0.46],[0.75,0.5,0.43],[0.65,0.5,0.37],[0.58,0.51,0.28],[0.53,0.52,0.18],[0.49,0.53,0.1]],
-      nodes: [[0.5,0.87],[0.5,0.751],[0.5,0.652],[0.511,0.573],[0.525,0.51]] },
-    { backgroundId: '11', image: F + 'ch1_bg_11.webp', name: '古塔の遺跡', terrain: 'highland',
+      nodes: [[0.5,0.87,'merge'],[0.5,0.751,'stat_power'],[0.5,0.652,'normal'],[0.511,0.573,'wild'],[0.525,0.51,'stat_evasion']] },
+    { backgroundId: '11', route: 'late', image: F + 'ch1_bg_11.webp', name: '古塔の遺跡', terrain: 'highland',
       road: [[0.97,0.5,0.48],[0.85,0.5,0.45],[0.75,0.51,0.4],[0.65,0.52,0.33],[0.58,0.53,0.25],[0.53,0.53,0.16],[0.49,0.53,0.09]],
-      nodes: [[0.5,0.87],[0.51,0.752],[0.52,0.652],[0.53,0.574],[0.53,0.51]] },
-    { backgroundId: '12', image: F + 'ch1_bg_12.webp', name: '遺跡の高台', terrain: 'highland',
+      nodes: [[0.5,0.87,'event'],[0.511,0.737,'normal'],[0.526,0.605,'stat_toughness'],[0.53,0.525,'treasure']] },
+    { backgroundId: '12', route: 'late', image: F + 'ch1_bg_12.webp', name: '遺跡の高台', terrain: 'highland',
       road: [[0.97,0.5,0.48],[0.85,0.5,0.45],[0.75,0.51,0.42],[0.65,0.53,0.37],[0.59,0.53,0.27],[0.55,0.53,0.16],[0.53,0.53,0.11]],
-      nodes: [[0.5,0.87],[0.511,0.745],[0.53,0.642],[0.53,0.56]] },
-    { backgroundId: '13', image: F + 'ch1_bg_13.webp', name: '城へ続く道', terrain: 'grass',
+      nodes: [[0.5,0.87,'normal'],[0.511,0.745,'stat_accuracy'],[0.53,0.642,'rest'],[0.53,0.56,'normal']] },
+    { backgroundId: '13', route: 'late', image: F + 'ch1_bg_13.webp', name: '城へ続く道', terrain: 'grass',
       road: [[0.97,0.48,0.45],[0.85,0.47,0.4],[0.75,0.47,0.32],[0.67,0.48,0.23],[0.61,0.5,0.15],[0.56,0.53,0.09],[0.52,0.55,0.06]],
-      nodes: [[0.472,0.87],[0.471,0.744],[0.49,0.641],[0.53,0.56]] },
-    { backgroundId: '14', image: F + 'ch1_bg_14.webp', name: '大会会場の門前', terrain: 'highland',
+      nodes: [[0.472,0.87,'wild'],[0.477,0.69,'event'],[0.521,0.575,'normal']] },
+    { backgroundId: '14', route: 'late', image: F + 'ch1_bg_14.webp', name: '大会会場の門前', terrain: 'highland',
       road: [[0.97,0.5,0.48],[0.85,0.5,0.47],[0.75,0.5,0.4],[0.7,0.5,0.3],[0.66,0.5,0.22],[0.63,0.5,0.15]],
-      nodes: [[0.5,0.87],[0.5,0.769],[0.5,0.68]] },
+      nodes: [[0.5,0.87,'rival'],[0.5,0.769,'normal'],[0.5,0.68,'goal']] },
   ];
-  const TOTAL_NODES = 60;   // 01〜14 の合計（tests/chapter-engine.test.mjs で確認）
+  const TOTAL_TILES = 60;   // 公式マスの総数（スタートを含まない。森・大橋の両方を合わせた全体。tests/chapter-engine.test.mjs と layoutRules.expect で確認）
   const fieldScenes = [], paths = [], landmarks = {}, foreground = {};
   const at = (pts, y, k) => { const C = [...pts].sort((a, b) => a[0] - b[0]); if (y <= C[0][0]) return C[0][k]; for (let i = 1; i < C.length; i++) if (y <= C[i][0]) { const a = C[i - 1], b = C[i]; return +(a[k] + (b[k] - a[k]) * (y - a[0]) / (b[0] - a[0])).toFixed(4); } return C[C.length - 1][k]; };
   for (const B of BACKGROUNDS) {
-    const sid = fieldScenes.length + 1, id = `w${sid}_`, near = B.nodes[0][1], far = B.nodes[B.nodes.length - 1][1];
-    fieldScenes.push({ id: sid, name: B.name, bg: B.image, w: W, h: H, bgKey: B.backgroundId, stage: B.backgroundId, exit: 'up', farBand: { to: 0.26, k: 0.95 }, depth: DEPTH, zoom: (B.camera && B.camera.zoom) || { near: 1.45, far: 2.15 }, road: { center: B.road, safe: 0.7 }, ...(B.camera && B.camera.scene ? { camera: B.camera.scene } : {}) });
+    const sid = fieldScenes.length + 1, id = `p${sid}_`, near = B.nodes[0][1], far = B.nodes[B.nodes.length - 1][1];
+    fieldScenes.push({ id: sid, name: B.name, route: B.route, bg: B.image, w: W, h: H, bgKey: B.backgroundId, stage: B.backgroundId, exit: 'up', farBand: { to: 0.26, k: 0.95 }, depth: DEPTH, zoom: (B.camera && B.camera.zoom) || { near: 1.45, far: 2.15 }, road: { center: B.road, safe: 0.7 }, ...(B.camera && B.camera.scene ? { camera: B.camera.scene } : {}) });
     landmarks[sid] = []; foreground[sid] = [];
-    // 歩く道筋：マスの点と、その間にある道の中央線の点（手前 → 奥）。歩きの途中も道から外れない
+    // 歩く道筋：マスの点と、その間にある道の中央線の点（手前 → 奥）。中央線の点は歩きの見た目だけの経由点で、サイコロの出目には数えない（出目＝公式のマス＝ノード）
     const mids = B.road.filter((p) => p[0] < near && p[0] > far).map((p) => [at(B.road, p[0], 1), p[0]]);
     const pts = [...B.nodes.map((q) => [q[0], q[1]]), ...mids].sort((a, b) => b[1] - a[1]);
-    paths.push({ id, field: sid, n: B.nodes.length, nodePts: B.nodes, curve: 'linear', terrain: B.terrain, next: [], pts });
-    if (paths.length > 1) paths[paths.length - 2].next = [id];
+    paths.push({ id, field: sid, n: B.nodes.length, nodePts: B.nodes.map((q) => [q[0], q[1]]), tiles: B.nodes.map((q) => q[2] || 'normal'), tileLook: B.nodes.map((q) => q[3] || null), curve: 'linear', terrain: B.terrain, next: [], pts,
+      ...(B.route === 'forest' || B.route === 'bridge' ? { branch: B.route } : {}) });
   }
-  const ORDER = BACKGROUNDS.map((B) => B.backgroundId), NODES = Object.fromEntries(BACKGROUNDS.map((B) => [B.backgroundId, B.nodes.length]));
-  const P = (id) => paths.find((p) => p.id === id), N = (id) => P(id).n;
-  P('w1_').start = true; P('w1_').fixed = { 0: 'start' };
-  // 強敵（strong）は正式のマスではない（2026-10-02）：天空の大橋（09）の真ん中 w9_3 の固定の強敵は外し、ほかと同じ候補マスにした
-  const gl = P('w14_'); gl.goal = true; gl.fixed = { [N('w14_') - 3]: 'rival', [N('w14_') - 1]: 'goal' };   // ライバル（強制停止）→ ゴール（大会会場の門前）
+  const P = (id) => paths.find((p) => p.id === id), N = (id) => P(id).n, PID = (bg) => `p${BACKGROUNDS.findIndex((B) => B.backgroundId === bg) + 1}_`;
+  // つながり：共通 01→05、05 の分かれ道 → 森 06→07 ／ 大橋 08→09、どちらも → 10 の合流 → 14
+  const LINKS = [['01', '02'], ['02', '03'], ['03', '04'], ['04', '05'], ['05', '06'], ['05', '08'], ['06', '07'], ['07', '10'], ['08', '09'], ['09', '10'], ['10', '11'], ['11', '12'], ['12', '13'], ['13', '14']];
+  for (const [a, b] of LINKS) P(PID(a)).next.push(PID(b));
+  const ORDER = BACKGROUNDS.map((B) => B.backgroundId), NODES = Object.fromEntries(BACKGROUNDS.map((B) => [B.backgroundId, B.nodes.filter((q) => q[2] !== 'start').length]));
+  const ROUTES = { common: ['01', '02', '03', '04', '05'], forest: ['06', '07'], bridge: ['08', '09'], late: ['10', '11', '12', '13', '14'] };
+  P(PID('01')).start = true;
+  P(PID('14')).goal = true;   // ゴール＝14 の最後のマス（大会会場の門前）。ライバル（強制停止）はその2つ手前
+  const BRANCH_AT = `${PID('05')}${N(PID('05')) - 1}`;
+  // 分かれ道（05 の最後のマス）：左＝森の道、右＝大橋の道。gate＝分かれ道で道の先に立てる左右の門（正式素材 tiles/branch_gate_left・right。ZIP の 02_branching を透過化）。label・desc は【暫定】
+  const BRANCHES = [{ at: BRANCH_AT, options: [
+    { id: 'forest', to: `${PID('06')}0`, label: '森の道', desc: '大樹の森を抜ける。能力・休むマスが多い【暫定】', side: -1, gate: 'gate_left', lean: {} },
+    { id: 'bridge', to: `${PID('08')}0`, label: '大橋の道', desc: '天空の大橋を渡る。野生バトルが多い【暫定】', side: 1, gate: 'gate_right', lean: {} },
+  ] }];
 
   const cfg = {
     chapterId: 1,
@@ -86,8 +99,9 @@
     title: 'はじまりの草原',
     patternTitle: 'はじまりの草原',
     playable: true,
-    // passNormal（2026-10-02 ユーザー判断）：効果の無い通常マス（何も割り当たらなかった候補ノード）は通過専用。出目は効果マス・ライバル・ゴールだけを数え、ターンは必ずそのどれかで終わる（何も無い道の上で止まらない）
-    rules: { turnLimit: 40, diceSides: 3, passNormal: true },   // 2026-10-01 夜：通常 Chapter のサイコロは 1〜3・40ターン（Chapter 2 と同じ。4〜6 の素材・共通の仕組みは残す）【試遊用の値】
+    // 通常マス（normal）は止まれる公式のマス（2026-10-02 の60マス再設計：出目に数え、止まると何も起きずにターンが終わる。旧 passNormal＝通過専用は廃止）。
+    //  歩きの見た目だけの経由点（paths[].pts の道の中央線の点）はマスではなく、出目に数えない
+    rules: { turnLimit: 40, diceSides: 3 },   // 2026-10-01 夜：通常 Chapter のサイコロは 1〜3・40ターン（Chapter 2 と同じ。4〜6 の素材・共通の仕組みは残す）【試遊用の値】
     forceStopKinds: ['rival'],
     tournamentDestination: 'official',
     // ---- ゴール（14 の最後のマス）に着いたあと：到着イベント専用の背景（マス・サイコロ・操作欄なし）→ フィナの短い会話 → 大会受付（ランク選択）。
@@ -98,11 +112,12 @@
         { expression: 'smile', text: 'ここが公式大会の会場だよ。' },
         { expression: 'guide', text: 'さあ、早速受付に行こう！' },
       ] },
-    backgroundTransition: { type: 'forward', ms: 700 },
-    stageOrder: ORDER, nodesPerBackground: NODES, totalNodes: TOTAL_NODES,
+    // 背景の切り替え：歩き続けたまま前の背景から次の背景へクロスフェード（ms＝溶ける時間（歩いて入る enterMs の間に終わる）、outMs／out＝前の背景の先へ歩き続ける時間・距離、back／enterMs＝次の背景の入口の手前から歩いて入る距離・時間。境目はマスではない）
+    backgroundTransition: { type: 'crossfade', ms: 460, outMs: 260, out: 80, back: 90, enterMs: 540 },
+    stageOrder: ORDER, routes: ROUTES, tilesPerBackground: NODES, totalTiles: TOTAL_TILES,
 
     fieldScenes, paths, edges: {}, nodeOverrides: {},
-    branches: [],
+    branches: BRANCHES,
 
     // anchorY 0.72（2026-10-02 歩行アニメ：0.66 → 0.72。ソラモを画面の中央下に置き、進む先の道を広く見せる）
     camera: { anchorY: 0.72, lookAhead: 0.08, followDelay: 110, zoom: { idle: 1, move: 0.985, stop: 1.015, branch: 0.93, focus: 1.02 } },
@@ -120,13 +135,13 @@
     deck: { start: U + 'deck_start.webp', aspect: 1100 / 353,
       hit: { center: { x: 0.385, y: 0.03, w: 0.23, h: 0.94 }, tl: { x: 0.012, y: 0.05, w: 0.37, h: 0.42 }, tr: { x: 0.618, y: 0.05, w: 0.37, h: 0.42 }, bl: { x: 0.012, y: 0.53, w: 0.37, h: 0.42 }, br: { x: 0.618, y: 0.53, w: 0.37, h: 0.42 } } },
 
-    // ---- 配置の規則（固定骨格＋候補ノードへのランダムな割り当て）【暫定：総マス数と一緒に見直す】 ----
+    // ---- 配置の規則（2026-10-02 の60マス再設計：固定配置）。マスの種類は BACKGROUNDS[].nodes の3番目のとおり（ランダムに並べ替えない）。
+    //  Chapter開始時に seed で決めるのは中身だけ：イベントの内容（eventPool。休む＝疲れ回復のイベント）・宝箱の段階・野生がレアモンスターマスになるか（rareBattleRate）。
+    //  expect＝正式の内訳（スタートを含まない60マス）。構成を変えたら validateLayout がこの数で確かめる ----
     layoutRules: {
-      counts: { stat: [12, 15], event: [6, 9], battle: [4, 6], treasure: [3, 4] },   // 59歩の 20〜25%・10〜15%・7〜10%・5〜7%【暫定】
-      maxPerStat: 4, recoveryEvents: [2, 4], recoveryPerRoute: true,
-      noBattleFirst: 5, maxBattlesFirst: [12, 1], noEventLast: 4,
-      maxFieldShare: 0.25, minFieldShare: 0,
-      rareBattleRate: 0.1,   // バトルの候補マスがレアモンスターマスになる確率（2026-10-02 正式：10%）。配置を作るとき（Chapter開始時に1回）に決めて保存する
+      fixed: true,
+      expect: { total: TOTAL_TILES, groups: { normal: 19, stat: 18, wild: 6, event: 6, treasure: 4, rest: 3, rival: 1, branchSpecial: 2, goal: 1 }, perStat: 3 },
+      rareBattleRate: 0.1,   // 野生のマスがレアモンスターマスになる確率（2026-10-02 正式：10%）。配置を作るとき（Chapter開始時に1回）に決めて保存する
       eventTierWeights: { normal: 70, rare: 25, special: 5 },
     },
 
@@ -189,10 +204,14 @@
         stat_accuracy: TL + 'tile_stat_accuracy.webp', stat_evasion: TL + 'tile_stat_evasion.webp', stat_toughness: TL + 'tile_stat_toughness.webp',
         wild: TL + 'tile_wild_battle.webp', rare: TL + 'tile_rare_monster.webp', rival: TL + 'tile_rival.webp',
         treasure: TL + 'tile_treasure.webp', rest: TL + 'tile_rest.webp', event: TL + 'tile_event.webp', goal: TL + 'tile_chapter_goal.webp',
+        branch: TL + 'tile_branch.webp', merge: TL + 'tile_merge.webp',   // 分かれ道・合流（2026-10-02。ZIP の 02_branching の board_node_branch／merge を透過化）
       },
       // 宝箱のマスに止まったとき、マスの脇に現れて開く宝箱（tier ごと。書いていない tier＝rare は従来の表示＝マスUIだけ）
       chests: { normal: { closed: 'chest_normal_closed', open: 'chest_normal_open', w: 128 }, special: { closed: 'chest_special_closed', open: 'chest_special_open', w: 134 } },
-      size: { w: 230, flat: 0.46, depthPow: 0.65 }, placeholder: false, replacesLandmarks: true,   // 表示の大きさ：基準 230px × 奥行き^0.65（手前 約250px・奥 約130px＝背景の画素。縦は 0.46 に潰して地面に置いた見え方）
+      // 大きさ：基準 w × 奥行き^depthPow（背景の画素）。flat＝縦の潰れ（奥 far ほど平たい楕円・手前 near ほど円に近い。奥行き d で補間）。normal＝通常マスの大きさの倍率（控えめ）。
+      //  pedestal＝共通の台座（接地影・石の台座の厚み thick・金属の縁 rim。CSS だけ）。ノードごとの上書きは BACKGROUNDS[].nodes の4番目 { s, f }
+      size: { w: 190, depthPow: 0.7, flat: { near: 0.52, far: 0.3, dNear: 1.12, dFar: 0.4 }, normal: 0.8, thick: 0.06, rim: 0.016 }, pedestal: true, placeholder: false, replacesLandmarks: true,
+      gates: { gate_left: TL + 'branch_gate_left.webp', gate_right: TL + 'branch_gate_right.webp' },   // 分かれ道で道の先に立てる左右の門（branches[].options[].gate）   // 表示の大きさ：基準 230px × 奥行き^0.65（手前 約250px・奥 約130px＝背景の画素。縦は 0.46 に潰して地面に置いた見え方）
     },
     // 演出の割り当て（config.assets のキー）。statUp＝能力マスの結果の枠（文字は HTML）。turnWarning.at＝警告を出す残りターン（未決＝空＝出さない。例：[5, 1]）
     effects: { statUp: 'fx_stat_up', turnWarning: { asset: 'fx_turn_warning', at: [] } },

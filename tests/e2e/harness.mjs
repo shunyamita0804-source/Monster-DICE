@@ -85,7 +85,7 @@ export async function launch() {
     if (!opt.karen) await ctx.addInitScript(() => { window.MM_QA_NO_KAREN = true; });
     if (!opt.intro) await ctx.addInitScript(() => { window.MM_QA_NO_INTRO = true; });   // Chapter開始の俯瞰図の演出は intro:true のテストだけ
     if (!opt.arrival) await ctx.addInitScript(() => { window.MM_QA_NO_ARRIVAL = true; });   // 大会会場への到着のフィナの会話は arrival:true のテストだけ（背景の切り替えと受付は常に出る）
-    // legacyStep：1地点ずつ止まる旧来の進み方で確かめるテスト用（Chapter 1 の rules.passNormal＝通常マスの通過専用 を、このテストのページでだけ切る。2026-10-02）
+    // legacyStep：旧 rules.passNormal（通常マスの通過専用）を、このテストのページでだけ切っていた名残。2026-10-02 の60マス再設計から Chapter 1 の通常マスは止まれるので、付けても何も変わらない
     if (opt.legacyStep) await ctx.addInitScript(() => { document.addEventListener('DOMContentLoaded', () => { try { MMCH.getConfig(1).rules.passNormal = false; } catch (e) {} }); });
     const page = await ctx.newPage();
     // 全テストを並列で流すと、約9MBの index.html の読み込みが遅くなる。待ち時間は長めにとる（成功時の速さは変わらない）

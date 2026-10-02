@@ -32,6 +32,7 @@
   const SPECIAL = fz(['stat', 'event', 'battle', 'treasure']);             // 特殊地点の種類
   const TIERS = fz(['normal', 'rare', 'special']);
   const BATTLE_TYPES = fz(['wild', 'rare', 'strong', 'rival']);
+  const SKELETON = fz(['start', 'goal', 'rival', 'strong', 'special', 'branch', 'merge']);   // 固定の骨格（path.tiles に書いたら kind になる。branch＝分かれ道・merge＝合流：止まっても何も起きない公式のマス）
 
   // ---------------------------------------------------------
   // 既定のルール（config で上書きできる。正式仕様の値）
@@ -179,15 +180,20 @@
       curves[p.id] = { pts, s: M.s, total: M.total, field: p.field, terrain: p.terrain || 'grass', speed: p.speed || 1 };
       // マスの座標：path.nodePts（[x, y] を n 個）があればその点（背景ごとに画像を見て決めた座標）。無ければ曲線の上に奥行き補正で等間隔
       const NP = Array.isArray(p.nodePts) && p.nodePts.length === p.n ? p.nodePts : null;
+      // マスの種類の固定（2026-10-02 Chapter 1 の60マス）：path.tiles＝[種別名…]（MMCH.NODE_TYPES の名前＋'branch'・'merge'）。骨格の種類（start・goal・rival・strong・special・branch・merge）はそのまま kind に、
+      //  それ以外（能力・野生・イベント・宝・休む・通常）は候補ノード（slot）のまま tile に持ち、配置（layoutRules.fixed）がその種類を割り当てる。path.tileLook＝[{ s（大きさの倍率）, f（縦の潰れ） }…]（マスUIの見た目の上書き。任意）
+      const TL = Array.isArray(p.tiles) && p.tiles.length === p.n ? p.tiles : null, TLK = Array.isArray(p.tileLook) ? p.tileLook : [];
       for (let i = 0; i < p.n; i++) {
-        const id = `${p.id}${i}`, kind = (p.fixed && p.fixed[i]) || 'slot', o = OV[id] || {};
+        const id = `${p.id}${i}`, tile = TL ? TL[i] : null, o = OV[id] || {};
+        const kind = (p.fixed && p.fixed[i]) || (tile && SKELETON.includes(tile) ? tile : 'slot');
         const s = NP ? sOfPoint(pts, M, NP[i], sc.w || 1, sc.h || 1) : p.n === 1 ? 0 : (M.total * i) / (p.n - 1), pos = NP ? [NP[i][0], NP[i][1]] : pointAt(pts, M, s);
         nodes[id] = { id, path: p.id, idx: i, field: p.field, x: pos[0], y: pos[1], s, d: +depthOf(sc, pos[1]).toFixed(3), kind, branch: p.branch || null,
           side: o.side || (p.side && p.side[i]) || (i % 2 ? 1 : -1), terrain: o.terrain || p.terrain || 'grass',
           // 見せ方の上書き（config.nodeOverrides）：monster＝止まる位置（既定は道の上の点）、landmark＝目印の位置・大きさ、camera＝カメラの寄り
           mx: clampToRoad(sc, o.monster ? o.monster[0] : pos[0], o.monster ? o.monster[1] : pos[1]).x, my: o.monster ? o.monster[1] : pos[1], lm: o.landmark || null, cam: o.camera || null,   // 止まる位置は道の安全域の中（fieldScenes[].road）
           // 強制停止：path の forceStop:[index...]・nodeOverrides[id].forceStop・config.forceStopKinds の種類。出目が残っていてもここで止まり、残りの移動は消える（MMP8.step が node.stop で判定）
-          forceStop: !!((p.forceStop && p.forceStop.includes(i)) || o.forceStop === true || stopKinds.includes(kind)) };
+          forceStop: !!((p.forceStop && p.forceStop.includes(i)) || o.forceStop === true || stopKinds.includes(kind)),
+          ...(tile ? { tile } : {}), ...(isObj(TLK[i]) ? { look: TLK[i] } : {}) };
         if (p.noSlot && p.noSlot.includes(i) && kind === 'slot') nodes[id].kind = 'normal';
         order.push(id);
         if (i > 0) conn[`${p.id}${i - 1}`] = [id];
@@ -257,8 +263,36 @@
   /** 配置で割り当てる種類：layoutRules.counts に書いた種類だけ（書かない種類は乱数を消費しない＝既存の seed の配置を変えない） */
   const slotTypes = (L) => SPECIAL.filter((t) => Array.isArray(L.counts && L.counts[t]));
   /** 配置の制約を満たすか（違反の理由の配列。空なら合格） */
+  /**
+   * 公式マスの内訳（スタートは数えない。分岐・合流は両方のルートを合わせた全体＝1回の旅で全部は通らない）。
+   *  byType：種別名ごと（stat_life…・wild・event・treasure・rest・rival・branch・merge・goal・normal）、groups：仕様の内訳の分類、stats：能力ごと
+   */
+  function tileCensus(cfg) {
+    const g = buildGraph(cfg), byType = {}, stats = {};
+    for (const id of g.order) {
+      const n = g.nodes[id]; if (n.kind === 'start') continue;
+      const name = SKELETON.includes(n.kind) ? n.kind : (n.tile || 'normal');
+      byType[name] = (byType[name] || 0) + 1;
+      const b = NODE_TYPES[name]; if (b && b.t === 'stat') stats[b.k] = (stats[b.k] || 0) + 1;
+    }
+    const c = (k) => byType[k] || 0, statTotal = Object.values(stats).reduce((s, x) => s + x, 0);
+    const groups = { normal: c('normal'), stat: statTotal, wild: c('wild'), event: c('event'), treasure: c('treasure'), rest: c('rest'), rival: c('rival'), branchSpecial: c('branch') + c('merge') + c('special'), goal: c('goal') };
+    const total = g.order.length - (g.order.some((id) => g.nodes[id].kind === 'start') ? 1 : 0);
+    return { total, byType, stats, groups };
+  }
+  /** 固定配置の検査（layoutRules.expect＝{ total, groups:{…}, perStat }）。違反の理由の配列 */
+  function censusErrors(cfg) {
+    const E = cfg.layoutRules.expect; if (!E) return [];
+    const C = tileCensus(cfg), errs = [];
+    if (E.total != null && C.total !== E.total) errs.push(`total:${C.total}`);
+    for (const [k, v] of Object.entries(E.groups || {})) if (C.groups[k] !== v) errs.push(`${k}:${C.groups[k]}`);
+    if (E.perStat != null) for (const k of STATS) if ((C.stats[k] || 0) !== E.perStat) errs.push(`${k}:${C.stats[k] || 0}`);
+    return errs;
+  }
   function validateLayout(cfg, g, assign) {
     const L = cfg.layoutRules, errs = [], TYPES = slotTypes(L);
+    if (L.fixed) return censusErrors(cfg);   // 固定配置（マスの種類は config の path.tiles）：内訳だけを確かめる
+
     let recoveryTotal = 0;
     for (const a of Object.values(assign)) if (a.t === 'event' && a.recovery) recoveryTotal++;
     const [rlo, rhi] = L.recoveryEvents || [1, 3];
@@ -282,8 +316,24 @@
     return errs;
   }
   /** 候補ノードへの割り当てを1回作る（制約の検査は validateLayout） */
+  /** 固定配置（layoutRules.fixed）：マスの種類は path.tiles のとおり。中身（イベントの内容・宝箱の段階・野生がレアモンスターマスになるか）だけを seed で決める */
+  function fixedLayout(cfg, g, r) {
+    const L = cfg.layoutRules, assign = {}, pool = cfg.eventPool || [], rec = pool.filter((e) => e.recovery), other = pool.filter((e) => !e.recovery);
+    const rareRate = Number(L.rareBattleRate) || 0;
+    for (const id of g.order) {
+      const n = g.nodes[id], b = n.kind === 'slot' && n.tile ? NODE_TYPES[n.tile] : null; if (!b || !SPECIAL.includes(b.t)) continue;
+      const a = assign[id] = { ...b };
+      if (a.t === 'event' && a.recovery) { const e = pickWeighted(rec, r); Object.assign(a, { tier: e.tier, ev: e.id }); }
+      else if (a.t === 'event') { const tier = pickWeighted(TIERS.map((t) => ({ t, weight: (L.eventTierWeights || {})[t] || 0 })), r).t; const c = other.filter((x) => x.tier === tier), e = c.length ? pickWeighted(c, r) : pickWeighted(other, r); Object.assign(a, { tier: e.tier, ev: e.id }); }
+      else if (a.t === 'treasure') a.tier = pickWeighted(TIERS.map((t) => ({ t, weight: ((cfg.treasurePool || {}).tierWeights || {})[t] || 0 })), r).t;
+      else if (a.t === 'battle' && a.bt === 'wild') a.bt = rareRate > 0 && r() < rareRate ? 'rare' : 'wild';   // レアモンスターマス：野生のマスごとに配置のとき rareBattleRate（正式 10%）
+    }
+    for (const id of g.order) { const k = g.nodes[id].kind; if (k === 'strong' || k === 'rival') assign[id] = { t: 'battle', bt: k, fixed: true }; }
+    return assign;
+  }
   function draftLayout(cfg, g, r) {
     const L = cfg.layoutRules, assign = {}, TYPES = slotTypes(L);
+    if (L.fixed) return fixedLayout(cfg, g, r);
     const slots = g.order.filter((id) => g.nodes[id].kind === 'slot');
     const shared = slots.filter((id) => !g.nodes[id].branch), byBranch = {};
     slots.filter((id) => g.nodes[id].branch).forEach((id) => { (byBranch[g.nodes[id].branch] = byBranch[g.nodes[id].branch] || []).push(id); });
@@ -597,7 +647,7 @@
   function attach(P8 = root.MMP8) { if (P8 && typeof P8.registerChapterDriver === 'function') P8.registerChapterDriver(DRIVER); }
 
   root.MMCH = fz({ STATS, SPECIAL, TIERS, BATTLE_TYPES, NODE_TYPES, REACTION_KEYS, DEFAULT_RULES, rng, newSeed, registerConfig, getConfig, patterns, handles, selectPattern,
-    buildGraph, trackOf, alongPersp, smoothCurve, measure, pointAt, routeBetween, depthOf, roadAt, clampToRoad, stepsToMerge, sceneNodes, nextFields, sceneOrder, routeLengths,
+    SKELETON, tileCensus, censusErrors, buildGraph, trackOf, alongPersp, smoothCurve, measure, pointAt, routeBetween, depthOf, roadAt, clampToRoad, stepsToMerge, sceneNodes, nextFields, sceneOrder, routeLengths,
     validateLayout, generateLayout, initRun, fieldOf, configFor, graphFor, validField, sanitize, typeAt, nodeTypeName, assignOfType, turnInfo,
     fatigue, addFatigue, rollFatigue, canRoll, recover, carryFatigue, registerFatigueItem, fatigueItemEffect, useFatigueItem,
     statGain, isWaypoint, registerEventHandler, registerPassHandler, onPass, resolve, reactionKeyOf, registerReactionResolver, companionReaction, DRIVER, attach, rulesOf });

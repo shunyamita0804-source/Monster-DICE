@@ -145,13 +145,13 @@ T('QA-SR3：サイコロ演出中に再読み込み → 出目・使用ターン
   await pg.evaluate(() => { Math.random = window.__rnd; });
   const st = JSON.parse(await stored(pg));
   assert.deepEqual(st.m.raise.pend, { roll: 3, left: 3, stage: 'move', fatigueAdded: 7 }, '出目（と疲れ +7）は演出の前に保存済み');
-  assert.equal(st.m.raise.turnsUsed, 1); assert.equal(st.m.raise.node, 'w1_0'); assert.equal(st.m.raise.fatigue, 7);
+  assert.equal(st.m.raise.turnsUsed, 1); assert.equal(st.m.raise.node, 'p1_0'); assert.equal(st.m.raise.fatigue, 7);
   const { boot } = await reloadResume(pg, '#chf');
   assert.deepEqual(boot, st, '起動直後の S は保存された途中状態と同じ（振り直しなし）');
   await pg.waitForFunction(() => S.m.raise.pend == null && !bBusy && !document.querySelector('.chpop'), null, { timeout: 15000 });
   await pg.waitForSelector('#brollbtn, #chf-ui .chsheet');
   const after = await H.getS(pg);
-  assert.equal(after.m.raise.node, 'w1_3', '出目3の分だけ進んだ');
+  assert.equal(after.m.raise.node, 'p1_3', '出目3の分だけ進んだ');
   assert.equal(after.m.raise.turnsUsed, 1, 'ターンは1回分だけ（二重に使っていない）'); assert.equal(after.m.raise.fatigue, 7, '疲れも1回分だけ');
   assert.deepEqual(after, JSON.parse(await stored(pg)), '進んだ結果も保存済み');
   noErrors(p);

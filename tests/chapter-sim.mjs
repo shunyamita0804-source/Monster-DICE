@@ -42,12 +42,14 @@ export function runOnce(E, seed, policy = 'cautious', branchPick = null, chapter
       continue;
     }
     if (ph === 'move') { P8.step(S, m); continue; }
-    if (ph === 'branch') { const opts = m.raise.pend.opts, pickId = branchPick ? opts.find((o) => o.startsWith(branchPick === 'bridge' ? 'a' : 'b')) : opts[Math.floor(rnd() * opts.length)]; P8.chooseBranch(S, m, pickId); continue; }
+    if (ph === 'branch') { const opts = m.raise.pend.opts, pickId = branchPick ? (opts.find((o) => (CH.graphFor(m).nodes[o] || {}).branch === branchPick) || opts.find((o) => o.startsWith(branchPick === 'bridge' ? 'a' : 'b')) || opts[0]) : opts[Math.floor(rnd() * opts.length)]; P8.chooseBranch(S, m, pickId); continue; }   // 道の名前（node.branch）で選ぶ（旧 Chapter の a／b の接頭辞も読む）
     if (ph === 'resolve') {
       const r = P8.resolveLanding(S, m, rnd), fx = r.fx || {};
       if (fx.kind === 'chstat') { st.stat++; st.statOutcome[fx.outcome]++; }
       else if (fx.kind === 'treasure') st.treasure++;
+      else if (fx.kind === 'fatigue') { st.event++; st.restStops = (st.restStops || 0) + 1; }
       else if (fx.ev) st.event++;
+      else if (fx.kind === 'none' && fx.note === 'normal') st.normalStops = (st.normalStops || 0) + 1;
       if (fx.kind === 'battle') { st.battle++; P8.beginBattle(S, m, { kind: 'practice', rank: 0 }); P8.markBattleDone(S); P8.finishBattle(S, m, rnd); }
       continue;
     }
@@ -56,8 +58,8 @@ export function runOnce(E, seed, policy = 'cautious', branchPick = null, chapter
   st.turns = m.raise.turnsUsed; st.goal = !!m.raise.goal; st.branch = (m.raise.field && m.raise.field.branch) || null; st.endFatigue = CH.fatigue(m);
   return st;
 }
-export function simulate(E, n = 1000, policy = 'cautious', seed0 = 20260930, chapter = 1) {
-  const runs = []; for (let i = 0; i < n; i++) runs.push(runOnce(E, seed0 + i * 101, policy, null, chapter));
+export function simulate(E, n = 1000, policy = 'cautious', seed0 = 20260930, chapter = 1, branchPick = null) {
+  const runs = []; for (let i = 0; i < n; i++) runs.push(runOnce(E, seed0 + i * 101, policy, branchPick, chapter));
   const avg = (xs) => xs.reduce((a, b) => a + b, 0) / Math.max(1, xs.length), med = (xs) => { const a = [...xs].sort((x, y) => x - y); return a.length ? a[Math.floor(a.length / 2)] : 0; };
   const reached = runs.filter((r) => r.goal), by = (b) => reached.filter((r) => r.branch === b).map((r) => r.turns);
   return {
@@ -71,9 +73,12 @@ export function simulate(E, n = 1000, policy = 'cautious', seed0 = 20260930, cha
     avgRests: +avg(runs.map((r) => r.rests)).toFixed(2), avgForcedRests: +avg(runs.map((r) => r.forcedRests)).toFixed(2),
     statOutcome: ['ok', 'great', 'fail'].reduce((o, k) => ({ ...o, [k]: runs.reduce((a, r) => a + r.statOutcome[k], 0) }), {}),
     minTurns: Math.min(...reached.map((r) => r.turns)), maxTurns: Math.max(...reached.map((r) => r.turns)),
+    p90Turns: (() => { const a = reached.map((r) => r.turns).sort((x, y) => x - y); return a.length ? a[Math.floor(a.length * 0.9)] : 0; })(),
+    avgNormalStops: +avg(runs.map((r) => r.normalStops || 0)).toFixed(2), avgRestStops: +avg(runs.map((r) => r.restStops || 0)).toFixed(2),
   };
 }
 if (process.argv[1] && process.argv[1].endsWith('chapter-sim.mjs')) {
   const E = loadEngine(), n = +(process.argv[2] || 1000), chapter = +(process.argv[4] || 1);   // 使い方：node tests/chapter-sim.mjs [回数] [方針] [Chapter 番号]
-  for (const pol of process.argv[3] ? [process.argv[3]] : ['cautious', 'forced']) console.log(JSON.stringify(simulate(E, n, pol, 20260930, chapter), null, 1));
+  const pick = process.argv[5] || null;   // 5番目：分岐の道（forest｜bridge など。省略＝ランダム）
+  for (const pol of process.argv[3] ? [process.argv[3]] : ['cautious', 'forced']) console.log(JSON.stringify(simulate(E, n, pol, 20260930, chapter, pick), null, 1));
 }

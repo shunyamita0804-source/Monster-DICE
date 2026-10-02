@@ -1136,6 +1136,15 @@ button.mkc b{font-size:.9rem}button.mkc small{font-size:.66rem;color:#ffe9b0}
 .chf-obj{transition:opacity .35s ease}
 .chf-obj.hid{opacity:0!important}
 .chf-obj.brhide{display:none!important}
+.chf-cam.chf-xout{pointer-events:none}
+/* 分かれ道の左右の門（tileUI.gates）：道の先の左右に立てる。下端が地面（足元の位置）。道の名前は門の下 */
+.chf-brgate{position:absolute;transform:translate(-50%,-100%);z-index:8;pointer-events:none;animation:chfGateIn .45s ease-out both}
+.chf-brgate img{display:block;height:100%;width:auto;filter:drop-shadow(0 calc(6px * var(--d,1)) calc(8px * var(--d,1)) rgba(0,0,0,.35))}
+.chf-brgate b{position:absolute;left:50%;top:100%;transform:translate(-50%,calc(4px * var(--d,1)));white-space:nowrap;padding:calc(3px * var(--d,1)) calc(12px * var(--d,1));border-radius:999px;background:rgba(14,24,54,.82);border:1px solid rgba(232,200,106,.85);color:#fff3cf;font:700 calc(24px * var(--d,1))/1.2 'Noto Sans JP',sans-serif}
+@keyframes chfGateIn{from{opacity:0;transform:translate(-50%,-92%)}to{opacity:1;transform:translate(-50%,-100%)}}
+@media (prefers-reduced-motion:reduce){.chf-brgate{animation:none}}
+.chroute.gi{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;column-gap:10px;align-items:center;text-align:left}
+.chroute.gi .chroute-gate{grid-row:1/3;height:46px;width:auto}
 .chf-brhint{position:absolute;width:calc(150px * var(--d,1));height:calc(48px * var(--d,1));transform:translate(-50%,-50%);border-radius:50%;border:2px solid rgba(255,226,140,.85);box-shadow:0 0 14px rgba(255,214,110,.6),inset 0 0 10px rgba(255,214,110,.35);pointer-events:none;animation:chfBrHint 1.4s ease-in-out infinite;z-index:9}
 .chf-brhint b{position:absolute;left:50%;bottom:100%;transform:translate(-50%,-6px);white-space:nowrap;font:700 calc(26px * var(--d,1))/1.2 'Noto Sans JP',sans-serif;color:#fff6d8;text-shadow:0 1px 3px rgba(0,0,0,.8)}
 @keyframes chfBrHint{0%,100%{opacity:.55}50%{opacity:1}}
@@ -1421,6 +1430,15 @@ button.mkc b{font-size:.9rem}button.mkc small{font-size:.66rem;color:#ffe9b0}
 @keyframes chtilehit{0%{opacity:0}25%{opacity:1}100%{opacity:0}}
 @keyframes chtilepop{0%{transform:scale(1)}40%{transform:scale(1.06)}100%{transform:scale(1)}}
 @media (prefers-reduced-motion:reduce){.chf-tile.hit::before,.chf-tile.hit img{animation:none}}
+/* 共通の台座（2026-10-02 の60マス再設計。tileUI.pedestal）：地面 → 薄く短い接地影（.chf-tsh）→ 石の台座の厚み＋金属の縁（.chf-tped）→ マスの絵（img）。
+   大きさ・縦の潰れ（奥ほど平たい楕円）は field-view の tileBox が style に書く（--th＝台座の厚み、--rim＝縁の太さ。px）。通常マスは絵が無く、台座の石の面だけ（.k-normal。控えめ） */
+.chf-tile.ped img{position:relative}
+.chf-tile.ped .chf-tsh{position:absolute;left:-9%;right:-9%;top:-4%;bottom:-20%;border-radius:50%;background:radial-gradient(closest-side,rgba(30,22,12,.34),rgba(30,22,12,.16) 70%,rgba(30,22,12,0));pointer-events:none}
+.chf-tile.ped .chf-tped{position:absolute;left:-3%;right:-3%;top:-4%;bottom:-4%;border-radius:50%;box-sizing:border-box;border:var(--rim,3px) solid #94733a;background:radial-gradient(ellipse at 50% 34%,#d2c5a6 0%,#b09f7e 48%,#8a7a5c 84%,#6a5d46 100%);box-shadow:inset 0 calc(var(--rim,3px) * .8) 0 rgba(255,236,186,.35),inset 0 calc(var(--rim,3px) * -1) 0 rgba(48,34,14,.4),0 var(--th,4px) 0 -1px rgba(92,80,60,.95),0 calc(var(--th,4px) + .5px) calc(var(--th,4px) * .9) rgba(20,14,6,.28);pointer-events:none}
+.chf-tile.ped.k-normal{opacity:.94}
+.chf-tile.ped.k-normal .chf-tped{border-color:#8a7650;background:radial-gradient(ellipse at 50% 36%,#cdbf9f 0%,#ad9c7b 52%,#857558 88%,#6a5d46 100%)}
+.chf-tile.ped.k-normal .chf-tface{position:absolute;left:22%;right:22%;top:24%;bottom:24%;border-radius:50%;border:1px solid rgba(78,62,38,.45);box-shadow:inset 0 1px 0 rgba(40,30,16,.25),0 1px 0 rgba(255,240,205,.35);pointer-events:none}
+.chf-tile.ped.k-normal.hit .chf-tped{border-color:#c9a14f}
 .chf-tile.ph{border:2px dashed rgba(255,255,255,.9);border-radius:50%;background:rgba(255,0,170,.16);box-shadow:0 0 0 1.5px rgba(0,0,0,.45),inset 0 0 0 1.5px rgba(0,0,0,.35)}
 .chf-tile.ph b{position:absolute;left:50%;top:100%;transform:translate(-50%,2px) scale(calc(.55 + var(--d,1) * .45));transform-origin:50% 0;padding:1px 5px;border-radius:4px;background:rgba(255,0,170,.85);color:#fff;font:700 11px/1.3 var(--mm-font-body);white-space:nowrap;letter-spacing:.02em}
 /* 大会会場への到着（config.arrival）：到着イベント専用の背景をフィールドの上に重ねる（マス・サイコロ・操作欄は出さない） */
