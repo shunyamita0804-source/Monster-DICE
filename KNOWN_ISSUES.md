@@ -248,3 +248,14 @@
 - 影響：止まる回数は変わらず、ゴールまでのターン数が平均 32 → 16 に減った（40ターンの上限では余る）。ターン上限・マス数の見直しはユーザー判断（未決）。
 - 歩く距離が長くなった（出目3で通常マスを含めて最大6〜7地点を歩く）。歩く速さは変えていない。
 - Chapter開始の演出は Chapter 2 にも同じ流れで出る（Chapter 2 の設定は旧形式のまま＝会場 → 海上 → 海中 → スタート）。
+
+## ボードUI v2・Pattern A 背景・歩行素材（2026-10-02）
+- Pattern A の背景（ZIP mismon_ch1_patternA_final_assets）：14枚＋到着イベント1枚とも、組み込み済みの final/ と同じ絵（同じ大きさ・差は WebP の圧縮だけ）。追加・差し替えはしていない。参考画像 tournament_rank_select_reference は以前と同じく参考だけ。
+- ボードUI v2（ZIP mystic-monsters-board-ui-assets-2026-10-01-v2）：23枚は前の ZIP と同じファイル（バイト単位で一致）。新しい7枚はすべて候補（new_candidates・open_candidate）か用途が未決。
+  - 組み込んだ：effect_battle_encounter（野生バトル突入）・frame_stat_up（能力マスの結果の枠）・ui_turn_warning（残りターンの警告。発火ターンは未決＝出さない）。
+  - 組み込み済み（前回）：能力6種・野生・レア（旧名 strong_enemy）・ライバル・宝・休憩・？イベント・ゴールのマス、宝箱（通常・虹色の閉／開）。
+  - 使っていない（理由）：分岐・合流・左右ゲート（Chapter 1 Pattern A は今は分岐の無い1本道＝橋／森の分岐は 2026-10-01 にユーザー判断で廃止。Chapter 2 の分岐へ付けるかは未決）、frame_great_success（大成功の判定が今の仕様に無い）、effect_treasure_open（宝箱の段階との対応が未決。rare の宝箱は従来の表示のまま）、board_node_chapter_goal_arena（ゴールのマスは組み込み済みの tile_chapter_goal。差し替えるかは未決）、候補：board_node_event_scroll_candidate・frame_stat_up_whitegold_candidate_a／b・ui_item_acquired_vertical_candidate・frame_chapter_clear_gold_candidate・chapter_rank_gate_candidate_a／b・chapter_rank_gate_open_candidate（README で「正式採用は未決定・選択待ち」）。
+  - ZIP に無い：通常マス・能力DOWN のマス6種・能力DOWN／失敗の枠（MISSING_OR_PENDING）。能力が下がるイベント（つまずく −4）は今までどおりの表示。
+  - アイテム取得の画面：Chapter 1 に「アイテムを手に入れる」処理が今は無い（宝箱の中身はお金）。素材も候補だけなので未接続。
+- 歩行素材（ZIP mismon_walk_sprites_transparent）：ジオル・ガウル・ノビトンとも、透過化のときの白い背景の残りがあった。ユーザー判断で残りだけを透明にした（各 assets/monsters/{種族}_walk/README.md）。ノビトンは横向き（右向き）の絵なので、道が左へ曲がる区間でも右を向いたまま。
+- 指示書の記述と今のゲームの違い（変更していない）：Chapter 1 は「FIELD 1〜3・大橋／森の分岐・約44／48歩」ではなく、14背景・60地点の1本道（通常マスは通過専用）。能力マスは「固定 +5」ではなく成長適性（A+7〜E+3。ソラモは +5）。疲れは Chapter 開始時に 0 ではなく max(0, 疲れ−50) を持ち越す。ターン上限は 40 のまま。

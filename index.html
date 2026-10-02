@@ -1307,6 +1307,17 @@ button.mkc b{font-size:.9rem}button.mkc small{font-size:.66rem;color:#ffe9b0}
 .chpop.great small{color:#ffe07a;font:800 15px/1.3 var(--mm-font-head)}
 .chpop.fail{border-color:#8a93a8;background:linear-gradient(180deg,rgba(44,50,66,.94),rgba(22,26,38,.94))}
 .chpop.fail b{font-size:16px;color:#dfe3ec}
+.chpop.framed{min-width:0;width:min(86vw,330px);aspect-ratio:900/388;max-width:none;padding:0 22% 0;display:flex;flex-direction:column;justify-content:center;background:center/contain no-repeat;border:0;border-radius:0;box-shadow:none}
+.chpop.framed small{font-size:11px;line-height:1.3}.chpop.framed b{font-size:21px;text-shadow:0 2px 0 rgba(0,0,0,.6)}
+/* 野生バトル突入のカットイン（約0.6秒。画面の中央・操作は止めたまま＝encounter の待ち時間の中） */
+.chf-cutin{position:absolute;left:50%;top:42%;width:min(92vw,380px);transform:translate(-50%,-50%);z-index:21;pointer-events:none;animation:chfcut .62s cubic-bezier(.2,1.2,.4,1) both}
+.chf-cutin img{display:block;width:100%;height:auto}
+@keyframes chfcut{0%{opacity:0;transform:translate(-50%,-50%) scale(.45) rotate(-12deg)}35%{opacity:1;transform:translate(-50%,-50%) scale(1.06) rotate(0)}75%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.12)}}
+/* 残りターンの警告（config.effects.turnWarning.at の残りターンだけ・約1.4秒） */
+.chf-twarn{position:absolute;left:50%;top:22%;width:min(88vw,340px);aspect-ratio:900/221;transform:translateX(-50%);background:center/contain no-repeat;display:flex;align-items:center;justify-content:center;z-index:19;pointer-events:none;animation:chftw 1.4s ease both}
+.chf-twarn b{font:800 18px/1 var(--mm-font-head);color:#fff3cf;letter-spacing:.06em;text-shadow:0 2px 0 rgba(40,20,0,.75),0 0 10px rgba(0,0,0,.6)}
+@keyframes chftw{0%{opacity:0;transform:translate(-50%,-8px)}15%,80%{opacity:1;transform:translate(-50%,0)}100%{opacity:0}}
+@media (prefers-reduced-motion:reduce){.chf-cutin,.chf-twarn{animation-duration:.01s}}
 .chpop.out{opacity:0;transform:translate(-50%,-60%);transition:opacity .16s,transform .16s}
 @keyframes chpop{from{opacity:0;transform:translate(-50%,-40%) scale(.9)}}
 /* サイコロ：1枚の正式画像を translate・rotate・scale で動かす（連番画像は使わない）。STOP の上から飛び、フィールドの手前に落ちて正式の角度で止まる。止まったら金色の光の輪と出目 */

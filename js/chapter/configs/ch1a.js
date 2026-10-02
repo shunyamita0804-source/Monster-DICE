@@ -145,7 +145,7 @@
     ],
     treasurePool: { tierWeights: { normal: 70, rare: 25, special: 5 }, contents: { handler: 'gold_table', params: { table: [{ w: 4, gold: 50 }, { w: 1, gold: 150 }] } } },
     battleTypes: {
-      wild: { label: '野生のモンスター', asset: 'battle_wild' },
+      wild: { label: '野生のモンスター', asset: 'battle_wild', cutin: 'fx_battle_encounter' },   // cutin：野生バトル突入のカットイン（2026-10-02 正式。赤と金の交差。レア・ライバルには付けない）
       rare: { label: 'レアモンスター', asset: 'battle_wild' },   // レアモンスターマス（10%）。敵データ・報酬・遭遇演出は未登録＝【暫定】バトルの中身は野生と同じ
       rival: { label: 'ライバル', asset: 'battle_rival', figure: null },
     },
@@ -162,6 +162,8 @@
       treasure_normal: A + 'nodes/treasure_normal.webp', treasure_rare: A + 'nodes/treasure_rare.webp', treasure_special: A + 'nodes/treasure_special.webp',
       battle_wild: A + 'nodes/battle_wild.webp', battle_rival: A + 'nodes/battle_rival.webp',
       grass_front: A + 'env/grass_flower_border.webp',
+      // 演出（2026-10-02。ZIP mystic-monsters-board-ui-assets-2026-10-01-v2 の 03_board_effects を透過化。assets/fields/ch1a/effects/README.md）
+      fx_battle_encounter: A + 'effects/effect_battle_encounter.webp', fx_stat_up: A + 'effects/frame_stat_up.webp', fx_turn_warning: A + 'effects/ui_turn_warning.webp',
       // 宝箱（2026-10-02 正式素材。ZIP の 05_goal_and_treasure を透過化）：normal＝通常の宝箱、special＝虹色の宝箱。rare は従来の表示のまま（この2つを流用しない）
       chest_normal_closed: TL + 'chest_normal_closed.webp', chest_normal_open: TL + 'chest_normal_open.webp',
       chest_special_closed: TL + 'chest_rainbow_closed.webp', chest_special_open: TL + 'chest_rainbow_open.webp',
@@ -192,11 +194,18 @@
       chests: { normal: { closed: 'chest_normal_closed', open: 'chest_normal_open', w: 128 }, special: { closed: 'chest_special_closed', open: 'chest_special_open', w: 134 } },
       size: { w: 230, flat: 0.46, depthPow: 0.65 }, placeholder: false, replacesLandmarks: true,   // 表示の大きさ：基準 230px × 奥行き^0.65（手前 約250px・奥 約130px＝背景の画素。縦は 0.46 に潰して地面に置いた見え方）
     },
+    // 演出の割り当て（config.assets のキー）。statUp＝能力マスの結果の枠（文字は HTML）。turnWarning.at＝警告を出す残りターン（未決＝空＝出さない。例：[5, 1]）
+    effects: { statUp: 'fx_stat_up', turnWarning: { asset: 'fx_turn_warning', at: [] } },
     battleMarkers: false,
     landmarkVisibility: { stat: 'arrive', event: 'arrive', treasure: 'arrive' },   // 宝箱はマスUIがあるので、止まったときに現れる
     // ---- 歩行アニメ（2026-10-02 正式素材：ソラモの後ろ向き歩行 8カット。assets/monsters/solamo_walk_back/）。種族キーごと。無い種族は従来の画像＋CSS の上下動。
     //  その場歩行の絵：移動の間だけ 01→08 をループ（fps × 歩く速さ）、止まったら idle（01）。後ろ姿なので左右反転・前傾はしない（noFlip） ----
     monsterSprites: {
+      // 2026-10-02 正式素材（ZIP mismon_walk_sprites_transparent。assets/monsters/{種族}_walk/README.md）：ガウル 6コマ（後ろ姿）・ノビトン 8コマ（横向き＝右向き）・ジオル 8コマ。
+      //  移動の時間は種族で変えない（歩く速さは共通）。コマの速さだけ：ガウルは 6コマなので 9fps（1周 約0.67秒＝8コマの 12fps と同じ）。h は箱に対する高さ（体型の違い）
+      gauru: { walk: { frames: [1, 2, 3, 4, 5, 6].map((i) => `./assets/monsters/gauru_walk/gauru_walk_0${i}.webp`), fps: 9, idle: 0, h: 1.05, noFlip: true } },
+      nobiton: { walk: { frames: [1, 2, 3, 4, 5, 6, 7, 8].map((i) => `./assets/monsters/nobiton_walk/nobiton_walk_0${i}.webp`), fps: 12, idle: 0, h: 0.86, noFlip: true } },
+      jiol: { walk: { frames: [1, 2, 3, 4, 5, 6, 7, 8].map((i) => `./assets/monsters/jiol_walk/jiol_walk_0${i}.webp`), fps: 12, idle: 0, h: 0.95, noFlip: true } },
       solamo: { walk: { frames: [1, 2, 3, 4, 5, 6, 7, 8].map((i) => `./assets/monsters/solamo_walk_back/solamo_walk_back_0${i}.webp`), fps: 12, idle: 0, h: 0.9, noFlip: true } },
     },
     monster: { h: 180, w: 150 },   // w＝体の幅（道の安全域の計算に使う。画像の見た目の幅）

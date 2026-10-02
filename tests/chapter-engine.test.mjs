@@ -586,7 +586,6 @@ test('CH1-33：ソラモの後ろ向き歩行アニメ（2026-10-02 正式素材
   assert.deepEqual([W.idle, W.noFlip, W.fps], [0, true, 12], '停止は 01・後ろ姿は反転しない・12fps（歩く速さで 55〜100%）');
   const sizes = W.frames.map((f) => { const b = readFileSync(path.join(ROOT, f)); assert.equal(b.toString('ascii', 0, 4) + b.toString('ascii', 8, 12), 'RIFFWEBP', f); assert.ok(b.includes(Buffer.from('ALPH')) || b.includes(Buffer.from('VP8L')), `${f}：透過あり`); return b.readUIntLE(24, 3) + 1 + 'x' + (b.readUIntLE(27, 3) + 1); });
   assert.equal(new Set(sizes).size, 1, `8コマとも同じ大きさ（${sizes[0]}。共通の切り抜き＝コマごとのずれを足さない）`);
-  assert.equal(cfg.monsterSprites.gauru, undefined, 'ガウルなど素材の無い種族は従来の画像');
   const FV = rd('js/chapter/field-view.js'), code = FV.split('\n').map((l) => l.replace(/\/\/.*$/, '')).join('\n');
   assert.doesNotMatch(code, /\.chf-spr[^\n]*setAttribute\('src'/, 'コマの切り替えで src を差し替えない（再読み込み・ちらつきなし）');
   assert.match(code, /if \(state === 'walk' && !\(info && info\.calm\)\)/, '歩いている間だけループ');
@@ -637,4 +636,25 @@ test('CH1-35：Chapter開始の演出（2026-10-02 正式）：全景を止め�
   const FV = rd('js/chapter/field-view.js');
   assert.match(FV, /if \(busyGet\(\) \|\| V\.intro\) return;/, '二重に始めない'); assert.match(FV, /w\.classList\.add\('chf-intro'\)/, 'イントロ中は UI・ソラモ・マスを出さない');
   assert.match(rd('index.html'), /\.chfw\.chf-intro #chf-ui,\.chfw\.chf-intro \.chf-mon,\.chfw\.chf-intro \.chf-tile,\.chfw\.chf-intro \.chf-obj\{opacity:0!important\}/);
+});
+
+
+test('CH1-36：ガウル・ノビトン・ジオルの歩行アニメ（2026-10-02 正式素材）：ガウル 6コマ・ノビトン 8コマ・ジオル 8コマ（無いコマは作らない）。透過 WebP・種族ごとに同じ大きさ。1周の時間はそろえる（ガウル 9fps×6 ≒ 12fps×8）。演出：野生バトル突入のカットイン（野生だけ）・能力マスの結果の枠・残りターンの警告（発火ターンは未決＝空）', () => {
+  const { CH } = loadEngine(), cfg = CH.getConfig(1), S = cfg.monsterSprites;
+  const want = { gauru: 6, nobiton: 8, jiol: 8 };
+  for (const [sp, n] of Object.entries(want)) {
+    const W = S[sp].walk; assert.equal(W.frames.length, n, `${sp}：${n}コマ`); assert.deepEqual([W.idle, W.noFlip], [0, true]);
+    assert.deepEqual(W.frames, Array.from({ length: n }, (_, i) => `./assets/monsters/${sp}_walk/${sp}_walk_0${i + 1}.webp`));
+    const sizes = W.frames.map((f) => { const b = readFileSync(path.join(ROOT, f)); assert.equal(b.toString('ascii', 0, 4) + b.toString('ascii', 8, 12), 'RIFFWEBP', f); assert.ok(b.includes(Buffer.from('VP8L')), `${f}：可逆 WebP（透過あり）`); return b.readUIntLE(21, 4) & 0x0fffffff; });
+    assert.equal(new Set(sizes).size, 1, `${sp}：コマの大きさがそろっている`);
+    assert.ok(Math.abs(n / W.fps - 8 / 12) < 0.01, `${sp}：1周の時間（${(n / W.fps).toFixed(2)}秒）は種族でそろえる`);
+  }
+  assert.equal(S.solamo.walk.frames.length, 8, 'ソラモはそのまま');
+  for (let i = 7; i <= 8; i++) assert.ok(!existsSync(path.join(ROOT, `assets/monsters/gauru_walk/gauru_walk_0${i}.webp`)), 'ガウルの 7・8コマは作らない');
+  // 演出：素材と割り当て
+  assert.equal(cfg.battleTypes.wild.cutin, 'fx_battle_encounter'); assert.equal(cfg.battleTypes.rare.cutin, undefined); assert.equal(cfg.battleTypes.rival.cutin, undefined, 'ライバル・レアには野生の突入演出を付けない');
+  assert.deepEqual(cfg.effects, { statUp: 'fx_stat_up', turnWarning: { asset: 'fx_turn_warning', at: [] } }, '残りターンの警告は発火ターン未決＝出さない');
+  for (const k of ['fx_battle_encounter', 'fx_stat_up', 'fx_turn_warning']) assert.ok(existsSync(path.join(ROOT, cfg.assets[k])), k);
+  const FV = rd('js/chapter/field-view.js');
+  assert.match(FV, /if \(cut && !V\.calm\)/); assert.match(FV, /c: 'ok stat', frame: 'statUp'/); assert.match(FV, /if \(!W \|\| !Array\.isArray\(W\.at\) \|\| !W\.at\.length/, '発火ターンが空なら出さない');
 });

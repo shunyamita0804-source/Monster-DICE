@@ -58,6 +58,8 @@
   const P7 = () => root.MMP7, P8 = () => root.MMP8;
   const asset = (cfg, k) => (cfg.assets && cfg.assets[k]) || '';
   const sceneOf = (cfg, id) => cfg.fieldScenes.find((s) => s.id === id);
+  /** 演出の素材（config.effects[key] → config.assets[その値]）。無ければ null＝今までどおりの表示 */
+  const effectAsset = (key) => { const c = V.cfg; if (!c || !key) return null; const k = (c.effects || {})[key] || key; return (c.assets || {})[k] || null; };
   const MO = () => ({ ...DEF.motion, ...((V.cfg && V.cfg.motion) || {}), terrain: { ...DEF.motion.terrain, ...(((V.cfg && V.cfg.motion) || {}).terrain || {}) } });
   // カメラ：既定 ← config.camera（Pattern 全体）← fieldScenes[].camera（背景ごとの上書き）
   const CA = () => { const c = (V.cfg && V.cfg.camera) || {}, s = (V.sc && V.sc.camera) || {}; return { ...DEF.camera, ...c, ...s, zoom: { ...DEF.camera.zoom, ...(c.zoom || {}), ...(s.zoom || {}) } }; };
@@ -537,9 +539,21 @@
     //  introSeen を記録する（演出を始める前に保存）。同じ育成の再読み込み・再開では出さず、新しい育成個体（育成放棄のあとの別の個体を含む）や次の Chapter では出す。
     //  sessionStorage などセーブの外の記録では判定しない（タブが閉じられると消え、新旧の個体の区別も保証できないため）
     if (!same && ph === 'roll' && r.turnsUsed === 0 && r.node === V.g.start && root.MMCHI && V.cfg.intro && !f.introSeen && !root.MM_QA_NO_INTRO) chfIntro(m, key);   // MM_QA_NO_INTRO：自動テスト専用（tests/e2e/harness.mjs）
+    if (ph === 'roll' && !V.intro) turnWarning(m);
     // 再開した移動・停止地点の処理は少し後で。その間に別の画面へ移ったら何もしない（次にフィールドを開いたとき1回だけ処理する）
     if (ph === 'move') setTimeout(() => { if (onField()) chfContinue(); }, 300); else if (ph === 'resolve') setTimeout(() => { if (onField()) chfResolve(); }, 300);
     return true;
+  }
+  /**
+   * 残りターンの警告（config.effects.turnWarning＝{ asset, at:[残りターン…] }）。短く出して消える（約1.3秒・操作は止めない）。
+   *  出すターンは at に書いた残りターンだけ（空なら出さない＝正式な発火ターンは未決）。同じターンに二度は出さない
+   */
+  function turnWarning(m) {
+    const W = (V.cfg.effects || {}).turnWarning, t = MMCH.turnInfo(m); if (!W || !Array.isArray(W.at) || !W.at.length || !t || t.limit == null) return;
+    const key = `${m.raise.ch}:${t.used}`; if (!W.at.includes(t.left) || V.warned === key) return; V.warned = key;
+    const src = effectAsset(W.asset), ui = $('#chf-ui'); if (!ui || !src) return;
+    ui.insertAdjacentHTML('beforeend', `<div class="chf-twarn" style="background-image:url(${esc(src)})"><b>残り ${t.left} ターン</b></div>`);
+    const el = ui.querySelector('.chf-twarn:last-child'); setTimeout(() => el && el.remove(), V.calm ? 900 : 1400);
   }
   async function chfIntro(m, key) {
     if (busyGet() || V.intro) return;   // 二重に始めない
@@ -686,15 +700,16 @@
     if (onField()) chfBoard(`ひと休みした。疲れ ${MMCH.fatigue(m)}` + (res && res.timeUp ? '　ターンを使い切った…' : ''));
   }
   // ---- 停止地点の結果（短く。タップで早送り） ----
-  function popup(html, cls, ms) {
+  function popup(html, cls, ms, frame) {
     const ui = $('#chf-ui'); if (!ui) return wait(0);
-    const d = document.createElement('div'); d.className = `chpop ${cls || ''}`; d.innerHTML = html; ui.appendChild(d);
+    const d = document.createElement('div'); d.className = `chpop ${cls || ''}${frame ? ' framed' : ''}`; d.innerHTML = html; ui.appendChild(d);
+    if (frame) d.style.backgroundImage = `url(${frame})`;   // 演出の枠（画像に文字は入れない。能力名・数値は HTML）
     return new Promise((ok) => { let done = false; const end = () => { if (done) return; done = true; d.classList.add('out'); setTimeout(() => { d.remove(); ok(); }, 160); };
       V.skip = end; setTimeout(end, ms); d.addEventListener('click', end); });
   }
   function fxText(fx) {
     const L = (k) => labOf(k);
-    if (fx.kind === 'chstat') return { h: `<small>${L(fx.key)}のマス</small><b>${L(fx.key)} +${fx.amount}</b>`, c: 'ok', t: `${L(fx.key)} +${fx.amount}` };   // 能力マス：成長適性の値だけ上がる（失敗・大成功なし）
+    if (fx.kind === 'chstat') return { h: `<small>${L(fx.key)}のマス</small><b>${L(fx.key)} +${fx.amount}</b>`, c: 'ok stat', frame: 'statUp', t: `${L(fx.key)} +${fx.amount}` };   // 能力マス：成長適性の値だけ上がる（失敗・大成功なし）
     if (fx.kind === 'treasure') { const tl = { normal: '宝箱', rare: '珍しい宝箱', special: '特別な宝箱' }[fx.tier] || '宝箱', gain = fx.reward && fx.reward.kind === 'gold' ? `+${fx.reward.amount}G` : ''; return { h: `<small>道端で${tl}を見つけた！</small><b>${gain || '…'}</b>`, c: `tr tr-${fx.tier}`, t: `${tl}を開けた！ ${gain}` }; }
     if (fx.ev) {
       let eff = '';
@@ -712,9 +727,10 @@
     fx.insertAdjacentHTML('beforeend', `<i class="chf-rustle" style="left:${x.toFixed(1)}px;top:${y.toFixed(1)}px;width:${(190 * d).toFixed(0)}px;height:${(72 * d).toFixed(0)}px;background-image:url(${src});background-position:${(-rnd01() * 700).toFixed(0)}px 100%"></i><i class="chf-alert" style="left:${V.monPos.x.toFixed(1)}px;top:${(V.monPos.y - monH() * d * 1.02).toFixed(1)}px;--d:${d}">！</i>`);
     V.moving = false; camFocus({ x, y }, 0.3, CA().zoom.focus);
     if (root.sfx) root.sfx(2);
+    const cut = effectAsset(((V.cfg.battleTypes || {})[bt] || {}).cutin);   // 野生バトル突入のカットイン（config.battleTypes.wild.cutin。レア・ライバルには付けない）
+    if (cut && !V.calm) { const ui = $('#chf-ui'); if (ui) { ui.insertAdjacentHTML('beforeend', `<div class="chf-cutin"><img src="${esc(cut)}" alt="" draggable="false"></div>`); const c = ui.querySelector('.chf-cutin:last-child'); setTimeout(() => c && c.remove(), 700); } }
     await wait(V.calm ? 120 : 640);
     fx.querySelectorAll('.chf-rustle,.chf-alert').forEach((e) => e.remove());
-    void bt;
   }
   async function chfResolve() {
     const m = gS() && gS().m; if (!chfActive(m) || busyGet() || !onField() || !m.raise.pend || m.raise.pend.stage !== 'resolve') return;
@@ -732,7 +748,7 @@
         if (obj && obj.classList.contains('hid')) { obj.classList.remove('hid'); await wait(V.calm ? 0 : 240); }   // 道端の物が現れる（発見）
         if (obj) { obj.classList.add('hit'); if (fx.kind === 'treasure') { await wait(V.calm ? 0 : 180); const im = obj.querySelector('img[data-open]'); if (im && im.dataset.open) im.src = im.dataset.open; obj.classList.add('open'); } }   // 正式の宝箱は開いた絵へ
         setMsg(T ? T.t : '');
-        await popup(T ? T.h : '', T ? T.c : '', fx.kind === 'chstat' ? 850 : 1300);
+        await popup(T ? T.h : '', T ? T.c : '', fx.kind === 'chstat' ? 850 : 1300, T && T.frame ? effectAsset(T.frame) : null);
         if (obj) { obj.classList.remove('hit'); obj.classList.add('used'); }
         camFocus(null);
         tail = T ? T.t : '';
