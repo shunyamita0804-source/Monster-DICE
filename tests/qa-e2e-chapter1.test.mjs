@@ -211,7 +211,7 @@ test('CH1-B9：カメラ：移動が始まるとモンスターより少し遅�
   for (const r of rec) assert.ok(r.z >= 0.97 && r.z <= 1.031, `ズームは小さく（${r.z}）`);
   const zs = rec.map((r) => r.z); assert.ok(Math.min(...zs) < 0.995 && Math.max(...zs) > 1.005, '移動中は少し引き、着いたら軽く寄る');
   const last = rec[rec.length - 1]; assert.equal(last.moving, false);
-  assert.ok(last.y > last.H * 0.4 && last.y < last.H * 0.8 && last.x > 0 && last.x < last.W, `止まったあと、モンスターは画面の中央より少し下（${Math.round(last.y)} / ${Math.round(last.H)}）`);
+  assert.ok(last.y > last.H * 0.55 && last.y < last.H * 0.88 && last.x > 0 && last.x < last.W, `止まったあと、モンスターは画面の中央下（2026-10-02 歩行アニメ：anchorY 0.72）（${Math.round(last.y)} / ${Math.round(last.H)}）`);
   for (const r of rec) assert.ok(r.x >= -5 && r.x <= r.W + 5 && r.y >= 0 && r.y <= r.H + 5, 'モンスターは画面の外へ出ない');
   const tail = rec.slice(-8); assert.ok(maxStep(tail, ['tx', 'ty']) < 0.6, 'カメラは止まっている（追従が終わる）');
   assert.notEqual(last.front, last.back, `視差：前景 ${last.front} と奥 ${last.back} は違う量だけ動く`); assert.ok(/translate3d/.test(last.front), '前景が動いている');
@@ -289,7 +289,7 @@ test('CH1-B13：再読み込み後は今の地点を基準にカメラを合わ�
   await pg.reload(); await pg.waitForFunction(() => typeof MMP8 === 'object');
   await pg.click('.p15start'); await pg.waitForSelector('#chf .chf-bg'); await pg.waitForTimeout(400);
   const e = await pg.evaluate(() => { const s = MMCHV.state(), r = document.querySelector('#bmonw .mon img').getBoundingClientRect(), f = document.querySelector('#chf').getBoundingClientRect(); return { dx: Math.abs(s.cam.x - s.target.x), dy: Math.abs(s.cam.y - s.target.y), node: document.querySelector('#bmonw').dataset.node, y: (r.bottom - f.top) / f.height, inX: r.left >= 0 && r.right <= f.width }; });
-  assert.ok(e.dx < 0.5 && e.dy < 0.5, `再読み込み後はその場で合っている（${e.dx}・${e.dy}）`); assert.equal(e.node, 'w8_3'); assert.ok(e.y > 0.4 && e.y < 0.8 && e.inX, `モンスターは中央より少し下（${e.y.toFixed(2)}）`);
+  assert.ok(e.dx < 0.5 && e.dy < 0.5, `再読み込み後はその場で合っている（${e.dx}・${e.dy}）`); assert.equal(e.node, 'w8_3'); assert.ok(e.y > 0.55 && e.y < 0.88 && e.inX, `モンスターは中央下（anchorY 0.72）（${e.y.toFixed(2)}）`);
   assert.deepEqual(p.errors, []);
 });
 
