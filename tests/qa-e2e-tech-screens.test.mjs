@@ -173,7 +173,8 @@ describe('QA-TS：390×844 の通し（JS エラー・読み込み・壊れた�
     pg = p.page;
     // ローカルへの応答と、読み込みの失敗（理由つき）を集める
     pg.on('response', (r) => { if (r.url().startsWith(L.url)) res.push([r.status(), r.url().slice(L.url.length)]); });
-    pg.on('requestfailed', (r) => { if (r.url().startsWith(L.url)) failed.push([r.url().slice(L.url.length), r.failure() && r.failure().errorText]); });
+    // BGM の <audio> を次の曲へ使い回すとき、前の曲の途中のダウンロードが中断される（net::ERR_ABORTED・media）のは失敗ではない（2026-10-02 夜の Audio 基盤）
+    pg.on('requestfailed', (r) => { if (r.url().startsWith(L.url) && !(r.resourceType() === 'media' && /ERR_ABORTED/.test((r.failure() || {}).errorText || ''))) failed.push([r.url().slice(L.url.length), r.failure() && r.failure().errorText]); });
     pg.on('request', (r) => { if (r.url().startsWith(L.url)) reqs.add(r.url().slice(L.url.length)); });
   });
   after(async () => { if (p) await p.ctx.close().catch(() => {}); });

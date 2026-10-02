@@ -415,7 +415,7 @@
       V.hold = performance.now() + (V.calm ? 0 : C.followDelay);   // 歩き出してから少し遅れて追いかける
     }
     await moveAlong(pts, stepDuration(pts, id), [first ? 0.3 : 0.05, last ? 0.3 : 0.05]);
-    if (w) w.dataset.node = id; markCur(id);
+    if (w) w.dataset.node = id; markCur(id); feel('step', { id, last });   // 1マスごとの足音（出来事 step → SE STEP。音源が無ければ無音）
     if (last) {   // 着地：小さな上下動のあと、目的地点へ軽く寄る
       V.moving = false; lean(0); anim('land'); camZoom('stop');
       await wait(V.calm ? 20 : M.landMs);
@@ -714,7 +714,7 @@
     busySet(true); lockUi(true);
     try {
       const r = P8().roll(gS(), m); doSave();
-      refreshHud(m); if (root.sfx) root.sfx(7);
+      refreshHud(m);   // サイコロの音は MMCHD が出来事（dice.throw）として出す（合成音の直接呼び出しは廃止＝二重に鳴らさない）
       const host = $('#chfw') || $('#chf-ui') || document.body, hr = host.getBoundingClientRect(), bt = $('#brollbtn');
       const from = bt ? (() => { const b = bt.getBoundingClientRect(); return { x: b.left + b.width / 2 - hr.left, y: b.top + b.height / 2 - hr.top }; })() : null;   // START の位置から出現する
       const fv = $('#chf'), fr = fv ? fv.getBoundingClientRect() : hr;

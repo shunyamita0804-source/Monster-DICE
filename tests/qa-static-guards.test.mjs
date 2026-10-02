@@ -80,7 +80,7 @@ function mon(P7, P8, S, state = 'none', over = {}) {
 const SCRIPTS = [
   'js/battle-bridge.js', 'js/integration/adapter.js', 'js/phase7/progression.js', 'js/phase8/league.js', 'js/phase8/raising.js',
   'js/phase10/monsters.js', 'js/phase11/player.js', 'js/phase12/scenes.js', 'js/phase12/dice.js', 'js/phase13/field.js',
-  'js/phase9/chapters.js', 'js/phase9/board-art.js', 'js/npc/npc.js', 'js/audio/audio-manager.js', 'js/feel/game-feel.js',   // 2026-10-02：Audio Manager・Game Feel の共通基盤
+  'js/phase9/chapters.js', 'js/phase9/board-art.js', 'js/npc/npc.js', 'js/audio/audio-manager.js', 'js/audio/audio-registry.js', 'js/feel/game-feel.js',   // 2026-10-02：Audio Manager・Audio Registry（BGM・SE の対応表）・Game Feel の共通基盤
   'js/chapter/engine.js', 'js/chapter/configs/ch1a.js', 'js/chapter/configs/ch2a.js', 'js/chapter/dice-renderer.js', 'js/chapter/field-view.js', 'js/chapter/intro.js',   // 2026-09-30：Chapterフィールドエンジン
   'js/battle/fit.js',   // 2026-09-30：バトル画面の表示だけの補正（fight()・.bt 系 CSS は変えない）
 ];

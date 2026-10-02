@@ -2078,6 +2078,7 @@ main>h1{flex:none}
 <script src="./js/phase9/board-art.js"></script>
 <script src="./js/npc/npc.js"></script>
 <script src="./js/audio/audio-manager.js"></script>
+<script src="./js/audio/audio-registry.js"></script>
 <script src="./js/feel/game-feel.js"></script>
 <!-- Chapterフィールドエンジン（共通エンジン＋Chapterごとの config。Chapter 1 Pattern A から。window.MMCH・MMCHD）と画面（chfBoard） -->
 <script src="./js/chapter/engine.js"></script>
@@ -2202,16 +2203,28 @@ function plays(M,i,t,sd){
  if(M.hn!=null&&st==0)note(NT(r+ch[M.hn]+K),t,sd*15,LD.hn,LD.hn.v*.7)}
 function loop(){clearInterval(AU.tm);AU.tm=null;if(!AU.ctx||!AU.on||!AU.sc)return;const M=MUS[AU.sc],sd=60/M.b/4;prep(M);if(AU.out)AU.out.gain.setValueAtTime(.72*(M.vol||1),AU.ctx.currentTime);AU.i=0;AU.nt=AU.ctx.currentTime+.1;
  AU.tm=setInterval(()=>{const c=AU.ctx;if(c.state!="running"){AU.nt=Math.max(AU.nt,c.currentTime+.05);return}while(AU.nt<c.currentTime+.16){plays(M,AU.i,AU.nt,sd);AU.i++;AU.nt+=sd}},30)}
-function bgmLegacy(sc){if(AU.sc==sc&&AU.tm)return;AU.sc=sc;loop()} // 今の合成音の BGM（MMAUDIO の legacy。正式な BGM ファイルを MMAUDIO.registerBgm で登録すれば、その場面はファイルで鳴る）
-// BGM は場面（MMAUDIO.SCENES）で鳴らす（2026-10-02）。画面のコードの bgm("town") などは場面へ読み替える。Chapter は field-view が CHAPTER_N を指定する
-const BGM_SCENE={title:"TITLE",town:"TOWN",market:"FACILITY",farm:"FARM",train:"TRAINING",battle:"BATTLE",dojo:"SPECIAL",tour:"TOURNAMENT",result:"RESULT"};
-const LEGACY_BGM={TITLE:"title",TOWN:"town",FACILITY:"market",FARM:"farm",TRAINING:"train",CHAPTER_1:"train",CHAPTER_2:"train",CHAPTER_3:"train",CHAPTER_4:"train",BATTLE:"battle",TOURNAMENT:"train",RESULT:"train",SPECIAL:"dojo"};
-const LEGACY_SE={UI_CONFIRM:5,UI_CANCEL:10,UI_ERROR:10,UI_OPEN:0,DICE_THROW:7,DICE_ROLL:7,DICE_LAND:9,STAT_UP:3,GOLD_GET:11,CHEST_OPEN:11,EVENT:3,WILD_ALERT:2,BATTLE_START:12,VICTORY:3,UNLOCK:11}; // 正式な SE ファイルが無い出来事は今の合成音（無いものは鳴らさない：STEP・TILE_STOP・CHAPTER_START など）
-function bgm(sc){MMAUDIO.scene(BGM_SCENE[sc]||"TOWN")}
+function bgmLegacy(sc){if(AU.sc==sc&&AU.tm)return;AU.sc=sc;loop()} // 合成音の BGM（MMAUDIO の legacy。正式な曲の無い場面だけ鳴る）
+function bgmLegacyStop(){clearInterval(AU.tm);AU.tm=null;AU.sc=null} // 正式な曲へ切り替えるとき合成音を止める（二重再生の防止）
+// BGM は場面（MMAUDIO.SCENES）で鳴らす（2026-10-02）。画面のコードの bgm("town") などは、画面の鍵 → 場面へ読み替える（audioSceneFor）。曲とファイルの対応は js/audio/audio-registry.js
+const BGM_SCENE={title:"TITLE",town:"TOWN",market:"MARKET",ranch:"RANCH",lab:"LABORATORY",farm:"FARM",train:"TRAINING",result:"RESULT",dojo:"SPECIAL_BATTLE"};
+const LEGACY_BGM={TITLE:"title",TOWN:"town",MARKET:"market",RANCH:"farm",LABORATORY:"market",FARM:"farm",TRAINING:"train",CHAPTER_1:"train",CHAPTER_2:"train",CHAPTER_3:"train",CHAPTER_4:"train",WILD_BATTLE:"battle",RARE_WILD_BATTLE:"battle",RIVAL_BATTLE:"battle",TOURNAMENT_LOBBY_LOW:"train",TOURNAMENT_LOBBY_HIGH:"train",TOURNAMENT_BATTLE_LOW:"battle",TOURNAMENT_BATTLE_HIGH:"battle",SPECIAL_BATTLE:"dojo",RESULT:"train"}; // 正式な曲の無い場面 → 合成音の曲
+const LEGACY_SE={UI_CONFIRM:5,UI_CANCEL:10,UI_ERROR:10,UI_OPEN:0,DICE_THROW:7,DICE_ROLL:7,DICE_LAND:9,STAT_UP:3,GOLD_GET:11,CHEST_OPEN:11,EVENT:3,WILD_ALERT:2,BATTLE_INTRO:12,BATTLE_START:3,BATTLE_ATTACK:9,BATTLE_HIT:1,BATTLE_CRIT:2,BATTLE_MISS:0,BUFF:11,DEBUFF:10,ROULETTE_TICK:7,VICTORY:3,SWOOSH:6,UNLOCK:11,REWARD:11}; // 正式な SE ファイルの無い出来事 → 合成音の番号（表に無いものは鳴らさない：STEP・TILE_STOP・CHAPTER_START など）
+// 合成音の番号（sfx(n)）→ 出来事の名前（[ふだん, バトル中]）。fight()（Phase 6・変更しない）の中の sfx(n) も、この読み替えで正式な SE へ届く
+const SFX_EVENT={0:["UI_ERROR","BATTLE_MISS"],1:["BATTLE_HIT","BATTLE_HIT"],2:["WILD_ALERT","BATTLE_CRIT"],3:["STAT_UP",null],5:["UI_CONFIRM","UI_CONFIRM"],6:["SWOOSH","SWOOSH"],7:["DICE_THROW","ROULETTE_TICK"],9:["BATTLE_ATTACK","BATTLE_ATTACK"],10:["UI_CANCEL","DEBUFF"],11:["GOLD_GET","BUFF"],12:["BATTLE_INTRO","BATTLE_INTRO"]};
+function sfxEventOf(t){const b=!!document.getElementById("bt"),e=SFX_EVENT[t];if(!e)return null;if(b&&t==3){AU.fight3=(AU.fight3||0)+1;return AU.fight3==1?"BATTLE_START":"VICTORY"}return e[b?1:0]} // バトル中の 3 は最初が FIGHT!（開始）、次が勝利
+/** 画面の鍵 → BGM の場面。battle＝今の戦闘の種類（野生・レア・ライバル・大会のランク帯）、chapter＝今の Chapter、tour＝大会のランク帯（E〜C／B〜S）。null＝今の場面のまま */
+function audioSceneFor(k){const m=S&&S.m,r=m&&m.raise;
+ if(k=="battle"||k=="dojo")AU.fight3=0;
+ if(k=="battle"){const b=r&&r.battle,t=r&&r.tour;if((b&&b.kind=="league")||(!b&&t&&t.status=="league"))return (b?b.rank:t.rank)>=3?"TOURNAMENT_BATTLE_HIGH":"TOURNAMENT_BATTLE_LOW";const bt=r&&r.pend&&r.pend.fx&&r.pend.fx.battleType;return bt=="rival"?"RIVAL_BATTLE":bt=="rare"?"RARE_WILD_BATTLE":"WILD_BATTLE"}
+ if(k=="chapter")return "CHAPTER_"+Math.max(1,Math.min(4,(r&&r.ch)|0));
+ if(k=="tour"){const t=r&&r.tour;return t&&t.rank>=3?"TOURNAMENT_LOBBY_HIGH":"TOURNAMENT_LOBBY_LOW"}
+ if(k=="farmmenu")return r&&r.state=="board"?null:"FARM"; // Chapter 中にボードから開くステータス・技管理は Chapter の曲のまま
+ return BGM_SCENE[k]||"TOWN"}
+function bgm(sc){const s=audioSceneFor(sc);if(s)MMAUDIO.scene(s)}
 function mkbus(c){AU.out=c.createGain();AU.out.gain.value=.72;
  const ls=c.createBiquadFilter();ls.type="lowshelf";ls.frequency.value=140;ls.gain.value=2.5;const hs=c.createBiquadFilter();hs.type="highshelf";hs.frequency.value=7500;hs.gain.value=-4;
  const cp=c.createDynamicsCompressor();cp.threshold.value=-18;cp.ratio.value=3;cp.knee.value=12;cp.attack.value=.012;cp.release.value=.28;
- const mg=c.createGain();mg.gain.value=.95;const lm=c.createDynamicsCompressor();lm.threshold.value=-4;lm.knee.value=2;lm.ratio.value=20;lm.attack.value=.002;lm.release.value=.12;AU.out.connect(ls);ls.connect(hs);hs.connect(cp);cp.connect(mg);mg.connect(lm);lm.connect(c.destination);
+ const mg=c.createGain();mg.gain.value=.95;const lm=c.createDynamicsCompressor();lm.threshold.value=-4;lm.knee.value=2;lm.ratio.value=20;lm.attack.value=.002;lm.release.value=.12;AU.out.connect(ls);ls.connect(hs);hs.connect(cp);cp.connect(mg);mg.connect(lm);lm.connect(MMAUDIO.legacyInput()||c.destination);
  const sr=c.sampleRate,rl=Math.floor(sr*3.6),ib=c.createBuffer(2,rl,sr);for(let q=0;q<2;q++){const dd=ib.getChannelData(q);let lp=0;for(let z=0;z<rl;z++){const w=Math.random()*2-1;lp+=(w-lp)*(.35-.28*z/rl);dd[z]=lp*Math.pow(1-z/rl,2.2)*(z<sr*.08?1.4:1)}}
  const rv=c.createConvolver();rv.buffer=ib;const pd=c.createDelay(.2);pd.delayTime.value=.038;const rf=c.createBiquadFilter();rf.type="lowpass";rf.frequency.value=4300;const wt=c.createGain();wt.gain.value=.58;
  AU.wet=c.createGain();AU.wet.connect(pd);pd.connect(rv);rv.connect(rf);rf.connect(wt);wt.connect(ls);
@@ -2233,13 +2246,14 @@ function fanfare(){const c=AU.ctx;if(!c||!AU.on||!AU.wet)return;const n=c.curren
  [-12,-5,0,4,7,12,16].forEach(x=>strg(NT(x),m,1.1,.05,{a:.06,r:1.6,snd:.8}));
  [0,4,7].forEach(x=>note(NT(x+12),m,1.3,LD.horn,.09));}
 function startGame(el){if(el&&el.dataset.go)return;if(el)el.dataset.go=1;unlock();clearInterval(AU.tm);AU.tm=null;AU.sc=null;fanfare();const p=$(".tpage");if(p){const d=document.createElement("div");d.className="tflash";p.appendChild(d)}setTimeout(()=>p8Resume(),900)}
-MMAUDIO.attachLegacy({bgm:sc=>bgmLegacy(LEGACY_BGM[sc]||"town"),sfx:n=>{const t=LEGACY_SE[n];if(t==null)return false;sfx(t);return true},muted:()=>!AU.on,setMuted:on=>{if(AU.on===!on)return;sndToggle()}});
-function unlock(){try{if(navigator.audioSession)navigator.audioSession.type="playback"}catch(e){}if(!AU.ctx){const C=window.AudioContext||window.webkitAudioContext;if(!C)return;AU.ctx=new C();mkbus(AU.ctx);loop()}if(AU.ctx.state!="running")AU.ctx.resume();try{const b=AU.ctx.createBuffer(1,1,22050),n=AU.ctx.createBufferSource();n.buffer=b;n.connect(AU.ctx.destination);n.start(0)}catch(e){}}
+MMAUDIO.attachLegacy({bgm:sc=>{if(auBus())bgmLegacy(LEGACY_BGM[sc]||"town")},stop:bgmLegacyStop,sfx:(n,o)=>{const t=o&&o.legacy!=null?o.legacy:LEGACY_SE[n];if(t==null)return false;sfxSynth(t,o&&o.delay);return true},muted:()=>!AU.on,setMuted:on=>{if(AU.on===!on)return;AU.on=!on;try{localStorage.setItem("mr4a",AU.on?"1":"0")}catch(e){}const b=$("#snd");if(b)b.textContent=AU.on?"🔊":"🔇"}}); // 合成音（legacy）を MMAUDIO へつなぐ。sfx の o.legacy＝sfx(n) から来たときの元の番号（合成音は今までどおりの音）
+function auBus(){if(AU.ctx)return true;const c=MMAUDIO.context();if(!c)return false;AU.ctx=c;mkbus(c);return true} // AudioContext は MMAUDIO の1つだけ。合成音の出口（mkbus）はそこへつなぐ
+function unlock(){try{if(navigator.audioSession)navigator.audioSession.type="playback"}catch(e){}auBus();MMAUDIO.unlock()} // 最初の操作：AudioContext の作成・resume・保留した BGM の再開（表裏の suspend／resume も MMAUDIO）
 ["pointerdown","touchend","click","keydown"].forEach(e=>document.addEventListener(e,unlock));
-document.addEventListener("visibilitychange",()=>{if(AU.ctx)document.hidden?AU.ctx.suspend():AU.ctx.resume()});
 document.addEventListener("click",e=>{const b=e.target&&e.target.closest?e.target.closest("button,.skt,[role=button]"):null;if(b&&!b.disabled&&b.id!="snd"&&!(b.dataset&&b.dataset.nsfx))MMAUDIO.se("UI_CONFIRM")},true);
-function sndToggle(){AU.on=!AU.on;try{localStorage.setItem("mr4a",AU.on?"1":"0")}catch(e){}$("#snd").textContent=AU.on?"🔊":"🔇";unlock();loop();if(AU.on)setTimeout(()=>sfx(3),250)}
-function sfx(t,dl){const c=AU.ctx;if(!c||!AU.on||c.state!="running"||!AU.wet)return;const n=c.currentTime+(dl||0);
+function sndToggle(){AU.on=!AU.on;try{localStorage.setItem("mr4a",AU.on?"1":"0")}catch(e){}$("#snd").textContent=AU.on?"🔊":"🔇";unlock();MMAUDIO.setMuted(!AU.on);if(AU.on)setTimeout(()=>sfx(3),250)} // ミュートは MMAUDIO が全部の経路（ファイル BGM・合成 BGM・ファイル SE・合成 SE）へ反映する
+function sfx(t,dl){const n=sfxEventOf(t);if(n&&MMAUDIO.se(n,{delay:dl,legacy:t}))return;sfxSynth(t,dl)} // 合成音の番号 → 出来事の名前 → MMAUDIO（正式な SE があればファイル、無ければ今までの合成音）
+function sfxSynth(t,dl){const c=AU.ctx;if(!c||!AU.on||c.state!="running"||!AU.wet)return;const n=c.currentTime+(dl||0);
  const nz=(f0,f1,d,v,ty,sd,q)=>{const b=c.createBufferSource(),fl=c.createBiquadFilter(),g=c.createGain();b.buffer=AU.nb;b.loop=true;fl.type=ty||"bandpass";if(q)fl.Q.value=q;fl.frequency.setValueAtTime(f0,n);fl.frequency.exponentialRampToValueAtTime(f1,n+d);g.gain.setValueAtTime(.0001,n);g.gain.linearRampToValueAtTime(v,n+Math.min(.01,d/4));g.gain.exponentialRampToValueAtTime(.0001,n+d);b.connect(fl);fl.connect(g);out(g,0,sd??.25);b.start(n,Math.random());b.stop(n+d+.02)};
  const tn=(f0,f1,d,v,ty,sd,dt)=>{const o=c.createOscillator(),g=c.createGain(),s0=n+(dt||0);o.type=ty||"sine";o.frequency.setValueAtTime(f0,s0);o.frequency.exponentialRampToValueAtTime(f1,s0+d);g.gain.setValueAtTime(.0001,s0);g.gain.linearRampToValueAtTime(v,s0+.004);g.gain.exponentialRampToValueAtTime(.0001,s0+d);o.connect(g);out(g,0,sd??.2);o.start(s0);o.stop(s0+d+.02)};
  const ring=(f,d,v,dt)=>[[1,1],[2.76,.5],[5.4,.25]].forEach(([m,a])=>tn(f*m,f*m*.998,d*(1.2-a*.2),v*a,"sine",.7,dt));
@@ -2304,7 +2318,7 @@ let ft="a";
 const cname=({name:a},{name:b})=>Array.from(a).slice(0,2).join("")+Array.from(b).slice(-2).join(""); // 親1の名前の前2文字＋親2の名前の後ろ2文字。文字（コードポイント）単位で切る（絵文字を半分にしない）
 const slot=x=>x?`<div class="mon">${msv(x)}</div><b>${p11Esc(x.name)}</b>`:"<small>えらんでね</small>";
 function pasture(){const l=[S.m,...S.box].filter(Boolean);return `<div class="pasture"><span class="dc" style="left:6%;top:6%">☁️</span><span class="dc" style="right:10%;top:8%">☀️</span><span class="dc" style="left:3%;top:30%">🌳</span><span class="dc" style="right:3%;top:32%">🌳</span>${l.length?"":'<p class="pe">モンスターがいません</p>'}${l.map((x,i)=>`<div class="wk" style="top:${40+(i*23)%42}%;--d:${9+(i*5)%8}s;animation-delay:-${(i*3.7)%9}s"><div class="mon">${msv(x)}</div></div>`).join("")}</div>`}
-function farm(msg,tab){if(p8Blocked())return;p9Immersive(true);bgm("farm"); // 牧場（正式UI 2026-09-30）：上に正式背景＋ニック、下に4コマンド（2×2）、その下に選んだ機能の中身（処理は従来どおり）
+function farm(msg,tab){if(p8Blocked())return;p9Immersive(true);bgm("ranch"); // 牧場（正式UI 2026-09-30）：上に正式背景＋ニック、下に4コマンド（2×2）、その下に選んだ機能の中身（処理は従来どおり）
  if(tab&&tab!="d")pfSellUid=null;ft=tab||(ft=="c"?"a":ft);const m=S.m,all=[m,...S.box].filter(Boolean);let b="";
  if(ft=="a")b=m?`${mcard(m)}<button class="go" onclick="dep()">このモンスターを預ける</button>`:"<p>いま連れているモンスターはいません。</p>";
  else if(ft=="b")b=S.box.length?S.box.map((x,j)=>`<div class="row rr"><div class="mon">${msv(x)}</div><div class="info"><b>${p11Esc(x.name)}</b><br><small>${sm(x)}</small></div><button onclick="wd(${j})">受け取る</button></div>`).join("")+(m?"<p><small>受け取ると、いま連れているモンスターは自動で預けられます。</small></p>":""):"<p>預けているモンスターはいません。</p>";
@@ -2513,7 +2527,7 @@ document.addEventListener("keydown",e=>{if(!document.getElementById("p10car")||d
 function mkd(i,step){if(p8Blocked())return;market(null,MMP10M.keyOf(i)||0)} // Phase 10：旧・詳細画面は新しい市場（カルーセル）へ統合
 function mkgo(i){if(p8Blocked())return;if(!document.getElementById("p10ov"))return; // 確認画面が閉じた後の二度押しは無視（購入・補填を二重にしない）
  const e=document.getElementById("mnm");let v=(e&&e.value||"").trim().slice(0,8);if(!v)v=SP[i][0];adopt(i,v)}
-function museum(){if(p8Blocked())return;bgm("market");
+function museum(){if(p8Blocked())return;bgm("lab");
  $("#app").innerHTML=`<div class="ds" style="--dc:#c9a24d"><div class="dbg" style="background-image:url(${AS.mkt})"></div><div class="dtop"><button class="dback" onclick="lobby()">◀ 街にもどる</button></div><div class="dtitle"><div class="mico">🔬</div><div><b>モンスター研究所</b><small>出会えるモンスターの記録</small></div></div><div class="dbody">${elSay(ELLIOT_TALK.lab[R(ELLIOT_TALK.lab.length)])}<div class="mgrid">${SP.map((x,i)=>`<button class="mgc" onclick="musd(${i})"><div class="mgi"><div class="spa">${sprH(i,"idle",0,false,0)||svg(i,0)}</div></div><b>No.${String(i+1).padStart(3,"0")}</b><span>${x[0]}</span></button>`).join("")}<div class="mgc lk"><div class="mgi"><span class="q">？</span></div><b>No.003</b><span>ノビトン</span><small>近日公開</small></div></div></div></div>`;try{window.scrollTo(0,0)}catch(e){}}
 function musd(i){if(p8Blocked())return;$("#app").innerHTML=`<div class="mk2"><div class="dtop"><button class="dback" onclick="museum()">◀ 研究所</button></div><div class="mush">No.${String(i+1).padStart(3,"0")}　${SP[i][0]}</div>${elSay(ELLIOT_TALK.book[R(ELLIOT_TALK.book.length)])}<img class="pcard" src="${AS[AK[i]+"L"]}" alt="${SP[i][0]}のプロフィール"><img class="pcard" src="${AS[AK[i]+"R"]}" alt="${SP[i][0]}の技一覧"><button class="dback wide" onclick="museum()">◀ 研究所にもどる</button></div>`;try{window.scrollTo(0,0)}catch(e){}}
 function adopt(i,nm){if(p8Blocked())return;const r=MMP10M.purchase(S,MMP10M.keyOf(i),S.box.length+(S.m?1:0));if(!r.ok)return market(P10_WHY[r.reason]||"購入できません。",MMP10M.keyOf(i));S.cnt=(S.cnt||0)+1;const x=mk(i);if(nm)x.name=nm;if(S.m)S.box.push(x);else S.m=x;sel=[];save();const go=()=>lobby(`${p11Esc(x.name)}をつれて帰った！`+(S.m==x?"":"（牧場に預けました）")+(r.rescued?`（はじめての1体のため、所持金を${MMP10M.ECONOMY.marketPrice}Gまで補填しました）`:"")+(r.continueRescued?`（育成を続けるため、不足分${r.topUp}Gを補填して購入しました）`:""));const kt=typeof karenTalk=="function"?karenTalk("bought"):null;if(kt)kt.then(go);else go()}
@@ -2699,7 +2713,7 @@ function _hall(tab,msg){p9Immersive(false);
  if(S.m&&MMP7.trainRunOf(S.m)){trScr();return} // Phase 7：特訓中はそのまま特訓ボードへ
  if(S.m&&MMP7.inChapter(S.m)&&tab!="st"&&tab!="w"){board(msg);return} // Phase 8：Chapter中に使えるファーム機能はステータス・わざだけ
  if(S.m&&(tab||ht)=="t"){ht="t";while(S.m.eq.length<6)S.m.eq.push(-1);return fmScr(msg)} // ファーム（正式デザイン）：育成開始前・Chapter間・育成完了を同じ画面で（下の fmScr）
- bgm("train");ht=tab||ht;const m=S.m;while(m.eq.length<6)m.eq.push(-1);let b="";
+ bgm("farmmenu");ht=tab||ht;const m=S.m;while(m.eq.length<6)m.eq.push(-1);let b="";
  if(ht!="t"){dscr(ht,msg);return}
  if(ht=="t"){b=p8FarmPanel()} // Phase 7：Chapter進行中／ファーム帰還中で導線を切り替える
  else if(ht=="b")b=tour()?"<p><small>大会の月です！出るランクを選ぼう。</small></p>"+RN.map((r,i)=>i>m.rk?"":`<button class="t" onclick="fight(${i})">ランク${r}大会<small>賞金 ${PZ[i]}G${i==m.rk?"（勝つとランクアップ）":""}</small></button>`).join(""):"<p>大会は3・6・9・12月の第4週に開かれます。それまでトレーニングで鍛えよう。</p>";
@@ -2970,8 +2984,8 @@ function board(msg){
  const r=m.raise,trk=bTrackFor(m),n=trk.nodes[r.node],ph=MMP8.boardPhase(m),c=p9Ch(r.ch);
  if(ph=="tour"||ph=="tour_done")return p8TourScr(msg); // 公式ランク大会（総当たりリーグ）の途中・結果
  p9MenuClose();p9Immersive(true);
- if(window.chfActive&&chfActive(m)){MMAUDIO.scene("CHAPTER_"+Math.max(1,Math.min(4,r.ch|0)));return chfBoard(msg)} // Chapter は Chapter ごとの BGM（2026-10-02。正式な曲は未着＝今は合成音）
- bgm("train"); // Chapterフィールドエンジン（js/chapter/）が担当するChapter：フィールドの中を旅する正式画面
+ bgm("chapter"); // Chapter ごとの BGM（CHAPTER_1〜4。曲の対応は js/audio/audio-registry.js）
+ if(window.chfActive&&chfActive(m))return chfBoard(msg); // Chapterフィールドエンジン（js/chapter/）が担当するChapter：フィールドの中を旅する正式画面
  let ctl="",def=r.turnsUsed==0&&ph=="roll"&&c&&c.desc?`<b>${MMP8.chapterName(r.ch)}</b>　${c.desc}`:"サイコロを振って進もう！";
  if(ph=="roll")ctl=`<button class="p9dice" id="brollbtn" onclick="bRoll()" aria-label="サイコロを振る"><span class="dz" id="bdice"><img class="p12dicon" src="${MMP12D.icon("std")}" alt=""></span><span class="t1">サイコロを振る</span><span class="t2">1・2・3のみ</span></button>`;
  else if(ph=="move"||ph=="resolve"){def="移動中…";ctl=`<button class="p9dice" disabled><span class="dz" id="bdice">${r.pend.roll}</span><span class="t1">移動中</span></button>`}
@@ -3147,7 +3161,7 @@ function p9Matrix(lg){const mk={win:"○",loss:"×",self:"",next:"◎",pending:"
  return `<section class="p9board2"><h3>対戦表</h3><div class="p9mx-w"><table class="p9mx"><thead><tr><th class="stk">参加者</th>${lg.entrants.map((e,i)=>`<th>${i+1}</th>`).join("")}</tr></thead><tbody>${lg.entrants.map(e=>{
   return `<tr class="${e.player?"me":""}"><th class="stk"><span class="no">${e.id+1}</span>${p9Pt(p9Npc(lg,e.id),"xs")}<span class="nm">${p11Esc(p9Short(lg,e.id))}</span></th>${lg.entrants.map(o=>{const c=MMP8L.resultCell(lg,e.id,o.id);return `<td class="c-${c}">${mk[c]}</td>`}).join("")}</tr>`}).join("")}</tbody></table></div>
  <div class="p9mx-lg"><span><b class="c-win">○</b>勝ち</span><span><b class="c-loss">×</b>負け</span><span><b class="c-next">◎</b>次の試合</span><span><b class="c-pending">・</b>未対戦</span></div></section>`}
-function p8TourScr(msg){const m=S.m,t=m.raise.tour,lg=t.league;bgm("tour");p9Immersive(true);p9MenuClose();
+function p8TourScr(msg){const m=S.m,t=m.raise.tour,lg=t.league;bgm(t.status=="settled"?"result":"tour");p9Immersive(true);p9MenuClose();
  if(t.status=="settled")return p9TourResult(msg);
  const st=MMP8L.standings(lg),pm=MMP8.tourNext(m),o=p9Npc(lg,pm.opp);
  $("#app").innerHTML=`<div class="p9tour">${p9TourHead(m,t)}
@@ -3250,7 +3264,7 @@ const FM_IC={train:'<path d="M3 13h3v6H3zM26 13h3v6h-3zM6 10h3v12H6zM23 10h3v12h
 const fmIc=k=>`<svg viewBox="0 0 32 32" aria-hidden="true">${FM_IC[k]}</svg>`;
 function fmScr(msg){const m=S.m;if(!m)return lobby();p9MenuClose();
  const st=MMP7.raiseState(m),r=m.raise||{},k=MMP8.nextChapterKey(m),fin=k==MMP8.FINAL,last=(r.log||[]).slice(-1)[0],sp=MMP10M.byId(m.sp),done=st=="done",can=done?{ok:true}:MMP8.canDepart(S,m);
- bgm(st=="farm"?"farm":"train");p9Immersive(true);ht="t";
+ bgm("farm");p9Immersive(true);ht="t";
  const chNm=c=>c==MMP8.FINAL?"最終ルート":`Chapter ${c}`,chSub=c=>c==MMP8.FINAL||c==null?"":MMP8.chapterName(c);
  // 育成状態（セーブから判断）：開始前＝育成準備中／Chapter間＝終わったChapter／完了＝育成完了
  const state=st=="none"?"育成準備中":done?"育成完了":fin?"最終ルート前":`Chapter ${last?last.ch:Math.max(1,k-1)} 終了`;
@@ -3331,7 +3345,7 @@ async function trRoll(){if(p7Busy||!S.m||!MMP7.trainRunOf(S.m))return;p7Busy=tru
 // ---- 出発準備（バッグ⇄保管庫・Chapter選択） ----
 const p7ItemName=it=>{const d=MMP7.getItemDef(it.id);return d?d.name:it.id};
 function p7Shell(ic,title,sub,body,msg,back){return `<div class="ds" style="--dc:#e8b23a"><div class="dbg" style="background-image:url(${FARM_BG})"></div><div class="dtop"><button class="dback" onclick="${back||"hall('t')"}">◀ ファーム</button><div class="dmoney">🪙 ${S.g}G</div></div><div class="dtitle"><div class="mico">${ic}</div><div><b>${title}</b><small>${sub}</small></div></div>${msg?`<div class="dmsg"><span>${msg}</span></div>`:""}<div class="dbody">${body}</div></div>`}
-function prepScr(msg){if(!S.m)return lobby();if(!MMP7.canAccessVault(S))return hall("t","Chapter中はバッグの準備ができません。");bgm("train");
+function prepScr(msg){if(!S.m)return lobby();if(!MMP7.canAccessVault(S))return hall("t","Chapter中はバッグの準備ができません。");bgm("farm");
  const cap=MMP7.bagCap(S),bag=S.inv.bag,vt=S.inv.vault,c=MMP8.canDepart(S,S.m),nx=MMP8.nextChapterKey(S.m);
  const bagRows=[...Array(cap)].map((_,i)=>bag[i]?`<div class="p7it"><span>${i+1}. ${p7ItemName(bag[i])}</span><button onclick="p7ToVault(${i})">保管庫へ</button></div>`:`<div class="p7it emp"><span>${i+1}. （空き）</span></div>`).join("");
  const vtRows=vt.length?vt.map((it,i)=>`<div class="p7it"><span>${p7ItemName(it)}</span><button ${bag.length>=cap?"disabled":""} onclick="p7ToBag(${i})">バッグへ</button></div>`).join(""):`<div class="p7it emp"><span>保管庫は空です</span></div>`;
@@ -3387,7 +3401,7 @@ function p7Depart(b){const m=S.m;if(!m)return lobby();
  if(MMP7.raiseState(m)=="none"&&b&&!arm(b,"もう一度押すと育成開始（完了か放棄まで街へ戻れません）"))return;const r=MMP8.depart(S,m);if(!r.ok)return prepScr(P7_ERR[r.reason]||"出発できません。");save();board(`${p8ChLabel(r.key)}に出発！サイコロを振って進もう！`)}
 
 // ---- アイテム屋（購入品は保管庫へ。バッグは直接操作しない） ----
-function shopScr(msg){if(!S.m)return lobby();if(!MMP7.canAccessVault(S))return hall("t","Chapter中はアイテム屋に行けません。");bgm("market");
+function shopScr(msg){if(!S.m)return lobby();if(!MMP7.canAccessVault(S))return hall("t","Chapter中はアイテム屋に行けません。");bgm("farm");
  const cat=MMP7.getShopCatalog(),vt=S.inv.vault;
  const buy=cat.length?cat.map(id=>{const d=MMP7.getItemDef(id),pr=Number.isInteger(d.price);return `<button class="t" ${pr&&S.g>=d.price?"":"disabled"} onclick="p7Buy('${id}')">${d.name}<small>${pr?d.price+"G":"価格未設定"}</small></button>`}).join(""):`<div class="p7it emp"><span>商品は準備中です</span></div>`;
  const sell=vt.length?vt.map((it,i)=>{const d=MMP7.getItemDef(it.id),ok=!!d&&Number.isInteger(d.sellPrice);return `<div class="p7it"><span>${p7ItemName(it)}</span><button ${ok?"":"disabled"} onclick="p7Sell(${i})">${ok?"売る "+d.sellPrice+"G":"売れない"}</button></div>`}).join(""):`<div class="p7it emp"><span>保管庫は空です</span></div>`;

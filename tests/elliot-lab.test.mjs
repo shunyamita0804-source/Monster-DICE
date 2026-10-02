@@ -53,7 +53,7 @@ test('ELI-3：一言は ELLIOT_TALK。柔らかい敬語。博士口調（なの
 test('ELI-4：表示場所は研究所の図鑑一覧（museum）と図鑑の詳細（musd）だけ。図鑑の中身・背景（AS.*）・入口の制限（p8Blocked）・関数名は従来どおり', () => {
   assert.match(lineOf('function elSay('), /^function elSay\(t\)\{return `<div class="elsay"><img src="\$\{ELLIOT_FACE\}" alt=""><div class="tx"><b>エリオット<\/b>\$\{t\}<\/div><\/div>`\}$/);
   const mu = lineOf('function museum(') + HTML.split('\n')[HTML.split('\n').findIndex((l) => l.startsWith('function museum(')) + 1];
-  assert.ok(mu.startsWith('function museum(){if(p8Blocked())return;bgm("market");'), '研究所の入口の制限はそのまま');
+  assert.ok(mu.startsWith('function museum(){if(p8Blocked())return;bgm("lab");'), '研究所の入口の制限はそのまま');
   assert.ok(mu.includes('<div class="dbg" style="background-image:url(${AS.mkt})"></div>'), '背景（base64 の AS.mkt）はそのまま');
   assert.ok(mu.includes('<small>出会えるモンスターの記録</small></div></div><div class="dbody">${elSay(ELLIOT_TALK.lab[R(ELLIOT_TALK.lab.length)])}<div class="mgrid">'));
   assert.ok(mu.includes('<span>ノビトン</span><small>近日公開</small>'), '「近日公開」（ロック表示）はシステム表示のまま');

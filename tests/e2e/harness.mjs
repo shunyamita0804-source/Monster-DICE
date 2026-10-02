@@ -37,7 +37,7 @@ export const skipReason = () => (process.env.QA_E2E !== '1' ? '実ブラウザ�
 
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8',
   '.css': 'text/css; charset=utf-8', '.json': 'application/json', '.png': 'image/png', '.PNG': 'image/png', '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.svg': 'image/svg+xml', '.md': 'text/plain; charset=utf-8' };
+  '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.svg': 'image/svg+xml', '.md': 'text/plain; charset=utf-8', '.ogg': 'audio/ogg', '.m4a': 'audio/mp4', '.mp3': 'audio/mpeg' };
 
 /** リポジトリ直下を配信するサーバを起動する。{ url, close, requests } */
 export async function serve() {
@@ -95,7 +95,8 @@ export async function launch() {
     page.on('pageerror', (e) => errors.push(String(e && e.message || e)));
     page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) errors.push('console: ' + m.text()); });
     page.on('response', (r) => { if (r.status() >= 400 && r.url().startsWith(srv.url)) bad.push(r.status() + ' ' + r.url().slice(srv.url.length)); });
-    page.on('requestfailed', (r) => { if (r.url().startsWith(srv.url)) bad.push('failed ' + r.url().slice(srv.url.length)); });
+    // 画面の再読み込み（reload）で途中だった BGM のダウンロードが中断される（net::ERR_ABORTED・media）のは失敗ではない
+    page.on('requestfailed', (r) => { if (r.url().startsWith(srv.url) && !(r.resourceType() === 'media' && /ERR_ABORTED/.test((r.failure() || {}).errorText || ''))) bad.push('failed ' + r.url().slice(srv.url.length)); });
     await page.goto(srv.url + 'index.html' + (opt.query || ''));
     await page.waitForFunction(() => typeof window.MMP8 === 'object' && typeof S === 'object', null, { timeout: 120000 });
     const p = { page, ctx, errors, bad };

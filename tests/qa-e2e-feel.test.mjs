@@ -54,7 +54,7 @@ test('FE-2：能力UP：止まる → 間 → マスが光る → モンスタ�
   const firstPop = fx.findIndex((x) => x[0]), firstReact = fx.findIndex((x) => x[1]), firstHit = fx.findIndex((x) => x[2]);
   assert.ok(firstHit >= 0 && firstReact > firstHit && firstPop > firstReact, `マス → モンスター → 枠の順（${firstHit}・${firstReact}・${firstPop}）`);
   assert.ok(fx.filter((x) => x[0]).every((x) => x[3] !== false), '結果を見せている間は START を押せない（ボタンが無いか disabled）');
-  assert.deepEqual(r[2].slice(-4), ['dice.throw', 'dice.land', 'dice.result', 'stat.up']);
+  assert.deepEqual(r[2].filter((e) => e !== 'step').slice(-4), ['dice.throw', 'dice.land', 'dice.result', 'stat.up']);   // step＝1マスごとの足音（2026-10-02 夜）は数えない
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
 });
 
@@ -113,13 +113,13 @@ test('FE-6：システム通知（育成放棄など）は顔・名前の無い�
   assert.deepEqual(p.errors, []);
 });
 
-test('FE-7：BGM の場面：街＝TOWN、市場＝FACILITY、Chapter＝CHAPTER_1（街の BGM のままにしない）。正式な音源が無くても止まらない（エラーなし・同じ場面は1回）', { skip: SKIP }, async () => {
+test('FE-7：BGM の場面：街＝TOWN、市場＝MARKET、Chapter＝CHAPTER_1（街の BGM のままにしない）。正式な音源が無くても止まらない（エラーなし・同じ場面は1回）', { skip: SKIP }, async () => {
   const p = await open(); const pg = p.page;
   await H.newGame(pg, 'テスト'); await pg.waitForTimeout(300);
   const a = await pg.evaluate(() => MMAUDIO.status()); assert.equal(a.scene, 'TOWN');
-  await pg.evaluate(() => market()); await pg.waitForTimeout(300); assert.equal(await pg.evaluate(() => MMAUDIO.status().scene), 'FACILITY');
+  await pg.evaluate(() => market()); await pg.waitForTimeout(300); assert.equal(await pg.evaluate(() => MMAUDIO.status().scene), 'MARKET');
   await pg.evaluate(() => { const m = mk(0); m.name = 'ソラ'; MMP7.ensureProg(m); S.m = m; save(); MMP8.depart(S, m, () => 0.37); save(); board(); }); await pg.waitForSelector('#chf .chf-bg');
   const c = await pg.evaluate(() => { const n = MMAUDIO.status().plays; board(); board(); return [MMAUDIO.status(), n]; });
-  assert.equal(c[0].scene, 'CHAPTER_1'); assert.equal(c[0].plays, c[1], '同じ場面は鳴らし直さない'); assert.deepEqual(c[0].errors, []); assert.deepEqual(c[0].files, { bgm: [], se: [] });
+  assert.equal(c[0].scene, 'CHAPTER_1'); assert.equal(c[0].plays, c[1], '同じ場面は鳴らし直さない'); assert.deepEqual(c[0].errors, []); assert.ok(c[0].files.bgm.includes('TOWN') && c[0].files.se.includes('UI_CONFIRM'), '正式な音源は registry から登録されている');
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
 });
