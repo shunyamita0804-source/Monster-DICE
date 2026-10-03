@@ -83,6 +83,13 @@ try {
   await sleep(1500);
 
   await page.click('[onclick*="startGame"]'); await sleep(600);
+  // 2026-10-03：新しいゲームの最初はプロローグ A〜E（背景5枚が読めること・スキップの2度押しで名前登録へ）
+  const pro = await page.waitForFunction(() => { const b = document.querySelector('.mmpro .mmpro-bg.on'); return b && /prologue_a\.webp/.test(b.style.backgroundImage); }, null, { timeout: 20000 }).then(() => true, () => false);
+  const proImgs = await page.evaluate(() => Promise.all(['a', 'b', 'c', 'd', 'e'].map((k) => new Promise((ok) => { const i = new Image(); i.onload = () => ok(i.naturalWidth > 0); i.onerror = () => ok(false); i.src = `assets/prologue/prologue_${k}.webp`; })))).then((a) => a.every(Boolean));
+  await page.screenshot({ path: `${OUT}/prologue_a_390.png` });
+  if (pro) { await sleep(500); await page.click('.mmpro-skip'); await sleep(500); await page.click('.mmpro-skip'); }
+  await page.waitForSelector('#p11nm', { timeout: 20000 });
+  rec('プロローグ A（背景5枚が読める・スキップで聖獣士登録へ）', pro && proImgs, `表示:${pro} 背景:${proImgs}`);
   await page.fill('#p11nm', 'テスト');
   await page.click('[onclick*="p11NameGo"]'); await sleep(800);
   const d1 = await drain(); await sleep(600);
