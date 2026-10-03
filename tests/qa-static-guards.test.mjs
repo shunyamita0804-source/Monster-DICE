@@ -78,10 +78,10 @@ function mon(P7, P8, S, state = 'none', over = {}) {
 
 // 読み込むスクリプト（この順番で18本）。PHASE 1 の土台（js/main.js・js/core・js/ui・js/dev・js/systems・css/）は含めない
 const SCRIPTS = [
-  'js/battle-bridge.js', 'js/integration/adapter.js', 'js/phase7/progression.js', 'js/phase8/league.js', 'js/phase8/raising.js',
+  'js/battle-bridge.js', 'js/integration/adapter.js', 'js/phase7/progression.js', 'js/phase8/league.js', 'js/phase8/raising.js', 'js/phase8/rival.js',
   'js/phase10/monsters.js', 'js/phase11/player.js', 'js/phase12/scenes.js', 'js/phase12/dice.js', 'js/phase13/field.js',
-  'js/phase9/chapters.js', 'js/phase9/board-art.js', 'js/npc/npc.js', 'js/audio/audio-manager.js', 'js/audio/audio-registry.js', 'js/feel/game-feel.js',   // 2026-10-02：Audio Manager・Audio Registry（BGM・SE の対応表）・Game Feel の共通基盤
-  'js/chapter/engine.js', 'js/chapter/configs/ch1a.js', 'js/chapter/configs/ch2a.js', 'js/chapter/dice-renderer.js', 'js/chapter/field-view.js', 'js/chapter/intro.js',   // 2026-09-30：Chapterフィールドエンジン
+  'js/phase9/chapters.js', 'js/phase9/board-art.js', 'js/npc/npc.js', 'js/npc/npc-events.js', 'js/audio/audio-manager.js', 'js/audio/audio-registry.js', 'js/feel/game-feel.js',   // 2026-10-02：Audio Manager・Audio Registry（BGM・SE の対応表）・Game Feel の共通基盤
+  'js/chapter/engine.js', 'js/chapter/events.js', 'js/chapter/configs/ch1a.js', 'js/chapter/configs/ch2a.js', 'js/chapter/dice-renderer.js', 'js/chapter/field-view.js', 'js/chapter/intro.js',   // 2026-09-30：Chapterフィールドエンジン
   'js/battle/fit.js',   // 2026-09-30：バトル画面の表示だけの補正（fight()・.bt 系 CSS は変えない）
   'js/battle/fx.js',    // 2026-10-03：バトル共通演出の正式素材（fight()・.bt 系 CSS は変えない。外から見て重ねる）
   'js/fx/sequence.js',  // 2026-10-03：連続コマの演出の再生器（野生聖獣の遭遇の正式8コマ。今はどこからも呼ばない＝将来つなぐ準備）
@@ -506,7 +506,7 @@ test('QA-C14：フィナの登場は指定の3か所だけ（名前登録の直�
   const calls = callSites(CODE, 'finaTalk').map((c) => `${c.fn}:${c.arg}`).sort();
   assert.deepEqual(calls, ['finaIntro:"intro"', 'p7Depart:first?"raiseFirst":"raiseAgain",{start:DAN_TALK.handoff}', 'p8DoneScr:"done"']);
   assert.deepEqual(callSites(CODE, 'finaIntro').map((c) => c.fn), ['p11NameGo'], 'あいさつは名前登録の確定からだけ');
-  assert.deepEqual(callSites(CODE, 'MMNPC\\.talk').map((c) => c.fn).sort(), ['finaTalk', 'karenSay'], '共通会話を開くのは finaTalk と市場のカレン（karenSay）だけ');
+  assert.deepEqual(callSites(CODE, 'MMNPC\\.talk').map((c) => c.fn).sort(), ['farmReturn', 'finaTalk', 'karenSay', 'npcFirst'], '共通会話を開くのは finaTalk・市場のカレン（karenSay）・施設の初回訪問（npcFirst）・Chapter の帰還（farmReturn）だけ（2026-10-04）');
   assert.deepEqual(callSites(CODE, 'karenTalk').map((c) => c.fn).sort(), ['adopt', 'karenIntro'], 'カレンの会話ウィンドウは市場の入店と購入成功だけ（切り替え・ボタンは案内欄の一言）');
   const ft = cut(CODE, 'const FINA_TALK={', '};');
   assert.deepEqual(Object.keys(new Function(`return ${ft.slice('const FINA_TALK='.length)}}`)()), ['intro', 'raiseFirst', 'raiseAgain', 'done']);

@@ -56,7 +56,7 @@ test('QU-04：研究所＝正式背景（assets/lab/lab_main.webp）・エリオ
 });
 
 test('QU-05：対戦前の画面を1つに：練習試合は BATTLE 画面（p9PreBattle）を出さず fight() の導入（対面＋VS）だけ。大会は順位表の「次の相手」に小さな能力比較＋対戦開始（2度押し）→ fight()。fight()・Phase 6 は変えない', () => {
-  assert.match(fnOf('bBattleGo'), /^function bBattleGo\(\)\{const m=S\.m;if\(bBusy\|\|!m\)return;const rk=MMP8\.practiceRank\(m\);if\(!MMP8\.beginBattle\(S,m,\{kind:"practice",rank:rk\}\)\.ok\)return board\(\);save\(\);fight\(rk\)\}/);
+  assert.match(fnOf('bBattleGo'), /^function bBattleGo\(\)\{const m=S\.m;if\(bBusy\|\|!m\)return;const bt=[^;]*,rk=bt=="rival"&&window\.MMRIVAL\?MMRIVAL\.rankFor\(m\):MMP8\.practiceRank\(m\);[^\n]*if\(!MMP8\.beginBattle\(S,m,\{kind:"practice",rank:rk\}\)\.ok\)return board\(\);save\(\);fight\(rk\)\}/);
   assert.doesNotMatch(HTML.replace(/function p9PreBattle\(/, ''), /p9PreBattle\(/, 'p9PreBattle はどこからも呼ばない（関数は残す）');
   assert.doesNotMatch(HTML.replace(/function p9VsScr\(/, ''), /p9VsScr\(\)/, 'VS 画面（p9VsScr）は流れから外した（関数は残す）');
   assert.match(fnOf('p8TourScr'), /\$\{p9Cmp\(m,o\)\}<button class="p9btn p9go" data-nsfx="1" onclick="p9VsGo\(this\)">⚔️ 対戦開始<\/button>/);

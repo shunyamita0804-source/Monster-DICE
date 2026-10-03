@@ -83,6 +83,7 @@ export async function launch() {
     }
     // 市場のカレンの会話（初回来店・購入成功）は、ふだんのテストでは出さない（市場・購入の操作を止めないため）。カレンのテストは open({ karen: true })
     if (!opt.karen) await ctx.addInitScript(() => { window.MM_QA_NO_KAREN = true; });
+    if (!opt.npc) await ctx.addInitScript(() => { window.MM_QA_NO_NPC = true; });   // 2026-10-04：施設の初回訪問の会話・Chapter の帰還イベント（MMNPCE）は npc:true のテストだけ
     if (!opt.intro) await ctx.addInitScript(() => { window.MM_QA_NO_INTRO = true; });   // Chapter開始の俯瞰図の演出は intro:true のテストだけ
     if (!opt.arrival) await ctx.addInitScript(() => { window.MM_QA_NO_ARRIVAL = true; });
     if (!opt.prologue) await ctx.addInitScript(() => { window.MM_QA_NO_PROLOGUE = true; });   // 新しいゲームの最初のプロローグ（MMPRO）は prologue:true のテストだけ

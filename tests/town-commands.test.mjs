@@ -63,7 +63,7 @@ test('TW-6：コマンドは施設名だけ（補足は title に残す）。ア
 });
 
 test('TW-3：闘技場は開放条件を新設せず、押しても案内を出すだけ（画面遷移・セーブをしない）。案内文はシステム表示のまま、ヴァルガスの一言（vgSay）を添える', () => {
-  assert.equal(line('function townArena('), 'function townArena(){townLock("闘技場は、まだ利用できません。");vgSay()}');
+  assert.match(line('function townArena('), /^function townArena\(\)\{townLock\("闘技場は、まだ利用できません。"\);if\(!npcFirst\("arena"\)\)vgSay\(\)\}/);
   assert.match(line('function townLock('), /^function townLock\(t\)\{const e=\$\("#msg"\);if\(e\)e\.textContent=t;const w=\$\("#app>\.tlow"\);if\(w\)\{w\.classList\.add\("on"\);/);
   assert.doesNotMatch(line('function townLock(') + line('function vgSay('), /save\(|lobby\(|innerHTML=|fight\(|MMP8\./, '案内とヴァルガスの一言は、画面遷移・セーブ・バトルをしない');
 });

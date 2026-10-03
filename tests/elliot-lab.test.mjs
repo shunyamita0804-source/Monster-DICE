@@ -55,7 +55,7 @@ test('ELI-4：表示場所は研究所の図鑑一覧（museum）と図鑑の詳
   const L0 = HTML.split('\n').findIndex((l) => l.startsWith('function museum(')), mu = HTML.split('\n').slice(L0, L0 + 3).join('\n');
   assert.ok(mu.startsWith('function museum(tab){if(p8Blocked())return;bgm("lab");'), '研究所の入口の制限はそのまま');
   // 2026-10-03 品質向上：正式な研究所の背景（assets/lab/lab_main.webp）が届いた＝入口（エリオットの半身・機能のカード）と図鑑の一覧の背景を差し替え（AS.mkt のデータは消さない）
-  assert.ok(mu.includes('<div class="labnpc nst r"><img class="nstf" src="${ELLIOT_STAND}" alt="" decoding="async"><div class="tx"><b>エリオット</b>${ELLIOT_TALK.lab[R(ELLIOT_TALK.lab.length)]}</div></div>'), '入口：エリオットの半身＋会話窓');
+  assert.ok(mu.includes('<div class="labnpc nst r"><img class="nstf" src="${ELLIOT_STAND}" alt="" decoding="async"><div class="tx"><b>エリオット</b>${npcLine("lab",ELLIOT_TALK.lab)}</div></div>'), '入口：エリオットの半身＋会話窓（2026-10-04：進行状態に合う一言。無ければ従来の配列）');
   assert.ok(mu.includes('<div class="dbg" style="background-image:url(${LAB_BG})"></div>'), '図鑑の一覧の背景も研究所の正式背景'); assert.ok(HTML.includes('"mkt":"data:image/jpeg;base64,'), 'AS.mkt のデータは残す');
   assert.ok(mu.includes('<small>出会えるモンスターの記録</small></div></div><div class="dbody">${elSay(ELLIOT_TALK.lab[R(ELLIOT_TALK.lab.length)])}<div class="mgrid">'));
   assert.ok(mu.includes('<span>ノビトン</span><small>近日公開</small>'), '「近日公開」（ロック表示）はシステム表示のまま');

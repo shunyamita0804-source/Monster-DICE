@@ -311,7 +311,7 @@ test('NX-16：Chapter 1（1〜3・正式背景14枚・30ターン・大会なし
   const a = CH.generateLayout(cfg, 1).assign, cnt = {}; for (const x of Object.values(a)) cnt[x.t] = (cnt[x.t] || 0) + 1;
   assert.ok(cnt.stat >= 12 && cnt.event >= 6 && cnt.battle >= 2 && cnt.treasure >= 3, JSON.stringify(cnt));
   // 同行者：ダンの台詞は Chapter フィールド（field-view・engine・config）に無い。出発時の掛け合い（DAN_TALK.handoff）は index.html の1か所だけ（内容の見直しは仕様側＝報告）
-  for (const f of ['js/chapter/engine.js', 'js/chapter/field-view.js', 'js/chapter/configs/ch1a.js']) assert.doesNotMatch(rd(f), /DAN_TALK|npc:\s*['"]dan['"]|ダン/, `${f}：ダンは Chapter に出ない`);
+  for (const f of ['js/chapter/engine.js', 'js/chapter/field-view.js', 'js/chapter/configs/ch1a.js']) assert.doesNotMatch(rd(f).replace(/ダンが言ってた|ダンの言葉/g, ''), /DAN_TALK|npc:\s*['"]dan['"]|speaker:\s*['"]dan['"]|ダン/, `${f}：ダンは Chapter に出ない（2026-10-04：フィナが「ダンの言葉を思い出す」出来事で名前を出すのは同行ではない）`);
   const html = rd('index.html'); assert.equal((html.match(/DAN_TALK\.handoff/g) || []).length, 1, '出発時の掛け合いは1か所');
   const view = rd('js/chapter/field-view.js'); assert.doesNotMatch(view.split('\n').map((l) => l.replace(/\/\/.*$/, '')).join('\n'), /1・2・3|DICE_MAX|<= 3\b/, '画面側に 1〜3 の固定なし');
 });

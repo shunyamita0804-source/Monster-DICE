@@ -42,7 +42,7 @@ test('NICK-3：牧場の吹き出し：通知（msg）は名前・顔なし。�
   assert.match(lineOf('const NICK_FACE='), /^const NICK_FACE="assets\/npc\/nick\/face\.webp";/);
   const f = farmSrc();
   assert.ok(f.includes('${msg?`<div class="fbub sys">${msg}</div>`:""}'), '通知は名前・顔なし');
-  assert.ok(f.includes('<div class="rnnick nst r"><img class="nstf" src="${NICK_STAND}" alt="" decoding="async">${msg?"":`<div class="tx fnick"><b>ニック</b>${NICK_TALK.ranch[R(NICK_TALK.ranch.length)]}</div>`}</div>'), '2026-10-03：ニックは半身の立ち絵（正式 closeup）＋会話窓。通知のときは立ち絵だけ');
+  assert.ok(f.includes('<div class="rnnick nst r"><img class="nstf" src="${NICK_STAND}" alt="" decoding="async">${msg?"":`<div class="tx fnick"><b>ニック</b>${npcLine("ranch",NICK_TALK.ranch)}</div>`}</div>'), '2026-10-03：ニックは半身の立ち絵（正式 closeup）＋会話窓。通知のときは立ち絵だけ');
   assert.doesNotMatch(f, /NP\.f|<b>ダン<\/b>/, '牧場に旧「ダン」を出さない');
   assert.doesNotMatch(HTML, /\.fbub::after|\.fbub\.fnick::after/, '吹き出しのしっぽ（背景の絵の人物を指す）は無い');
   assert.match(HTML, /\.fbub\{position:absolute;left:3%;top:3%;width:52%;/, '正式背景では左上の空に出す（牧舎を隠さない。旧い吹き出しを隠す位置・最小の高さは不要になった）');
@@ -88,7 +88,7 @@ test('NICK-B1：牧場：ふだんはニックの吹き出し（名前・顔が�
   await pg.click('.hz[onclick="farm()"]'); await pg.waitForSelector('#app .fscene .rnnick .tx'); await pg.waitForFunction(() => { const i = document.querySelector('.rnnick .nstf'); return i && i.complete && i.naturalWidth > 0; });
   let b = await bub(pg);
   assert.equal(b.cls, 'tx fnick'); assert.equal(b.name, 'ニック'); assert.deepEqual(b.img, ['assets/npc/nick/closeup/smile.webp', true]);
-  assert.ok((await pg.evaluate(() => NICK_TALK.ranch)).some((s) => b.text.endsWith(s)), `ニックの一言：${b.text}`);
+  assert.ok((await pg.evaluate(() => (window.MMNPCE ? MMNPCE.REVISIT.ranch.lines.map((l) => l.text) : NICK_TALK.ranch))).some((s) => b.text.endsWith(s)), `ニックの一言：${b.text}`);   // 2026-10-04：進行状態に合う一言（MMNPCE.REVISIT.ranch）
   assert.doesNotMatch(await H.text(pg), /ダン/, '牧場に旧「ダン」の名前を出さない');
   // 預ける（手持ち → 牧場）：通知は名前・顔なし
   await pg.evaluate(() => farm('', 'a')); await pg.waitForFunction(() => ft === 'a'); await pg.waitForTimeout(200);

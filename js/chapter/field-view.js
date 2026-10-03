@@ -583,7 +583,7 @@
     }
     if (ph === 'battle') {
       const fx = r.pend.fx || {}, bt = (cfg.battleTypes || {})[fx.battleType || 'wild'] || { label: 'モンスター' };
-      return `<div class="chsheet chbat"><h3>${esc(bt.label)}</h3><p class="p9s">バトルの後は疲れ +${MMCH.rulesOf(cfg).fatigueRules.battle}。賞金・ランクアップはありません。</p><button class="p9btn" onclick="bBattleGo()">バトルする</button><button class="p9btn2" onclick="bBattleSkip()">やめておく</button></div>`;
+      return `<div class="chsheet chbat"><h3>${esc(bt.label)}</h3>${bt.note ? `<p class="p9s chbat-note">${esc(bt.note)}</p>` : ''}<p class="p9s">バトルの後は疲れ +${MMCH.rulesOf(cfg).fatigueRules.battle}。賞金・ランクアップはありません。</p><button class="p9btn" onclick="bBattleGo()">バトルする</button><button class="p9btn2" onclick="bBattleSkip()">やめておく</button></div>`;
     }
     if (ph === 'goal') return `<div class="chsheet chgoal">${root.p8GoalHtml ? root.p8GoalHtml(m) : ''}</div>`;
     if (ph === 'timeup') return `<div class="chsheet"><h3>⌛ ターン終了</h3><p class="p9s">ゴールできなかったため、このChapterの公式大会には参加できません。Chapterは終了し、次のChapterへ進めます（育成失敗ではありません）。</p><button class="p9btn" onclick="p8EndChapter()">Chapterを終えてファームへ</button></div>`;
@@ -616,6 +616,7 @@
     $('#chfw').classList.remove('arrive'); { const o = $('#chfarr'); if (o) o.remove(); }
     $('#chf-ui').innerHTML = hudHtml(m) + sheetHtml(m, ph) + deckHtml(m, ph, msg);
     if (ph === 'branch') branchCamera(m); else if (V.focus && ph === 'roll') camFocus(null);
+    if (ph === 'branch') setTimeout(() => { if (onField() && P8().boardPhase(m) === 'branch') storyAt(m, 'branch'); }, 350);   // 2026-10-04：初めての分かれ道（チュートリアル。config.story の trigger 'branch'）
     // Chapter に入った直後（出発してまだ何もしていない）：旅路全体の俯瞰図 → スタート地点へ寄る演出（js/chapter/intro.js）。
     //  「初回」の判定（2026-10-01）＝育成個体 × Chapter ごとに1回：この Chapter の配置 m.raise.field（出発のたびに作り直され、Chapter の終了・育成放棄で消える）に
     //  introSeen を記録する（演出を始める前に保存）。同じ育成の再読み込み・再開では出さず、新しい育成個体（育成放棄のあとの別の個体を含む）や次の Chapter では出す。
@@ -857,10 +858,12 @@
     const L = (k) => labOf(k);
     if (fx.kind === 'chstat') return { h: `<small>${L(fx.key)}のマス</small><b>${L(fx.key)} +${fx.amount}</b>`, c: 'ok stat', frame: 'statUp', t: `${L(fx.key)} +${fx.amount}` };   // 能力マス：成長適性の値だけ上がる（失敗・大成功なし）
     if (fx.kind === 'treasure') { const tl = { normal: '宝箱', rare: '珍しい宝箱', special: '特別な宝箱' }[fx.tier] || '宝箱', gain = fx.reward && fx.reward.kind === 'gold' ? `+${fx.reward.amount}G` : ''; return { h: `<small>道端で${tl}を見つけた！</small><b>${gain || '…'}</b>`, c: `tr tr-${fx.tier}`, t: `${tl}を開けた！ ${gain}` }; }
+    if (fx.kind === 'flavor') return { h: `<small>出来事</small><b>${esc(fx.text || '')}</b>`, c: `ev ev-${fx.tier || 'normal'}`, t: fx.text || '' };   // 2026-10-04：効果の無い出来事（会話だけ）
     if (fx.ev) {
       let eff = '';
       if (fx.kind === 'fatigue') eff = `疲れ −${fx.recovered}`; else if (fx.kind === 'stat') eff = `${L(fx.key)} ${fx.amount >= 0 ? '+' : '−'}${Math.abs(fx.amount)}`;
       else if (fx.kind === 'multi') eff = fx.gains.map((x) => `${L(x.key)}+${x.amount}`).join(' '); else if (fx.kind === 'gold') eff = `+${fx.amount}G`;
+      if (fx.fatigueAdded > 0) eff += `　疲れ +${fx.fatigueAdded}`;   // 少し疲れて能力が上がる出来事（stat_tired）
       return { h: `<small>${esc(fx.text)}</small><b>${eff}</b>`, c: `ev ev-${fx.tier || 'normal'}`, t: `${fx.text} ${eff}` };
     }
     return null;
@@ -933,7 +936,16 @@
     let tail = '';
     try {
       const id = m.raise.node, g0 = (gS().g) | 0, f0 = MMCH.fatigue(m), r = P8().resolveLanding(gS(), m); doSave();
-      const fx = r.fx || {}, T = fxText(fx), obj = $(`#chf .chf-obj[data-id="${id}"]`), tile = $(`#chf .chf-tile[data-id="${id}"]`);
+      let fx = r.fx || {};
+      // 2026-10-04（第二段階）：選択肢のある出来事＝会話（最後の行に2択）→ 選ぶ → 選んだ効果（選ぶまで結果は決まらない・使った印も付かない。再読み込みでは同じ選択肢がもう一度出る）
+      if (fx.kind === 'choice') {
+        const t0 = $(`#chf .chf-tile[data-id="${id}"]`); if (t0) { t0.classList.remove('hit'); void t0.offsetWidth; t0.classList.add('hit'); }
+        await wait(beatOf(2));
+        const pick = await choiceTalk(fx);
+        let r2 = P8().resolveChoice(gS(), m, pick); if (!r2.ok) r2 = P8().resolveChoice(gS(), m, (fx.options[0] || {}).id); doSave();
+        if (r2.ok) { Object.assign(r, r2); fx = r2.fx || {}; }
+      }
+      const T = fxText(fx), obj = $(`#chf .chf-obj[data-id="${id}"]`), tile = $(`#chf .chf-tile[data-id="${id}"]`);
       refreshHud(m);
       // HUD は結果の演出が届くまで前の値（所持金・疲れ）を見せ、演出に合わせて動かす
       const g1 = (gS().g) | 0, f1 = MMCH.fatigue(m), gb = $('#chgold b'), fb = $('#chfat b'); if (gb) gb.textContent = String(g0); if (fb && fx.kind === 'fatigue') fb.textContent = String(f0);
@@ -961,6 +973,7 @@
       } else if (fx.ev && fx.kind !== 'none') {
         // イベント（LEVEL 2〜3）：間 → マスが光る → 出来事の文 → 結果（所持金・疲れは HUD まで動かす）
         await wait(beatOf(2)); if (tile) { tile.classList.remove('hit'); void tile.offsetWidth; tile.classList.add('hit'); }
+        await eventLines(fx);   // 2026-10-04：出来事の会話（フィナの吹き出し。eventPool[].lines）→ 結果
         feel('event', { ev: fx.ev }); if (fx.kind === 'stat' || fx.kind === 'multi') monReact(fx.amount < 0 ? 'down' : 'up'); else if (fx.kind === 'fatigue') monReact('rest');
         setMsg(T.t);
         await popup(T.h, T.c, holdOf(fx.tier === 'special' ? 3 : 2, 1200), null, async (d) => { await wait(V.calm ? 0 : 200); if (gold > 0) await goldToHud(g0, g1, d.querySelector('b') || d); if (fx.kind === 'fatigue') await fatigueHud(f0, f1); });
@@ -971,9 +984,23 @@
       if (gb && gold > 0 && gb.textContent !== String(g1)) gb.textContent = String(g1);   // 念のため（演出を飛ばしたとき）
       if (r.goal) tail = `${tail}　大会会場に着いた！`.trim(); else if (r.timeUp) tail = `${tail}　ターンを使い切った…`.trim();
       await showReaction(m, fx);
-      await storyAt(m, 'land', { fx });
+      await storyAt(m, 'land', { fx, goal: !!r.goal });
     } finally { busySet(false); }
     if (onField()) chfBoard(tail || undefined);
+  }
+  // ---- 2026-10-04（第二段階）：イベントの会話と選択肢（js/chapter/events.js の MMEVT。キューで順に出す＝フィナの会話・演出・遭遇が重ならない） ----
+  const queued = (fn) => (root.MMEVT ? MMEVT.run(fn) : fn());
+  /** 出来事の会話（eventPool[].lines＝フィナの吹き出しを順に）。自動テスト（MM_QA_NO_STORY）では出さない */
+  async function eventLines(fx) {
+    const L = Array.isArray(fx.lines) ? fx.lines : []; if (!L.length || root.MM_QA_NO_STORY || !onField()) return;
+    await queued(async () => { for (const l of L) { if (!onField()) break; const x = root.MMEVT ? MMEVT.lineOf(l) : { expression: l.expression, text: l.text }; await finaBubble({ text: x.text, expression: x.expression || 'normal' }); } });
+  }
+  /** 選択肢のある出来事：会話（最後の行に選択肢）→ 選んだ id。自動テスト・会話UIが無いときは最初の候補（MM_QA_CHOICE で指定できる） */
+  async function choiceTalk(fx) {
+    const E = root.MMEVT, first = (fx.options && fx.options[0] && fx.options[0].id) || null;
+    if (!E || !root.MMNPC || root.MM_QA_NO_STORY) return E ? E.autoChoice(fx) : first;
+    const id = await queued(() => MMNPC.talk(E.choiceLines(fx), { kind: 'event', presentation: 'standard' }));
+    return (fx.options || []).some((o) => o.id === id) ? id : first;
   }
   // ---- 同行者（フィナ）のリアクションの差し込み口：停止地点の結果 → MMCH.companionReaction（config.companion.reactions）→ 登録した描画（既定は何も出さない。会話UIは未決） ----
   //  既定の描画：フィナの小さな吹き出し（.chf-fina：顔・名前・一言。約1.6秒で消える。config.companion.reactions に本文があるときだけ出る＝本文は未決）
@@ -1000,11 +1027,15 @@
    */
   async function storyAt(m, trigger, ctx = {}) {
     if (!root.MMCH || !MMCH.storyEvents || root.MM_QA_NO_STORY || !onField()) return;
-    const P = root.MMP10M, ev = MMCH.storyEvents(m, trigger, { ...ctx, visitedFields: V.lastFields || [], species: P && P.keyOf ? P.keyOf(m.sp) : null, raiseCount: (gS() && gS().raiseRec) | 0 })[0];
+    const P = root.MMP10M, S0 = gS(), flags = S0 ? (S0.npcFlags = (S0.npcFlags && typeof S0.npcFlags === 'object' && !Array.isArray(S0.npcFlags)) ? S0.npcFlags : {}) : null;   // scope 'save'（チュートリアル）の見た記録＝S.npcFlags.story
+    const ev = MMCH.storyEvents(m, trigger, { ...ctx, flags, visitedFields: V.lastFields || [], species: P && P.keyOf ? P.keyOf(m.sp) : null, raiseCount: (S0 && S0.raiseRec) | 0 })[0];
     if (!ev) return;
-    MMCH.markStory(m, ev.id); doSave();
-    if (ev.presentation === 'talk' && root.MMNPC) { await MMNPC.talk((ev.lines || []).map((l, i) => ({ npc: l.speaker || 'fina', expression: l.expression || 'normal', text: l.text, ...(i ? {} : {}) })), { kind: 'fina', presentation: 'compact' }); return; }
-    for (const l of ev.lines || []) { if (!onField()) break; await finaBubble({ text: l.text, expression: l.expression || 'normal' }); }
+    MMCH.markStory(m, ev.id, flags); doSave();
+    await queued(async () => {
+      if (!onField()) return;
+      if (ev.presentation === 'talk' && root.MMNPC) { await MMNPC.talk((ev.lines || []).map((l) => ({ npc: l.speaker || 'fina', expression: l.expression || 'normal', text: l.text })), { kind: 'fina', presentation: 'compact' }); return; }
+      for (const l of ev.lines || []) { if (!onField()) break; await finaBubble({ text: l.text, expression: l.expression || 'normal' }); }
+    });
   }
   let reactionRenderer = (rx) => finaBubble(rx);
   function registerReactionRenderer(fn) { reactionRenderer = typeof fn === 'function' ? fn : null; }

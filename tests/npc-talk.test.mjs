@@ -97,7 +97,7 @@ test('NT-6：既存NPC会話（NP）は文章を変えずに共通会話へ変�
   const L = M.fromLegacy(NP.b, [0, 1]); assert.deepEqual(L, [{ name: 'コウ', text: NP.b.t[0] }, { name: 'コウ', text: NP.b.t[1] }]);
   assert.equal(M.fromLegacy(NP.f).length, NP.f.t.length); assert.equal(JSON.stringify(NP), before, '既存の会話データは変えない');
   assert.equal((HTML.match(/<script src="\.\/js\/npc\/npc\.js"><\/script>/g) || []).length, 1);
-  assert.deepEqual(HTML.match(/MMNPC\.[a-zA-Z]+/g), ['MMNPC.imageOf', 'MMNPC.imageOf', 'MMNPC.imageOf', 'MMNPC.talk', 'MMNPC.imageOf', 'MMNPC.talk'], '画面からは finaTalk・karenTalk（会話）と、顔・立ち絵の画像（街のフィナの立ち絵 finaStandSrc（2026-10-03）・街のフィナの案内 finaFaceSrc・大会開始のセドリック p9TourIntro・購入確認の karenLine）だけで呼ぶ');
+  assert.deepEqual(HTML.match(/MMNPC\.[a-zA-Z]+/g), ['MMNPC.imageOf', 'MMNPC.imageOf', 'MMNPC.imageOf', 'MMNPC.talk', 'MMNPC.imageOf', 'MMNPC.talk', 'MMNPC.talk', 'MMNPC.talk'], '画面からは finaTalk・karenTalk（会話）と、顔・立ち絵の画像（街のフィナの立ち絵 finaStandSrc（2026-10-03）・街のフィナの案内 finaFaceSrc・大会開始のセドリック p9TourIntro・購入確認の karenLine）だけで呼ぶ');
   for (const f of ['function farm(', 'function _hall(', 'function board(', 'function museum(']) { const i = HTML.indexOf(f); if (i >= 0) assert.doesNotMatch(HTML.slice(i, HTML.indexOf('\nfunction ', i + 10)), /finaTalk|MMNPC/, `${f} には置かない`); }
   const css = HTML.slice(HTML.indexOf('/* ===== 共通NPC会話（MMNPC'), HTML.indexOf('</style></head>'));
   assert.doesNotMatch(css, /filter|hue-rotate/, '立ち絵の色を変えない'); assert.match(css, /font-family:"Noto Sans JP"/); assert.match(css, /font-family:"Shippori Mincho"/);

@@ -51,7 +51,7 @@ function runOnce(E, seed, route, rests) {
     }
     if (ph === 'move') { P8.step(S, m); continue; }
     if (ph === 'branch') { const o = m.raise.pend.opts; P8.chooseBranch(S, m, route ? o.find((x) => x.startsWith(route === 'bridge' ? 'a' : 'b')) : o[Math.floor(rnd() * o.length)]); continue; }
-    if (ph === 'resolve') { const r = P8.resolveLanding(S, m, rnd), fx = r.fx || {}; if (fx.kind === 'chstat') st.stat++; else if (fx.kind === 'treasure') st.treasure++; else if (fx.ev) st.event++; if (fx.kind === 'battle') { st.battle++; P8.beginBattle(S, m, { kind: 'practice', rank: 0 }); P8.markBattleDone(S); P8.finishBattle(S, m, rnd); } continue; }
+    if (ph === 'resolve') { let r = P8.resolveLanding(S, m, rnd), fx = r.fx || {}; if (fx.kind === 'choice') { r = P8.resolveChoice(S, m, fx.options[Math.floor(rnd() * fx.options.length)].id, rnd); fx = r.fx || {}; } if (fx.kind === 'chstat') st.stat++; else if (fx.kind === 'treasure') st.treasure++; else if (fx.ev) st.event++; if (fx.kind === 'battle') { st.battle++; P8.beginBattle(S, m, { kind: 'practice', rank: 0 }); P8.markBattleDone(S); P8.finishBattle(S, m, rnd); } continue; }
     throw new Error('phase ' + ph);
   }
   return { ...st, turns: m.raise.turnsUsed, goal: !!m.raise.goal, branch: m.raise.field && m.raise.field.branch };

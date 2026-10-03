@@ -44,7 +44,8 @@ export function runOnce(E, seed, policy = 'cautious', branchPick = null, chapter
     if (ph === 'move') { P8.step(S, m); continue; }
     if (ph === 'branch') { const opts = m.raise.pend.opts, pickId = branchPick ? (opts.find((o) => (CH.graphFor(m).nodes[o] || {}).branch === branchPick) || opts.find((o) => o.startsWith(branchPick === 'bridge' ? 'a' : 'b')) || opts[0]) : opts[Math.floor(rnd() * opts.length)]; P8.chooseBranch(S, m, pickId); continue; }   // 道の名前（node.branch）で選ぶ（旧 Chapter の a／b の接頭辞も読む）
     if (ph === 'resolve') {
-      const r = P8.resolveLanding(S, m, rnd), fx = r.fx || {};
+      let r = P8.resolveLanding(S, m, rnd), fx = r.fx || {};
+      if (fx.kind === 'choice') { st.choice = (st.choice || 0) + 1; r = P8.resolveChoice(S, m, fx.options[Math.floor(rnd() * fx.options.length)].id, rnd); fx = r.fx || {}; }   // 2026-10-04：2択の出来事はランダムに選ぶ
       if (fx.kind === 'chstat') { st.stat++; st.statOutcome[fx.outcome]++; }
       else if (fx.kind === 'treasure') st.treasure++;
       else if (fx.kind === 'fatigue') { st.event++; st.restStops = (st.restStops || 0) + 1; }

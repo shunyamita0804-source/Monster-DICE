@@ -312,7 +312,7 @@ test('JR-13：大会会場への到着：14 の最後のマス（ゴール）に
   await H.newGame(pg, 'ユウ');
   await pg.evaluate(() => { const m = mk(0); m.name = 'ソラ'; MMP7.ensureProg(m); S.m = m; save(); MMP8.depart(S, m, () => 0.37); save(); board(); });
   await pg.waitForSelector('#chf .chf-bg'); await idle(pg);
-  await place(pg, 'p14_1', { turnsUsed: 30 }); await idle(pg);
+  await place(pg, 'p14_1', { turnsUsed: 29 }); await idle(pg);   // 2026-10-04：30ターン（最後のターンでゴール）
   assert.equal(await pg.evaluate(() => document.querySelector('#chf .chf-bg').getAttribute('src')), './assets/fields/ch1a/final/field/ch1_bg_14.webp');
   await rollAs(pg, 1);
   await pg.waitForSelector('#chfarr.on', { timeout: 20000 });

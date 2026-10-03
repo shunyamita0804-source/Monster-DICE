@@ -450,6 +450,15 @@
     const fx = (d && d.resolve(S, m, r.node, rnd)) || (SQUARE_EFFECTS[nd.type] || SQUARE_EFFECTS.normal)(S, m, rnd);   // エンジン：配置で決まった種類（能力・イベント・宝箱・バトル）
     p.fx = fx;
     if (fx.kind === 'battle') { p.stage = 'battle'; return { ok: true, fx, wait: true }; }
+    if (fx.kind === 'choice') return { ok: true, fx, wait: true, choice: true };   // 2026-10-04：選択肢のある出来事＝プレイヤーが選ぶまで待つ（stage は 'resolve' のまま＝再読み込みでも同じ選択肢が出る）
+    return { ok: true, fx, ...finishTurn(S, m) };
+  }
+  /** 選択肢のある出来事で選んだあと（エンジンの Chapter だけ）：選んだ効果を適用してターンを終える */
+  function resolveChoice(S, m, optId, rnd = Math.random) {
+    const r = m && m.raise, p = r && r.pend, d = r && driverFor(r.ch);
+    if (!p || p.stage !== 'resolve' || !isObj(p.fx) || p.fx.kind !== 'choice' || !d || !d.resolveChoice) return { ok: false };
+    const fx = d.resolveChoice(S, m, optId, rnd); if (!fx) return { ok: false };
+    p.fx = fx;
     return { ok: true, fx, ...finishTurn(S, m) };
   }
   function finishTurn(S, m) {
@@ -549,7 +558,7 @@
   }
   /** 【暫定】練習試合の相手の強さ＝個体の表示ランク（未クリアはE）。旧仕様の「現在ランク」に相当 */
   const practiceRank = (m) => Math.max(RANK_E, highestCleared(m));
-  Object.assign(API, { registerChapterDriver, canRest, rest, turnsLeft, boardPhase, canRoll, diceSides, roll, step, chooseBranch, registerSquareEffect, resolveLanding, skipBattleSquare,
+  Object.assign(API, { registerChapterDriver, canRest, rest, turnsLeft, boardPhase, canRoll, diceSides, roll, step, chooseBranch, registerSquareEffect, resolveLanding, resolveChoice, skipBattleSquare,
     canEndChapter, endChapter, declineTournament, beginBattle, markBattleDone, finishBattle, practiceRank });
 
   // =========================================================

@@ -66,7 +66,7 @@ test('DAN-5：セリフは DAN_TALK。育成開始はフィナ→ダン（左右
   const all = [...T.farm, T.chapter(3), T.interval];
   assert.equal(T.chapter(3), '残り3ターンか。焦らずゴールを目指そう。');
   for (const s of all) assert.doesNotMatch(s, /ぜ！|寿命|疲労|ストレス|わよ/, s);
-  assert.match(lineOf('function bcomm('), /^function bcomm\(\)\{const m=S\.m,a=\[DAN_TALK\.farm\[R\(DAN_TALK\.farm\.length\)\]\];/, '旧コウのセリフ（NP.b.t）は使わない');
+  assert.match(lineOf('function bcomm('), /^function bcomm\(\)\{const m=S\.m,st=window\.MMNPCE\?npcLine\("farm",null\):null;if\(st\)return st;const a=\[DAN_TALK\.farm\[R\(DAN_TALK\.farm\.length\)\]\];/, '旧コウのセリフ（NP.b.t）は使わない（2026-10-04：進行状態に合う一言＝MMNPCE が先）');
   assert.match(HTML, /finaTalk\(first\?"raiseFirst":"raiseAgain",\{start:DAN_TALK\.handoff\}\)\.then\(r=>\{delete b\.dataset\.fina;if\(r==="start"&&S\.m===m&&MMP7\.raiseState\(m\)=="none"\)p7Depart\(\)\}\)/, '「始める」のときだけ同じ会話で掛け合い → 従来の出発処理');
 });
 

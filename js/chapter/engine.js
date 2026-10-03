@@ -56,6 +56,8 @@
   const newSeed = (rnd) => (Math.floor((rnd || Math.random)() * 0x7fffffff) >>> 0) || 1;
   const pick = (arr, r) => arr[Math.floor(r() * arr.length)];
   function pickWeighted(list, r, w = (x) => x.weight || 1) { const tot = list.reduce((s, x) => s + w(x), 0); let t = r() * tot; for (const x of list) { t -= w(x); if (t < 0) return x; } return list[list.length - 1]; }
+  /** 重み付きで1つ選ぶ。ただし used（同じ Chapter で既に選んだ id）に無いものを優先し、全部使い切ったときだけ重複を許す（2026-10-04：同じイベントばかり続かない） */
+  function pickDistinct(list, r, used, w) { const rest = list.filter((x) => !used.has(x.id)); const x = pickWeighted(rest.length ? rest : list, r, w); if (x && x.id != null) used.add(x.id); return x; }
   function shuffle(arr, r) { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
   const randInt = (lo, hi, r) => lo + Math.floor(r() * (hi - lo + 1));
 
@@ -319,12 +321,12 @@
   /** 固定配置（layoutRules.fixed）：マスの種類は path.tiles のとおり。中身（イベントの内容・宝箱の段階・野生がレアモンスターマスになるか）だけを seed で決める */
   function fixedLayout(cfg, g, r) {
     const L = cfg.layoutRules, assign = {}, pool = cfg.eventPool || [], rec = pool.filter((e) => e.recovery), other = pool.filter((e) => !e.recovery);
-    const rareRate = Number(L.rareBattleRate) || 0;
+    const rareRate = Number(L.rareBattleRate) || 0, used = new Set();   // used：この Chapter で既に割り当てたイベント（同じイベントの重複を避ける。候補を使い切ったときだけ重複）
     for (const id of g.order) {
       const n = g.nodes[id], b = n.kind === 'slot' && n.tile ? NODE_TYPES[n.tile] : null; if (!b || !SPECIAL.includes(b.t)) continue;
       const a = assign[id] = { ...b };
-      if (a.t === 'event' && a.recovery) { const e = pickWeighted(rec, r); Object.assign(a, { tier: e.tier, ev: e.id }); }
-      else if (a.t === 'event') { const tier = pickWeighted(TIERS.map((t) => ({ t, weight: (L.eventTierWeights || {})[t] || 0 })), r).t; const c = other.filter((x) => x.tier === tier), e = c.length ? pickWeighted(c, r) : pickWeighted(other, r); Object.assign(a, { tier: e.tier, ev: e.id }); }
+      if (a.t === 'event' && a.recovery) { const e = pickDistinct(rec, r, used); Object.assign(a, { tier: e.tier, ev: e.id }); }
+      else if (a.t === 'event') { const tier = pickWeighted(TIERS.map((t) => ({ t, weight: (L.eventTierWeights || {})[t] || 0 })), r).t; const c = other.filter((x) => x.tier === tier && !used.has(x.id)), e = pickDistinct(c.length ? c : other, r, used); Object.assign(a, { tier: e.tier, ev: e.id }); }   // その段階の候補を使い切ったら全体から（重複より別の出来事）
       else if (a.t === 'treasure') a.tier = pickWeighted(TIERS.map((t) => ({ t, weight: ((cfg.treasurePool || {}).tierWeights || {})[t] || 0 })), r).t;
       else if (a.t === 'battle' && a.bt === 'wild') a.bt = rareRate > 0 && r() < rareRate ? 'rare' : 'wild';   // レアモンスターマス：野生のマスごとに配置のとき rareBattleRate（正式 10%）
     }
@@ -363,9 +365,9 @@
     let bagS = []; statIds.forEach((id) => { if (!bagS.length) bagS = shuffle(STATS, r); assign[id].k = bagS.pop(); });
     const pool = cfg.eventPool || [], rec = pool.filter((e) => e.recovery), other = pool.filter((e) => !e.recovery);
     const evIds = shuffle(g.order.filter((id) => assign[id] && assign[id].t === 'event'), r);
-    const [rlo, rhi] = L.recoveryEvents || [1, 3], nRec = Math.min(evIds.length, randInt(rlo, rhi, r));
+    const [rlo, rhi] = L.recoveryEvents || [1, 3], nRec = Math.min(evIds.length, randInt(rlo, rhi, r)), used = new Set();
     evIds.forEach((id, i) => {
-      const e = i < nRec ? pickWeighted(rec, r) : (() => { const tier = pickWeighted(TIERS.map((t) => ({ t, weight: (L.eventTierWeights || {})[t] || 0 })), r).t; const c = other.filter((x) => x.tier === tier); return c.length ? pickWeighted(c, r) : pickWeighted(other, r); })();
+      const e = i < nRec ? pickDistinct(rec, r, used) : (() => { const tier = pickWeighted(TIERS.map((t) => ({ t, weight: (L.eventTierWeights || {})[t] || 0 })), r).t; const c = other.filter((x) => x.tier === tier && !used.has(x.id)); return pickDistinct(c.length ? c : other, r, used); })();
       Object.assign(assign[id], { tier: e.tier, ev: e.id }, e.recovery ? { recovery: true } : {});
     });
     for (const id of g.order) if (assign[id] && assign[id].t === 'treasure') assign[id].tier = pickWeighted(TIERS.map((t) => ({ t, weight: ((cfg.treasurePool || {}).tierWeights || {})[t] || 0 })), r).t;
@@ -521,6 +523,9 @@
     stat_all: (S, m, p) => ({ kind: 'multi', gains: (p.keys || STATS.slice(1)).map((key) => ({ key, amount: addStat(m, key, p.amount) })) }),
     gold: (S, m, p) => { S.g = (S.g || 0) + p.amount; return { kind: 'gold', amount: p.amount }; },
     gold_table: (S, m, p, r) => { const x = pickWeighted(p.table || [], r, (e) => e.w); const amount = x ? x.gold : 0; S.g = (S.g || 0) + amount; return { kind: 'gold', amount }; },
+    // 2026-10-04（第二段階）：効果の無い出来事（フィナとの会話だけ）と、少し疲れて能力が上がる出来事（古い訓練跡などの「少し鍛える」）
+    none: () => ({ kind: 'flavor' }),
+    stat_tired: (S, m, p, r) => { const key = pick(p.keys || STATS.slice(1), r), amount = addStat(m, key, p.amount), fatigueAdded = addFatigue(m, p.fatigue || 0); return { kind: 'stat', key, amount, fatigueAdded, fatigue: fatigue(m) }; },
   };
   function registerEventHandler(name, fn) { if (typeof name !== 'string' || typeof fn !== 'function') throw new Error('MMCH：イベント処理の登録が不正です'); EVENT_HANDLERS[name] = fn; }
 
@@ -578,9 +583,12 @@
     if (a.t === 'event') {
       if (f.consumedEvents.includes(id)) return { kind: 'none', note: 'consumed' };
       const e = (cfg.eventPool || []).find((x) => x.id === a.ev), h = e && EVENT_HANDLERS[e.handler];
+      // 2026-10-04：選択肢のある出来事（e.choices＝[{ id, label, desc, handler, params, text, lines }]）は、ここでは何も起こさず・使った印も付けず、選択肢だけを返す
+      //  （プレイヤーが選んだら resolveChoice。再読み込みでも同じ選択肢がもう一度出る）
+      if (e && Array.isArray(e.choices) && e.choices.length) return { kind: 'choice', ev: e.id, tier: a.tier, text: e.text || '', lines: e.lines || [], options: e.choices.map((c) => ({ id: c.id, label: c.label, desc: c.desc || '' })) };
       f.consumedEvents.push(id);
-      if (!h) return { kind: 'none', note: 'event' };
-      return { ...h(S, m, e.params || {}, rnd), ev: e.id, tier: a.tier, text: e.text || '' };
+      if (!h) return { kind: 'none', note: 'event', ev: e ? e.id : a.ev, lines: (e && e.lines) || [] };
+      return { ...h(S, m, e.params || {}, rnd), ev: e.id, tier: a.tier, text: e.text || '', lines: e.lines || [] };
     }
     if (a.t === 'treasure') {
       if (f.openedTreasures.includes(id)) return { kind: 'none', note: 'opened' };
@@ -602,6 +610,17 @@
       return { ...h(S, m, a.params || {}, rnd), special: id, text: a.text || '' };
     }
     return a.t === 'goal' ? { kind: 'none', note: 'goal' } : { kind: 'none', note: 'normal' };
+  }
+
+  /** 選択肢のある出来事で、プレイヤーが選んだあと（MMP8.resolveChoice から）：選んだ選択肢の効果を1回だけ適用し、使った印を付ける。選べない状態なら null */
+  function resolveChoice(S, m, optId, rnd = Math.random) {
+    const f = fieldOf(m), cfg = configFor(m), id = m.raise.node, a = typeAt(m, id);
+    if (!f || !cfg || !a || a.t !== 'event' || f.consumedEvents.includes(id)) return null;
+    const e = (cfg.eventPool || []).find((x) => x.id === a.ev), c = e && Array.isArray(e.choices) ? e.choices.find((x) => x.id === optId) : null;
+    if (!c) return null;
+    f.consumedEvents.push(id);
+    const h = EVENT_HANDLERS[c.handler || 'none'];
+    return { ...(h ? h(S, m, c.params || {}, rnd) : { kind: 'flavor' }), ev: e.id, tier: a.tier, text: c.text || e.text || '', lines: c.lines || [], choice: c.id };
   }
 
   function isWaypoint(m, id) {
@@ -627,22 +646,36 @@
     fatigueMin: (w, c) => c.fatigue >= w,
     raiseMin: (w, c) => c.raiseCount >= w,
     chance: (w, c) => (c.rnd || Math.random)() < w,
+    // 2026-10-04（第二段階・チュートリアル）：止まったマスの結果の種類（kind）、出来事があったか（hasEvent）、疲れ回復の出来事か（recovery）、ゴールに着いたか（goal）、選んだ道を決める瞬間か（trigger 'branch' で使う）
+    kind: (w, c) => !!c.fx && c.fx.kind === w,
+    hasEvent: (w, c) => (!!c.fx && !!c.fx.ev && c.fx.kind !== 'none' && !isRecoveryEv(c, c.fx.ev)) === !!w,
+    recovery: (w, c) => (!!c.fx && !!c.fx.ev && isRecoveryEv(c, c.fx.ev)) === !!w,   // 休憩マス（eventPool の recovery の出来事）。疲れが減るだけの出来事（追い風など）は休憩ではない
+    goal: (w, c) => !!c.goal === !!w,
   };
+  const isRecoveryEv = (c, ev) => { const cfg = c.cfg; const e = cfg && (cfg.eventPool || []).find((x) => x.id === ev); return !!(e && e.recovery); };
   /** 今の状態で起きるイベント（優先度の高い順。見たものは除く）。ctx＝{ trigger, visitedFields, fx, species, raiseCount, rnd } */
+  //  scope（2026-10-04）：'chapter'（既定＝この個体のこの Chapter で1回）／'save'（このセーブで1回＝チュートリアルなど。見た記録は ctx.flags.story（S.npcFlags.story）に持つ）
   function storyEvents(m, trigger, ctx = {}) {
     const f = fieldOf(m), cfg = configFor(m), g = graphFor(m); if (!f || !cfg || !Array.isArray(cfg.story) || !g) return [];
     const seen = Array.isArray(f.storySeen) ? f.storySeen : [], node = m.raise.node, n = g.nodes[node];
-    const c = { ...ctx, node, field: n ? n.field : null, branch: f.branch, fatigue: fatigue(m) };
+    const saveSeen = ctx.flags && Array.isArray(ctx.flags.story) ? ctx.flags.story : [];
+    const c = { ...ctx, cfg, node, field: n ? n.field : null, branch: f.branch, fatigue: fatigue(m) };
     const out = [];
     for (const e of cfg.story) {
-      if (!e || e.trigger !== trigger || (e.once !== false && seen.includes(e.id))) continue;
+      if (!e || e.trigger !== trigger) continue;
+      if (e.once !== false && (e.scope === 'save' ? saveSeen.includes(e.id) : seen.includes(e.id))) continue;
+      if (e.scope === 'save' && !ctx.flags) continue;   // セーブ単位の記録が渡されないとき（旧い呼び方）は出さない（二度出さないため）
       const W = e.when || {}; let ok = true;
       for (const [k, v] of Object.entries(W)) { const fn = STORY_CONDS[k]; if (!fn || !fn(v, c)) { ok = false; break; } }
       if (ok) out.push(e);
     }
     return out.sort((a, b) => (b.priority || 0) - (a.priority || 0));
   }
-  function markStory(m, id) { const f = fieldOf(m); if (!f) return; if (!Array.isArray(f.storySeen)) f.storySeen = []; if (!f.storySeen.includes(id)) f.storySeen.push(id); }
+  function markStory(m, id, flags) {
+    const cfg = configFor(m), e = cfg && Array.isArray(cfg.story) ? cfg.story.find((x) => x && x.id === id) : null;
+    if (e && e.scope === 'save') { if (!flags || typeof flags !== 'object') return; if (!Array.isArray(flags.story)) flags.story = []; if (!flags.story.includes(id)) flags.story.push(id); return; }
+    const f = fieldOf(m); if (!f) return; if (!Array.isArray(f.storySeen)) f.storySeen = []; if (!f.storySeen.includes(id)) f.storySeen.push(id);
+  }
 
   // ---------------------------------------------------------
   // MMP8（raising.js）へのつなぎ（Chapter ドライバー）
@@ -687,6 +720,7 @@
     onRest(S, m) { return { recovered: recover(m, { amount: rules(m).fatigueRules.rest }) }; },
     onStep(S, m) { const g = graphFor(m), f = fieldOf(m); if (g && f && g.nodes[m.raise.node]) { f.fieldId = g.nodes[m.raise.node].field; if (g.nodes[m.raise.node].branch) f.branch = g.nodes[m.raise.node].branch; } },
     resolve: (S, m, id, rnd) => resolve(S, m, id, rnd),
+    resolveChoice: (S, m, optId, rnd) => resolveChoice(S, m, optId, rnd),
     onBattleFinished(S, m) { return { fatigueAdded: addFatigue(m, rules(m).fatigueRules.battle) }; },
     onClose(S, m) { m.raise.field = null; },
     sanitize: (m) => sanitize(m),
@@ -697,6 +731,6 @@
     SKELETON, tileCensus, censusErrors, buildGraph, trackOf, alongPersp, smoothCurve, measure, pointAt, routeBetween, depthOf, roadAt, clampToRoad, stepsToMerge, sceneNodes, nextFields, sceneOrder, progressOf, routeLengths,
     validateLayout, generateLayout, initRun, fieldOf, configFor, graphFor, validField, sanitize, typeAt, nodeTypeName, assignOfType, turnInfo,
     fatigue, addFatigue, rollFatigue, canRoll, recover, carryFatigue, registerFatigueItem, fatigueItemEffect, useFatigueItem,
-    statGain, isWaypoint, storyEvents, markStory, STORY_CONDS: fz(Object.keys(STORY_CONDS)), registerEventHandler, registerPassHandler, onPass, resolve, reactionKeyOf, registerReactionResolver, companionReaction, DRIVER, attach, rulesOf });
+    statGain, isWaypoint, storyEvents, markStory, STORY_CONDS: fz(Object.keys(STORY_CONDS)), registerEventHandler, registerPassHandler, onPass, resolve, resolveChoice, pickDistinct, reactionKeyOf, registerReactionResolver, companionReaction, DRIVER, attach, rulesOf });
   attach();
 })(typeof window !== 'undefined' ? window : globalThis);

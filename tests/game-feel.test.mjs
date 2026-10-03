@@ -131,7 +131,7 @@ test('GF-07：フィナ／ダン／システム通知の役割：ダンはファ
 test('GF-08：Chapter のイベント（config.story）：データ駆動（本文は config だけ）。条件＝背景（通った背景を含む）・道・結果・種族・疲れ・確率。見たら「この個体のこの Chapter で1回」（storySeen）。セーブ・読み込みで残る', () => {
   const E = loadEngine(), { CH, P7, P8 } = E, cfg = CH.getConfig(1);
   assert.ok(Array.isArray(cfg.story) && cfg.story.length >= 10, `Chapter 1 のイベント ${cfg.story.length}`);
-  for (const e of cfg.story) { assert.ok(e.id && ['start', 'land'].includes(e.trigger) && e.lines.length >= 1, e.id); for (const k of Object.keys(e.when || {})) assert.ok(CH.STORY_CONDS.includes(k), `${e.id}：${k}`); for (const l of e.lines) assert.ok(l.text.length <= 40, `${e.id}：短い一言`); }
+  for (const e of cfg.story) { assert.ok(e.id && ['start', 'land', 'branch'].includes(e.trigger) && e.lines.length >= 1, e.id); for (const k of Object.keys(e.when || {})) assert.ok(CH.STORY_CONDS.includes(k), `${e.id}：${k}`); for (const l of e.lines) assert.ok(l.text.length <= (e.presentation === 'talk' ? 60 : 40), `${e.id}：短い一言`); }   // 2026-10-04：チュートリアル（presentation 'talk'・scope 'save'）は会話窓なので少し長くてよい
   assert.equal(new Set(cfg.story.map((e) => e.id)).size, cfg.story.length);
   const code = rd('js/chapter/engine.js').split('\n').map((l) => l.replace(/\/\/.*$/, '')).join('\n'); for (const e of cfg.story) assert.ok(!code.includes(e.lines[0].text), 'エンジンに本文を書かない');
   const S = P8.newSave(); S.m = P8.initIndividual(S, { sp: 1, name: 'ガル', age: 0, span: 30, h: 0, rk: 0, fa: 0, st: 0, last: null, li: 80, po: 110, in: 110, hi: 90, ev: 90, de: 60, sk: [0, 1, 2, 3], eq: [0, 1, 2, 3, -1, -1] }); P7.ensureProg(S.m); P8.depart(S, S.m, lcg(3)); const m = S.m;
@@ -160,7 +160,7 @@ test('GF-09：Chapter の演出の流れ（field-view・サイコロ）：能力
   const enc = FV.slice(FV.indexOf('  async function encounter(m, bt) {'), FV.indexOf('  /** 通常マス（LEVEL 1）'));
   order(enc, ['Math.max(380, beatOf(4))', 'chf-rustle', 'chf-alert', 'await encounterShow(BT, bt)', 'async function encounterShow', 'chf-enc', "feel('wild.alert'", 'await wait(1250)']);   // 2026-10-03：静止 → 予兆 → 絵と文を同時に → 遭遇の音 → 読める間
   assert.match(res, /else touchTile\(tile\);/, '通常マスは足元が軽く光るだけ');
-  assert.match(res, /await storyAt\(m, 'land', \{ fx \}\);/);
+  assert.match(res, /await storyAt\(m, 'land', \{ fx, goal: !!r\.goal \}\);/);
   assert.match(DR, /feel\('dice\.throw'\); landT = setTimeout\(\(\) => \{ ov\.classList\.add\('landed'\); feel\('dice\.land'\); \}, T \* 0\.6\);/);
   assert.doesNotMatch(DR, /stop\.classList\.add\('on', 'pop'\)|'afterbegin', '<i class="chdz-glow"><\/i>'/, '2026-10-04：止まったあとに弾み・光の輪の動きを足さない（光の輪は転がっている間に出し終える）');
   assert.match(DR, /ev\(r0, \(\) => \{ setPhase\('settle'\);[\s\S]*?chdz-glow/, '光の輪は SETTLE の始まりで出す');

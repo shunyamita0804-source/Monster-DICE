@@ -159,18 +159,48 @@
       { id: 'sage', tier: 'rare', weight: 2, handler: 'stat_random', params: { amount: 20 }, text: '旅の賢者に教えを受けた！', look: { h: 118 } },
       { id: 'charm', tier: 'rare', weight: 2, handler: 'gold', params: { amount: 150 }, text: '幸運のお守りを見つけた！', look: { h: 118 } },
       { id: 'legend_spring', tier: 'special', weight: 1, handler: 'stat_all', params: { amount: 8 }, text: '伝説の泉の力で、ライフ以外の能力がそれぞれ上がった！', look: { h: 132 } },
+      // ---- 2026-10-04（第二段階）：Chapter 1 の短いランダムイベント（フィナの2〜3行＋小さな結果。lines＝会話（フィナの吹き出し）、効果は既存の仕組みの中で安全なものだけ）。
+      //  同じ Chapter では同じイベントを重複して割り当てない（engine の pickDistinct）。choices＝2択（選んでから効果。選ぶまで使った印を付けない）。文面は【暫定】 ----
+      { id: 'tailwind', tier: 'normal', weight: 3, handler: 'fatigue', params: { amount: 5 }, text: '草原の追い風に背中を押された。', lines: [{ expression: 'happy', text: 'わ、追い風！ 背中を押してくれてるみたい。' }, { expression: 'smile', text: '少し足が軽くなったね。' }] },
+      { id: 'spring_water', tier: 'normal', weight: 3, handler: 'fatigue', params: { amount: 15 }, text: '澄んだ湧き水でひと息ついた。', lines: [{ expression: 'happy', text: '見て、湧き水だよ。冷たくておいしい！' }, { expression: 'smile', text: 'ひと息ついたら、また行こう。' }] },
+      { id: 'stone_tablet', tier: 'normal', weight: 3, handler: 'stat_random', params: { amount: 5, keys: ['in', 'hi'] }, text: '古い石碑の言葉に耳を傾けた。', lines: [{ expression: 'guide', text: '古い石碑…。文字が少し読めるよ。昔の聖獣士の言葉かな。' }, { expression: 'smile', text: 'この子も、じっと見てる。何か伝わったのかも。' }] },
+      { id: 'break_with_fina', tier: 'normal', weight: 3, handler: 'fatigue', params: { amount: 12 }, text: 'フィナと一緒に少し休んだ。', lines: [{ expression: 'smile', text: 'ここで少し休もう。…ねえ、この子、来たときより落ち着いてない？' }, { expression: 'happy', text: '旅って、こういう時間も大事だよね。' }] },
+      { id: 'sudden_rain', tier: 'normal', weight: 2, handler: 'stat_tired', params: { amount: 5, keys: ['de'], fatigue: 4 }, text: '突然の雨を木の下でやり過ごした。', lines: [{ expression: 'surprised', text: 'わっ、雨！ 木の下に入ろう。' }, { expression: 'smile', text: '…少し濡れちゃったけど、この子は平気そう。むしろ丈夫になったかも。' }] },
+      { id: 'beast_tracks', tier: 'normal', weight: 3, handler: 'stat_random', params: { amount: 5, keys: ['hi', 'ev'] }, text: '獣の足跡をたどって気配を読んだ。', lines: [{ expression: 'serious', text: '大きな足跡…。何かが通ったあとだね。' }, { expression: 'smile', text: 'この子、じっと足跡を見てる。気配を読む練習になったかも。' }] },
+      { id: 'distant_cry', tier: 'normal', weight: 2, handler: 'none', text: '遠くからモンスターの声が聞こえた。', lines: [{ expression: 'surprised', text: '今の、聞こえた？ 遠くでモンスターの声…。' }, { expression: 'normal', text: 'この地方には、まだ会ったことのない子がいるんだね。' }] },
+      { id: 'wild_flowers', tier: 'normal', weight: 3, handler: 'fatigue', params: { amount: 8 }, text: '野花の群生で少し寄り道した。', lines: [{ expression: 'happy', text: 'わあ、お花がいっぱい！ 少しだけ寄り道しよう。' }, { expression: 'smile', text: 'いい匂い。この子もうれしそう。' }] },
+      { id: 'traveler_trace', tier: 'normal', weight: 3, handler: 'stat_random', params: { amount: 5, keys: ['po'] }, text: '古い旅人の痕跡を見つけた。', lines: [{ expression: 'normal', text: '焚き火の跡だ。誰かが先に旅をしてたんだね。' }, { expression: 'smile', text: 'ここで鍛えていったのかな。この子もやる気になってる。' }] },
+      { id: 'small_animal', tier: 'normal', weight: 3, handler: 'fatigue', params: { amount: 10 }, text: '小動物に近道を教えてもらった。', lines: [{ expression: 'surprised', text: 'あ、小さな動物。…ついてきてほしいのかな？' }, { expression: 'happy', text: '近道を教えてくれたみたい。ありがとう！' }] },
+      { id: 'remember_dan', tier: 'normal', weight: 2, handler: 'stat_random', params: { amount: 5, keys: ['de', 'li'] }, text: 'ダンの言葉を思い出した。', lines: [{ expression: 'normal', text: 'ダンが言ってたよね。「無理をするより、整えてから進め」って。' }, { expression: 'smile', text: '落ち着いて歩いたら、この子の足取りもしっかりしてきた。' }] },
+      { id: 'wind_cry', tier: 'normal', weight: 2, handler: 'none', text: '風に乗って鳴き声が聞こえた。', lines: [{ expression: 'surprised', text: '風に乗って、鳴き声が聞こえる。…この子が返事してる！' }, { expression: 'smile', text: '仲間を呼んでるのかな。それとも、挨拶？' }] },
+      { id: 'old_grounds', tier: 'normal', weight: 3, text: '古い訓練跡を見つけた。', lines: [{ expression: 'guide', text: '誰かが鍛えていた跡みたい。少し試してみる？' }],
+        choices: [{ id: 'train', label: '少し鍛える', desc: '能力が少し上がる・少し疲れる', handler: 'stat_tired', params: { amount: 5, fatigue: 6 }, text: '古い訓練跡で少し鍛えた。', lines: [{ expression: 'smile', text: 'いい動き！ 少し疲れたけど、確かに伸びてる。' }] },
+          { id: 'rest', label: '今日は休む', desc: '疲れが少し減る', handler: 'fatigue', params: { amount: 8 }, text: '訓練跡のそばで休んだ。', lines: [{ expression: 'smile', text: 'うん、今日は休もう。無理しないのも大事。' }] }] },
+      { id: 'small_shrine', tier: 'normal', weight: 2, text: '小さな祠があった。', lines: [{ expression: 'normal', text: '小さな祠があるよ。手を合わせていこうか？' }],
+        choices: [{ id: 'pray', label: '手を合わせる', desc: '疲れが少し減る', handler: 'fatigue', params: { amount: 10 }, text: '小さな祠に手を合わせた。', lines: [{ expression: 'smile', text: '…なんだか、気持ちが落ち着いたね。' }] },
+          { id: 'go', label: '先を急ぐ', desc: '何も起きない', handler: 'none', text: '祠を横目に先を急いだ。', lines: [{ expression: 'normal', text: 'うん、先を急ごう。' }] }] },
     ],
     treasurePool: { tierWeights: { normal: 70, rare: 25, special: 5 }, contents: { handler: 'gold_table', params: { table: [{ w: 4, gold: 50 }, { w: 1, gold: 150 }] } } },
     battleTypes: {
       // encounter（2026-10-03）：遭遇の演出の文（絵と同時に出る）【暫定の文面】。tone＝帯の色（wild 赤金・rare 深紅・rival 紫）。ライバルは草むらの揺れ・野生のカットインを使わない
       wild: { label: '野生のモンスター', asset: 'battle_wild', cutin: 'fx_battle_encounter', encounter: '野生のモンスターが現れた！', tone: 'wild' },   // cutin：野生バトル突入のカットイン（2026-10-02 正式。赤と金の交差。レア・ライバルには付けない）
       rare: { label: 'レアモンスター', asset: 'battle_wild', encounter: 'レアモンスターが現れた！', tone: 'rare', aura: true, badge: '★ レア' },   // aura（2026-10-03 デザイン参考 04）：同じ遭遇の作りに淡い後光・金のリムライト・光の粒・「★ レア」の札（見た目だけ。出現率・判定は変えない）   // レアモンスターマス（10%）。敵データ・報酬・遭遇演出は未登録＝【暫定】バトルの中身は野生と同じ
-      rival: { label: 'ライバル', asset: 'battle_rival', figure: null, encounter: 'ライバルが立ちはだかった！', tone: 'rival', noRustle: true, sting: { title: 'RIVAL', sub: 'ライバルが現れた', ms: 880 } },   // sting（2026-10-03 デザイン参考 04 の A1）：1秒未満の「RIVAL」の映画的な一瞬（ネイビー・アイボリーの細い罫線）。ライバルの会話（A2）・自動でバトルへ（A3）は未決＝ライバルの人物・会話のデータが無い
+      rival: { label: 'ライバルのリュウ', name: 'リュウ', asset: 'battle_rival', figure: null, encounter: 'リュウが立ちはだかった！', tone: 'rival', noRustle: true, sting: { title: 'RIVAL', sub: 'ライバル・リュウが現れた', ms: 880 },
+        note: 'リュウの相棒は、今のこの子と同じくらいの強さみたい。' },   // 2026-10-04：ライバルの正式名＝リュウ（各 Chapter に登場する同一人物。相棒モンスターは未確定）。強さは js/phase8/rival.js（MMRIVAL）   // sting（2026-10-03 デザイン参考 04 の A1）：1秒未満の「RIVAL」の映画的な一瞬（ネイビー・アイボリーの細い罫線）。ライバルの会話（A2）・自動でバトルへ（A3）は未決＝ライバルの人物・会話のデータが無い
     },
     // ---- Chapter のイベント（2026-10-02。MMCH.storyEvents のデータ。本文は【暫定】）：フィナは節目だけ話す（通常マスごとには話さない）。
     //  trigger：'start'＝Chapter に入った最初、'land'＝止まったあと。when：field＝今回の移動で通った背景・今いる背景、branch＝選んだ道、fx／battleType＝止まったマスの結果、species＝種族、fatigueMin＝疲れ、chance＝確率。
     //  once（既定）＝この個体のこの Chapter で1回。priority＝同時に満たしたときの順（高いほうを1つだけ）。presentation：'bubble'（既定・フィナの小さな吹き出し）／'talk'（小さな会話窓） ----
     story: [
+      // ---- 2026-10-04（第二段階）：初回チュートリアル＝フィナとの会話（scope 'save'＝このセーブで1回だけ。見た記録は S.npcFlags.story）。文面は【暫定】 ----
+      { id: 'tut_stat', trigger: 'land', scope: 'save', priority: 50, presentation: 'talk', when: { kind: 'chstat' }, lines: [{ expression: 'guide', text: '能力マスだよ。止まると、この子の得意に合わせて能力が伸びるんだ。' }, { expression: 'smile', text: '伸び方は子ごとに違うから、ステータスで確かめてみてね。' }] },
+      { id: 'tut_event', trigger: 'land', scope: 'save', priority: 50, presentation: 'talk', when: { hasEvent: true }, lines: [{ expression: 'guide', text: 'イベントマスは、止まるたびに違う出来事が起きるよ。' }, { expression: 'happy', text: '何が起きるかは、その時のお楽しみ！' }] },
+      { id: 'tut_rest', trigger: 'land', scope: 'save', priority: 50, presentation: 'talk', when: { recovery: true }, lines: [{ expression: 'guide', text: '休憩マスだね。疲れが減ったよ。' }, { expression: 'normal', text: '疲れが100になるとサイコロが振れなくなるから、操作欄の「休む」も使ってね。' }] },
+      { id: 'tut_treasure', trigger: 'land', scope: 'save', priority: 50, presentation: 'talk', when: { kind: 'treasure' }, lines: [{ expression: 'happy', text: '宝箱だ！ 中身はその時によって違うよ。' }, { expression: 'guide', text: '珍しい宝箱ほど、いいものが入ってるみたい。' }] },
+      { id: 'tut_wild', trigger: 'land', scope: 'save', priority: 50, presentation: 'talk', when: { fx: 'battle', battleType: 'wild' }, lines: [{ expression: 'surprised', text: '野生のモンスターだ！ ここでバトルするか、やめておくか選べるよ。' }, { expression: 'guide', text: '勝っても賞金は無いけど、いい練習になる。バトルのあとは少し疲れるから気をつけてね。' }] },
+      { id: 'tut_rival', trigger: 'land', scope: 'save', priority: 50, presentation: 'talk', when: { fx: 'battle', battleType: 'rival' }, lines: [{ expression: 'serious', text: 'あれは…リュウ！ 私たちと同じように旅をしてるライバルだよ。' }, { expression: 'guide', text: '向こうもこの旅で強くなってる。ここは避けて通れないから、がんばろう！' }] },
+      { id: 'tut_branch', trigger: 'branch', scope: 'save', priority: 50, presentation: 'talk', lines: [{ expression: 'guide', text: '分かれ道だよ。どっちの道を通るかは、自分で決められるんだ。' }, { expression: 'smile', text: '道によって出来事や相手が少し変わるみたい。好きなほうを選んでね。' }] },
+      { id: 'tut_goal', trigger: 'land', scope: 'save', priority: 60, presentation: 'talk', when: { goal: true }, lines: [{ expression: 'happy', text: 'ゴールだ！ ここから公式大会に挑戦できるよ。' }, { expression: 'guide', text: '大会はランクE〜S。今のこの子に合うランクを選ぼう。参加しない選択もできるよ。' }] },
       { id: 'ch1_start', trigger: 'start', lines: [{ expression: 'happy', text: 'いよいよ出発だね！ 大会会場まで、一緒にがんばろう。' }] },
       { id: 'ch1_first_wild', trigger: 'land', priority: 30, when: { fx: 'battle', battleType: 'wild' }, lines: [{ expression: 'surprised', text: '野生のモンスターだ！ 気をつけて！' }] },
       { id: 'ch1_first_rare', trigger: 'land', priority: 31, when: { fx: 'battle', battleType: 'rare' }, lines: [{ expression: 'surprised', text: 'あの子、見たことない色…！ めずらしいモンスターかも！' }] },

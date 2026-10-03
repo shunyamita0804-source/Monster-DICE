@@ -30,7 +30,7 @@ for (const ch of [3, 4]) for (const lim of [20, ...LIMS.filter((x) => x !== 20)]
       if (ph === 'roll') { if (P8.canRoll && !P8.canRoll(m)) P8.rest(S, m); else P8.roll(S, m, rnd); }
       else if (ph === 'move') P8.step(S, m);
       else if (ph === 'branch') P8.chooseBranch(S, m, m.raise.pend.opts[0]);
-      else if (ph === 'resolve') P8.resolveLanding(S, m, rnd);
+      else if (ph === 'resolve') { const r = P8.resolveLanding(S, m, rnd); if (r.fx && r.fx.kind === 'choice') P8.resolveChoice(S, m, r.fx.options[Math.floor(rnd() * r.fx.options.length)].id, rnd); }   // 2026-10-04：2択の出来事はランダムに選ぶ
       else if (ph === 'battle') { if (P8.beginBattle(S, m, { kind: 'practice', rank: 0 }).ok) P8.markBattleDone(S); else m.raise.pend = null; }
       else m.raise.pend = null;
     }

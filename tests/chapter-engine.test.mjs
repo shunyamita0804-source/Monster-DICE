@@ -33,7 +33,7 @@ function turn(E, v, opt, die = DIE3) {   // 2026-10-01 夜：Chapter 1・2 と�
   }
   return path;
 }
-function finishTurnAnyway(E) { const { P8, S, m } = E; if (m.raise.pend && m.raise.pend.stage === 'resolve') { const x = P8.resolveLanding(S, m, lcg(1)); if (m.raise.pend && m.raise.pend.stage === 'battle') P8.skipBattleSquare(S, m); return x; } return null; }
+function finishTurnAnyway(E) { const { P8, S, m } = E; if (m.raise.pend && m.raise.pend.stage === 'resolve') { let x = P8.resolveLanding(S, m, lcg(1)); if (x.fx && x.fx.kind === 'choice') x = P8.resolveChoice(S, m, x.fx.options[0].id, lcg(1)); if (m.raise.pend && m.raise.pend.stage === 'battle') P8.skipBattleSquare(S, m); return x; } return null; }
 
 test('CH-ENGINE-01：config からフィールド（正式背景14枚 ch1_bg_01〜14。共通 01〜05 → 分かれ道 → 森 06〜07／大橋 08〜09 → 合流 10 → 14）・ノード・つながり・ルートを作る。公式マス54（2026-10-04・30ターン。スタートを含まない）。Chapter 1 は MMP8 のトラックとして登録される', () => {
   const { CH, P8 } = loadEngine(), cfg = CH.getConfig(1), g = CH.buildGraph(cfg);
@@ -284,7 +284,7 @@ test('CH1-14〜15：ボード上のバトルの後は疲れ +5（野生・レア
 test('CH1-16：バトルの種類：wild・rare・rival（レアモンスターの敵データは未登録＝バトルの中身は野生と同じ【暫定】）。旧目印の asset key は wild・rival で分ける', () => {
   const { CH } = loadEngine(), cfg = CH.getConfig(1), bt = cfg.battleTypes;
   assert.deepEqual(Object.keys(bt), ['wild', 'rare', 'rival']);
-  assert.deepEqual([bt.wild.label, bt.rare.label, bt.rival.label], ['野生のモンスター', 'レアモンスター', 'ライバル']);
+  assert.deepEqual([bt.wild.label, bt.rare.label, bt.rival.label], ['野生のモンスター', 'レアモンスター', 'ライバルのリュウ']); assert.equal(bt.rival.name, 'リュウ', '2026-10-04：ライバルの正式名');
   assert.deepEqual([bt.wild.asset, bt.rare.asset, bt.rival.asset], ['battle_wild', 'battle_wild', 'battle_rival']);
   assert.notEqual(cfg.assets.battle_wild, cfg.assets.battle_rival, '別のファイル名'); assert.equal(cfg.assets.battle_strong, undefined);
   for (const k of ['battle_wild', 'battle_rival']) assert.ok(existsSync(path.join(ROOT, cfg.assets[k])), k);

@@ -77,7 +77,7 @@ test('DP-03：アイテム屋：正式背景（ぼかさない）と正式NPC �
 
 test('DP-04：共通会話 UI（ネイビー・アイボリー・細い罫線・小さな金の角飾り）。ライバルは「RIVAL／ライバルが現れた」を1秒未満、レアは後光・金のリムライト・光の粒・「★ レア」。見た目だけ', () => {
   const CF = rd('js/chapter/configs/ch1a.js'), FV = rd('js/chapter/field-view.js');
-  assert.match(CF, /sting: \{ title: 'RIVAL', sub: 'ライバルが現れた', ms: 880 \}/);
+  assert.match(CF, /sting: \{ title: 'RIVAL', sub: 'ライバル・リュウが現れた', ms: 880 \}/);
   assert.match(CF, /aura: true, badge: '★ レア'/);
   assert.match(FV, /const S1 = BT\.sting \|\| \{\}, ms = Math\.max\(400, Math\.min\(980, S1\.ms \|\| 880\)\);/, '1秒未満');
   assert.match(FV, /if \(BT\.sting\) return stingShow\(ui, BT, bt\);/);
