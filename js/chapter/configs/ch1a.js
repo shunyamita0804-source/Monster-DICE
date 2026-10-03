@@ -13,7 +13,7 @@
 // =========================================================
 (function (root) {
   'use strict';
-  const A = './assets/fields/ch1a/', TL = A + 'tiles/', FN = A + 'final/', F = FN + 'field/', I = A + 'intro/', U = A + 'ui/', D = A + 'dice/';
+  const A = './assets/fields/ch1a/', CB = './assets/chests/', TL = A + 'tiles/', FN = A + 'final/', F = FN + 'field/', I = A + 'intro/', U = A + 'ui/', D = A + 'dice/';
   const W = 762, H = 1536;   // 背景画像の大きさ
   const DEPTH = [[0.98, 1.22], [0.9, 1.1], [0.84, 1], [0.72, 0.84], [0.6, 0.62], [0.535, 0.5], [0.47, 0.4], [0.425, 0.34], [0.38, 0.28], [0.3, 0.2]];
   // route：common（共通区間 01〜05）→ 05 の最後のマス＝分かれ道（branch）→ forest（森の道 06〜07）／bridge（大橋の道 08〜09）→ late（合流 10 の最初のマス＝merge → 終盤 → 14 の大会会場の門前）。
@@ -162,8 +162,8 @@
     battleTypes: {
       // encounter（2026-10-03）：遭遇の演出の文（絵と同時に出る）【暫定の文面】。tone＝帯の色（wild 赤金・rare 深紅・rival 紫）。ライバルは草むらの揺れ・野生のカットインを使わない
       wild: { label: '野生のモンスター', asset: 'battle_wild', cutin: 'fx_battle_encounter', encounter: '野生のモンスターが現れた！', tone: 'wild' },   // cutin：野生バトル突入のカットイン（2026-10-02 正式。赤と金の交差。レア・ライバルには付けない）
-      rare: { label: 'レアモンスター', asset: 'battle_wild', encounter: 'レアモンスターが現れた！', tone: 'rare' },   // レアモンスターマス（10%）。敵データ・報酬・遭遇演出は未登録＝【暫定】バトルの中身は野生と同じ
-      rival: { label: 'ライバル', asset: 'battle_rival', figure: null, encounter: 'ライバルが立ちはだかった！', tone: 'rival', noRustle: true },
+      rare: { label: 'レアモンスター', asset: 'battle_wild', encounter: 'レアモンスターが現れた！', tone: 'rare', aura: true, badge: '★ レア' },   // aura（2026-10-03 デザイン参考 04）：同じ遭遇の作りに淡い後光・金のリムライト・光の粒・「★ レア」の札（見た目だけ。出現率・判定は変えない）   // レアモンスターマス（10%）。敵データ・報酬・遭遇演出は未登録＝【暫定】バトルの中身は野生と同じ
+      rival: { label: 'ライバル', asset: 'battle_rival', figure: null, encounter: 'ライバルが立ちはだかった！', tone: 'rival', noRustle: true, sting: { title: 'RIVAL', sub: 'ライバルが現れた', ms: 880 } },   // sting（2026-10-03 デザイン参考 04 の A1）：1秒未満の「RIVAL」の映画的な一瞬（ネイビー・アイボリーの細い罫線）。ライバルの会話（A2）・自動でバトルへ（A3）は未決＝ライバルの人物・会話のデータが無い
     },
     // ---- Chapter のイベント（2026-10-02。MMCH.storyEvents のデータ。本文は【暫定】）：フィナは節目だけ話す（通常マスごとには話さない）。
     //  trigger：'start'＝Chapter に入った最初、'land'＝止まったあと。when：field＝今回の移動で通った背景・今いる背景、branch＝選んだ道、fx／battleType＝止まったマスの結果、species＝種族、fatigueMin＝疲れ、chance＝確率。
@@ -198,9 +198,10 @@
       grass_front: A + 'env/grass_flower_border.webp',
       // 演出（2026-10-02。ZIP mystic-monsters-board-ui-assets-2026-10-01-v2 の 03_board_effects を透過化。assets/fields/ch1a/effects/README.md）
       fx_battle_encounter: A + 'effects/effect_battle_encounter.webp', fx_stat_up: A + 'effects/frame_stat_up.webp', fx_turn_warning: A + 'effects/ui_turn_warning.webp',
-      // 宝箱（2026-10-02 正式素材。ZIP の 05_goal_and_treasure を透過化）：normal＝通常の宝箱、special＝虹色の宝箱。rare は従来の表示のまま（この2つを流用しない）
-      chest_normal_closed: TL + 'chest_normal_closed.webp', chest_normal_open: TL + 'chest_normal_open.webp',
-      chest_special_closed: TL + 'chest_rainbow_closed.webp', chest_special_open: TL + 'chest_rainbow_open.webp',
+      // 宝箱（2026-10-03 正式素材 4種類＝assets/chests/。各＝本体1枚＋開封アニメーション4枚。README.md）：normal＝chest_01（木）、special＝chest_04（虹色）。
+      //  rare は従来の表示のまま（chest_02・03 のどちらを使うかは未決＝要確認）。旧（2026-10-02）の chest_normal／rainbow は tiles/ にファイルだけ残す
+      ...['01', '02', '03', '04'].reduce((o, n) => Object.assign(o, { [`chest_${n}_base`]: `${CB}chest_${n}_base.webp` },
+        ...[1, 2, 3, 4].map((i) => ({ [`chest_${n}_anim_0${i}`]: `${CB}chest_${n}_anim_0${i}.webp` }))), {}),
     },
     // 目印：石板の脇（道の中央の輪にモンスター、目印は輪の横。奥の輪でもモンスターに重ならない距離 gap）。足元の草は置かない（石の道）
     nodeLook: {
@@ -226,7 +227,11 @@
         branch: TL + 'tile_branch.webp', merge: TL + 'tile_merge.webp',   // 分かれ道・合流（2026-10-02。ZIP の 02_branching の board_node_branch／merge を透過化）
       },
       // 宝箱のマスに止まったとき、マスの脇に現れて開く宝箱（tier ごと。書いていない tier＝rare は従来の表示＝マスUIだけ）
-      chests: { normal: { closed: 'chest_normal_closed', open: 'chest_normal_open', w: 128 }, special: { closed: 'chest_special_closed', open: 'chest_special_open', w: 134 } },
+      //  frames＝開封アニメーション（順に切り替え、最後の1枚が開いたままの姿＝open）。2026-10-03 正式4種類のうち normal＝chest_01・special＝chest_04（rare は未決）
+      chests: {
+        normal: { closed: 'chest_01_base', open: 'chest_01_anim_04', frames: ['chest_01_anim_01', 'chest_01_anim_02', 'chest_01_anim_03', 'chest_01_anim_04'], w: 136 },
+        special: { closed: 'chest_04_base', open: 'chest_04_anim_04', frames: ['chest_04_anim_01', 'chest_04_anim_02', 'chest_04_anim_03', 'chest_04_anim_04'], w: 150 },
+      },
       // 大きさ（2026-10-03 試遊で最優先）：roadFit＝その地点で見えている道幅に対する割合（通常マス 0.55・能力 0.58・宝／イベント／休憩 0.62・バトル／分かれ道／合流／ゴール 0.66。道を覆わない）。
       //  roadFit が無いときの旧方式：基準 w × 奥行き^depthPow（背景の画素）。flat＝縦の潰れ（奥 far ほど平たい楕円・手前 near ほど円に近い。奥行き d で補間）。normal＝通常マスの大きさの倍率（控えめ）。
       //  pedestal＝道に刻まれたマス（ごく薄い接地影・細い金属の縁 rim。厚みは見せない＝thick 0。CSS だけ）。farOpacity＝いちばん奥のマスの濃さ（奥ほど控えめ）。ノードごとの上書きは BACKGROUNDS[].nodes の4番目 { s, f }

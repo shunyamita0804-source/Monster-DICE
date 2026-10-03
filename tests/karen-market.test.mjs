@@ -75,11 +75,13 @@ test('KR-4：NPC同士の会話：行ごとに npc を切り替えると、名�
   assert.deepEqual(seen, [['フィナ', 'left'], ['カレン', 'right'], ['フィナ', 'left'], ['カレン', 'right'], ['カレン', 'right']]);
 });
 
-test('KR-5：会話ウィンドウは深い青・白文字・金枠。名前欄は紺に金縁・金文字。立ち絵に色のフィルターをかけない', () => {
+test('KR-5：会話ウィンドウ（2026-10-03 デザイン素材 02 を HTML/CSS で再構築）は深いネイビーの半透明・アイボリーの文字・アイボリーの細い罫線、金は角の小さな飾りだけ。名前欄もネイビーにアイボリーの罫線。立ち絵に色のフィルターをかけない', () => {
   const css = HTML.slice(HTML.indexOf('/* ===== 共通NPC会話（MMNPC'), HTML.indexOf('</style></head>'));
-  assert.match(css, /\.mmtalk-win\{[^}]*border:2px solid #e8c86a;background:linear-gradient\(#1e3f8f,#0c1f56/);
-  assert.match(css, /\.mmtalk-name\{[^}]*border:2px solid #e8c86a;background:linear-gradient\(#13306f,#07163f\);color:#f6dc92/);
-  assert.match(css, /\.mmtalk-text\{[^}]*color:#fff;/);
+  assert.match(css, /\.mmtalk-win\{[^}]*border:1px solid rgba\(240,232,212,\.62\);background:linear-gradient\(rgba\(16,27,54,\.95\)/);
+  assert.match(css, /\.mmtalk-win::before,\.mmtalk-win::after\{[^}]*width:14px;height:14px;[^}]*border-color:rgba\(214,186,120,\.85\)/, '金は角の小さな飾り（1px）だけ');
+  assert.doesNotMatch(css, /\.mmtalk-win\{[^}]*border:2px solid #e8c86a/, '大きな金枠は使わない');
+  assert.match(css, /\.mmtalk-name\{[^}]*border:1px solid rgba\(240,232,212,\.7\);background:linear-gradient\(#17284f,#0b1631\);color:#f3ecd9/);
+  assert.match(css, /\.mmtalk-text\{[^}]*color:#f3ecd9;/);
   assert.match(css, /\.mmtalk-stage\[data-side=right\] \.mmtalk-name\{left:auto;right:14px\}/);
   assert.doesNotMatch(css, /filter|hue-rotate/);
 });

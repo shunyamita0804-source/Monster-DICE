@@ -75,7 +75,7 @@
     if (!a) return null;
     if (cfg.tileUI && cfg.tileUI.replacesLandmarks && ['stat', 'event', 'treasure'].includes(a.t)) {   // マスUIが種別を示す：同じ意味の旧目印は出さない
       const ch = a.t === 'treasure' && (cfg.tileUI.chests || {})[a.tier || 'normal'];   // 宝箱の正式素材（tier ごと。無い tier は出さない）
-      return ch ? { ...L.treasure, w: ch.w || (L.treasure || {}).w, key: ch.closed, openKey: ch.open, cls: `tr tr-${a.tier || 'normal'} chest` } : null;
+      return ch ? { ...L.treasure, w: ch.w || (L.treasure || {}).w, key: ch.closed, openKey: ch.open, frames: ch.frames || null, cls: `tr tr-${a.tier || 'normal'} chest` } : null;
     }
     if (a.t === 'stat') return { ...L.stat, key: `stat_${a.k}`, cls: `st st-${a.k}` };
     if (a.t === 'event') {
@@ -149,7 +149,7 @@
     const w = look.w ? look.w * d : 0, size = look.w ? `width:${w.toFixed(1)}px;` : `height:${(look.h * d).toFixed(1)}px;`;
     const far = clamp((1 - n.d) * 1.1, 0, 0.7);   // 遠景ほど淡く小さく（透明度だけ。色は変えない）
     const vis = ((cfg.landmarkVisibility || {})[a.t] || 'always') === 'arrive' && !used;   // 着いたときに初めて現れる目印
-    return `<div class="chf-obj ${look.cls}${used ? ' used' : ''}${vis ? ' hid' : ''}" data-id="${id}" data-t="${a.t}" data-side="${P.side}" style="left:${P.x.toFixed(1)}px;top:${P.y.toFixed(1)}px;z-index:${Math.round(P.y)};--sink:${look.sink || 0};--d:${d};opacity:${(P.opacity * (1 - far * 0.35)).toFixed(2)}"><i class="chf-osh"></i><i class="chf-glow"></i><img src="${asset(cfg, used && look.openKey ? look.openKey : look.key)}"${look.openKey ? ` data-open="${esc(asset(cfg, look.openKey) || '')}"` : ''} alt="" draggable="false" decoding="async" style="${size}">${look.tuft === false ? '' : tuftHtml(cfg, w || (look.h * d) * 0.7)}</div>`;
+    return `<div class="chf-obj ${look.cls}${used ? ' used' : ''}${vis ? ' hid' : ''}" data-id="${id}" data-t="${a.t}" data-side="${P.side}" style="left:${P.x.toFixed(1)}px;top:${P.y.toFixed(1)}px;z-index:${Math.round(P.y)};--sink:${look.sink || 0};--d:${d};opacity:${(P.opacity * (1 - far * 0.35)).toFixed(2)}"><i class="chf-osh"></i><i class="chf-glow"></i><img src="${asset(cfg, used && look.openKey ? look.openKey : look.key)}"${look.openKey ? ` data-open="${esc(asset(cfg, look.openKey) || '')}"` : ''}${look.frames ? ` data-frames="${esc(look.frames.map((k) => asset(cfg, k) || '').join('|'))}"` : ''} alt="" draggable="false" decoding="async" style="${size}">${look.tuft === false ? '' : tuftHtml(cfg, w || (look.h * d) * 0.7)}</div>`;
   }
   // ---------------------------------------------------------
   // マスUI（config.tileUI）：各マスの座標（ノードの止まる位置 mx・my）に、マス種別ごとの表示素材を地面に置く。
@@ -236,6 +236,15 @@
     fv.insertAdjacentHTML('afterbegin', sceneHtml(m, fieldId) + overlayHtml(V.cfg, m));
     V.par0 = null; V.focus = null;
     for (const f of MMCH.nextFields(V.g, fieldId)) preloadField(V.cfg, f);   // 次に入る背景（つながりの先。背景IDの連番は前提にしない）
+    preloadChests(fv);
+  }
+  /** 宝箱の開封アニメーションの絵を先に読む（開ける瞬間に絵が抜けないように。同じ絵は1回だけ） */
+  const CHEST_PRE = new Set();
+  function preloadChests(fv) {
+    if (typeof Image === 'undefined') return;
+    fv.querySelectorAll('.chf-obj:not(.used) img[data-frames]').forEach((im) => im.dataset.frames.split('|').forEach((src) => {
+      if (!src || CHEST_PRE.has(src)) return; CHEST_PRE.add(src); const x = new Image(); x.decoding = 'async'; x.src = src;
+    }));
   }
 
   // ---------------------------------------------------------
@@ -868,11 +877,36 @@
   async function encounterShow(BT, bt) {
     const ui = $('#chf-ui'), cut = BT.cutin ? effectAsset(BT.cutin) : null, text = BT.encounter || '';
     if (!ui || V.calm || (!cut && !text)) { feel('wild.alert', { battleType: bt }); if (text) setMsg(text); await wait(V.calm ? 300 : 600); return; }
-    ui.insertAdjacentHTML('beforeend', `<div class="chf-enc t-${esc(BT.tone || bt)}" role="status">${cut ? `<img class="chf-enc-art" src="${esc(cut)}" alt="" draggable="false">` : '<i class="chf-enc-art chf-enc-flare"></i>'}<b class="chf-enc-tx">${esc(text)}</b></div>`);
+    if (BT.sting) return stingShow(ui, BT, bt);
+    // aura（レア）：同じ作りに 淡い後光・金のリムライト・光の粒・札（見た目だけ）
+    const aura = BT.aura ? `<i class="chf-enc-halo"></i>${Array.from({ length: 12 }, (_, i) => `<i class="chf-enc-pt" style="--x:${(8 + ((i * 37) % 84)).toFixed(0)}%;--dl:${(i * 0.07).toFixed(2)}s;--s:${(3 + (i % 3) * 2)}px"></i>`).join('')}` : '';
+    ui.insertAdjacentHTML('beforeend', `<div class="chf-enc t-${esc(BT.tone || bt)}${BT.aura ? ' aura' : ''}" role="status">${aura}${cut ? `<img class="chf-enc-art" src="${esc(cut)}" alt="" draggable="false">` : '<i class="chf-enc-art chf-enc-flare"></i>'}${BT.badge ? `<em class="chf-enc-badge">${esc(BT.badge)}</em>` : ''}<b class="chf-enc-tx">${esc(text)}</b></div>`);
     const el = ui.querySelector('.chf-enc:last-child');
     feel('wild.alert', { battleType: bt });   // 絵と文が出た瞬間
     await wait(1250);   // 読める間（文＋絵）
     if (el) { el.classList.add('out'); await wait(180); el.remove(); }
+  }
+  /**
+   * ライバルの登場（2026-10-03 デザイン参考 04 の A1「RIVAL」フラッシュ）：画面いっぱいのネイビーに「RIVAL」と「ライバルが現れた」を1秒未満だけ（config.battleTypes.rival.sting）。
+   *  見た目だけ（バトルへの進み方・判定は従来のまま。このあと従来どおりバトルの案内）
+   */
+  async function stingShow(ui, BT, bt) {
+    const S1 = BT.sting || {}, ms = Math.max(400, Math.min(980, S1.ms || 880));
+    ui.insertAdjacentHTML('beforeend', `<div class="chf-sting t-${esc(BT.tone || bt)}" role="status" style="--ms:${ms}ms"><i class="chf-sting-ring"></i><b>${esc(S1.title || '')}</b><small>${esc(S1.sub || BT.encounter || '')}</small></div>`);
+    const el = ui.querySelector('.chf-sting:last-child');
+    feel('wild.alert', { battleType: bt });
+    await wait(ms - 160);
+    if (el) { el.classList.add('out'); await wait(160); el.remove(); }
+  }
+  /**
+   * 宝箱の開封アニメーション（2026-10-03 正式素材：config.tileUI.chests[tier].frames＝4枚）。見た目だけ（中身・報酬・セーブは resolveLanding の結果のまま）。
+   *  1枚 110ms で切り替え、最後の1枚（開いたまま）で止まる。視差を減らす設定では最後の1枚だけ。先読みは buildScene のとき（preloadChests）
+   */
+  async function chestFrames(im) {
+    const fr = im && im.dataset.frames ? im.dataset.frames.split('|').filter(Boolean) : [];
+    if (!fr.length) return;
+    if (V.calm) { im.src = fr[fr.length - 1]; return; }
+    for (const src of fr) { im.src = src; await wait(110); }
   }
   /** 通常マス（LEVEL 1）：足元のマスが軽く光るだけ（何も起きない。テンポを落とさない） */
   function touchTile(tile) { if (!tile) return; tile.classList.remove('touch'); void tile.offsetWidth; tile.classList.add('touch'); feel('tile.stop'); }
@@ -901,7 +935,7 @@
         await wait(beatOf(3)); if (tile) { tile.classList.remove('hit'); void tile.offsetWidth; tile.classList.add('hit'); }
         const P = objPoint(obj); if (P) camFocus(P, 0.45, CA().zoom.focus);
         if (obj && obj.classList.contains('hid')) { obj.classList.remove('hid'); await wait(V.calm ? 0 : 300); }
-        if (obj) { obj.classList.add('shake'); await wait(V.calm ? 0 : 320); obj.classList.remove('shake'); const im = obj.querySelector('img[data-open]'); if (im && im.dataset.open) im.src = im.dataset.open; obj.classList.add('open', 'hit'); }
+        if (obj) { obj.classList.add('shake'); await wait(V.calm ? 0 : 320); obj.classList.remove('shake'); const im = obj.querySelector('img[data-open]'); await chestFrames(im); if (im && im.dataset.open) im.src = im.dataset.open; obj.classList.add('open', 'hit'); }
         feel('chest.open', { tier: fx.tier }); monReact('treasure');
         setMsg(T.t);
         await popup(T.h, T.c, holdOf(3, 900), null, async (d) => { await wait(V.calm ? 0 : 260); if (gold > 0) await goldToHud(g0, g1, d.querySelector('b') || d); });

@@ -600,6 +600,13 @@ button.wx{padding:2px 10px;font-size:.7rem;border-radius:999px;box-shadow:none;b
 .ds .dbg{position:absolute;inset:0;background-size:cover;background-position:center;filter:blur(6px) brightness(.35) saturate(1.2);transform:scale(1.1);z-index:0}
 .ds::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0,color-mix(in srgb,var(--dc) 30%,transparent),transparent 60%),linear-gradient(rgba(20,12,6,.2),rgba(10,6,3,.85));z-index:0}
 .ds>*{position:relative;z-index:1}
+/* アイテム屋（2026-10-03 正式背景・正式NPC）：背景はぼかさず、上下だけ暗くして文字を読めるように。NPC は一覧の後ろに立つ（名前は未確定のため出さない） */
+.ds.shop{background:#20140a}
+.ds.shop>.shopbg{position:absolute;inset:0;z-index:0;background-size:cover;background-position:center 28%}
+.ds.shop::before{background:linear-gradient(rgba(10,6,3,.55),rgba(10,6,3,0) 24%,rgba(10,6,3,0) 46%,rgba(10,6,3,.72) 74%,rgba(10,6,3,.88))}
+.ds.shop>.shopnpc{position:absolute;z-index:1;right:max(2%,calc(50% - 200px));bottom:30%;height:min(50%,430px);width:auto;max-width:none;pointer-events:none}
+#app>.ds.shop>.dbody{flex:0 1 auto;margin-top:auto;max-height:42%;z-index:2}
+@media (max-height:720px){.ds.shop>.shopnpc{height:37%;bottom:31%}}
 .dtop{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
 button.dback{padding:6px 14px;border-radius:999px;background:linear-gradient(#a06a35,#6b4423);color:#fff3dc;border:2px solid #e8c86a;box-shadow:0 3px 0 #3a2410;font-weight:900;font-size:.85rem}
 .dmoney{padding:4px 12px;border-radius:999px;background:rgba(0,0,0,.5);border:2px solid #c9a24d;font-weight:900;font-size:.85rem;margin-right:44px}
@@ -1355,6 +1362,23 @@ button.mkc b{font-size:.9rem}button.mkc small{font-size:.66rem;color:#ffe9b0}
 .chf-enc.t-rare .chf-enc-flare{background:radial-gradient(closest-side,rgba(255,170,170,.9),rgba(200,20,40,.5) 45%,rgba(120,0,20,0))}
 .chf-enc-tx{position:relative;margin-top:-4px;padding:6px 26px 7px;font:900 clamp(17px,5.3vw,24px)/1.25 var(--mm-font-head);letter-spacing:.04em;white-space:nowrap;color:#fff;text-align:center;text-shadow:0 2px 0 #3a0a04,0 0 6px rgba(0,0,0,.9);background:linear-gradient(90deg,rgba(30,4,2,0),rgba(30,4,2,.88) 16%,rgba(30,4,2,.88) 84%,rgba(30,4,2,0));border-top:1px solid rgba(240,200,110,.55);border-bottom:1px solid rgba(240,200,110,.55);animation:chfenctx .45s cubic-bezier(.2,1.25,.4,1) both}
 .chf-enc.t-rival .chf-enc-tx{text-shadow:0 2px 0 #1a0638,0 0 6px rgba(0,0,0,.9);background:linear-gradient(90deg,rgba(20,6,44,0),rgba(26,8,58,.9) 16%,rgba(26,8,58,.9) 84%,rgba(20,6,44,0));border-color:rgba(200,160,255,.55)}
+/* レアの遭遇（2026-10-03 デザイン参考 04）：淡い後光・金のリムライト（1px）・光の粒・「★ レア」の札。見た目だけ */
+.chf-enc.aura::before{box-shadow:inset 0 1px 0 rgba(236,206,140,.75),inset 0 -1px 0 rgba(236,206,140,.75)}
+.chf-enc-halo{position:absolute;left:50%;top:50%;width:min(96vw,420px);height:min(96vw,420px);transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(closest-side,rgba(255,236,190,.5),rgba(255,214,140,.22) 45%,rgba(255,214,140,0) 72%);animation:chfhalo 1.25s ease-out both}
+.chf-enc-pt{position:absolute;left:var(--x);top:58%;width:var(--s);height:var(--s);border-radius:50%;background:#fff3cf;box-shadow:0 0 6px 2px rgba(255,220,150,.75);opacity:0;animation:chfpt 1.2s var(--dl) ease-out both}
+.chf-enc-badge{position:relative;margin:2px 0 4px;padding:2px 12px 3px;border:1px solid rgba(236,206,140,.85);border-radius:3px;background:rgba(14,22,44,.86);color:#f3ecd9;font:700 12px/1.3 var(--mm-font-head);font-style:normal;letter-spacing:.12em;animation:chfenctx .4s .08s ease-out both}
+.chf-enc.aura .chf-enc-tx{border-color:rgba(236,206,140,.85)}
+@keyframes chfhalo{0%{opacity:0;transform:translate(-50%,-50%) scale(.6)}40%{opacity:1}100%{opacity:.85;transform:translate(-50%,-50%) scale(1)}}
+@keyframes chfpt{0%{opacity:0;transform:translateY(0)}25%{opacity:1}100%{opacity:0;transform:translateY(-90px)}}
+/* ライバルの登場（2026-10-03 デザイン参考 04 の A1）：1秒未満の「RIVAL」。深いネイビー・アイボリーの文字と細い罫線（金は使わない） */
+.chf-sting{position:absolute;inset:0;z-index:22;pointer-events:none;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 46%,rgba(22,30,62,.9),rgba(8,12,30,.97) 70%);animation:chfstin .16s ease-out both;transition:opacity .16s ease}
+.chf-sting.out{opacity:0}
+.chf-sting-ring{position:absolute;left:50%;top:46%;width:min(80vw,320px);height:min(80vw,320px);transform:translate(-50%,-50%);border-radius:50%;border:1px solid rgba(240,232,212,.42);clip-path:polygon(0 0,18% 0,18% 100%,0 100%,0 0,82% 0,100% 0,100% 100%,82% 100%,82% 0);animation:chfstring var(--ms,880ms) ease-out both}
+.chf-sting b{position:relative;font:400 clamp(40px,13vw,58px)/1 "Shippori Mincho",var(--mm-font-head,serif);letter-spacing:.32em;margin-right:-.32em;color:#f3ecd9;text-shadow:0 0 18px rgba(200,210,255,.25);animation:chfstitle var(--ms,880ms) cubic-bezier(.2,.9,.3,1) both}
+.chf-sting small{position:relative;margin-top:12px;padding-top:8px;border-top:1px solid rgba(240,232,212,.5);font:500 13px/1.2 var(--mm-font-body);letter-spacing:.24em;color:#e6dcc4;animation:chfenctx .3s .12s ease-out both}
+@keyframes chfstin{from{opacity:0}to{opacity:1}}
+@keyframes chfstring{0%{opacity:0;transform:translate(-50%,-50%) scale(.82)}35%{opacity:1}100%{opacity:1;transform:translate(-50%,-50%) scale(1.04)}}
+@keyframes chfstitle{0%{opacity:0;letter-spacing:.6em;transform:scale(1.08)}40%{opacity:1}100%{opacity:1;letter-spacing:.32em;transform:scale(1)}}
 @keyframes chfencband{from{opacity:0;transform:translateY(-50%) scaleY(.2)}to{opacity:1;transform:translateY(-50%) scaleY(1)}}
 @keyframes chfencart{0%{opacity:0;transform:scale(.5) rotate(-10deg)}60%{opacity:1;transform:scale(1.06) rotate(0)}100%{opacity:1;transform:scale(1)}}
 @keyframes chfenctx{0%{opacity:0;transform:scale(1.35)}60%{opacity:1;transform:scale(.97)}100%{opacity:1;transform:scale(1)}}
@@ -1901,17 +1925,21 @@ button.p10karen img{display:block;width:100%;height:auto;margin-top:2px;transfor
 .mmtalk-fig img{display:block;height:100%;width:auto;max-width:92vw;object-fit:contain}
 .mmtalk-fig.closeup{height:min(44vh,380px)}
 .mmtalk-fig.fullbody{height:min(66vh,600px)}
-.mmtalk-win{position:relative;z-index:2;box-sizing:border-box;width:100%;min-height:7.6em;padding:24px 18px 20px;border-radius:12px;border:2px solid #e8c86a;background:linear-gradient(#1e3f8f,#0c1f56 70%,#0a1a4a);box-shadow:inset 0 0 0 1px rgba(255,232,170,.35),inset 0 0 0 4px rgba(8,20,58,.6),inset 0 0 0 5px rgba(232,200,106,.22),inset 0 0 20px rgba(0,0,0,.35),0 8px 22px rgba(0,0,0,.5)}
-.mmtalk-name{position:absolute;top:-17px;left:14px;padding:4px 16px 5px;border-radius:8px;border:2px solid #e8c86a;background:linear-gradient(#13306f,#07163f);color:#f6dc92;font-family:"Shippori Mincho",var(--mm-font-head,serif);font-weight:700;font-size:1rem;letter-spacing:.08em;line-height:1.2;box-shadow:0 3px 6px rgba(0,0,0,.45)}
+/* 2026-10-03 デザイン素材 02_npc_message_ui（参考）を HTML/CSS で再構築：深いネイビーの半透明・アイボリーの文字・アイボリーの細い罫線（外 1px＋内 1px の二重）・金は角の小さな飾りと 1px のヘアラインだけ（大きな金枠は使わない） */
+.mmtalk-win{position:relative;z-index:2;box-sizing:border-box;width:100%;min-height:7.6em;padding:24px 18px 20px;border-radius:10px;border:1px solid rgba(240,232,212,.62);background:linear-gradient(rgba(16,27,54,.95),rgba(9,17,38,.96) 70%,rgba(7,13,30,.97));box-shadow:inset 0 0 0 3px rgba(9,17,38,.9),inset 0 0 0 4px rgba(240,232,212,.2),inset 0 1px 0 4px rgba(214,186,120,.1),inset 0 0 24px rgba(0,0,0,.32),0 8px 22px rgba(0,0,0,.5)}
+.mmtalk-win::before,.mmtalk-win::after{content:"";position:absolute;width:14px;height:14px;pointer-events:none;border-color:rgba(214,186,120,.85);border-style:solid}
+.mmtalk-win::before{top:6px;left:6px;border-width:1px 0 0 1px;border-radius:3px 0 0 0}
+.mmtalk-win::after{right:6px;bottom:6px;border-width:0 1px 1px 0;border-radius:0 0 3px 0}
+.mmtalk-name{position:absolute;top:-17px;left:14px;padding:4px 18px 5px;border-radius:4px;border:1px solid rgba(240,232,212,.7);background:linear-gradient(#17284f,#0b1631);color:#f3ecd9;font-family:"Shippori Mincho",var(--mm-font-head,serif);font-weight:700;font-size:1rem;letter-spacing:.08em;line-height:1.2;box-shadow:0 3px 6px rgba(0,0,0,.45)}
 .mmtalk-name[hidden]{display:none}
-.mmtalk-text{margin:0;min-height:5.25em;color:#fff;font-family:"Noto Sans JP",var(--mm-font-body,sans-serif);font-size:16px;font-weight:500;line-height:1.75;letter-spacing:.02em;white-space:pre-wrap;word-break:break-word;text-shadow:0 1px 2px rgba(0,0,0,.6)}
-.mmtalk-next{position:absolute;right:16px;bottom:10px;color:#f6dc92;font-size:.8rem;animation:mmtalkNx 1s ease-in-out infinite}
+.mmtalk-text{margin:0;min-height:5.25em;color:#f3ecd9;font-family:"Noto Sans JP",var(--mm-font-body,sans-serif);font-size:16px;font-weight:500;line-height:1.75;letter-spacing:.02em;white-space:pre-wrap;word-break:break-word;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+.mmtalk-next{position:absolute;right:16px;bottom:10px;color:#efe6cf;font-size:.8rem;animation:mmtalkNx 1s ease-in-out infinite}
 .mmtalk-next[hidden]{display:none}
 .mmtalk-choices{display:flex;flex-direction:column;gap:8px;margin:10px 0 0}
 .mmtalk-choices[hidden]{display:none}
-.mmtalk-choice{display:block;width:100%;min-height:44px;padding:9px 14px;border-radius:10px;border:2px solid #e8c86a;background:linear-gradient(#2a4fa6,#13306f);color:#fff;font-family:"Noto Sans JP",var(--mm-font-body,sans-serif);font-size:15px;font-weight:700;letter-spacing:.04em;cursor:pointer;box-shadow:0 2px 0 #07163f;-webkit-tap-highlight-color:transparent}
+.mmtalk-choice{display:block;width:100%;min-height:44px;padding:9px 14px;border-radius:8px;border:1px solid rgba(240,232,212,.7);background:linear-gradient(#1b2e5a,#0e1a38);color:#f3ecd9;font-family:"Noto Sans JP",var(--mm-font-body,sans-serif);font-size:15px;font-weight:700;letter-spacing:.04em;cursor:pointer;box-shadow:inset 0 0 0 3px rgba(14,26,56,.9),inset 0 0 0 4px rgba(240,232,212,.16),0 2px 0 #060d20;-webkit-tap-highlight-color:transparent}
 .mmtalk-choice:active{transform:translateY(1px);box-shadow:none}
-.mmtalk-choice:focus-visible{outline:3px solid #f6dc92;outline-offset:2px}
+.mmtalk-choice:focus-visible{outline:2px solid #efe6cf;outline-offset:2px}
 @keyframes mmtalkNx{0%,100%{transform:translateY(0);opacity:1}50%{transform:translateY(3px);opacity:.6}}
 @media (prefers-reduced-motion:reduce){.mmtalk,.mmtalk-next{animation:none}}
 /* ===== ファーム（正式デザイン 2026-09-30。fmScr）：正式背景 FARM_BG・ダン・育成中の個体・情報パネル・4コマンド・進行ボタンを1画面（100dvh）に収める。
@@ -2148,6 +2176,7 @@ main>h1{flex:none}
 <script src="./js/battle/fit.js"></script>
 <!-- バトル共通演出の正式素材（2026-10-03。fight()・.bt 系 CSS は変えない）：ダメージ表示・能力アップ／ダウン・決着の帯を外から見て短く重ねる -->
 <script src="./js/battle/fx.js"></script>
+<script src="./js/fx/sequence.js"></script>
 <script>
 const $=s=>document.querySelector(s),R=n=>Math.floor(Math.random()*n),sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const IMG=MMP10M.SPECIES.map(s=>s.image.src); // Phase 10：正式画像（番号IDの順。画像ファイルは assets/monsters/。旧ノビトン画像など旧版は使わない）
@@ -3412,7 +3441,7 @@ async function trRoll(){if(p7Busy||!S.m||!MMP7.trainRunOf(S.m))return;p7Busy=tru
 
 // ---- 出発準備（バッグ⇄保管庫・Chapter選択） ----
 const p7ItemName=it=>{const d=MMP7.getItemDef(it.id);return d?d.name:it.id};
-function p7Shell(ic,title,sub,body,msg,back){return `<div class="ds" style="--dc:#e8b23a"><div class="dbg" style="background-image:url(${FARM_BG})"></div><div class="dtop"><button class="dback" onclick="${back||"hall('t')"}">◀ ファーム</button><div class="dmoney">🪙 ${S.g}G</div></div><div class="dtitle"><div class="mico">${ic}</div><div><b>${title}</b><small>${sub}</small></div></div>${msg?`<div class="dmsg"><span>${msg}</span></div>`:""}<div class="dbody">${body}</div></div>`}
+function p7Shell(ic,title,sub,body,msg,back,o){o=o||{};return `<div class="ds${o.cls?" "+o.cls:""}" style="--dc:#e8b23a">${o.bg||`<div class="dbg" style="background-image:url(${FARM_BG})"></div>`}<div class="dtop"><button class="dback" onclick="${back||"hall('t')"}">◀ ファーム</button><div class="dmoney">🪙 ${S.g}G</div></div><div class="dtitle"><div class="mico">${ic}</div><div><b>${title}</b><small>${sub}</small></div></div>${msg?`<div class="dmsg"><span>${msg}</span></div>`:""}<div class="dbody">${body}</div></div>`}
 function prepScr(msg){if(!S.m)return lobby();if(!MMP7.canAccessVault(S))return hall("t","Chapter中はバッグの準備ができません。");bgm("farm");
  const cap=MMP7.bagCap(S),bag=S.inv.bag,vt=S.inv.vault,c=MMP8.canDepart(S,S.m),nx=MMP8.nextChapterKey(S.m);
  const bagRows=[...Array(cap)].map((_,i)=>bag[i]?`<div class="p7it"><span>${i+1}. ${p7ItemName(bag[i])}</span><button onclick="p7ToVault(${i})">保管庫へ</button></div>`:`<div class="p7it emp"><span>${i+1}. （空き）</span></div>`).join("");
@@ -3469,11 +3498,14 @@ function p7Depart(b){const m=S.m;if(!m)return lobby();
  if(MMP7.raiseState(m)=="none"&&b&&!arm(b,"もう一度押すと育成開始（完了か放棄まで街へ戻れません）"))return;const r=MMP8.depart(S,m);if(!r.ok)return prepScr(P7_ERR[r.reason]||"出発できません。");save();board(`${p8ChLabel(r.key)}に出発！サイコロを振って進もう！`)}
 
 // ---- アイテム屋（購入品は保管庫へ。バッグは直接操作しない） ----
+// アイテム屋の正式背景・正式NPC（2026-10-03。assets/shop/。README.md）：背景はそのまま（ぼかさない）、NPC は立ち姿だけ（名前は未確定＝名前・セリフは出さない）。商品・価格・売買の処理は変えていない
+const SHOP_BG="assets/shop/shop_bg.webp",SHOP_NPC="assets/shop/shop_npc.webp";
+const SHOP_LOOK={cls:"shop",bg:`<div class="shopbg" style="background-image:url(${SHOP_BG})"></div><img class="shopnpc" src="${SHOP_NPC}" alt="" draggable="false" decoding="async">`};
 function shopScr(msg){if(!S.m)return lobby();if(!MMP7.canAccessVault(S))return hall("t","Chapter中はアイテム屋に行けません。");bgm("farm");
  const cat=MMP7.getShopCatalog(),vt=S.inv.vault;
  const buy=cat.length?cat.map(id=>{const d=MMP7.getItemDef(id),pr=Number.isInteger(d.price);return `<button class="t" ${pr&&S.g>=d.price?"":"disabled"} onclick="p7Buy('${id}')">${d.name}<small>${pr?d.price+"G":"価格未設定"}</small></button>`}).join(""):`<div class="p7it emp"><span>商品は準備中です</span></div>`;
  const sell=vt.length?vt.map((it,i)=>{const d=MMP7.getItemDef(it.id),ok=!!d&&Number.isInteger(d.sellPrice);return `<div class="p7it"><span>${p7ItemName(it)}</span><button ${ok?"":"disabled"} onclick="p7Sell(${i})">${ok?"売る "+d.sellPrice+"G":"売れない"}</button></div>`}).join(""):`<div class="p7it emp"><span>保管庫は空です</span></div>`;
- $("#app").innerHTML=p7Shell("🛒","アイテム屋","購入・売却（買ったアイテムは保管庫へ）",`<div class="dcard"><div class="dh">購入</div>${buy}</div><div class="dcard"><div class="dh">売却 <small>保管庫のアイテム</small></div>${sell}</div>`,msg);try{window.scrollTo(0,0)}catch(e){}}
+ $("#app").innerHTML=p7Shell("🛒","アイテム屋","購入・売却（買ったアイテムは保管庫へ）",`<div class="dcard"><div class="dh">購入</div>${buy}</div><div class="dcard"><div class="dh">売却 <small>保管庫のアイテム</small></div>${sell}</div>`,msg,null,SHOP_LOOK);try{window.scrollTo(0,0)}catch(e){}}
 function p7Buy(id){const r=MMP7.shopBuy(S,id);if(r.ok)save();shopScr(r.ok?"保管庫に入れました。":P7_ERR[r.reason])}
 function p7Sell(i){const r=MMP7.shopSell(S,i);if(r.ok)save();shopScr(r.ok?"売却しました。":P7_ERR[r.reason])}
 

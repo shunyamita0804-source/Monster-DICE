@@ -90,9 +90,9 @@ test('DAN-6：共通会話の選択肢：全文表示のあとに出て、本文
   clk = 0; x = mk({}); x.c.start(); run(); x.c.end(); assert.equal(x.ended(), null, '選ばずに閉じたら null');
 });
 
-test('DAN-7：選択肢のボタンは深い青・白文字・金枠で、押しやすい高さ（44px 以上）。▼は選択肢を出している間は出さない', () => {
+test('DAN-7：選択肢のボタンはネイビー・アイボリーの文字・アイボリーの細い罫線（2026-10-03）で、押しやすい高さ（44px 以上）。▼は選択肢を出している間は出さない', () => {
   const css = HTML.slice(HTML.indexOf('/* ===== 共通NPC会話（MMNPC'), HTML.indexOf('</style></head>'));
-  assert.match(css, /\.mmtalk-choice\{[^}]*min-height:44px;[^}]*border:2px solid #e8c86a;background:linear-gradient\(#2a4fa6,#13306f\);color:#fff;/);
+  assert.match(css, /\.mmtalk-choice\{[^}]*min-height:44px;[^}]*border:1px solid rgba\(240,232,212,\.7\);background:linear-gradient\(#1b2e5a,#0e1a38\);color:#f3ecd9;/);
   assert.match(readFileSync(path.join(ROOT, 'js/npc/npc.js'), 'utf8'), /nx\.hidden = s\.typing \|\| !!s\.choices;/);
 });
 

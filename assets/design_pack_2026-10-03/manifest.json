@@ -1,0 +1,602 @@
+[
+  {
+    "group": "01_treasure_chests",
+    "status": "FORMAL_DIRECT_ASSETS",
+    "order": 1,
+    "pack_name": "01_treasure_chests/chest_01_base.jpeg",
+    "original_filename": "file_1791013227021.jpeg",
+    "sha256": "0fcf648867104c240ddc93d3da532888f70287596dbdfffe90641690b6a9f74b"
+  },
+  {
+    "group": "01_treasure_chests",
+    "status": "FORMAL_DIRECT_ASSETS",
+    "order": 2,
+    "pack_name": "01_treasure_chests/chest_01_anim_01.jpeg",
+    "original_filename": "file_1791013232559.jpeg",
+    "sha256": "fc167dac547eef5f3b5508ea150b75ee041226176fb9970c0e4d4816663771cb"
+  },
+  {
+    "group": "01_treasure_chests",
+    "status": "FORMAL_DIRECT_ASSETS",
+    "order": 3,
+    "pack_name": "01_treasure_chests/chest_01_anim_02.jpeg",
+    "original_filename": "file_1791013234617.jpeg",
+    "sha256": "a76052858ae4ada51f68beabae2b33c3b3c3618a8f02a6b220a6084ee63f75bd"
+  },
+  {
+    "group": "01_treasure_chests",
+    "status": "FORMAL_DIRECT_ASSETS",
+    "order": 4,
+    "pack_name": "01_treasure_chests/chest_01_anim_03.jpeg",
+    "original_filename": "file_1791013236291.jpeg",
+    "sha256": "d525f69f5be6384eb48a6810cae75881e576f6f36ddda08cbfd589a6e3b524c7"
+  },
+  {
+    "group": "01_treasure_chests",
+    "status": "FORMAL_DIRECT_ASSETS",
+    "order": 5,
+    "pack_name": "01_treasure_chests/chest_01_anim_04.jpeg",
+    "original_filename": "file_1791013238184.jpeg",
+    "sha256": "c3a7d978d1be637e38dddb9a1c2acc9ad23ee3df602f205a7f1a96654f22bd1e"
+  },
+  {
+    "group": "01_treasure_chests",
+    "status": "FORMAL_DIRECT_ASSETS",
+    "order": 6,
+    "pack_name": "01_treasure_chests/chest_02_base.jpeg",
+    "original_filename": "file_1791013268551.jpeg",
+    "sha256": "8a520dbedacecdfa5fed0c8809226b1ba9038cca3ceb6976987eb23758cdbfb3"
+  },
+  {
+    "group": "01_treasure_chests",
+    "status": "FORMAL_DIRECT_ASSETS",
+    "order": 7,
+    "pack_name": "01_treasure_chests/chest_02_anim_01.jpeg",
+    "original_filename": "file_1791013305278.jpeg",
+    "sha256": "0c50d40e75af40268057b4a749b87578625a371d1eec210992662997cce72e69"
+  },
+  {
+    "group": "01_treasure_chests",
+    "status": "FORMAL_DIRECT_ASSETS",
+    "order": 8,
+    "pack_name": "01_treasure_chests/chest_02_anim_02.jpeg",
+    "original_filename": "file_1791013309788(2).jpeg",
+    "sha256": "9d8be93060ba9cd119cd2a3b92c94ff6830fedbd36a1a350f80c641448c8e505"
+  },
+  {
+    "group": "01_treasure_chests",
+    "status": "FORMAL_DIRECT_ASSETS",
+    "order": 9,
+    "pack_name": "01_treasure_chests/chest_02_anim_03.jpeg",
+    "original_filename": "file_1791013310947.jpeg",
+    "sha256": "0f4c5f4c3b2eea358a7ff5a3d52e0a753da8e12785d75f72ae3a36bb55f3cf4f"
+  },
+  {
+    "group": "01_treasure_chests",
+    "status": "FORMAL_DIRECT_ASSETS",
+    "order": 10,
+    "pack_name": "01_treasure_chests/chest_02_anim_04.jpeg",
+    "original_filename": "file_1791013312424(20261003-074548).jpeg",
+    "sha256": "dafdf3f28611f18fa6b8de7f284b5923ca26ff5d006e53dd5d2beadc0df3614f"
+  },
+  {
+    "group": "01_treasure_chests",
+    "status": "FORMAL_DIRECT_ASSETS",
+    "order": 11,
+    "pack_name": "01_treasure_chests/chest_03_base.jpeg",
+    "original_filename": "file_1791013322470(3).jpeg",
+    "sha256": "3778f58a1ac08d6f4ff2c56e2602b95afaec57bb0899672411fbcbfd998884a9"
+  },
+  {
+    "group": "01_treasure_chests",
+    "status": "FORMAL_DIRECT_ASSETS",
+    "order": 12,
+    "pack_name": "01_treasure_chests/chest_03_anim_01.jpeg",
+    "original_filename": "file_1791013338095(3).jpeg",
+    "sha256": "c156232c8a4853d1451e4d48f7f5d3ce7f648c388e2d49188796c3af6aeca9ea"
+  },
+  {
+    "group": "01_treasure_chests",
+    "status": "FORMAL_DIRECT_ASSETS",
+    "order": 13,
+    "pack_name": "01_treasure_chests/chest_03_anim_02.jpeg",
+    "original_filename": "file_1791013339997(3).jpeg",
+    "sha256": "ab3da4564049c89d476c15a9d5ea0032ff4387819b0c67715c15ef1c78cace6d"
+  },
+  {
+    "group": "01_treasure_chests",
+    "status": "FORMAL_DIRECT_ASSETS",
+    "order": 14,
+    "pack_name": "01_treasure_chests/chest_03_anim_03.jpeg",
+    "original_filename": "file_1791013342026(2).jpeg",
+    "sha256": "3fe69770f3b27490dfb4c6f798b4fd8e1bec3f39477b619e676ecfddc815fb8c"
+  },
+  {
+    "group": "01_treasure_chests",
+    "status": "FORMAL_DIRECT_ASSETS",
+    "order": 15,
+    "pack_name": "01_treasure_chests/chest_03_anim_04.jpeg",
+    "original_filename": "file_1791013344197(2).jpeg",
+    "sha256": "01f4cd3e3b5159cffe44a97100a489742b0592adff52efe753c8ebe1e35aaf2c"
+  },
+  {
+    "group": "01_treasure_chests",
+    "status": "FORMAL_DIRECT_ASSETS",
+    "order": 16,
+    "pack_name": "01_treasure_chests/chest_04_base.jpeg",
+    "original_filename": "file_1791013351297(2).jpeg",
+    "sha256": "b325be6854f5bb3976a83b6d6ea978e624e8f8216c368e6010b19eac4703aa23"
+  },
+  {
+    "group": "01_treasure_chests",
+    "status": "FORMAL_DIRECT_ASSETS",
+    "order": 17,
+    "pack_name": "01_treasure_chests/chest_04_anim_01.jpeg",
+    "original_filename": "file_1791013362795(1).jpeg",
+    "sha256": "a4c8532ae6c6d39244835d97737bc7a3c094bd50525299c6ba24ccdb90f4d539"
+  },
+  {
+    "group": "01_treasure_chests",
+    "status": "FORMAL_DIRECT_ASSETS",
+    "order": 18,
+    "pack_name": "01_treasure_chests/chest_04_anim_02.jpeg",
+    "original_filename": "file_1791013369317(1).jpeg",
+    "sha256": "25848c5cc7369d05ea91735e31f0c2e6b7c2569c1155a57df3181876ea70f445"
+  },
+  {
+    "group": "01_treasure_chests",
+    "status": "FORMAL_DIRECT_ASSETS",
+    "order": 19,
+    "pack_name": "01_treasure_chests/chest_04_anim_03.jpeg",
+    "original_filename": "file_1791013372041(1).jpeg",
+    "sha256": "c1bdf6ee269ea1211d46582380003d3bd575bdad42685b681af2effc983ee9b0"
+  },
+  {
+    "group": "01_treasure_chests",
+    "status": "FORMAL_DIRECT_ASSETS",
+    "order": 20,
+    "pack_name": "01_treasure_chests/chest_04_anim_04.jpeg",
+    "original_filename": "file_1791013375883(1).jpeg",
+    "sha256": "0c531d4eb1109db887ec4394a6278dfbad4e62a791402f61079c9268d73be0d5"
+  },
+  {
+    "group": "02_npc_message_ui",
+    "status": "UI_REFERENCE",
+    "order": 1,
+    "pack_name": "02_npc_message_ui/02_npc_message_ui_01.jpeg",
+    "original_filename": "file_1791016840784.jpeg",
+    "sha256": "1983660517e9947d160475f6d9580562a084f08ff0469dbfe487d9ac052e5fda"
+  },
+  {
+    "group": "02_npc_message_ui",
+    "status": "UI_REFERENCE",
+    "order": 2,
+    "pack_name": "02_npc_message_ui/02_npc_message_ui_02.jpeg",
+    "original_filename": "file_1791016842765.jpeg",
+    "sha256": "b8235690324745469329bb5b63e42c23ccbf282ca58ac08faf071571c2a6c184"
+  },
+  {
+    "group": "02_npc_message_ui",
+    "status": "UI_REFERENCE",
+    "order": 3,
+    "pack_name": "02_npc_message_ui/02_npc_message_ui_03.jpeg",
+    "original_filename": "file_1791016847219.jpeg",
+    "sha256": "383a1f3ca80e8f71250a1b20da57c4312b0624548338ed0390fc3af74ecb3ca6"
+  },
+  {
+    "group": "02_npc_message_ui",
+    "status": "UI_REFERENCE",
+    "order": 4,
+    "pack_name": "02_npc_message_ui/02_npc_message_ui_04.jpeg",
+    "original_filename": "file_1791016851769.jpeg",
+    "sha256": "57b7993cc7c0e8d4a9689b547417f9163c53c27ee43354638e8e519e90afe758"
+  },
+  {
+    "group": "03_first_town_guide_fina",
+    "status": "REFERENCE_ONLY",
+    "order": 1,
+    "pack_name": "03_first_town_guide_fina/03_first_town_guide_fina_01.jpeg",
+    "original_filename": "file_1791016944581.jpeg",
+    "sha256": "081d7e2575b5199eceeced44a9874db2fa9eb2588762e4b69fbb30ab5e8fe24c"
+  },
+  {
+    "group": "03_first_town_guide_fina",
+    "status": "REFERENCE_ONLY",
+    "order": 2,
+    "pack_name": "03_first_town_guide_fina/03_first_town_guide_fina_02.jpeg",
+    "original_filename": "file_1791016948824.jpeg",
+    "sha256": "7d45e36040b0f98dd2f8f836508955e93380ad3fcc80a119e170604df971cffb"
+  },
+  {
+    "group": "03_first_town_guide_fina",
+    "status": "REFERENCE_ONLY",
+    "order": 3,
+    "pack_name": "03_first_town_guide_fina/03_first_town_guide_fina_03.jpeg",
+    "original_filename": "file_1791016951960.jpeg",
+    "sha256": "6d52526b77c38af161803e0e4f496c0d3e8a7790cfdd0c883b55e0ef7ae0b690"
+  },
+  {
+    "group": "03_first_town_guide_fina",
+    "status": "REFERENCE_ONLY",
+    "order": 4,
+    "pack_name": "03_first_town_guide_fina/03_first_town_guide_fina_04.jpeg",
+    "original_filename": "file_1791016964188.jpeg",
+    "sha256": "9ce2353154494b150b6ca03ccc62529dce71f9a5bfa89c544ff855ebbdcfb469"
+  },
+  {
+    "group": "03_first_town_guide_fina",
+    "status": "REFERENCE_ONLY",
+    "order": 5,
+    "pack_name": "03_first_town_guide_fina/03_first_town_guide_fina_05.jpeg",
+    "original_filename": "file_1791016968825.jpeg",
+    "sha256": "580a6a08325328e1e800ac8d8831df66d87931e7ac98c2d28f7bb458373529e6"
+  },
+  {
+    "group": "03_first_town_guide_fina",
+    "status": "REFERENCE_ONLY",
+    "order": 6,
+    "pack_name": "03_first_town_guide_fina/03_first_town_guide_fina_06.jpeg",
+    "original_filename": "file_1791016970835.jpeg",
+    "sha256": "235394b6eaee678b8ca403eb25e32cb6681785be445620f5766b6236537dbdb4"
+  },
+  {
+    "group": "03_first_town_guide_fina",
+    "status": "REFERENCE_ONLY",
+    "order": 7,
+    "pack_name": "03_first_town_guide_fina/03_first_town_guide_fina_07.jpeg",
+    "original_filename": "file_1791016982420.jpeg",
+    "sha256": "0f47648c762f9914695f3e158256ba9850325c0b015bfbacd983af05a570332f"
+  },
+  {
+    "group": "03_first_town_guide_fina",
+    "status": "REFERENCE_ONLY",
+    "order": 8,
+    "pack_name": "03_first_town_guide_fina/03_first_town_guide_fina_08.jpeg",
+    "original_filename": "file_1791016990113.jpeg",
+    "sha256": "25b482a44f7058fb086f4a9690496da75c871360e2fdee3d45c036917c646909"
+  },
+  {
+    "group": "03_first_town_guide_fina",
+    "status": "REFERENCE_ONLY",
+    "order": 9,
+    "pack_name": "03_first_town_guide_fina/03_first_town_guide_fina_09.jpeg",
+    "original_filename": "file_1791016991593.jpeg",
+    "sha256": "e05bf267af9e00b1bbe11ac027c9e7f4d80c5d948368568e014890abb9509c72"
+  },
+  {
+    "group": "04_encounter_tournament_chapter_ui",
+    "status": "UI_REFERENCE",
+    "order": 1,
+    "pack_name": "04_encounter_tournament_chapter_ui/04_encounter_tournament_chapter_ui_01.jpeg",
+    "original_filename": "file_1791017073318.jpeg",
+    "sha256": "0922b509cbd49da51eb69543e61c0ad8a5fee1c93f37ba6e2924f34d38eb889a"
+  },
+  {
+    "group": "04_encounter_tournament_chapter_ui",
+    "status": "UI_REFERENCE",
+    "order": 2,
+    "pack_name": "04_encounter_tournament_chapter_ui/04_encounter_tournament_chapter_ui_02.jpeg",
+    "original_filename": "file_1791017075627.jpeg",
+    "sha256": "7856fddaefacf9faaff1f07368245f094d1b67fb69c94abdce07316145047607"
+  },
+  {
+    "group": "04_encounter_tournament_chapter_ui",
+    "status": "UI_REFERENCE",
+    "order": 3,
+    "pack_name": "04_encounter_tournament_chapter_ui/04_encounter_tournament_chapter_ui_03.jpeg",
+    "original_filename": "file_1791017077483.jpeg",
+    "sha256": "b899a95e139b88244b8d0896cd681414b761770be1634fc189895c073982de1f"
+  },
+  {
+    "group": "04_encounter_tournament_chapter_ui",
+    "status": "UI_REFERENCE",
+    "order": 4,
+    "pack_name": "04_encounter_tournament_chapter_ui/04_encounter_tournament_chapter_ui_04.jpeg",
+    "original_filename": "file_1791017080153.jpeg",
+    "sha256": "139052b0bda0d601ed6ba501909d398453743c727e7cc1d5f9848167c5c953ea"
+  },
+  {
+    "group": "04_encounter_tournament_chapter_ui",
+    "status": "UI_REFERENCE",
+    "order": 5,
+    "pack_name": "04_encounter_tournament_chapter_ui/04_encounter_tournament_chapter_ui_05.jpeg",
+    "original_filename": "file_1791017081984.jpeg",
+    "sha256": "b4020c272b25db1421092cd6b723025ef9a11352e8bbd26e088c16805d28be31"
+  },
+  {
+    "group": "04_encounter_tournament_chapter_ui",
+    "status": "UI_REFERENCE",
+    "order": 6,
+    "pack_name": "04_encounter_tournament_chapter_ui/04_encounter_tournament_chapter_ui_06.jpeg",
+    "original_filename": "file_1791017084504.jpeg",
+    "sha256": "2b3a6bf8b03f0d29a9f6d77821bcaedc94d6dc0e46f9040cdbb5686a479c1676"
+  },
+  {
+    "group": "04_encounter_tournament_chapter_ui",
+    "status": "UI_REFERENCE",
+    "order": 7,
+    "pack_name": "04_encounter_tournament_chapter_ui/04_encounter_tournament_chapter_ui_07.jpeg",
+    "original_filename": "file_1791017091062.jpeg",
+    "sha256": "036d744cbbbeb1c142d0314019b61a97c9831a72215311a9f2895097d9162b68"
+  },
+  {
+    "group": "04_encounter_tournament_chapter_ui",
+    "status": "UI_REFERENCE",
+    "order": 8,
+    "pack_name": "04_encounter_tournament_chapter_ui/04_encounter_tournament_chapter_ui_08.jpeg",
+    "original_filename": "file_1791017093468.jpeg",
+    "sha256": "1ab64560bbfa2debcdc16b0b38bf8d4cef8c05d597039f6e8314be86cceb745b"
+  },
+  {
+    "group": "04_encounter_tournament_chapter_ui",
+    "status": "UI_REFERENCE",
+    "order": 9,
+    "pack_name": "04_encounter_tournament_chapter_ui/04_encounter_tournament_chapter_ui_09.jpeg",
+    "original_filename": "file_1791017096387.jpeg",
+    "sha256": "73989418164815a328949a50dd982b3ba6b2083f146c29c465434e1f91b58476"
+  },
+  {
+    "group": "04_encounter_tournament_chapter_ui",
+    "status": "UI_REFERENCE",
+    "order": 10,
+    "pack_name": "04_encounter_tournament_chapter_ui/04_encounter_tournament_chapter_ui_10.jpeg",
+    "original_filename": "file_1791017098663.jpeg",
+    "sha256": "98d98be48480140b3d6dabc28910cc21af5e1b9398e1ed20487d8cbc65afb11d"
+  },
+  {
+    "group": "05_fusion_effect_sequence",
+    "status": "FORMAL_SEQUENCE_ASSETS",
+    "order": 1,
+    "pack_name": "05_fusion_effect_sequence/fusion_01.jpeg",
+    "original_filename": "file_1791017101286.jpeg",
+    "sha256": "f3bf2bdf5d54abbfb9a75d724efb2a0089c2b70b89999da60a7e0c6b95455591"
+  },
+  {
+    "group": "05_fusion_effect_sequence",
+    "status": "FORMAL_SEQUENCE_ASSETS",
+    "order": 2,
+    "pack_name": "05_fusion_effect_sequence/fusion_02.jpeg",
+    "original_filename": "file_1791017104549.jpeg",
+    "sha256": "151223a60d3944f4b83258f1b01309afd85e1214309001b07dcbda0b2bb29f6d"
+  },
+  {
+    "group": "05_fusion_effect_sequence",
+    "status": "FORMAL_SEQUENCE_ASSETS",
+    "order": 3,
+    "pack_name": "05_fusion_effect_sequence/fusion_03.jpeg",
+    "original_filename": "file_1791017107269.jpeg",
+    "sha256": "f93e005464f8ba4f9c8f7f817e825b2b724653eb1faf206d954e06a0dd2c145c"
+  },
+  {
+    "group": "05_fusion_effect_sequence",
+    "status": "FORMAL_SEQUENCE_ASSETS",
+    "order": 4,
+    "pack_name": "05_fusion_effect_sequence/fusion_04.jpeg",
+    "original_filename": "file_1791017111709.jpeg",
+    "sha256": "f72892219e850ceb5ff890a8e1ebb5c793d30e3f8a726fc0614310c63ebcad57"
+  },
+  {
+    "group": "05_fusion_effect_sequence",
+    "status": "FORMAL_SEQUENCE_ASSETS",
+    "order": 5,
+    "pack_name": "05_fusion_effect_sequence/fusion_05.jpeg",
+    "original_filename": "file_1791017113503.jpeg",
+    "sha256": "98d707e0a4c7ed82b9857b02c83836a38a846a3532d7f813501a418dba244f51"
+  },
+  {
+    "group": "05_fusion_effect_sequence",
+    "status": "FORMAL_SEQUENCE_ASSETS",
+    "order": 6,
+    "pack_name": "05_fusion_effect_sequence/fusion_06.jpeg",
+    "original_filename": "file_1791017115349.jpeg",
+    "sha256": "9ce12018fc11d427923f6da9c0dafce955b97f2bf14310d9e6848e8ec54a48e6"
+  },
+  {
+    "group": "05_fusion_effect_sequence",
+    "status": "FORMAL_SEQUENCE_ASSETS",
+    "order": 7,
+    "pack_name": "05_fusion_effect_sequence/fusion_07.jpeg",
+    "original_filename": "file_1791017118025.jpeg",
+    "sha256": "02be8742b208461c627699472fcc74b9455f8f03d8d70e79413dd78b1b513896"
+  },
+  {
+    "group": "05_fusion_effect_sequence",
+    "status": "FORMAL_SEQUENCE_ASSETS",
+    "order": 8,
+    "pack_name": "05_fusion_effect_sequence/fusion_08.jpeg",
+    "original_filename": "file_1791017241674.jpeg",
+    "sha256": "7edc941f15a70ef0db821f65d2f71e8be48a1d6de91bd386ce5d6a651bd6675d"
+  },
+  {
+    "group": "05_fusion_effect_sequence",
+    "status": "FORMAL_SEQUENCE_ASSETS",
+    "order": 9,
+    "pack_name": "05_fusion_effect_sequence/fusion_09.jpeg",
+    "original_filename": "file_1791017243184.jpeg",
+    "sha256": "b3e36e8a7c40102cfc142fbd9bc44aa7e95aad0a5d2021368bd0a74f73d434c3"
+  },
+  {
+    "group": "05_fusion_effect_sequence",
+    "status": "FORMAL_SEQUENCE_ASSETS",
+    "order": 10,
+    "pack_name": "05_fusion_effect_sequence/fusion_10.jpeg",
+    "original_filename": "file_1791017245187.jpeg",
+    "sha256": "913fb6406e0a9eb3c47c708aeac7e34cffd1cf37437dbf3943759eefd88554c0"
+  },
+  {
+    "group": "06_encounter_tournament_chapter_ui_cont",
+    "status": "UI_REFERENCE",
+    "order": 1,
+    "pack_name": "06_encounter_tournament_chapter_ui_cont/06_encounter_tournament_chapter_ui_cont_01.jpeg",
+    "original_filename": "file_1791017246460.jpeg",
+    "sha256": "9a804a540cb84cbf57e53dc993e69388aaf4bb57989d4e49779f7597c4b8e515"
+  },
+  {
+    "group": "06_encounter_tournament_chapter_ui_cont",
+    "status": "UI_REFERENCE",
+    "order": 2,
+    "pack_name": "06_encounter_tournament_chapter_ui_cont/06_encounter_tournament_chapter_ui_cont_02.jpeg",
+    "original_filename": "file_1791017247907.jpeg",
+    "sha256": "50ac7787bf9763e7b6a05ce33ea051c222ef009978b6694342d43eaf8f585762"
+  },
+  {
+    "group": "06_encounter_tournament_chapter_ui_cont",
+    "status": "UI_REFERENCE",
+    "order": 3,
+    "pack_name": "06_encounter_tournament_chapter_ui_cont/06_encounter_tournament_chapter_ui_cont_03.jpeg",
+    "original_filename": "file_1791017249909.jpeg",
+    "sha256": "bed0bf4400ab8bb5396cdbdbee9c257cf1a7b8279fdc49cd3117c75a39766bff"
+  },
+  {
+    "group": "06_encounter_tournament_chapter_ui_cont",
+    "status": "UI_REFERENCE",
+    "order": 4,
+    "pack_name": "06_encounter_tournament_chapter_ui_cont/06_encounter_tournament_chapter_ui_cont_04.jpeg",
+    "original_filename": "file_1791017251457.jpeg",
+    "sha256": "d00c38abcf35b1d2528988281dec36b04038650b5002fa134d19ef33de49b03d"
+  },
+  {
+    "group": "06_encounter_tournament_chapter_ui_cont",
+    "status": "UI_REFERENCE",
+    "order": 5,
+    "pack_name": "06_encounter_tournament_chapter_ui_cont/06_encounter_tournament_chapter_ui_cont_05.jpeg",
+    "original_filename": "file_1791017252759.jpeg",
+    "sha256": "a21aa5c7e4383ab7d0c9ef1e1880efd11ff59501c2de2939273c23e4c5fed384"
+  },
+  {
+    "group": "06_encounter_tournament_chapter_ui_cont",
+    "status": "UI_REFERENCE",
+    "order": 6,
+    "pack_name": "06_encounter_tournament_chapter_ui_cont/06_encounter_tournament_chapter_ui_cont_06.jpeg",
+    "original_filename": "file_1791017254720.jpeg",
+    "sha256": "bafcc30e4e01627f93023063d0488ded7df3476dd3a1ea51107c81488e7bfe0e"
+  },
+  {
+    "group": "06_encounter_tournament_chapter_ui_cont",
+    "status": "UI_REFERENCE",
+    "order": 7,
+    "pack_name": "06_encounter_tournament_chapter_ui_cont/06_encounter_tournament_chapter_ui_cont_07.jpeg",
+    "original_filename": "file_1791017256096.jpeg",
+    "sha256": "1d89b49273c469ac6cd7886c03514a31b31f7a37c9c2c482190fe09309f9f2b4"
+  },
+  {
+    "group": "07_wild_sacred_beast_encounter_sequence",
+    "status": "FORMAL_SEQUENCE_ASSETS",
+    "order": 1,
+    "pack_name": "07_wild_sacred_beast_encounter_sequence/sacred_beast_encounter_01.jpeg",
+    "original_filename": "file_1791017362444.jpeg",
+    "sha256": "3a1c7e1a65266956ae0b3dc1e85ebea3c39ecbd0f6bde604d59cb493234060ab"
+  },
+  {
+    "group": "07_wild_sacred_beast_encounter_sequence",
+    "status": "FORMAL_SEQUENCE_ASSETS",
+    "order": 2,
+    "pack_name": "07_wild_sacred_beast_encounter_sequence/sacred_beast_encounter_02.jpeg",
+    "original_filename": "file_1791017370241.jpeg",
+    "sha256": "1dc5a1d9d452ef336e1675189a3fddcd60c4609a359c904c7a9dd6a5d9a98813"
+  },
+  {
+    "group": "07_wild_sacred_beast_encounter_sequence",
+    "status": "FORMAL_SEQUENCE_ASSETS",
+    "order": 3,
+    "pack_name": "07_wild_sacred_beast_encounter_sequence/sacred_beast_encounter_03.jpeg",
+    "original_filename": "file_1791017375141.jpeg",
+    "sha256": "891dcccd3df8fb19979da9e0fcf1174435cfa15364ba4d8b91d44e62fde4d956"
+  },
+  {
+    "group": "07_wild_sacred_beast_encounter_sequence",
+    "status": "FORMAL_SEQUENCE_ASSETS",
+    "order": 4,
+    "pack_name": "07_wild_sacred_beast_encounter_sequence/sacred_beast_encounter_04.jpeg",
+    "original_filename": "file_1791017377569.jpeg",
+    "sha256": "e04214e08663303c2d089f2c47fff1d2eda6d2745ec840b9eed87ddcc70fb69f"
+  },
+  {
+    "group": "07_wild_sacred_beast_encounter_sequence",
+    "status": "FORMAL_SEQUENCE_ASSETS",
+    "order": 5,
+    "pack_name": "07_wild_sacred_beast_encounter_sequence/sacred_beast_encounter_05.jpeg",
+    "original_filename": "file_1791017379521.jpeg",
+    "sha256": "025601b57f8fe85e7e896c1ef5c578a97e0e43f5f4977df39747ff1c020acd3c"
+  },
+  {
+    "group": "07_wild_sacred_beast_encounter_sequence",
+    "status": "FORMAL_SEQUENCE_ASSETS",
+    "order": 6,
+    "pack_name": "07_wild_sacred_beast_encounter_sequence/sacred_beast_encounter_06.jpeg",
+    "original_filename": "file_1791017381746.jpeg",
+    "sha256": "e44ca3601f0c355dc7beaf2512420b43c41bd5b220bd80061e3442325a9626d3"
+  },
+  {
+    "group": "07_wild_sacred_beast_encounter_sequence",
+    "status": "FORMAL_SEQUENCE_ASSETS",
+    "order": 7,
+    "pack_name": "07_wild_sacred_beast_encounter_sequence/sacred_beast_encounter_07.jpeg",
+    "original_filename": "file_1791017383423.jpeg",
+    "sha256": "47b1743e444ab47b2eb060219b3a76113a232597701aded2b5552bef1e32c4bc"
+  },
+  {
+    "group": "07_wild_sacred_beast_encounter_sequence",
+    "status": "FORMAL_SEQUENCE_ASSETS",
+    "order": 8,
+    "pack_name": "07_wild_sacred_beast_encounter_sequence/sacred_beast_encounter_08.jpeg",
+    "original_filename": "file_1791017385544.jpeg",
+    "sha256": "23708900b3141a0e27e452a8d1c6be90f9cf8a0c4934d02c3d7b28570fbb89a2"
+  },
+  {
+    "group": "08_item_shop_npc",
+    "status": "FORMAL_ASSET",
+    "order": 1,
+    "pack_name": "08_item_shop_npc/item_shop_npc.jpeg",
+    "original_filename": "file_1791017421930.jpeg",
+    "sha256": "310f3e4f8415e668f0697cc60a9991ddc435eccadbb7d286936d127521996a2c"
+  },
+  {
+    "group": "09_item_shop_background",
+    "status": "FORMAL_ASSET",
+    "order": 1,
+    "pack_name": "09_item_shop_background/item_shop_background.jpeg",
+    "original_filename": "file_1791017446740.jpeg",
+    "sha256": "7c6fdaa1d42068429bbed5063459a48ca2fd8b0124ae1b16b242d1d7be3ba200"
+  },
+  {
+    "group": "10_tournament_reward_unlock_fx",
+    "status": "FORMAL_FX_ASSETS",
+    "order": 1,
+    "pack_name": "10_tournament_reward_unlock_fx/reward_unlock_01.jpeg",
+    "original_filename": "file_1791017483082.jpeg",
+    "sha256": "bf83f26a4b85ae39568b0f81dbf4b6a11938e13203819746f1fca90a3ada5894"
+  },
+  {
+    "group": "10_tournament_reward_unlock_fx",
+    "status": "FORMAL_FX_ASSETS",
+    "order": 2,
+    "pack_name": "10_tournament_reward_unlock_fx/reward_unlock_02.jpeg",
+    "original_filename": "file_1791017484597.jpeg",
+    "sha256": "fc85df8592aa36c142cbc76d7fce7421cd93aa2cfd57c6efc964f3f5a42191ac"
+  },
+  {
+    "group": "10_tournament_reward_unlock_fx",
+    "status": "FORMAL_FX_ASSETS",
+    "order": 3,
+    "pack_name": "10_tournament_reward_unlock_fx/reward_unlock_03.jpeg",
+    "original_filename": "file_1791017486142.jpeg",
+    "sha256": "89a49ffa7dc3a7b264a7c14b6ce35cb1df5ea68704472da233f38cdcf3140191"
+  },
+  {
+    "group": "10_tournament_reward_unlock_fx",
+    "status": "FORMAL_FX_ASSETS",
+    "order": 4,
+    "pack_name": "10_tournament_reward_unlock_fx/reward_unlock_04.jpeg",
+    "original_filename": "file_1791017487526.jpeg",
+    "sha256": "fb8640156e27cbb9cdfd1fe8fcdfc1980b9d01a15fb79ef3f797820588f7a3ba"
+  },
+  {
+    "group": "11_tournament_rank_emblems_sheet",
+    "status": "FORMAL_SHEET_ASSET",
+    "order": 1,
+    "pack_name": "11_tournament_rank_emblems_sheet/tournament_rank_emblems_6set.jpeg",
+    "original_filename": "file_1791017514386.jpeg",
+    "sha256": "e5dbe08a7cf33da2ac22755ea2c2835c0f0682195ea917c7405bb30488f23997"
+  }
+]

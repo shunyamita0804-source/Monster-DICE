@@ -84,6 +84,7 @@ const SCRIPTS = [
   'js/chapter/engine.js', 'js/chapter/configs/ch1a.js', 'js/chapter/configs/ch2a.js', 'js/chapter/dice-renderer.js', 'js/chapter/field-view.js', 'js/chapter/intro.js',   // 2026-09-30：Chapterフィールドエンジン
   'js/battle/fit.js',   // 2026-09-30：バトル画面の表示だけの補正（fight()・.bt 系 CSS は変えない）
   'js/battle/fx.js',    // 2026-10-03：バトル共通演出の正式素材（fight()・.bt 系 CSS は変えない。外から見て重ねる）
+  'js/fx/sequence.js',  // 2026-10-03：連続コマの演出の再生器（野生聖獣の遭遇の正式8コマ。今はどこからも呼ばない＝将来つなぐ準備）
 ];
 // 旧名称（大文字小文字・区切りの違いも含む）。正式名称「ミスティックモンスターズ／MYSTIC MONSTERS」は含まない
 const OLD_NAME = /モンスターマスター|monster[\s_-]?master|monster[\s_-]?dice|ミスティックモンスター(?!ズ)|mystic[\s_-]?monster(?!s)/gi;
@@ -224,7 +225,7 @@ test('QA-S1：index.html の <script src> は18ファイルをこの順番で読
   for (const f of SCRIPTS) assert.ok(existsSync(path.join(ROOT, f)), f);
   assert.doesNotMatch(NODATA, /<script\b[^>]*type="module"/, 'ES module として読み込まない');
   // 本体のインラインスクリプトは、18本すべての後に置かれている（MMP 系を使うため）
-  const lastSrc = CODE.lastIndexOf('<script src="./js/battle/fx.js"></script>');
+  const lastSrc = CODE.lastIndexOf('<script src="./js/fx/sequence.js"></script>');
   const inline = [...CODE.matchAll(/<script>/g)].map((m) => m.index);
   assert.ok(inline.length >= 1 && inline.every((i) => i > lastSrc));
 });

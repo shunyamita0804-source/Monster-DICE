@@ -475,10 +475,14 @@ test('CH1-30：マスUI（config.tileUI。2026-10-02 正式素材）：能力6�
   assert.match(FV, /if \(cfg\.tileUI && cfg\.tileUI\.replacesLandmarks && \['stat', 'event', 'treasure'\]\.includes\(a\.t\)\) \{/, '旧目印（石碑・イベントの物・道端の宝箱）は出さない');
   // 宝箱：normal＝通常の宝箱、special＝虹色の宝箱（止まったとき現れて開く）。rare は従来の表示（この2つを流用しない＝宝箱の絵は出さない）
   const V = loadView(), C = cfg.tileUI.chests;
-  assert.deepEqual([cfg.assets[C.normal.closed], cfg.assets[C.normal.open], cfg.assets[C.special.closed], cfg.assets[C.special.open]], [TL + 'chest_normal_closed.webp', TL + 'chest_normal_open.webp', TL + 'chest_rainbow_closed.webp', TL + 'chest_rainbow_open.webp']);
-  for (const k of Object.values(C).flatMap((c) => [c.closed, c.open])) assert.ok(existsSync(path.join(ROOT, cfg.assets[k])), k);
+  // 2026-10-03 正式4種類（assets/chests/。本体＋開封4枚）：normal＝chest_01・special＝chest_04。rare は未決（chest_02・03 は保存だけ）
+  const CB = './assets/chests/';
+  assert.deepEqual([cfg.assets[C.normal.closed], cfg.assets[C.normal.open], cfg.assets[C.special.closed], cfg.assets[C.special.open]], [CB + 'chest_01_base.webp', CB + 'chest_01_anim_04.webp', CB + 'chest_04_base.webp', CB + 'chest_04_anim_04.webp']);
+  for (const [t, n] of [['normal', '01'], ['special', '04']]) assert.deepEqual(C[t].frames.map((k) => cfg.assets[k]), [1, 2, 3, 4].map((i) => `${CB}chest_${n}_anim_0${i}.webp`), `${t} の開封アニメーション（4枚の順）`);
+  for (const k of Object.values(C).flatMap((c) => [c.closed, c.open, ...c.frames])) assert.ok(existsSync(path.join(ROOT, cfg.assets[k])), k);
+  assert.match(FV, /async function chestFrames\(im\) \{/, '開封は絵の切り替えだけ（報酬・セーブは resolveLanding のまま）');
   assert.equal(C.rare, undefined); assert.equal(V.lookOf(cfg, { t: 'treasure', tier: 'rare' }), null, 'rare は宝箱の絵を出さない（マスUIだけ＝従来どおり）');
-  assert.deepEqual([V.lookOf(cfg, { t: 'treasure', tier: 'normal' }).key, V.lookOf(cfg, { t: 'treasure', tier: 'special' }).key, V.lookOf(cfg, { t: 'treasure', tier: 'special' }).openKey], ['chest_normal_closed', 'chest_special_closed', 'chest_special_open']);
+  assert.deepEqual([V.lookOf(cfg, { t: 'treasure', tier: 'normal' }).key, V.lookOf(cfg, { t: 'treasure', tier: 'special' }).key, V.lookOf(cfg, { t: 'treasure', tier: 'special' }).openKey], ['chest_01_base', 'chest_04_base', 'chest_04_anim_04']);
   assert.deepEqual([V.lookOf(cfg, { t: 'stat', k: 'li' }), V.lookOf(cfg, { t: 'event', ev: 'coin', tier: 'normal' })], [null, null]);
   assert.deepEqual({ ...cfg.treasurePool.contents }, { handler: 'gold_table', params: { table: [{ w: 4, gold: 50 }, { w: 1, gold: 150 }] } }, '報酬は変えていない');
   assert.match(FV, /function tileSpriteOf\(cfg, key\) \{ const T = \(cfg && cfg\.tileUI && cfg\.tileUI\.sprites\) \|\| \{\}; return T\[key\] \|\| T\[TILE_GROUP\[key\]\] \|\| T\.normal \|\| null; \}/, '種別名 → まとめた種類 → normal');
