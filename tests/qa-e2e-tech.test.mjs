@@ -394,7 +394,8 @@ B('QA-TN1：名前登録直後のフィナのあいさつ：開いた瞬間は�
   await pg.waitForFunction(() => !!window.__talkOpen);
   const o = await pg.evaluate(() => window.__talkOpen);
   delete o.npcTo; delete o.keydown;   // タイマー・リスナーの数は長い行で確かめる（QA-TN2）
-  assert.deepEqual(o, { n: 1, name: 'フィナ', img: 'assets/npc/fina/closeup/smile.webp', idx: 0, typing: true, text: '', nextShown: false }, '開いた瞬間の会話（1文字目の前・▼なし）');
+  assert.match(o.img, /^assets\/npc\/fina\/animations\/wave\/wave_0[1-6]\.webp$/, '1行目は手を振る（wave。2026-10-03）'); o.img = 'wave';
+  assert.deepEqual(o, { n: 1, name: 'フィナ', img: 'wave', idx: 0, typing: true, text: '', nextShown: false }, '開いた瞬間の会話（1文字目の前・▼なし）');
   const st = await H.storedSave(pg);
   assert.equal(st.npcFlags && st.npcFlags.finaIntro, 1, '会話を出す前に「表示済み」を保存している');
   await H.finishTalk(pg);
