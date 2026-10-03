@@ -350,10 +350,10 @@ test('JR-14：マスUI（正式素材）：今の背景のマスに正式素材�
   assert.deepEqual([pop[1], await pg.evaluate(() => S.m.de) - de0, await pg.evaluate(() => document.querySelector('.chf-tile[data-id="p1_1"]').classList.contains('used'))], [true, 3, true]); assert.match(pop[0], /丈夫さ \+3/);
   // 宝箱（normal）：止まると通常の宝箱が現れて開く。rare は宝箱の絵を出さない（従来の表示＝マスUIだけ）
   const chest = () => pg.evaluate(() => { const o = document.querySelector('#chf .chf-obj[data-id="p1_2"]'), im = o && o.querySelector('img'); return o ? { hid: o.classList.contains('hid'), src: im.getAttribute('src'), ok: im.naturalWidth > 0 } : null; });
-  assert.deepEqual(await chest(), { hid: true, src: './assets/fields/ch1a/tiles/chest_normal_closed.webp', ok: true }, '止まるまでは見えない');
+  assert.deepEqual(await chest(), { hid: true, src: './assets/chests/chest_01_base.webp', ok: true }, '止まるまでは見えない（2026-10-03 正式の宝箱 chest_01）');
   assert.equal(await pg.evaluate(() => !!document.querySelector('#chf .chf-obj[data-id="p1_4"]')), false, 'rare の宝箱は正式の宝箱の絵を流用しない');
   await rollAs(pg, 1); await pg.waitForSelector('.chpop'); await idle(pg);
-  assert.deepEqual(await chest(), { hid: false, src: './assets/fields/ch1a/tiles/chest_normal_open.webp', ok: true }, '止まると現れて開く');
+  assert.deepEqual(await chest(), { hid: false, src: './assets/chests/chest_01_anim_04.webp', ok: true }, '止まると現れて開く（開封4枚のあと、開いたままの anim_04）');
   // デバッグ（?chdebug=1）：ノードの点と道筋が出る（仮表示は出さない＝どのマスにも正式の表示がある）
   const q = await open({ query: '?chdebug=1' }); const qg = q.page; await H.newGame(qg, 'テスト');
   await qg.evaluate(() => { const m = mk(0); m.name = 'ソラ'; MMP7.ensureProg(m); S.m = m; save(); MMP8.depart(S, m, () => 0.37); save(); board(); });
