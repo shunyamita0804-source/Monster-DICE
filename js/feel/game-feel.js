@@ -4,7 +4,7 @@
 //  2) MOTION（motion tokens）：押下・画面遷移・報酬・遭遇などの時間とイージング。CSS には :root の変数（--mm-*）として渡す
 //  3) 押下の手ごたえ：ボタンに指が触れた瞬間にごく軽く沈む（.mm-press。scale のみ・色は変えない）。離すと戻る
 //  4) 画面を移るボタン（NAV）：押下の反応を約0.11秒見せてから移る。その間の2回目のタップ・別のボタンは無視（二重遷移の防止）。
-//     遷移の種類（施設へ／戻る）で入りかたを変える（html[data-mmtr]）
+//     遷移の種類（施設へ／戻る）で入りかたを変える（html[data-mmtr]）。2026-10-03：押下 → 今の画面のフェードアウト（html[data-mmout]）→ 切り替え → フェードイン（全体 0.5〜0.6秒）
 //  5) 出来事（emit）：名前 → SE（MMAUDIO）＋将来のハプティクス（registerHaptics でネイティブ側へつなぐ。Web では何もしない）
 // =========================================================
 (function (root) {
@@ -14,8 +14,9 @@
   /** 時間（ms）とイージング。press＝押下、nav＝押してから移るまで、enter＝画面の入り、hold＝結果を見せる余韻（LEVEL ごと） */
   const MOTION = fz({
     press: fz({ ms: 110, scale: 0.97 }),
-    nav: fz({ ms: 110, guard: 260 }),
-    enter: fz({ light: 220, facility: 280, back: 200, special: 520 }),
+    // nav.ms＝押下を見せる、nav.out＝今の画面を消す（2026-10-03 総監査：画面の切り替えが速すぎる → 押下 → フェードアウト → 切り替え → フェードイン。施設へ 約0.6秒・戻る 約0.5秒）
+    nav: fz({ ms: 110, out: 170, guard: 260 }),
+    enter: fz({ light: 240, facility: 320, back: 240, special: 520 }),
     ease: fz({ ui: 'cubic-bezier(.2,.7,.3,1)', out: 'cubic-bezier(.16,1,.3,1)', in: 'cubic-bezier(.5,0,.75,0)', snap: 'cubic-bezier(.3,1.4,.5,1)' }),
     hold: fz({ 0: 0, 1: 120, 2: 520, 3: 700, 4: 380, 5: 1100 }),   // 結果を見せたあとの余韻（遭遇は次の画面へ続くので短め）
     beat: fz({ 0: 0, 1: 0, 2: 140, 3: 180, 4: 260, 5: 400 }),      // 止まってから結果が出るまでの「間」
@@ -101,13 +102,20 @@
       if (NAV.pending || (Date.now() < NAV.until && !root.MM_QA_NAV_INSTANT)) { e.preventDefault(); e.stopImmediatePropagation(); return; }
       if (!e.isTrusted || calm() || root.MM_QA_NAV_INSTANT) { transition(kind); NAV.until = Date.now() + MOTION.nav.guard; NAV.count++; return; }   // スクリプトからのクリック・視差を減らす設定・自動テスト（MM_QA_NAV_INSTANT。押下の待ちは tests/qa-e2e-feel の FE-1 で確かめる）はすぐ移る
       e.preventDefault(); e.stopImmediatePropagation();
-      NAV.pending = el; el.classList.add('mm-press', 'mm-go'); emit('ui.confirm');
+      NAV.pending = el; el.classList.add('mm-press', 'mm-go'); emit(kind === 'back' ? 'ui.cancel' : 'ui.confirm');   // 戻る＝UI_CANCEL（登録済みの戻る音）・ほか＝UI_CONFIRM（いまは無音）
+      const h = doc.documentElement;
       setTimeout(() => {
-        NAV.pending = null; el.classList.remove('mm-press', 'mm-go');
-        if (!el.isConnected || el.disabled) return;
-        transition(kind); NAV.until = Date.now() + MOTION.nav.guard; NAV.count++;
-        el.dataset.mmGo = '1'; el.dataset.nsfx = '1';
-        try { el.click(); } finally { delete el.dataset.mmGo; delete el.dataset.nsfx; }
+        el.classList.remove('mm-press', 'mm-go');
+        if (!el.isConnected || el.disabled) { NAV.pending = null; return; }
+        // 今の画面をフェードアウト（html[data-mmout]。#app の中だけ・押せない）→ 切り替え → 入りかた（data-mmtr）でフェードイン
+        delete h.dataset.mmtr; h.dataset.mmout = '1';
+        setTimeout(() => {
+          NAV.pending = null;
+          if (!el.isConnected || el.disabled) { delete h.dataset.mmout; return; }
+          transition(kind); NAV.until = Date.now() + MOTION.nav.guard; NAV.count++;
+          el.dataset.mmGo = '1'; el.dataset.nsfx = '1';
+          try { el.click(); } finally { delete el.dataset.mmGo; delete el.dataset.nsfx; delete h.dataset.mmout; }
+        }, MOTION.nav.out);
       }, MOTION.nav.ms);
     }, true);
   }
@@ -115,6 +123,7 @@
     const s = doc.documentElement.style;
     s.setProperty('--mm-press-scale', String(MOTION.press.scale)); s.setProperty('--mm-press-ms', `${MOTION.press.ms}ms`);
     for (const [k, v] of Object.entries(MOTION.enter)) s.setProperty(`--mm-enter-${k}`, `${v}ms`);
+    s.setProperty('--mm-out-ms', `${MOTION.nav.out}ms`);
     for (const [k, v] of Object.entries(MOTION.ease)) s.setProperty(`--mm-ease-${k}`, v);
   }
   if (root.document && root.document.addEventListener) { setupInput(root.document); if (root.document.documentElement) setupTokens(root.document); }

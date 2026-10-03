@@ -173,8 +173,9 @@
     let flat = S.flat || 0.34;
     if (isObj(flat)) { const t = clamp((n.d - (flat.dFar != null ? flat.dFar : 0.4)) / ((flat.dNear != null ? flat.dNear : 1.12) - (flat.dFar != null ? flat.dFar : 0.4)), 0, 1); flat = flat.far + (flat.near - flat.far) * t; }
     // 2026-10-03：size.roadFit があれば、幅＝その地点で見えている道幅 × 区分ごとの割合（通常 55%・能力 58%・宝／イベント 62%・バトル 66%。道を覆わない）。無ければ従来の 基準 × 奥行き^depthPow
+    //  fitScale＝区分の比率を保ったまま全体を縮める共通の基準（2026-10-03 総監査：動画で「道に対して大きすぎる」→ 0.72）
     const road = S.roadFit && sc ? seenRoadW(sc, n) : 0;
-    const w = road ? road * (S.roadFit[tileFitKind(key)] || S.roadFit.stat || 0.58) * (L.s || 1) : W0 * Math.pow(n.d, dp) * (L.s || 1) * (key === 'normal' && S.normal ? S.normal : 1), f = L.f || flat;
+    const w = road ? road * (S.roadFit[tileFitKind(key)] || S.roadFit.stat || 0.58) * (S.fitScale || 1) * (L.s || 1) : W0 * Math.pow(n.d, dp) * (L.s || 1) * (key === 'normal' && S.normal ? S.normal : 1), f = L.f || flat;
     const t = clamp((n.d - 0.4) / (1.12 - 0.4), 0, 1), op = S.farOpacity != null ? S.farOpacity + (1 - S.farOpacity) * t : 1;   // 奥のマスほど控えめ（UI のアイコンに見えない）
     return { w, h: w * f, f, op, th: Math.max(0, w * f * (S.thick != null ? S.thick : 0.12)), rim: Math.max(1.2, w * (S.rim != null ? S.rim : 0.018)) };
   }

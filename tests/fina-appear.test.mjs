@@ -18,6 +18,7 @@ const L = (k) => FT[k].map((x) => [x.expression, x.text]);
 
 test('FA-1：会話の文章と表情は指定どおり（あいさつ・育成開始〔初回／2回目以降〕・育成完了）', () => {
   assert.deepEqual(L('intro'), [['smile', 'はじめまして。私はフィナです！'], ['normal', 'これからあなたのモンスター育成をお手伝いしますね。'], ['guide', 'まずは市場へ行って、一緒に育てるモンスターを迎えてみましょう！']]);
+  assert.deepEqual(FT.intro.map((x) => x.anim || null), ['wave', null, null], '最初のあいさつの1行目だけ手を振る（正式アニメ wave。2026-10-03 総監査で接続。行ごとの指定＝次の行へは引き継がない）');
   assert.deepEqual(L('raiseFirst'), [['serious', '育成を始めると、途中で街には戻れないから気をつけてね。'], ['normal', 'この子の育成を始める？']], '初回は説明のあと確認');
   assert.deepEqual(L('raiseAgain'), [['normal', 'この子の育成を始める？']], '2回目以降は確認だけ');
   const CH = [{ id: 'start', label: '始める' }, { id: 'cancel', label: 'まだやめておく' }];

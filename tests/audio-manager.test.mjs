@@ -413,3 +413,17 @@ test('AUDIO-24：2026-10-03 第5弾の仮採用（HydroGene 16-bit・CC0）：�
   A.stopBgm({ fade: 'quick' }); A.scene('TOURNAMENT_BATTLE_LOW'); await tick(800); assert.equal(active(A).length, 1); assert.match(active(A)[0].src, /battle_music_2/);
   A.scene('RESULT'); await tick(800); assert.equal(active(A).length, 1, '二重再生しない'); assert.match(active(A)[0].src, /03_royal_castle/);
 });
+
+test('AUDIO-25：2026-10-03 総監査：登録済みで呼ばれていなかった UI の SE をつなぐ（新しい音は足さない）。街へ戻る＝UI_CANCEL（戻る音）・市場の選択の切り替え＝UI_SELECT（1回の操作で1回）。決定音 UI_CONFIRM は NG のため無音のまま・NG のファイルを使わない', () => {
+  const { REG } = loadRegistry(), se = REG.se;
+  assert.equal(se.UI_CONFIRM.silent, true, '決定音は無音のまま（代わりの音を判断で選ばない）');
+  assert.match(se.UI_CANCEL.src, /back_style_4_002\.ogg$/); assert.match(se.UI_SELECT.src, /cursor_style_2\.ogg$/);
+  for (const k of ['UI_CANCEL', 'UI_SELECT']) assert.doesNotMatch(se[k].src, /confirm_style_1_004|confirm_style_5_001|pluck_3|pluck_5|fx_1\.ogg/, `${k} は NG の音ではない`);
+  // 戻る：街へ戻るボタン（MMFEEL の back）は、押下を見せる経路（game-feel）でも、すぐ移る経路（index.html の共通のクリック）でも UI_CANCEL を1回
+  assert.match(rd('js/feel/game-feel.js'), /emit\(kind === 'back' \? 'ui\.cancel' : 'ui\.confirm'\)/);
+  assert.match(HTML, /MMAUDIO\.se\(window\.MMFEEL&&MMFEEL\.navKind\(b\)=="back"\?"UI_CANCEL":"UI_CONFIRM"\)/);
+  // 選択の切り替え：p10Step の始まりで1回（遠い候補へ1つずつ回す続きの p10Step では鳴らさない）。矢印は決定音を重ねない（data-nsfx）
+  assert.match(HTML, /p10Place\(\);if\(!p10Step\.ch&&window\.MMAUDIO\)MMAUDIO\.se\("UI_SELECT"\);/);
+  assert.match(HTML, /p10Step\.ch=1;try\{p10Step\(/);
+  assert.equal((HTML.match(/class="p10arw (?:prev|next)"[^>]*data-nsfx="1"/g) || []).length, 2);
+});

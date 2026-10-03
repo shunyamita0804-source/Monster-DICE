@@ -177,12 +177,14 @@ button.go:disabled{filter:grayscale(.6)}
 html[data-mmtr="facility"] #app>*{animation:scrfac var(--mm-enter-facility,.28s) var(--mm-ease-out,ease-out) both}@keyframes scrfac{from{opacity:0;transform:scale(.985)}}
 html[data-mmtr="back"] #app>*{animation:scrback var(--mm-enter-back,.2s) var(--mm-ease-out,ease-out) both}@keyframes scrback{from{opacity:0;transform:translateX(-10px)}}
 html[data-mmtr="special"] #app>*{animation:scrsp var(--mm-enter-special,.52s) var(--mm-ease-ui,ease-out) both}@keyframes scrsp{from{opacity:0;filter:brightness(.4)}}
+/* 2026-10-03 総監査：画面を移る前に今の画面を短くフェードアウト（js/feel/game-feel.js の nav.out）。その間は押せない */
+html[data-mmout] #app>*{opacity:0;transition:opacity var(--mm-out-ms,.17s) var(--mm-ease-in,ease-in);pointer-events:none}
 /* 押下の手ごたえ：指が触れた瞬間にごく軽く沈む（scale だけ。transform は使わない＝位置合わせの transform と重ならない。絵の色は変えない）。画面を移るボタンは押下の反応を少し見せてから移る（.mm-go） */
 button,[role="button"],.skt{transition:scale var(--mm-press-ms,.11s) var(--mm-ease-ui,ease-out)}
 .mm-press:not(:disabled){scale:var(--mm-press-scale,.97)}
 .mm-go{scale:var(--mm-press-scale,.97);box-shadow:0 0 0 2px rgba(255,226,140,.55),0 0 16px rgba(255,214,110,.35)!important}
 .mm-bump{animation:mmbump .5s var(--mm-ease-snap,ease-out)}@keyframes mmbump{30%{scale:1.14}100%{scale:1}}
-@media (prefers-reduced-motion:reduce){html[data-mmtr] #app>*{animation:none}.mm-press,.mm-go{scale:none}.mm-bump{animation:none}}
+@media (prefers-reduced-motion:reduce){html[data-mmtr] #app>*{animation:none}html[data-mmout] #app>*{transition:none}.mm-press,.mm-go{scale:none}.mm-bump{animation:none}}
 .hn{position:absolute;right:-20px;top:-8px;width:40px;height:40px;border-radius:50%;background:#fff8e6;border:2px solid #3a2a1a;object-fit:cover;object-position:top}
 .ttl{text-align:center;padding:26px 12px 18px;background:linear-gradient(#8fd3ff,#e8f6ff 55%,#fff1c9);border:3px solid #8a5a2b;border-radius:22px;color:#3a2a1a;box-shadow:0 0 0 4px #e8c86a,0 6px 0 4px #8a5a2b}
 .tlogo{font-size:2.1rem;font-weight:800;color:#5a2d0c;text-shadow:0 3px 0 #fff,0 5px 0 #e8c86a}.tsub{letter-spacing:.3em;font-size:.8rem;margin:2px 0 14px}
@@ -2342,7 +2344,7 @@ MMAUDIO.attachLegacy({bgm:sc=>{if(auBus())bgmLegacy(LEGACY_BGM[sc]||"town")},sto
 function auBus(){if(AU.ctx)return true;const c=MMAUDIO.context();if(!c)return false;AU.ctx=c;mkbus(c);return true} // AudioContext は MMAUDIO の1つだけ。合成音の出口（mkbus）はそこへつなぐ
 function unlock(){try{if(navigator.audioSession)navigator.audioSession.type="playback"}catch(e){}auBus();MMAUDIO.unlock()} // 最初の操作：AudioContext の作成・resume・保留した BGM の再開（表裏の suspend／resume も MMAUDIO）
 ["pointerdown","touchend","click","keydown"].forEach(e=>document.addEventListener(e,unlock));
-document.addEventListener("click",e=>{const b=e.target&&e.target.closest?e.target.closest("button,.skt,[role=button]"):null;if(b&&!b.disabled&&b.id!="snd"&&!(b.dataset&&b.dataset.nsfx))MMAUDIO.se("UI_CONFIRM")},true);
+document.addEventListener("click",e=>{const b=e.target&&e.target.closest?e.target.closest("button,.skt,[role=button]"):null;if(b&&!b.disabled&&b.id!="snd"&&!(b.dataset&&b.dataset.nsfx))MMAUDIO.se(window.MMFEEL&&MMFEEL.navKind(b)=="back"?"UI_CANCEL":"UI_CONFIRM")},true); // 2026-10-03 総監査：街へ戻るボタン（MMFEEL の back）は登録済みの戻る音 UI_CANCEL。ほかは UI_CONFIRM（NG のため無音）
 function sndToggle(){AU.on=!AU.on;try{localStorage.setItem("mr4a",AU.on?"1":"0")}catch(e){}$("#snd").textContent=AU.on?"🔊":"🔇";unlock();MMAUDIO.setMuted(!AU.on);if(AU.on)setTimeout(()=>MMAUDIO.se("UI_CONFIRM"),250)} // ミュートは MMAUDIO が全部の経路（ファイル BGM・合成 BGM・ファイル SE・合成 SE）へ反映する
 function sfx(t,dl){const n=sfxEventOf(t);if(n&&MMAUDIO.se(n,{delay:dl,legacy:t}))return;sfxSynth(t,dl)} // 合成音の番号 → 出来事の名前 → MMAUDIO（正式な SE があればファイル、無ければ今までの合成音）
 function sfxSynth(t,dl){const c=AU.ctx;if(!c||!AU.on||c.state!="running"||!AU.wet)return;const n=c.currentTime+(dl||0);
@@ -2420,7 +2422,7 @@ function farm(msg,tab){if(p8Blocked())return;p9Immersive(true);bgm("ranch"); // 
   const [a,c]=sel.map(i=>all[i]);
   b=all.length<2?"<p>合体には2体以上必要です。市場でモンスターを選ぼう。</p>":`<p><small>合体させる2体を選んでください。</small></p><div class="fz"><div class="slot">${slot(a)}</div><span>＋</span><div class="slot">${slot(c)}</div></div>`+all.map((x,i)=>`<button class="t ${sel.includes(i)?"on":""}" onclick="selm(${i})">${sel.includes(i)?["①","②"][sel.indexOf(i)]+" ":""}${p11Esc(x.name)}${x==m?"（連れている）":""}<small>${sm(x)}</small></button>`).join("")+(a&&c?`<div class="card"><b>生まれるモンスター：${p11Esc(cname(a,c))}</b><div class="st">${KS.map(k=>`<span>${LAB[k]} ${Math.min(999,Math.round((a[k]+c[k])*.6))}</span>`).join("")}</div><small>2体は消え、新しい個体（未育成）が生まれます。</small></div><button class="go" ${S.g<200?"disabled":""} onclick="fuse()">合体させる！（200G）</button>`:"");
  }
- $("#app").innerHTML=`<div class="rn"><header class="rnhd"><button class="back" onclick="pfSellUid=null;lobby()">◀ 街にもどる</button><div class="rnplq"><b>牧場</b></div><div class="fhud"><span class="rncoin">G</span><b>${S.g}G</b></div></header><div class="fscene" style="background-image:url(${RANCH_BG})">${msg?`<div class="fbub sys">${msg}</div>`:`<div class="fbub fnick"><img class="fbface" src="${NICK_FACE}" alt=""><b>ニック</b><br>${NICK_TALK.ranch[R(NICK_TALK.ranch.length)]}</div>`}${[S.m,...S.box].filter(Boolean).map((x,i)=>`<div class="wk" style="top:${80+(i*7)%12}%;--d:${9+(i*5)%8}s;animation-delay:-${(i*3.7)%9}s"><div class="mon">${msv(x)}</div></div>`).join("")}</div><nav class="ftiles rncmd" aria-label="牧場のコマンド">${[["a","dep","預ける",""],["b","wd",`受け取る<small>(${S.box.length})</small>`,""],["e","look","様子を見る"," rnlook"]].map(x=>`<button class="ftile${x[3]}${ft==x[0]?" on":""}" onclick="${x[0]=="e"?"rnView=null;":""}farm('','${x[0]}')">${rnIc(x[1])}<span class="fl">${x[2]}</span></button>`).join("")}<button class="fsell rnsell${ft=="d"?" on":""}" onclick="farm('','d')">${rnIc("sell")}<span class="fl">売る</span></button></nav><div class="wpanel">${b}</div></div>`;
+ $("#app").innerHTML=`<div class="rn"><header class="rnhd"><button class="back" data-nav="back" onclick="pfSellUid=null;lobby()">◀ 街にもどる</button><div class="rnplq"><b>牧場</b></div><div class="fhud"><span class="rncoin">G</span><b>${S.g}G</b></div></header><div class="fscene" style="background-image:url(${RANCH_BG})">${msg?`<div class="fbub sys">${msg}</div>`:`<div class="fbub fnick"><img class="fbface" src="${NICK_FACE}" alt=""><b>ニック</b><br>${NICK_TALK.ranch[R(NICK_TALK.ranch.length)]}</div>`}${[S.m,...S.box].filter(Boolean).map((x,i)=>`<div class="wk" style="top:${80+(i*7)%12}%;--d:${9+(i*5)%8}s;animation-delay:-${(i*3.7)%9}s"><div class="mon">${msv(x)}</div></div>`).join("")}</div><nav class="ftiles rncmd" aria-label="牧場のコマンド">${[["a","dep","預ける",""],["b","wd",`受け取る<small>(${S.box.length})</small>`,""],["e","look","様子を見る"," rnlook"]].map(x=>`<button class="ftile${x[3]}${ft==x[0]?" on":""}" onclick="${x[0]=="e"?"rnView=null;":""}farm('','${x[0]}')">${rnIc(x[1])}<span class="fl">${x[2]}</span></button>`).join("")}<button class="fsell rnsell${ft=="d"?" on":""}" onclick="farm('','d')">${rnIc("sell")}<span class="fl">売る</span></button></nav><div class="wpanel">${b}</div></div>`;
 }
 /** 牧場の4コマンドのアイコン（金色の線画。街・ファームと同じ系統） */
 const RN_IC={dep:'<path d="M5 14h22v13H5z"/><path d="M5 14l3-5h16l3 5"/><path d="M16 3v9M12.5 8.5L16 12l3.5-3.5"/>',wd:'<path d="M5 14h22v13H5z"/><path d="M5 14l3-5h16l3 5"/><path d="M16 12V3M12.5 6.5L16 3l3.5 3.5"/>',fuse:'<circle cx="11.5" cy="17" r="7"/><circle cx="20.5" cy="17" r="7"/><path d="M16 4.5l1 2.4 2.4 1-2.4 1-1 2.4-1-2.4-2.4-1 2.4-1z" class="f"/>',look:'<path d="M3 17s5-8 13-8 13 8 13 8-5 8-13 8S3 17 3 17z"/><circle cx="16" cy="17" r="4.2"/><path d="M26 3.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z" class="f"/>',sell:'<path d="M11 8h10l-2 4h-6z"/><path d="M13 12c-5 3-7 7-7 10 0 4 4 6 10 6s10-2 10-6c0-3-2-7-7-10"/><path d="M16 16v8M13.5 18.5c0-1.2 1.2-2 2.5-2s2.5.6 2.5 1.8-1.2 1.7-2.5 1.9-2.5.8-2.5 2 1.2 1.8 2.5 1.8 2.5-.8 2.5-2"/>'};
@@ -2542,7 +2544,7 @@ function market(msg,focus){if(p8Blocked())return;bgm("market");p9Immersive(true)
  $("#app").innerHTML=`<div class="p10mk${MB?" p15img":""}"><div class="p10bg" aria-hidden="true">${MB?`<div class="p15mkbg" style="background-image:url(${MB.src})"></div>`:P10_SCENE}</div>
  <header class="p10top"><div class="p10ttl"><button class="p10back" onclick="lobby()" aria-label="街にもどる">◀</button><b>市場</b></div>${p10Who()}</header>
  ${MB?"":`<div class="p10sign">${P10_SIGN}</div>`}
- <div class="p10car" id="p10car" aria-label="モンスターを選ぶ（左右の矢印・スワイプ）">${cat.map((c,i)=>p10Slide(c,i)).join("")}<button class="p10arw prev" aria-label="前のモンスター" onclick="p10Step(-1)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="p10arw next" aria-label="次のモンスター" onclick="p10Step(1)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
+ <div class="p10car" id="p10car" aria-label="モンスターを選ぶ（左右の矢印・スワイプ）">${cat.map((c,i)=>p10Slide(c,i)).join("")}<button class="p10arw prev" aria-label="前のモンスター" data-nsfx="1" onclick="p10Step(-1)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button class="p10arw next" aria-label="次のモンスター" data-nsfx="1" onclick="p10Step(1)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
  <div class="p10dots" role="tablist">${cat.map((c,i)=>`<button class="p10dot" data-i="${i}" role="tab" aria-label="${MMP10M.byKey(c.key).name}" onclick="p10Go(${i})"></button>`).join("")}</div>
  <div class="p10kbar${finaFlags().karenIntro?"":" wait"}" id="p10kbar"><button class="p10karen" onclick="p10KarenTalk()" aria-label="この子についてカレンに聞く"><img alt=""></button><p class="p10kt" id="p10kt" aria-live="polite"></p></div><div class="p10det" id="p10det" aria-hidden="true"><div class="p10detbg" onclick="p10Detail(false)"></div><div class="p10detp"><button class="p10detx" onclick="p10Detail(false)" aria-label="詳細を閉じる">×</button><section class="p10info" id="p10info" aria-live="polite"></section></div></div>${msg?`<div class="p10msg">${msg}</div>`:""}</div>`;
  P10_ANIM=false;P10_TGT=null;P10_SW=null;p15MkFit();p10Swipe($("#p10car"));
@@ -2575,14 +2577,14 @@ function p10Place(){const car=$("#p10car");if(!car)return;const sl=[...car.query
 /** 1つ隣へ（dir=+1：次＝右矢印、-1：前＝左矢印）。中央の個体は左右の奥へ下がり、反対側の個体が弧を描いて中央へ回り込む */
 function p10Step(dir){const car=$("#p10car");if(!car||P10_ANIM||$("#p10ov"))return false;const sl=[...car.querySelectorAll(".p10sl")],n=sl.length;if(n<2)return false;
  const from=P10_MK,to=((from+dir)%n+n)%n,ms=(window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches)?0:P10_MS,tok=++P10_TOK;
- P10_ANIM=true;const bb=$("#p10info .p10buy");if(bb)bb.disabled=true;P10_MK=to;p10Place();   // 選択番号と最終位置を先に確定（購入は演出が終わるまで受け付けない）
+ P10_ANIM=true;const bb=$("#p10info .p10buy");if(bb)bb.disabled=true;P10_MK=to;p10Place();if(!p10Step.ch&&window.MMAUDIO)MMAUDIO.se("UI_SELECT");   // 選択番号と最終位置を先に確定（購入は演出が終わるまで受け付けない）
  const an=[];if(ms&&sl[0].firstElementChild.animate)sl.forEach((el,i)=>{const w=el.offsetWidth,a=p10Slot(i,from,n),b=p10Slot(i,to,n),pa=p10Pose(a,w),pb=p10Pose(b,w);
   const wrap=a&&b&&Math.sign(a)!==Math.sign(b);   // 反対側へ回り込む候補は奥を通る
   const mid=wrap?{t:0,ty:Math.min(pa.ty,pb.ty)-.08*w,s:.5,o:.35}:{t:(pa.t+pb.t)/2,ty:(pa.ty+pb.ty)/2-.05*w,s:(pa.s+pb.s)/2*.95,o:(pa.o+pb.o)/2};
   if(wrap)el.style.zIndex=1;
   an.push(el.firstElementChild.animate([{transform:p10Tf(pa),opacity:pa.o},{transform:p10Tf(mid),opacity:mid.o,offset:.5},{transform:p10Tf(pb),opacity:pb.o}],{duration:ms,easing:"cubic-bezier(.3,.7,.3,1)"}))});
  const done=()=>{if(tok!==P10_TOK||!P10_ANIM)return;P10_ANIM=false;an.forEach(a=>{try{a.cancel()}catch(e){}});if(!$("#p10car"))return;p10Place();p10Info();
-  if(P10_TGT!=null&&P10_TGT!==P10_MK)p10Step(Math.sign(p10Slot(P10_TGT,P10_MK,n)));else P10_TGT=null};
+  if(P10_TGT!=null&&P10_TGT!==P10_MK){p10Step.ch=1;try{p10Step(Math.sign(p10Slot(P10_TGT,P10_MK,n)))}finally{p10Step.ch=0}}else P10_TGT=null};   // 選択の切り替え音（UI_SELECT）は1回の操作で1回だけ（遠い候補へ1つずつ回すときは最初だけ）
  if(an.length){Promise.all(an.map(a=>a.finished)).then(done,done);setTimeout(done,ms+200)}else done();
  return true}
 /** 候補 i を中央へ（ドット・左右の個体のタップ。遠い候補へは1つずつ回す）。instant＝演出なし（市場を開いたとき） */
@@ -3481,7 +3483,7 @@ function p10KarenHint(tip){const t=$("#p10kt"),bar=$("#p10kbar");if(!t||!bar)ret
 /** カレンのボタン（案内欄の顔）：選択中のモンスターについて、案内欄に短く一言（大きな会話は開かない。購入の判定は変えない） */
 function p10KarenTalk(){if(P10_ANIM||$("#p10ov"))return;p10KarenHint(true)}
 const FINA_TALK={
- intro:[{npc:"fina",expression:"smile",text:"はじめまして。私はフィナです！"},{expression:"normal",text:"これからあなたのモンスター育成をお手伝いしますね。"},{expression:"guide",text:"まずは市場へ行って、一緒に育てるモンスターを迎えてみましょう！"}],
+ intro:[{npc:"fina",expression:"smile",anim:"wave",text:"はじめまして。私はフィナです！"},{expression:"normal",text:"これからあなたのモンスター育成をお手伝いしますね。"},{expression:"guide",text:"まずは市場へ行って、一緒に育てるモンスターを迎えてみましょう！"}],
  raiseFirst:[{npc:"fina",expression:"serious",text:"育成を始めると、途中で街には戻れないから気をつけてね。"},{expression:"normal",text:"この子の育成を始める？",choices:[{id:"start",label:"始める"},{id:"cancel",label:"まだやめておく"}]}],
  raiseAgain:[{npc:"fina",expression:"normal",text:"この子の育成を始める？",choices:[{id:"start",label:"始める"},{id:"cancel",label:"まだやめておく"}]}],
  done:[{npc:"fina",expression:"happy",text:"お疲れさまでした！　育成完了です！"},{expression:"smile",text:"ここまで育ててきた時間が、この子の力になっていますね。"},{expression:"guide",text:"育て終わったモンスターは、牧場でいつでも確認できますよ。"}]};

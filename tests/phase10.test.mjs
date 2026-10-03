@@ -257,7 +257,7 @@ test('M4-4：市場画面は正式データから作るカルーセル（左右�
   // 市場カルーセル改修：横スクロール（scroll-snap）から、左右の矢印・スワイプで切り替えるループ型へ（詳細は market-carousel.test.mjs）
   assert.match(css, /\.p10car\{[^}]*touch-action:pan-y/, '横方向の操作はカルーセルが受け取り、縦のスクロールはページのまま');
   assert.match(css, /\.p10sl\{position:absolute;left:50%;top:0;width:var\(--sw\);margin-left:calc\(var\(--sw\) \/ -2\)/, '候補は中央に重ねて置き、位置は計算で決める');
-  assert.match(mk, /<button class="p10arw prev" aria-label="前のモンスター" onclick="p10Step\(-1\)">/); assert.match(mk, /<button class="p10arw next" aria-label="次のモンスター" onclick="p10Step\(1\)">/);
+  assert.match(mk, /<button class="p10arw prev" aria-label="前のモンスター" data-nsfx="1" onclick="p10Step\(-1\)">/); assert.match(mk, /<button class="p10arw next" aria-label="次のモンスター" data-nsfx="1" onclick="p10Step\(1\)">/);   // data-nsfx：決定音ではなく選択の切り替え音（UI_SELECT。2026-10-03 総監査）
   assert.match(css, /\.p10mk\{[^}]*overflow:hidden/, 'ページ全体を横にはみ出させない');
   assert.doesNotMatch(css, /hue-rotate|saturate|grayscale|sepia/, '正式画像の色を変えない');
 });

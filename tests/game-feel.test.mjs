@@ -96,6 +96,8 @@ test('GF-05：Game Feel：出来事の重さ（LEVEL 0〜5）ごとに間と余�
   assert.ok(F.hold(3) > F.hold(1) && F.hold(5) > F.hold(3), '報酬・大事な出来事ほど余韻が長い'); assert.equal(F.hold(0), 0, '軽い UI 操作は待たない');
   assert.ok(F.MOTION.press.scale >= 0.96 && F.MOTION.press.scale <= 0.985 && F.MOTION.press.ms <= 180, '押下はごく小さく短い');
   assert.ok(F.MOTION.nav.ms >= 80 && F.MOTION.nav.ms <= 160, '押してから移るまで 0.08〜0.16秒（遅く感じない）');
+  // 2026-10-03 総監査：押下 → フェードアウト → 切り替え → フェードイン。全体 0.4〜0.7秒（速すぎず・遅すぎず）
+  for (const k of ['facility', 'back', 'light']) { const tot = F.MOTION.nav.ms + F.MOTION.nav.out + F.MOTION.enter[k]; assert.ok(tot >= 400 && tot <= 700, `${k}：${tot}ms`); }
   const hp = []; F.registerHaptics((k, n) => hp.push([k, n]));
   F.emit('dice.land'); F.emit('stat.up'); F.emit('ui.confirm');
   assert.deepEqual(se, ['DICE_LAND', 'STAT_UP', 'UI_CONFIRM']); assert.deepEqual(hp, [['medium', 'dice.land'], ['success', 'stat.up']], 'ハプティクスは重要な出来事だけ（Web では登録しない限り何もしない）');

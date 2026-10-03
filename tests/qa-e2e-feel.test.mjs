@@ -35,10 +35,13 @@ test('FE-1：押下の手ごたえ：指が触れた瞬間にボタンがごく�
   const n0 = await pg.evaluate(() => MMFEEL.navState().count);
   const t0 = Date.now(); await pg.mouse.click(x, y); await pg.mouse.click(x, y); await pg.mouse.click(x, y);
   const mid = await pg.evaluate(() => [!!document.querySelector('.p10mk'), MMFEEL.navState().pending]);
+  await pg.waitForFunction(() => document.documentElement.dataset.mmout === '1', null, { timeout: 2000 });   // 2026-10-03：押下のあと今の画面をフェードアウト（切り替えの前）
+  const out = await pg.evaluate(() => [!!document.querySelector('.p10mk'), document.querySelectorAll('nav.tcmds').length]);
   await pg.waitForSelector('.p10mk'); const ms = Date.now() - t0; await pg.waitForTimeout(500);
   const r = await pg.evaluate((n0) => ({ n: MMFEEL.navState().count - n0, mk: document.querySelectorAll('.p10mk').length }), n0);
   assert.deepEqual(mid, [false, true], '押した直後はまだ移らない（押下を見せる）'); assert.ok(ms < 900, `すぐに移る（${ms}ms）`);
-  assert.deepEqual(r, { n: 1, mk: 1 }, '3回押しても1回だけ移る');
+  assert.deepEqual(r, { n: 1, mk: 1 }, '3回押しても1回だけ移る'); assert.deepEqual(out, [false, 1], 'フェードアウトの間はまだ街（切り替えはそのあと）');
+  assert.equal(await pg.evaluate(() => document.documentElement.dataset.mmout), undefined, '切り替えたらフェードアウトの印は残らない');
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
 });
 
