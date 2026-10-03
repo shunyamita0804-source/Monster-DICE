@@ -87,3 +87,14 @@ test('BFX-04：Phase 6 保護対象に触れない：呼び出しは efBurst（f
   assert.ok(HTML.indexOf('<script src="./js/battle/fx.js"></script>') > HTML.indexOf('<script src="./js/battle/fit.js"></script>'));
   const src = rd('js/battle/fx.js').replace(/\/\*[\s\S]*?\*\//g, '').split('\n').map((l) => l.replace(/\/\/.*$/, '')).join('\n'); assert.doesNotMatch(src, /\bfight\s*\(|MMBattle|sfx\(|S\.m\b|save\(/, 'バトルの処理・セーブ・音に触れない（見た目だけ）');
 });
+
+test('BFX-05：能力アップ／ダウンの印（efBurst）は、どの能力か分からないとき（fight() は { lv } だけを渡す）アイコンを出さず ▲／▼ だけ＝「undefined」を出さない。分かるときは従来どおりアイコン', () => {
+  const line = HTML.split('\n').find((l) => l.startsWith('function efBurst(w,e){'));
+  assert.match(line, /d\.innerHTML=`\$\{EIC\[e\.st\]\?`<i>\$\{EIC\[e\.st\]\}<\/i>`:""\}<b>\$\{e\.lv<0\?"▼":"▲"\}<\/b>`;/);
+  const fightSrc = HTML.slice(HTML.indexOf('async function fight('), HTML.indexOf('\n$("#snd").textContent'));
+  assert.equal((fightSrc.match(/efBurst\(w,\{lv\}\)/g) || []).length, 2, 'fight() は { lv } だけで呼ぶ（変えていない）');
+  const eic = HTML.match(/EIC=(\{[^}]*\})/)[1], EIC = new Function(`return ${eic}`)();
+  const render = new Function('EIC', 'e', 'return `${EIC[e.st]?`<i>${EIC[e.st]}</i>`:""}<b>${e.lv<0?"▼":"▲"}</b>`;');
+  for (const lv of [1, 2, 3, -1, -2, -3]) { const h = render(EIC, { lv }); assert.doesNotMatch(h, /undefined/, `lv ${lv}`); assert.equal(h, `<b>${lv < 0 ? '▼' : '▲'}</b>`); }
+  assert.equal(render(EIC, { lv: 2, st: 'atk' }), '<i>⚔</i><b>▲</b>', '能力が分かるときはアイコン');
+});
