@@ -229,12 +229,11 @@ T('QA-BY6：継続用救済（現在の実装どおり）：育成完了の個�
   // B：未育成の個体がいれば救済なし
   await setState(pg, { g: 100, m: { sp: 0, state: 'done' }, box: [{ sp: 1, state: 'none' }] });
   b = await buyBox(pg); assert.deepEqual([b.dis, b.txt, b.notes], [true, 'お金が足りません。', []], '未育成がいる');
-  // C：2体・200G以上でも、研究所の合体UIが未実装の今は合体を使えない（画面から行けない）ので救済あり（2026-09-30）
-  assert.equal(await pg.evaluate(() => MMP10M.fusionAvailable(S)), false, 'ゲームは合体を「使える」と登録していない');
+  // C：2026-10-04（第二段階）：研究所の合体UI（museum('fuse')）があるので、2体・200G以上なら合体できる＝救済なし（index.html が MMP10M.setFusionAccess(() => true) を登録）
+  assert.equal(await pg.evaluate(() => MMP10M.fusionAvailable(S)), true, '研究所の合体UIがある＝合体を「使える」');
   await setState(pg, { g: 250, m: { sp: 0, state: 'done' }, box: [{ sp: 1, state: 'done' }] });
-  b = await buyBox(pg); assert.deepEqual([b.dis, b.txt, b.notes], [false, '購入する500G', [NOTE]], '合体を使えない今は救済あり');
-  // C'：合体を使えるようになった後（研究所の合体UIが登録する想定）は、合体（2体・200G以上）ができれば救済なし
-  await pg.evaluate(() => MMP10M.setFusionAccess(() => true));
+  b = await buyBox(pg); assert.deepEqual([b.dis, b.txt, b.notes], [true, 'お金が足りません。', []], '合体できるので救済なし');
+  // C'：同じ条件（合体できる）をもう一度（画面から登録しなくても同じ）
   await setState(pg, { g: 250, m: { sp: 0, state: 'done' }, box: [{ sp: 1, state: 'done' }] });
   b = await buyBox(pg); assert.deepEqual([b.dis, b.txt, b.notes], [true, 'お金が足りません。', []], '合体できる');
   // D：2体でも199Gなら合体できないので救済あり

@@ -71,9 +71,9 @@ test('TW-3：闘技場は開放条件を新設せず、押しても案内を出�
 test('TW-4：博物館は研究所へ（表示名・戻るボタン・育成中の案内）。中身の図鑑はそのまま', () => {
   const vis = HTML.replace(/data:[a-z/+]+;base64,[A-Za-z0-9+/=]+/g, '').split('\n').filter((l) => !/^\s*\/\//.test(l)).join('\n');
   assert.doesNotMatch(vis, /博物館/, '画面に出る文字に「博物館」は残さない（コメントの旧名の記録は除く）');
-  assert.match(HTML, /<b>モンスター研究所<\/b>/); assert.match(HTML, /◀ 研究所にもどる/);
+  assert.match(HTML, /<b>モンスター研究所<\/b>/); assert.match(HTML, /◀ 研究所<\/button>/, '2026-10-04：図鑑・合体・配合表の戻るは「◀ 研究所」');
   assert.match(HTML, /育成中は、街・牧場・市場・研究所へは行けません。/);
-  assert.match(HTML, /class="mgc" onclick="musd\(\$\{i\}\)"/, '図鑑（一覧→詳細）は従来どおり');
+  assert.match(HTML, /class="lbc" onclick="musd\(\$\{i\}\)"/, '図鑑（一覧→詳細）は従来どおり（2026-10-04：カードの見た目だけ刷新）');
 });
 
 test('TW-5：廃止済みの寿命にもとづく「預けている間、モンスターは年をとりません。」は出さない', () => {

@@ -128,7 +128,7 @@ test('NICK-6：牧場の4コマンドは 預ける・受け取る／様子を見
   assert.match(f, /<button class="fsell rnsell\$\{ft=="d"\?" on":""\}" data-se="UI_TAB" onclick="farm\('','d'\)">\$\{rnIc\("sell"\)\}<span class="fl">売る<\/span><\/button>/);
   assert.doesNotMatch(f, /"合体"|rnfuse|\["c",/, '牧場のコマンドに合体を置かない');
   assert.match(f, /ft=tab\|\|\(ft=="c"\?"a":ft\);/, '街から入ったときに合体の選択画面を出さない');
-  assert.match(f, /b=all\.length<2\?"<p>合体には2体以上必要です。/, '合体の選択画面（内部）は残す');
+  assert.match(f, /else return museum\("fuse"\);/, '2026-10-04：合体の画面は研究所（labFuse）。牧場の内部画面 farm(\'\',\'c\') は研究所へ送る');
   assert.ok(HTML.includes('async function fuse(){') && HTML.includes('function selm(i){'), '合体の処理は残す');
   const look = HTML.slice(HTML.indexOf('function rnLookPanel(){'), HTML.indexOf('\nconst rnIc='));
   assert.doesNotMatch(look, /save\(|wd\(|pfSell|fuse\(|selm\(|dep\(/, '様子を見るは閲覧だけ（保存・受け取る・売る・合体を呼ばない）');

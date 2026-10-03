@@ -147,7 +147,7 @@ test('EV-07：ライバル リュウ（MMRIVAL）：名前は正式に「リュ�
 
 test('EV-08：つなぎ（静的）：index.html は events.js・npc-events.js・rival.js を読み込み、施設の入口で npcFirst（市場・牧場・研究所・闘技場・ファーム）とファームの帰還 farmReturn を呼ぶ。画面側は 2択（choiceTalk）と出来事の会話（eventLines）を持つ。見た記録はセーブ v6 の任意項目（npcFlags・raise.evSeen）', () => {
   for (const f of ['./js/chapter/events.js', './js/npc/npc-events.js', './js/phase8/rival.js']) assert.ok(HTML.includes(`<script src="${f}"></script>`), f);
-  assert.match(HTML, /function karenIntro\(\)\{const f=finaFlags\(\);if\(npcFirst\("market"/); assert.match(HTML, /if\(tab!=="book"\)setTimeout\(\(\)=>npcFirst\("lab"\),0\)/);
+  assert.match(HTML, /function karenIntro\(\)\{const f=finaFlags\(\);if\(npcFirst\("market"/); assert.match(HTML, /if\(!tab\)setTimeout\(\(\)=>npcFirst\("lab"\),0\)/);
   assert.match(HTML, /function townArena\(\)\{townLock\("闘技場は、まだ利用できません。"\);if\(!npcFirst\("arena"\)\)vgSay\(\)\}/);
   assert.match(HTML, /if\(st=="none"\)npcFirst\("farm"\);else if\(st=="farm"\)farmReturn\(m\)/); assert.match(HTML, /npcLine\("ranch",NICK_TALK\.ranch\)/);
   assert.match(HTML, /function npcFirst\(fac,after\)\{if\(window\.MM_QA_NO_NPC\|\|!window\.MMNPCE\|\|!window\.MMNPC\)return false;/, '自動テストでは出さない');

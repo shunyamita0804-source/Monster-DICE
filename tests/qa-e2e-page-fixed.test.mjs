@@ -39,8 +39,8 @@ async function setup(p) {
 }
 const SCREENS = [
   ['街', 'lobby()', '.tbg'], ['市場', 'market()', '.p10mk'], ['牧場（預ける）', "farm('','a')", '.fscene'], ['牧場（様子を見る）', "rnView=null;farm('','e')", '.fscene'], ['牧場（売る）', "farm('','d')", '.fscene'],
-  ['ファーム', "hall('t')", '.fm'], ['ステータス', "hall('st')", '.dbg'], ['技管理', "hall('w')", '.dbg'], ['特訓メニュー', "hall('s')", '.dbg'], ['出発準備', 'prepScr()', '.dbg'], ['アイテム', 'shopScr()', '.dbg'],
-  ['プロフィール', 'profileScr()', '#app>.ds'], ['お知らせ', 'newsScr()', '#app>.ds'], ['設定', 'confScr()', '#app>.ds'], ['セーブ', 'savescr()', 'main'], ['研究所', 'museum()', '.labbg'], ['図鑑', "museum('book')", '.dbg'], ['図鑑の詳細', 'musd(0)', '.mk2'],   // 2026-10-03：研究所の入口（正式背景・1画面）と図鑑の一覧
+  ['ファーム', "hall('t')", '.fm'], ['ステータス', "hall('st')", '.dbg'], ['技管理', "hall('w')", '.dbg'], ['特訓メニュー', "hall('s')", '.dbg'], ['出発準備', 'prepScr()', '.pp'], ['アイテム', 'shopScr()', '.dbg'],
+  ['プロフィール', 'profileScr()', '#app>.ds'], ['お知らせ', 'newsScr()', '#app>.ds'], ['設定', 'confScr()', '#app>.ds'], ['セーブ', 'savescr()', 'main'], ['研究所', 'museum()', '.labbg'], ['図鑑', "museum('book')", '.lab'], ['図鑑の詳細', 'musd(0)', '.lab'], ['配合表', "museum('table')", '.lab'],   // 2026-10-03：研究所の入口（正式背景・1画面）と図鑑の一覧
 ];
 /** 画面の登場アニメ（#app>* の scr：12px 下から0.3秒）など、終わりのあるアニメが止まるまで待つ（背景の位置を正しく測るため） */
 const settle = (pg) => pg.waitForFunction(() => document.getAnimations().every((a) => a.playState !== 'running' || !Number.isFinite(a.effect && a.effect.getComputedTiming().endTime)), null, { timeout: 10000 }).then(() => pg.waitForTimeout(60));
@@ -75,7 +75,7 @@ for (const [key, size] of Object.entries(H.SIZES)) {
 test('PF-B2（390×844）：一覧は、その部分だけスクロールできる（ステータス・技管理の .dbody、牧場の売る一覧、図鑑の詳細）。見出し・戻るボタンは動かない', { skip: SKIP }, async () => {
   const p = await L.open(); const pg = p.page;
   await setup(p);
-  for (const [name, js, list, fixed] of [['ステータス', "hall('st')", '.dbody', '.dtop'], ['技管理', "hall('w')", '.dbody', '.dtitle'], ['牧場（売る）', "farm('','d')", '.rn .wpanel', '.rncmd'], ['図鑑の詳細', 'musd(0)', '.mk2', null]]) {
+  for (const [name, js, list, fixed] of [['ステータス', "hall('st')", '.dbody', '.dtop'], ['技管理', "hall('w')", '.dbody', '.dtitle'], ['牧場（売る）', "farm('','d')", '.rn .wpanel', '.rncmd'], ['研究所の合体（一覧）', "S.box=[1,2,3,4,5,6,7].map(i=>{const x=mk(i%2);x.name='M'+i;MMP7.ensureProg(x);return x});museum('fuse')", '.lab .labbody', '.lab .dtop']]) {
     await pg.evaluate((js) => (0, eval)(js), js); await pg.waitForTimeout(300); await settle(pg);
     const f0 = fixed && await pg.evaluate((s) => document.querySelector(s).getBoundingClientRect().top, fixed);
     const box = await pg.evaluate((s) => { const e = document.querySelector(s), r = e.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + Math.min(r.height - 20, 60), can: e.scrollHeight > e.clientHeight }; }, list);

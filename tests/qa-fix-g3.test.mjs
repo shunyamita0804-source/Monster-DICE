@@ -457,7 +457,7 @@ test('QA-G3-B9：実ブラウザ：新規開始→市場で購入→牧場→出
   const dep = '#app button[onclick="p7Depart(this)"]';
   await pg.waitForSelector(dep);
   const html0 = await pg.evaluate((s) => document.querySelector(s).innerHTML, dep);
-  assert.match(html0, /<small>準備ができたら出発しよう<\/small>/);
+  assert.match(html0, /<b>出発する<\/b><small>CHAPTER 1「はじまりの草原」へ（育成開始）<\/small>/, '2026-10-04：出発準備の「出発する」');
   await dnClock(pg); await dnFreezeOnChoices(pg);
   // 会話を送り、選択肢が出た瞬間から時計（Date.now：会話の時計）を止める＝そこからの押下は、実行環境の遅れがあっても「選択肢が出た直後・連打」として扱われる
   await pg.click(dep); await pg.waitForSelector('.mmtalk');

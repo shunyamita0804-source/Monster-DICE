@@ -133,7 +133,7 @@ test('KR-B1：入店：初回はカレンのアップ画像で説明2行（smile
   assert.equal(await talkState(pg), null, '1行で終わる'); await pg.waitForFunction(() => !document.querySelector('.mmtalk'), null, { timeout: 3000 });   // 退場のフェードのあと
   assert.equal(await pg.evaluate(() => document.querySelector('.p10mk').classList.contains('talk')), false, '終わると通常の閲覧へ');
   await pg.reload(); await pg.waitForFunction(() => typeof S === 'object'); await pg.evaluate(() => market()); await pg.waitForSelector('.mmtalk'); await pg.waitForTimeout(260); await pg.click('.mmtalk');
-  s2 = await talkState(pg); assert.ok(AGAIN.includes(s2.text), '再読み込み後も説明ではなく1行のあいさつ');
+  s2 = await talkState(pg); assert.ok(AGAIN.includes(s2.text) || AG2.includes(s2.text), `再読み込み後も説明ではなく1行のあいさつ：${s2.text}`);
   await H.finishTalk(pg);
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
 });

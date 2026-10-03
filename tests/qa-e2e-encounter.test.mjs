@@ -28,6 +28,7 @@ async function start(pg) {
   await pg.waitForTimeout(600);
   if (await pg.$('.chf-fina')) await pg.waitForFunction(() => !document.querySelector('.chf-fina'), null, { timeout: 8000 });   // 出発のフィナの一言（config.story）が自動で消えるまで
   await idle(pg);
+  await pg.evaluate(() => { finaFlags().story = ['tut_wild']; save(); });   // 2026-10-04：初めての野生のチュートリアル（会話窓）は見た状態＝従来の一言（吹き出し）の流れを確かめる。チュートリアルは tests/qa-e2e-events
 }
 const idle = (pg) => pg.waitForFunction(() => !bBusy && !MMCHD.isLocked() && !document.querySelector('.chpop,.chdz,.chf-enc,.chf-fina'), null, { timeout: 20000 }).then(() => pg.waitForTimeout(250));
 /** 最初の野生のマスに「止まった直後」の状態を作る（結果の処理＝遭遇の演出から始まる） */

@@ -49,8 +49,8 @@ test('QU-03：立ち絵つきの一言（.nst）＝正式の半身（closeup）�
 
 test('QU-04：研究所＝正式背景（assets/lab/lab_main.webp）・エリオットの半身・下に機能のカード（図鑑／特殊復元・合体は準備中＝システム表示だけ）。アイテム屋の店主は腰から上を大きく。牧場は選んでいる子を大きく', () => {
   assert.ok(existsSync(path.join(ROOT, 'assets/lab/lab_main.webp')));
-  const mu = fnOf('museum'); assert.match(mu, /onclick="museum\('book'\)"><b>図鑑<\/b>/); assert.match(mu, /onclick="labLock\('特殊復元'\)"/); assert.match(mu, /onclick="labLock\('合体'\)"/);
-  assert.doesNotMatch(HTML.split('\n').find((l) => l.startsWith('function labLock(')), /ELLIOT|エリオット|fuse\(|selm\(/, '準備中はシステム表示（合体の処理は呼ばない）');
+  const mu = fnOf('museum'); assert.match(mu, /if\(tab=="book"\)return labBook\(\);if\(tab=="fuse"\)return labFuse\(\);if\(tab=="table"\)return labTable\(\);/, '2026-10-04（第二段階）：研究所の主要機能＝図鑑・合体・配合表（特殊復元は主要メニューに無い）');
+  assert.doesNotMatch(mu, /labLock|特殊復元/); assert.doesNotMatch(HTML, /function labLock\(/, '旧 labLock（準備中の表示）は廃止');
   assert.match(HTML, /\.ds\.shop>\.shopnpc\{top:15%;bottom:auto;height:min\(112%,1000px\)/);
   assert.match(fnOf('farm'), /const rnFeat=\(rnView&&S\.box\.find\(v=>v\.uid===rnView\)\)\|\|S\.m\|\|S\.box\[0\]\|\|null;/);
 });

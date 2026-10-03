@@ -141,7 +141,7 @@ test('F1-5：画面：未登録のときだけ案内と「育成を完了して�
   // Chapter間ファーム（次＝最終ルート）：未登録なら進行ボタンが「育成を完了して街へ戻る」（2度押し）。出発準備にも同じボタン
   assert.match(between('function fmScr(msg){', '\n// ---- Phase 8：育成中の画面遷移'), /:fin&&!MMP8\.isPlayable\(MMP8\.FINAL\)\?\{t:"育成を完了して街へ戻る",s:"最終ルートは準備中",on:"pfixFinishNoFinal\(this\)",c:""\}/, 'Chapter間ファーム（次＝最終ルート・未登録）の進行ボタンは「育成を完了して街へ戻る」（2度押し）');
   assert.match(lineOf('function p8AfterChapterEnd(r){'), /MMP8\.isPlayable\(MMP8\.FINAL\)\?"Aランク以上をクリアしたので、次は最終Chapterへ進みます！":"Aランク以上をクリアした！ 最終ルートは準備中のため/);
-  assert.match(between('function prepScr(msg){', '\nconst P7_ERR='), /\(nx==MMP8\.FINAL&&!MMP8\.isPlayable\(MMP8\.FINAL\)\)\?`[^`]*最終ルートはまだ準備中です。[^`]*<button class="go" onclick="pfixFinishNoFinal\(this\)">育成を完了して街へ戻る<\/button>`:/, '「ボード」（出発準備）からも同じ完了ボタン（未登録のときだけ）');
+  assert.match(between('function prepScr(msg){', '\nconst P7_ERR='), /\(nx==MMP8\.FINAL&&!MMP8\.isPlayable\(MMP8\.FINAL\)\)\?`[^`]*最終ルートはまだ準備中です。/, '出発準備：未登録の案内'); assert.match(between('function prepScr(msg){', '\nconst P7_ERR='), /onclick="pfixFinishNoFinal\(this\)"><b>育成を完了して街へ戻る<\/b>/, '「ボード」（出発準備）からも同じ完了ボタン（未登録のときだけ）');
   const done = lineOf('function p8DoneScr(msg){');
   assert.match(done, /e\.skipped\?\(e\.reason=="rank_gate"\?`解放条件（公式\$\{MMP8\.RANK_LETTERS\[e\.need\]\|\|""\}ランク大会クリア）に届かず（ここで育成完了）`:"準備中のため未実施（ここで育成完了）"\)/, '解放条件に届かずに完了した記録も区別して出す'); assert.match(done, /\$\{msg\?`<div class="sub">\$\{msg\}<\/div>`:""\}/);
 });

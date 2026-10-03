@@ -84,7 +84,7 @@ async function toRanch(pg, tab) {
   await tap(pg, '.hz[onclick="farm()"]');
   await pg.waitForSelector('#app .wpanel');
   if (tab === 'd') await tap(pg, '.fsell');
-  else if (tab === 'c') await pg.evaluate(() => farm('', 'c'));   // 合体は研究所へ移す（牧場のコマンドには無い）。合体の処理・選択画面は内部に残しているので直接開く
+  else if (tab === 'c') { await pg.evaluate(() => museum('fuse')); await pg.waitForSelector('.lbf .wpanel'); return; }   // 2026-10-04：合体は研究所（museum('fuse')＝labFuse）。選択 selm・誕生 fuse は従来どおり
   else if (tab) await tap(pg, `.ftile[onclick="farm('','${tab}')"]`);
   await pg.waitForFunction((t) => typeof ft === 'string' && (!t || ft === t), tab || null);
 }

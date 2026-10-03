@@ -107,7 +107,7 @@ try {
   const bought = await page.evaluate(() => ({ m: !!S.m, name: S.m && S.m.name }));
   rec('市場で購入→街', d2 === 'none' && d3 === 'none' && bought.m, JSON.stringify(bought));
 
-  await page.evaluate(() => farm()); await sleep(1200);
+  await page.evaluate(() => farm()); await sleep(1200); await drain(); await sleep(300);   // 2026-10-04：初回訪問の会話（フィナ ↔ ニック）を送る
   const f = await page.evaluate(() => {
     const b = document.querySelector('.rnnick .tx'); const img = document.querySelector('.rnnick .nstf');   // 2026-10-03：ニックは半身の立ち絵＋会話窓
     return { cls: b && b.className, name: b && b.querySelector('b') && b.querySelector('b').textContent,
@@ -122,7 +122,7 @@ try {
   await page.evaluate(() => { farm('', 'b'); wd(0); }); await sleep(800);
   rec('牧場：受け取り', await page.evaluate(() => !!S.m));
 
-  await page.evaluate(() => hall('t')); await sleep(1200);
+  await page.evaluate(() => hall('t')); await sleep(1200); await drain(); await sleep(300);   // 2026-10-04：初回訪問の会話（ダン ↔ フィナ）を送る
   const h = await page.evaluate(() => { const b = document.querySelector('.kdan b'); const i = document.querySelector('.kav img'); return { name: b && b.textContent, src: i && i.getAttribute('src'), nw: i && i.naturalWidth }; });
   rec('ファーム：ダン（顔が読める）', h.name === 'ダン' && /assets\/npc\/dan\/face\.webp/.test(h.src || '') && h.nw > 0, JSON.stringify(h));
   await page.screenshot({ path: `${OUT}/hall_390.png` });

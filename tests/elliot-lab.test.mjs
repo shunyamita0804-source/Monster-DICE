@@ -56,14 +56,15 @@ test('ELI-4：表示場所は研究所の図鑑一覧（museum）と図鑑の詳
   assert.ok(mu.startsWith('function museum(tab){if(p8Blocked())return;bgm("lab");'), '研究所の入口の制限はそのまま');
   // 2026-10-03 品質向上：正式な研究所の背景（assets/lab/lab_main.webp）が届いた＝入口（エリオットの半身・機能のカード）と図鑑の一覧の背景を差し替え（AS.mkt のデータは消さない）
   assert.ok(mu.includes('<div class="labnpc nst r"><img class="nstf" src="${ELLIOT_STAND}" alt="" decoding="async"><div class="tx"><b>エリオット</b>${npcLine("lab",ELLIOT_TALK.lab)}</div></div>'), '入口：エリオットの半身＋会話窓（2026-10-04：進行状態に合う一言。無ければ従来の配列）');
-  assert.ok(mu.includes('<div class="dbg" style="background-image:url(${LAB_BG})"></div>'), '図鑑の一覧の背景も研究所の正式背景'); assert.ok(HTML.includes('"mkt":"data:image/jpeg;base64,'), 'AS.mkt のデータは残す');
-  assert.ok(mu.includes('<small>出会えるモンスターの記録</small></div></div><div class="dbody">${elSay(ELLIOT_TALK.lab[R(ELLIOT_TALK.lab.length)])}<div class="mgrid">'));
-  assert.ok(mu.includes('<span>ノビトン</span><small>近日公開</small>'), '「近日公開」（ロック表示）はシステム表示のまま');
+  assert.ok(HTML.includes('function labShell(cls,back,plq,body,cur){return `<div class="lab ${cls}"><div class="labbg" style="background-image:url(${LAB_BG})"></div>'), '図鑑・合体・配合表も研究所の正式背景（labShell）'); assert.ok(HTML.includes('"mkt":"data:image/jpeg;base64,'), 'AS.mkt のデータは残す');
+  { const bk = HTML.slice(HTML.indexOf('function labBook('), HTML.indexOf('\nfunction musd(')); assert.ok(bk.includes('<b>モンスター図鑑</b><small>発見 ${n} / ${tot}</small>') && bk.includes('<div class="lbgrid">'), '2026-10-04：図鑑はデザイン参考 06（濃紺＋金・2列）。エリオットの一言は入口だけ'); }
+  assert.ok(HTML.includes('<b class="lbnm">ノビトン</b><div class="lbim"><span class="q">?</span><em>近日公開</em></div>'), '「近日公開」（ロック表示）はシステム表示のまま（2026-10-04：図鑑のカード labBook）');
   const md = lineOf('function musd(');
   assert.ok(md.startsWith('function musd(i){if(p8Blocked())return;'));
-  assert.ok(md.includes('<div class="mush">No.${String(i+1).padStart(3,"0")}　${SP[i][0]}</div>${elSay(ELLIOT_TALK.book[R(ELLIOT_TALK.book.length)])}<img class="pcard" src="${AS[AK[i]+"L"]}"'));
-  assert.ok(md.includes('<img class="pcard" src="${AS[AK[i]+"R"]}"'), 'プロフィールカード（base64 の AS.*L／AS.*R）はそのまま');
-  assert.equal((HTML.match(/elSay\(/g) || []).length, 3, '定義＋2か所だけ（一覧・詳細。入口は半身の立ち絵）');
+  const mdAll = HTML.slice(HTML.indexOf('function musd('), HTML.indexOf('\nfunction ', HTML.indexOf('function musd(') + 10));
+  assert.ok(mdAll.includes('<small class="lbno">No.${String(i+1).padStart(3,"0")}</small><b class="lbnm">${x[0]}</b>') && mdAll.includes('${p10Img(i)}') && !mdAll.includes('pcard'), '2026-10-04：図鑑の詳細＝正式画像・ゲージ・成長適性・初期の技（旧 base64 のカードと一言は出さない）');
+  assert.ok(HTML.includes('"soL":"data:image/jpeg;base64,') || HTML.includes('"soL":"data:image/'), 'プロフィールカードのデータ（base64 の AS.*L／AS.*R）は互換のため残す（表示はしない）');
+  assert.equal((HTML.match(/elSay\(/g) || []).length, 1, '2026-10-04：elSay は定義だけ（図鑑の一覧・詳細はデザイン参考 06＝エリオットの一言は入口の立ち絵）');
   for (const f of ['function farm(', 'function market(', 'function _hall(', 'function p9TourResult(']) {
     const i = HTML.indexOf(f); assert.doesNotMatch(HTML.slice(i, HTML.indexOf('\nfunction ', i + 10)), /elSay|ELLIOT/, `${f} には出さない`);
   }
@@ -90,21 +91,19 @@ test('ELI-B1：研究所：図鑑一覧と詳細（ソラモ・ガウル）に�
   await pg.click('.hz[onclick="museum()"]', { force: true }); await pg.waitForSelector('.lab .labnpc');
   // 2026-10-03 品質向上：入口＝正式背景・エリオットの半身（正式 closeup）と会話窓・下に機能のカード
   const hero = await pg.evaluate(() => { const i = document.querySelector('.lab .labnpc img'); return { src: i.getAttribute('src'), name: document.querySelector('.lab .labnpc .tx b').textContent, text: document.querySelector('.lab .labnpc .tx').textContent.replace(/^エリオット/, ''), cards: [...document.querySelectorAll('.lab .labc b')].map((b) => b.textContent) }; });
-  assert.deepEqual([hero.src, hero.name, hero.cards], ['assets/npc/elliot/closeup/guide.webp', 'エリオット', ['図鑑', '特殊復元', '合体']]); assert.ok(T.lab.includes(hero.text), hero.text);
-  await pg.click('.labc[onclick="museum(\'book\')"]'); await pg.waitForSelector('.mgrid'); await waitImgs(pg);
+  assert.deepEqual([hero.src, hero.name, hero.cards], ['assets/npc/elliot/closeup/guide.webp', 'エリオット', ['図鑑', '合体', '配合表']]); assert.ok(T.lab.includes(hero.text), hero.text);
+  await pg.click('.labc[onclick="museum(\'book\')"]'); await pg.waitForSelector('.lbgrid'); await waitImgs(pg);
   let s = await say(pg);
-  assert.equal(s.length, 1); assert.deepEqual([s[0].name, s[0].src, s[0].ok], ['エリオット', 'assets/npc/elliot/face.webp', true]);
-  assert.ok(T.lab.includes(s[0].text), s[0].text);
-  const grid = await pg.evaluate(() => [...document.querySelectorAll('.mgc')].map((b) => b.innerText.replace(/\s+/g, ' ').trim()));
-  assert.deepEqual(grid, ['No.001 ソラモ', 'No.002 ガウル', '？ No.003 ノビトン 近日公開'], '図鑑の中身は従来どおり');
-  assert.equal(await pg.evaluate(() => [...document.querySelectorAll('.mgc.lk')].some((e) => e.querySelector('.elsay') || /エリオット/.test(e.textContent))), false, 'ロック表示にエリオットは付かない');
+  assert.equal(s.length, 0, '2026-10-04：図鑑の一覧にエリオットの吹き出しは無い（入口で話す）');
+  const grid = await pg.evaluate(() => [...document.querySelectorAll('.lbc')].map((b) => b.innerText.replace(/\s+/g, ' ').trim()));
+  assert.deepEqual(grid, ['No.001 ソラモ', 'No.002 ガウル', 'No.003 ノビトン ? 近日公開'], '図鑑の中身は従来どおり（解放条件は変えない）');
+  assert.equal(await pg.evaluate(() => [...document.querySelectorAll('.lbc.lk')].some((e) => e.querySelector('.elsay') || /エリオット/.test(e.textContent))), false, 'ロック表示にエリオットは付かない');
   for (const i of [0, 1]) {
-    await pg.click(`.mgc[onclick="musd(${i})"]`); await pg.waitForSelector('.mk2 .pcard'); await waitImgs(pg);
-    s = await say(pg);
-    assert.equal(s.length, 1); assert.ok(s[0].ok); assert.ok(T.book.includes(s[0].text), s[0].text);
-    assert.equal(await pg.evaluate(() => document.querySelectorAll('.mk2 .pcard').length), 2, 'プロフィールカード2枚はそのまま');
-    assert.match(await pg.evaluate(() => document.querySelector('.mush').textContent), new RegExp(`No\\.00${i + 1}`));
-    await pg.click('.mk2 .dback.wide'); await pg.waitForSelector('.mgrid');
+    await pg.click(`.lbc[onclick="musd(${i})"]`); await pg.waitForSelector('.lbd .lbsts'); await waitImgs(pg);
+    assert.equal(await pg.evaluate(() => document.querySelectorAll('.pcard').length), 0, '2026-10-04：旧い base64 のプロフィールカードは出さない（正式画像・ゲージ・成長適性・初期の技）');
+    assert.match(await pg.evaluate(() => document.querySelector('.lbd .lbno').textContent), new RegExp(`No\\.00${i + 1}`));
+    assert.equal(await pg.evaluate(() => document.querySelectorAll('.lbd .lbst').length), 6);
+    await pg.click('.lbd .dback'); await pg.waitForSelector('.lbgrid');
   }
   await pg.click('.dtop .dback'); await pg.waitForSelector('.lab .labnpc'); await pg.click('.lab .dtop .dback'); await pg.waitForSelector('.hz[onclick="museum()"]');
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, [], '404なし');
@@ -115,10 +114,12 @@ test('ELI-B2：4つの画面サイズで、研究所の一覧・詳細のエリ�
   for (const size of Object.values(H.SIZES)) {
     const p = await L.open({ size }); const pg = p.page; const tag = size.join('×');
     await H.newGame(pg, 'テスト');
-    await pg.evaluate(() => museum('book')); await pg.waitForSelector('.mgrid'); await waitImgs(pg);
-    let r = await fit(pg); assert.ok(r.inside, `${tag} 一覧：吹き出しが画面内`); assert.ok(r.sw <= r.W + 1, `${tag} 一覧：横にはみ出さない（${r.sw}/${r.W}）`);
-    await pg.evaluate(() => musd(0)); await pg.waitForSelector('.mk2 .pcard'); await waitImgs(pg);
-    r = await fit(pg); assert.ok(r.inside, `${tag} 詳細：吹き出しが画面内`); assert.ok(r.sw <= r.W + 1, `${tag} 詳細：横にはみ出さない（${r.sw}/${r.W}）`);
+    await pg.evaluate(() => museum()); await pg.waitForSelector('.lab .labnpc'); await waitImgs(pg);
+    let r = await fit(pg); assert.ok(r.inside, `${tag} 入口：会話窓が画面内`); assert.ok(r.sw <= r.W + 1, `${tag} 入口：横にはみ出さない（${r.sw}/${r.W}）`);
+    await pg.evaluate(() => museum('book')); await pg.waitForSelector('.lbgrid'); await waitImgs(pg);   // 2026-10-04：図鑑の一覧・詳細にエリオットの吹き出しは無い（入口だけ）。カードが横にはみ出さないことを見る
+    r = await fit(pg); assert.ok(r.sw <= r.W + 1, `${tag} 一覧：横にはみ出さない（${r.sw}/${r.W}）`);
+    await pg.evaluate(() => musd(0)); await pg.waitForSelector('.lbd .lbsts'); await waitImgs(pg);
+    r = await fit(pg); assert.ok(r.sw <= r.W + 1, `${tag} 詳細：横にはみ出さない（${r.sw}/${r.W}）`);
     assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
     await p.ctx.close();
   }

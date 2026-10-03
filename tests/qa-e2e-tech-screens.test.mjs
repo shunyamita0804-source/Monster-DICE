@@ -152,10 +152,10 @@ const SEL = {
   detail: ['#p10info .p10buy', '.p10detx'],
   sheet: ['#p10ov #mnm', '#p10ov .p10no', '#p10ov .p10ok'],
   ranch: ['button.back', '.ftile', '.fsell', '.wpanel button'],
-  museum: ['.dtop .dback', '.mgc'],
+  museum: ['.dtop .dback', '.lbc'],
   save: ['button.back', '.card.slot button', 'button.ghost'],
   hall: ['button.back', '.fmb', '[onclick="prepScr()"]'],   // ファーム（育成開始前）：街へ戻る・4コマンド・進行ボタン「育成を始める」
-  prep: ['.dback', '[onclick*="p7Depart"]'],
+  prep: ['.ppback', '[onclick*="p7Depart"]'],   // 2026-10-04（PHASE C）：新しい出発準備＝「◀ 拠点」(.ppback)・「出発する」
   board: ['.p9mbtn', '#brollbtn'],
   goal: ['#chrcv .rcv-row.ok', '.rcv-join', '.rcv-dec'],   // 2026-10-02：Chapter 1 のゴールは大会会場への到着 → 大会受付（p9ReceptionHtml）
   farmInterval: ['.fmb', '.fmgo', '.fmrd', '.fmab'],   // Chapter間ファーム：4コマンド・進行ボタン・中断・育成放棄
@@ -175,7 +175,7 @@ describe('QA-TS：390×844 の通し（JS エラー・読み込み・壊れた�
     // ローカルへの応答と、読み込みの失敗（理由つき）を集める
     pg.on('response', (r) => { if (r.url().startsWith(L.url)) res.push([r.status(), r.url().slice(L.url.length)]); });
     // BGM の <audio> を次の曲へ使い回すとき、前の曲の途中のダウンロードが中断される（net::ERR_ABORTED・media）のは失敗ではない（2026-10-02 夜の Audio 基盤）
-    pg.on('requestfailed', (r) => { if (r.url().startsWith(L.url) && !(r.resourceType() === 'media' && /ERR_ABORTED/.test((r.failure() || {}).errorText || ''))) failed.push([r.url().slice(L.url.length), r.failure() && r.failure().errorText]); });
+    pg.on('requestfailed', (r) => { if (r.url().startsWith(L.url) && !(/^(media|image)$/.test(r.resourceType()) && /ERR_ABORTED/.test((r.failure() || {}).errorText || ''))) failed.push([r.url().slice(L.url.length), r.failure() && r.failure().errorText]); });
     pg.on('request', (r) => { if (r.url().startsWith(L.url)) reqs.add(r.url().slice(L.url.length)); });
   });
   after(async () => { if (p) await p.ctx.close().catch(() => {}); });
@@ -247,13 +247,13 @@ describe('QA-TS：390×844 の通し（JS エラー・読み込み・壊れた�
     await pg.click('.hz[onclick="museum()"]', { force: true });
     await waitSel(pg, '.lab .labc'); await check(pg, '研究所', ['.lab .dtop .dback', '.lab .labc']);   // 2026-10-03：研究所の入口（エリオットの半身・機能のカード）
     await pg.click('.lab .labc[onclick="museum(\'book\')"]');
-    await waitSel(pg, '.mgc');
+    await waitSel(pg, '.lbc');
     await check(pg, '博物館', SEL.museum);
-    await pg.click('.mgc');
-    await waitSel(pg, '.mk2 .dback.wide');
-    await check(pg, '博物館の詳細', ['.mk2 .dback']);
-    await pg.click('.mk2 .dback.wide');
-    await waitSel(pg, '.mgc');
+    await pg.click('.lbc');
+    await waitSel(pg, '.lbd .dback');
+    await check(pg, '博物館の詳細', ['.lbd .dback']);
+    await pg.click('.lbd .dback');
+    await waitSel(pg, '.lbc');
     await pg.click('.dtop .dback');
     await waitSel(pg, '.lab .labc'); await pg.click('.lab .dtop .dback');
     await waitSel(pg, '.svb');

@@ -98,7 +98,7 @@ export async function launch() {
     page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) errors.push('console: ' + m.text()); });
     page.on('response', (r) => { if (r.status() >= 400 && r.url().startsWith(srv.url)) bad.push(r.status() + ' ' + r.url().slice(srv.url.length)); });
     // 画面の再読み込み（reload）で途中だった BGM のダウンロードが中断される（net::ERR_ABORTED・media）のは失敗ではない
-    page.on('requestfailed', (r) => { if (r.url().startsWith(srv.url) && !(r.resourceType() === 'media' && /ERR_ABORTED/.test((r.failure() || {}).errorText || ''))) bad.push('failed ' + r.url().slice(srv.url.length)); });
+    page.on('requestfailed', (r) => { if (r.url().startsWith(srv.url) && !(/^(media|image)$/.test(r.resourceType()) && /ERR_ABORTED/.test((r.failure() || {}).errorText || ''))) bad.push('failed ' + r.url().slice(srv.url.length)); });   // 画像の ERR_ABORTED＝会話の立ち絵などが読み終わる前に次の画面へ移って要素が消えた（読み込みの失敗ではない。404 は応答で別に数える）
     await page.goto(srv.url + 'index.html' + (opt.query || ''));
     await page.waitForFunction(() => typeof window.MMP8 === 'object' && typeof S === 'object', null, { timeout: 120000 });
     const p = { page, ctx, errors, bad };

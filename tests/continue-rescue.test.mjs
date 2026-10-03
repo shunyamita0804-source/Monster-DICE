@@ -68,7 +68,7 @@ test('R3：確定前の補填金は別用途に使えない。購入をやめれ
   assert.match(fuse, /if\(S\.g<200\)return;S\.g-=200;/, '合体は実際の所持金で判定し、補填しない（合体料金200Gは変えない）');
   assert.doesNotMatch(fuse, /purchase|continueRescue|ECONOMY/, '合体処理は市場の補填を使わない');
   assert.equal(M.FUSION_COST, 200, '判定用の合体費用は fuse() と同じ200G');
-  assert.match(lineOf('function farm(msg,tab){') + between('function farm(msg,tab){', '\nfunction dep('), /\$\{S\.g<200\?"disabled":""\} onclick="fuse\(\)">合体させる！（200G）/);
+  assert.match(between('function labFuse(){', '\nfunction '), /\$\{S\.g<200\?"disabled":""\} onclick="fuse\(\)">合体させる！（200G）/, '2026-10-04：合体の画面は研究所（labFuse）。所持金が足りなければ押せない');
 });
 
 test('R4：次の育成に使える個体がいれば継続用救済は動かない（未育成が手持ち・牧場のどちらか／育成中の個体がいる）', () => {
@@ -127,12 +127,12 @@ test('R11：売却との関係は従来どおり（救済は売却を条件に�
   assert.equal(M.canSell(R, R.box[0].uid).reason, 'raising', '育成中の個体がいる間は売却できない（従来どおり）');
 });
 
-test('R12：合体の処理そのものは残っている（fuse・selm・合体の選択画面・費用200G）。救済の変更は monsters.js の判定だけ。ゲーム側で合体を「使える」と登録していない', () => {
+test('R12：合体の処理そのものは残っている（fuse・selm・合体の選択画面・費用200G）。救済の変更は monsters.js の判定だけ。2026-10-04：研究所の合体UI（labFuse）があるので index.html は合体を「使える」と登録する', () => {
   const fuse = between('async function fuse(){', '\nfunction ');
   assert.match(fuse, /if\(S\.g<200\)return;S\.g-=200;/, '合体費用200Gはそのまま');
   assert.match(HTML, /function selm\(i\)\{/, 'selm は残る');
-  assert.match(HTML, /onclick="fuse\(\)">合体させる！（200G）/, '合体の選択画面（farm(\'\',\'c\')）は残る');
-  assert.doesNotMatch(HTML, /setFusionAccess/, '研究所の合体UIが未実装のため、index.html は合体を使えると登録しない');
+  assert.match(HTML, /onclick="fuse\(\)">合体させる！（200G）/, '合体の選択画面（研究所の labFuse）は残る');
+  assert.match(HTML, /MMP10M\.setFusionAccess\(\(\)=>true\)/, '2026-10-04：研究所の合体UI（museum(\'fuse\'））があるので、合体を「使える」と登録する（継続用救済は合体できないときだけ）');
   assert.doesNotMatch(SRC.mo, /S\.(fusion|fuse|canFuse)\b|fusionAccess\s*:/, 'セーブに新しい項目を足さない');
 });
 

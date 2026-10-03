@@ -2136,6 +2136,88 @@ main:has(>#app>.lab) h1{display:none}#app:has(>.lab){overflow:hidden}
 .lab .labc.lock{background:linear-gradient(rgba(36,44,70,.92),rgba(18,24,44,.94));color:#cfd5e2}.lab .labc.lock b{font-size:15px}
 .lab .labmsg{position:relative;z-index:2;margin-top:8px;padding:8px 12px;border-radius:8px;background:rgba(8,15,34,.9);border:1px solid rgba(240,232,212,.5);font-size:13px}
 .lab .labmsg[hidden]{display:none}
+
+/* ===== 研究所（2026-10-04 第二段階）：図鑑・合体・配合表。デザイン参考 06（濃紺＋金・魔法図鑑・2列） ===== */
+.lab .labbody{position:relative;z-index:2;flex:1 1 auto;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;margin-top:10px;padding:2px 2px 8px}
+.lab .labnav{margin-top:8px;grid-template-columns:1fr 1fr 1fr}
+.lab .labnav .labc{flex-direction:row;gap:7px;min-height:52px;padding:6px 4px}
+.lab .labnav .labc svg{width:22px;height:22px;color:#e8c86a;flex:0 0 auto}
+.lab .labnav .labc b{font-size:15px}
+.lab .labnav .labc.on{background:linear-gradient(rgba(58,78,130,.98),rgba(24,40,86,.98));box-shadow:inset 0 0 0 3px rgba(10,20,46,.9),inset 0 0 0 3.6px rgba(240,210,130,.9),0 0 12px rgba(240,210,130,.35)}
+.lbgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:4px 2px}
+.lbc{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;margin:0;padding:10px 8px 12px;border-radius:12px;color:#f3ecd9;text-align:center;font:inherit;cursor:pointer;background:linear-gradient(rgba(14,24,56,.96),rgba(8,15,34,.98));border:1px solid rgba(240,232,212,.6);box-shadow:inset 0 0 0 3px rgba(8,15,34,.95),inset 0 0 0 3.6px rgba(217,180,101,.75),0 6px 14px rgba(0,0,0,.45)}
+.lbc::before,.lbc::after{content:"";position:absolute;width:10px;height:10px;border:1px solid rgba(240,210,130,.9);pointer-events:none}
+.lbc::before{left:5px;top:5px;border-right:0;border-bottom:0}.lbc::after{right:5px;bottom:5px;border-left:0;border-top:0}
+.lbno{font-size:11px;letter-spacing:.14em;color:#e8c86a;font-family:var(--mm-font-head)}
+.lbnm{display:block;font-family:var(--mm-font-head);font-weight:800;font-size:18px;letter-spacing:.1em;padding-bottom:4px;border-bottom:1px solid rgba(240,232,212,.5);width:100%}
+.lbim{position:relative;width:100%;aspect-ratio:3/4;border-radius:8px;display:grid;place-items:center;overflow:hidden;background:radial-gradient(circle at 50% 40%,#f3e6c8,#d9c59a 70%,#b89a68)}
+.lbim .p10im{max-width:92%;max-height:92%;object-fit:contain}
+.lbc.lk .lbim{background:radial-gradient(circle at 50% 45%,#1d3a6a,#0b1838 70%,#060d22)}
+.lbc.lk .q{font-family:var(--mm-font-head);font-size:52px;font-weight:800;color:#e8c86a;text-shadow:0 0 18px rgba(120,200,255,.6)}
+.lbc.lk em{position:absolute;bottom:10px;left:0;right:0;font-style:normal;font-size:12px;letter-spacing:.2em;color:#d9ccb0}
+.lbdc{position:relative;padding:14px 14px 16px;border-radius:12px;color:#f3ecd9;background:linear-gradient(rgba(14,24,56,.96),rgba(8,15,34,.98));border:1px solid rgba(240,232,212,.6);box-shadow:inset 0 0 0 3px rgba(8,15,34,.95),inset 0 0 0 3.6px rgba(217,180,101,.75),0 6px 14px rgba(0,0,0,.45)}
+.lbdh{text-align:center}.lbdh .lbkind{display:block;font-size:12px;color:#d9ccb0;margin-top:4px}
+.lbdim{width:min(60%,220px);aspect-ratio:1;margin:10px auto;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 50% 40%,#f3e6c8,#d9c59a 70%,#b89a68);box-shadow:0 0 0 2px rgba(217,180,101,.6),0 0 24px rgba(240,210,130,.25)}
+.lbdim .p10im{max-width:88%;max-height:88%;object-fit:contain}
+.lbdesc{margin:4px 0 10px;text-align:center;font-size:13px;color:#e8dfc8}
+.lbsts{display:grid;gap:6px}
+.lbst{display:grid;grid-template-columns:62px 1fr 38px 20px;align-items:center;gap:8px;font-size:12px}
+.lbsk{font-weight:700;color:var(--c)}.lbst b{text-align:right;font-variant-numeric:tabular-nums}
+.lbg{height:9px;border-radius:5px;background:rgba(255,255,255,.12);border:1px solid rgba(240,232,212,.35);overflow:hidden}.lbg i{display:block;height:100%;border-radius:5px;min-width:2px}
+.lbgr{font-style:normal;font-weight:800;font-size:12px;text-align:center;color:#e8c86a}
+.lbnote{display:block;margin-top:8px;font-size:10.5px;color:#cfc2a8;line-height:1.5}
+.lbmvs{margin-top:10px;padding-top:8px;border-top:1px solid rgba(240,232,212,.35)}.lbmvs>small{display:block;font-size:11px;color:#e8c86a;margin-bottom:4px}
+.lbmv{display:inline-block;margin:2px 4px 2px 0;padding:3px 8px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(240,232,212,.35);font-size:12px}
+.lbmsg{margin:4px 0 8px;font-size:13px}
+.lbwp{color:#f3ecd9}.lbwp .lbpick{width:100%;margin:4px 0;padding:8px 10px;border-radius:10px;text-align:left;color:#f3ecd9;background:linear-gradient(rgba(22,38,80,.95),rgba(10,20,46,.96));border:1px solid rgba(240,232,212,.5)}
+.lbwp .lbpick.on{box-shadow:inset 0 0 0 2px rgba(240,210,130,.9)}.lbwp .lbpick small{display:block;font-size:10.5px;color:#d9ccb0}
+.lbwp .fz{display:flex;align-items:center;justify-content:center;gap:10px;margin:6px 0 10px}.lbwp .fz .slot{flex:1;min-height:92px;display:grid;place-items:center;border-radius:10px;background:rgba(8,15,34,.8);border:1px dashed rgba(240,210,130,.6)}
+.lbwp .lbprev{margin:8px 0;padding:10px;border-radius:10px;background:rgba(8,15,34,.85);border:1px solid rgba(240,210,130,.7)}.lbwp .lbprev .st{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:12px;margin:6px 0}
+.lbwp .go{width:100%;margin-top:6px}
+.lbth,.lbtr{display:grid;grid-template-columns:1fr 14px 1fr 18px 1.2fr;align-items:center;gap:4px;padding:6px 4px;font-size:13px;text-align:center}
+.lbth{grid-template-columns:1fr 14px 1fr 18px 1.2fr;color:#e8c86a;font-size:11px;letter-spacing:.1em;border-bottom:1px solid rgba(240,232,212,.4)}.lbth span:nth-child(2){grid-column:3}.lbth span:nth-child(3){grid-column:5}
+.lbtr{border-bottom:1px solid rgba(240,232,212,.18)}.lbtr i,.lbtr em{font-style:normal;color:#d9ccb0}.lbtr b{color:#ffe6a8}
+.lbrules{margin:10px 0 0;padding-left:18px;font-size:12px;line-height:1.6;color:#e8dfc8}
+/* ===== 出発準備（2026-10-04 第二段階。デザイン参考 07）：地図の上に札・バッグのスロット・Chapter のカード・「出発する」 ===== */
+.pp{position:relative;margin:-16px;height:100dvh;min-height:560px;box-sizing:border-box;padding:calc(env(safe-area-inset-top,0px) + 8px) 12px calc(env(safe-area-inset-bottom,0px) + 10px);display:flex;flex-direction:column;gap:8px;overflow:hidden;color:#f3ecd9;background:#1b2a14}
+main:has(>#app>.pp) h1{display:none}#app:has(>.pp){overflow:hidden}
+.pp>.ppbg{position:absolute;inset:0;z-index:0;background:var(--pp-bg) center top/cover no-repeat}
+.pp>.ppbg::after{content:"";position:absolute;inset:0;background:linear-gradient(rgba(6,12,30,.35),rgba(6,12,30,.05) 25%,rgba(6,12,30,.15) 60%,rgba(6,12,30,.72))}
+.pp>*:not(.ppbg){position:relative;z-index:2}
+.pphd{display:flex;align-items:center;justify-content:space-between;padding-right:46px}   /* 右上の音のボタン（#snd）と重ねない */
+.ppback{padding:7px 14px 7px 10px;border-radius:999px;color:#ffe6a8;font-weight:800;font-size:13px;background:linear-gradient(#6b4226,#3e2413);border:1.5px solid #c9a24d;box-shadow:0 3px 8px rgba(0,0,0,.4)}
+.ppgold{padding:6px 12px;border-radius:999px;font-weight:800;font-size:13px;color:#ffe6a8;background:rgba(8,15,34,.8);border:1px solid rgba(217,180,101,.7)}
+.pptop{display:grid;grid-template-columns:76px 1fr auto;align-items:center;gap:8px}
+.ppmon{width:76px;height:76px;border-radius:50%;display:grid;place-items:center;overflow:hidden;background:radial-gradient(circle at 50% 40%,#2a3f78,#0b1838 75%);border:2px solid #c9a24d;box-shadow:0 0 0 3px rgba(8,15,34,.9),0 0 16px rgba(240,210,130,.35)}
+.ppmon .mon{width:100%;height:100%;display:grid;place-items:center}.ppmon .mon img{max-width:84%;max-height:84%;object-fit:contain}
+.ppname{padding:6px 12px;border-radius:10px;background:rgba(8,15,34,.85);border:1px solid rgba(217,180,101,.7);min-width:0}
+.ppname small{display:block;font-size:10px;letter-spacing:.14em;color:#e8c86a}.ppname b{display:block;font-family:var(--mm-font-head);font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ppname em{font-style:normal;font-size:11px;color:#d9ccb0}
+.ppch{padding:6px 10px;border-radius:10px;text-align:center;background:rgba(8,15,34,.85);border:1px solid rgba(217,180,101,.7);max-width:120px}
+.ppch small{display:block;font-size:10px;letter-spacing:.14em;color:#e8c86a;font-family:var(--mm-font-head)}.ppch b{display:block;font-family:var(--mm-font-head);font-size:13px;line-height:1.3}
+.ppmsg{margin:0}
+.ppbag{display:grid;grid-template-columns:1fr 64px;gap:8px;align-items:stretch;padding:8px 10px 10px;border-radius:12px;background:linear-gradient(rgba(70,44,22,.94),rgba(40,24,10,.96));border:1.5px solid #c9a24d;box-shadow:inset 0 0 0 2px rgba(20,12,4,.8),0 6px 14px rgba(0,0,0,.4)}
+.ppbagh{grid-column:1/-1;display:flex;align-items:baseline;gap:8px}.ppbagh b{font-family:var(--mm-font-head);font-size:14px;letter-spacing:.1em;color:#ffe6a8}.ppbagh small{font-size:11px;color:#e8dfc8}
+.ppslots{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.ppsl{aspect-ratio:1;min-width:0;padding:2px;border-radius:50%;display:grid;place-items:center;color:#ffe6a8;font:inherit;background:radial-gradient(circle at 50% 40%,#2e1c0c,#140b03);border:2px solid #c9a24d;box-shadow:inset 0 0 0 2px rgba(20,12,4,.9)}
+.ppsl span{color:#8a7250;font-weight:800}.ppsl.on{background:radial-gradient(circle at 50% 40%,#5b3d1a,#2a1708)}.ppsl b{font-size:9.5px;line-height:1.15;text-align:center;overflow:hidden;max-height:2.4em}
+.ppvault{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:4px;border-radius:10px;color:#ffe6a8;font:inherit;background:linear-gradient(#5b3d1a,#2a1708);border:1.5px solid #c9a24d}
+.ppvault b{font-size:12px}.ppvault small{font-size:10px;color:#e8dfc8}
+.ppcard{flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center}
+.ppcin{width:100%;max-width:340px;padding:12px 14px 14px;border-radius:10px;text-align:center;color:#2a2340;background:linear-gradient(#f3e6c8,#e4d2a8);border:2px solid #b98a3a;box-shadow:inset 0 0 0 2px rgba(255,248,230,.8),0 8px 18px rgba(0,0,0,.45)}
+.ppcin small{display:block;font-family:var(--mm-font-head);font-size:12px;letter-spacing:.2em;color:#6b4a1a}.ppcin b{display:block;font-family:var(--mm-font-head);font-size:20px;letter-spacing:.08em;padding-bottom:6px;margin-bottom:8px;border-bottom:1px solid #b98a3a}
+.ppart{width:100%;aspect-ratio:16/9;border-radius:6px;background:center/cover no-repeat #2a3f78;border:1px solid #b98a3a;box-shadow:inset 0 0 0 2px rgba(255,248,230,.6)}
+.ppart.none{background:linear-gradient(#20305c,#0b1838)}
+.ppnote{margin:8px 0 0;font-size:12px;line-height:1.5;color:#4a3a2a}
+.ppgo{display:flex;justify-content:center}
+.ppgobtn{width:min(100%,340px);padding:10px 14px;border-radius:14px;color:#ffe6a8;font:inherit;background:linear-gradient(#2d4a9a,#132554);border:2px solid #d9b465;box-shadow:inset 0 0 0 2px rgba(8,15,34,.9),0 0 18px rgba(240,210,130,.35),0 6px 14px rgba(0,0,0,.45)}
+.ppgobtn b{display:block;font-family:var(--mm-font-head);font-size:24px;letter-spacing:.2em}.ppgobtn small{display:block;font-size:11px;color:#e8dfc8;margin-top:2px}
+.ppgobtn:disabled{opacity:.55;box-shadow:none}.ppgobtn.fin{background:linear-gradient(#7a2a2a,#3e1313)}.ppgobtn.fin b{font-size:18px;letter-spacing:.1em}
+.ppsheet{position:absolute;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 10px);max-height:62%;display:flex;flex-direction:column;border-radius:14px;color:#f3ecd9;background:linear-gradient(rgba(14,24,56,.98),rgba(8,15,34,.99));border:1px solid rgba(240,232,212,.6);box-shadow:inset 0 0 0 3px rgba(8,15,34,.95),inset 0 0 0 3.6px rgba(217,180,101,.75),0 -8px 24px rgba(0,0,0,.5)}
+.ppsheet[hidden]{display:none}
+.ppsh{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid rgba(240,232,212,.35)}.ppsh b{font-family:var(--mm-font-head);font-size:16px}.ppsh small{flex:1;font-size:11px;color:#d9ccb0}
+.ppclose{padding:6px 12px;border-radius:999px;color:#ffe6a8;font:inherit;font-size:12px;background:rgba(255,255,255,.08);border:1px solid rgba(240,232,212,.5)}
+.ppvl{overflow:auto;padding:8px 12px 12px}.ppvl .p7it{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid rgba(240,232,212,.2)}.ppvl .p7it button{padding:6px 10px;border-radius:8px;color:#ffe6a8;background:linear-gradient(#5b3d1a,#2a1708);border:1px solid #c9a24d}.ppvl .p7note{display:block;margin-top:8px;font-size:10.5px;color:#cfc2a8}
+@media (max-height:700px){.pp{gap:6px}.pptop{grid-template-columns:62px 1fr auto}.ppmon{width:62px;height:62px}.ppcin{padding:8px 12px 10px}.ppcin b{font-size:17px;margin-bottom:6px}.ppart{aspect-ratio:2/1}.ppgobtn b{font-size:20px}}
 @media (max-height:700px){.lab .labnpc>.nstf{--nsh:min(34dvh,240px)}.lab .labc{min-height:56px}}
 /* 牧場（2026-10-03 品質向上）：正式背景の右にニックの半身（正式 closeup）と下の会話窓、左に選んでいる子を大きく。ほかの子は背景の中を歩く */
 .rn .fscene .rnnick{position:absolute;z-index:3;right:0;bottom:0;left:0;pointer-events:none}
@@ -2517,10 +2599,7 @@ function farm(msg,tab){if(p8Blocked())return;p9Immersive(true);bgm("ranch");if(!
  else if(ft=="b")b=S.box.length?S.box.map((x,j)=>`<div class="row rr"><div class="mon">${msv(x)}</div><div class="info"><b>${p11Esc(x.name)}</b><br><small>${sm(x)}</small></div><button onclick="wd(${j})">受け取る</button></div>`).join("")+(m?"<p><small>受け取ると、いま連れているモンスターは自動で預けられます。</small></p>":""):"<p>預けているモンスターはいません。</p>";
  else if(ft=="d")b=pfSellPanel(all);
  else if(ft=="e")b=rnLookPanel();
- else{
-  const [a,c]=sel.map(i=>all[i]);
-  b=all.length<2?"<p>合体には2体以上必要です。市場でモンスターを選ぼう。</p>":`<p><small>合体させる2体を選んでください。</small></p><div class="fz"><div class="slot">${slot(a)}</div><span>＋</span><div class="slot">${slot(c)}</div></div>`+all.map((x,i)=>`<button class="t ${sel.includes(i)?"on":""}" onclick="selm(${i})">${sel.includes(i)?["①","②"][sel.indexOf(i)]+" ":""}${p11Esc(x.name)}${x==m?"（連れている）":""}<small>${sm(x)}</small></button>`).join("")+(a&&c?`<div class="card"><b>生まれるモンスター：${p11Esc(cname(a,c))}</b><div class="st">${KS.map(k=>`<span>${LAB[k]} ${Math.min(999,Math.round((a[k]+c[k])*.6))}</span>`).join("")}</div><small>2体は消え、新しい個体（未育成）が生まれます。</small></div><button class="go" ${S.g<200?"disabled":""} onclick="fuse()">合体させる！（200G）</button>`:"");
- }
+ else return museum("fuse"); // 2026-10-04：合体は研究所（labFuse）。牧場の内部画面 farm('','c') は互換のため研究所へ送る
  const rnFeat=(rnView&&S.box.find(v=>v.uid===rnView))||S.m||S.box[0]||null; // 2026-10-03 品質向上：選んでいる子（様子を見るの詳細・連れている子・牧場の最初の子）を大きく
  $("#app").innerHTML=`<div class="rn"><header class="rnhd"><button class="back" data-nav="back" onclick="pfSellUid=null;lobby()">◀ 街にもどる</button><div class="rnplq"><b>牧場</b></div><div class="fhud"><span class="rncoin">G</span><b>${S.g}G</b></div></header><div class="fscene" style="background-image:url(${RANCH_BG})">${msg?`<div class="fbub sys">${msg}</div>`:""}${rnFeat?`<div class="rnfeat"><div class="mon">${msv(rnFeat)}</div><b>${p11Esc(rnFeat.name)}</b></div>`:""}<div class="rnnick nst r"><img class="nstf" src="${NICK_STAND}" alt="" decoding="async">${msg?"":`<div class="tx fnick"><b>ニック</b>${npcLine("ranch",NICK_TALK.ranch)}</div>`}</div>${[S.m,...S.box].filter(x=>x&&x!==rnFeat).map((x,i)=>`<div class="wk" style="top:${80+(i*7)%12}%;--d:${9+(i*5)%8}s;animation-delay:-${(i*3.7)%9}s"><div class="mon">${msv(x)}</div></div>`).join("")}</div><nav class="ftiles rncmd" aria-label="牧場のコマンド">${[["a","dep","預ける",""],["b","wd",`受け取る<small>(${S.box.length})</small>`,""],["e","look","様子を見る"," rnlook"]].map(x=>`<button class="ftile${x[3]}${ft==x[0]?" on":""}" data-se="UI_TAB" onclick="${x[0]=="e"?"rnView=null;":""}farm('','${x[0]}')">${rnIc(x[1])}<span class="fl">${x[2]}</span></button>`).join("")}<button class="fsell rnsell${ft=="d"?" on":""}" data-se="UI_TAB" onclick="farm('','d')">${rnIc("sell")}<span class="fl">売る</span></button></nav><div class="wpanel">${b}</div></div>`;
 }
@@ -2739,10 +2818,37 @@ function mkgo(i){if(p8Blocked())return;if(!document.getElementById("p10ov"))retu
  const e=document.getElementById("mnm");let v=(e&&e.value||"").trim().slice(0,8);if(!v)v=SP[i][0];adopt(i,v)}
 /** 研究所（2026-10-03 品質向上）：入口＝正式背景（assets/lab/lab_main.webp）を大きく・エリオットの半身・下に機能のカード（図鑑／特殊復元・合体＝研究所の正式な機能だが画面は未実装＝準備中）。
  *  tab "book"＝図鑑の一覧（従来の中身。背景だけ研究所の正式背景） */
-function museum(tab){if(p8Blocked())return;bgm("lab");if(tab!=="book")setTimeout(()=>npcFirst("lab"),0); // 2026-10-04：初回訪問の会話（エリオット ↔ フィナ）
- if(tab!=="book"){$("#app").innerHTML=`<div class="lab"><div class="labbg" style="background-image:url(${LAB_BG})"></div><div class="dtop"><button class="dback" onclick="lobby()">◀ 街にもどる</button></div><div class="labplq"><b>モンスター研究所</b><small>研究・記録・復元</small></div><div class="labnpc nst r"><img class="nstf" src="${ELLIOT_STAND}" alt="" decoding="async"><div class="tx"><b>エリオット</b>${npcLine("lab",ELLIOT_TALK.lab)}</div></div><nav class="labcmd" aria-label="研究所の機能"><button class="labc" onclick="museum('book')"><b>図鑑</b><small>出会えるモンスターの記録</small></button><button class="labc lock" onclick="labLock('特殊復元')" aria-label="特殊復元（準備中）"><b>特殊復元</b><small>準備中</small></button><button class="labc lock" onclick="labLock('合体')" aria-label="合体（準備中）"><b>合体</b><small>準備中</small></button></nav><div class="labmsg" id="labmsg" hidden></div></div>`;try{window.scrollTo(0,0)}catch(e){}return}
- $("#app").innerHTML=`<div class="ds labbook" style="--dc:#c9a24d"><div class="dbg" style="background-image:url(${LAB_BG})"></div><div class="dtop"><button class="dback" data-nav="back" onclick="museum()">◀ 研究所</button></div><div class="dtitle"><div class="mico">🔬</div><div><b>モンスター研究所</b><small>出会えるモンスターの記録</small></div></div><div class="dbody">${elSay(ELLIOT_TALK.lab[R(ELLIOT_TALK.lab.length)])}<div class="mgrid">${SP.map((x,i)=>`<button class="mgc" onclick="musd(${i})"><div class="mgi"><div class="spa">${sprH(i,"idle",0,false,0)||svg(i,0)}</div></div><b>No.${String(i+1).padStart(3,"0")}</b><span>${x[0]}</span></button>`).join("")}<div class="mgc lk"><div class="mgi"><span class="q">？</span></div><b>No.003</b><span>ノビトン</span><small>近日公開</small></div></div></div></div>`;try{window.scrollTo(0,0)}catch(e){}}
-function musd(i){if(p8Blocked())return;$("#app").innerHTML=`<div class="mk2"><div class="dtop"><button class="dback" data-nav="back" onclick="museum('book')">◀ 図鑑</button></div><div class="mush">No.${String(i+1).padStart(3,"0")}　${SP[i][0]}</div>${elSay(ELLIOT_TALK.book[R(ELLIOT_TALK.book.length)])}<img class="pcard" src="${AS[AK[i]+"L"]}" alt="${SP[i][0]}のプロフィール"><img class="pcard" src="${AS[AK[i]+"R"]}" alt="${SP[i][0]}の技一覧"><button class="dback wide" data-nav="back" onclick="museum('book')">◀ 図鑑にもどる</button><button class="dback wide" data-nav="back" onclick="museum()">◀ 研究所にもどる</button></div>`;try{window.scrollTo(0,0)}catch(e){}}
+if(window.MMP10M&&MMP10M.setFusionAccess)MMP10M.setFusionAccess(()=>true); // 2026-10-04：研究所の合体UI（museum('fuse')）＝プレイヤーが画面から合体を使える
+const STAT_COLOR={li:"#f2c94c",po:"#e5533c",in:"#4fbf6a",hi:"#f08cb4",ev:"#5cc8e8",de:"#4a74e0"}; // 6能力の正式色（ライフ黄・ちから赤・かしこさ緑・命中桃・回避水色・丈夫さ青）。図鑑・大会の比較・能力UPの演出で共通
+const LAB_IC={book:'<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M5 7h9a3 3 0 0 1 3 3v15a2 2 0 0 0-2-2H5zM27 7h-9a3 3 0 0 0-3 3v15a2 2 0 0 1 2-2h10z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
+ fuse:'<svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="12" cy="13" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="20" cy="13" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="16" cy="20" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>',
+ table:'<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M13 5h6M14 5v8L7 25a2 2 0 0 0 2 3h14a2 2 0 0 0 2-3l-7-12V5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 21h12" stroke="currentColor" stroke-width="1.8"/></svg>'};
+/** 研究所の下の機能（図鑑・合体・配合表。2026-10-04 正式。復元の機能は主要メニューに置かない） */
+function labNav(cur){return `<nav class="labcmd labnav" aria-label="研究所の機能">${[["book","図鑑"],["fuse","合体"],["table","配合表"]].map(([k,l])=>`<button class="labc${cur==k?" on":""}" onclick="museum('${k}')" data-se="${cur==k?"UI_TAB":"UI_SELECT"}">${LAB_IC[k]}<b>${l}</b></button>`).join("")}</nav>`}
+function labShell(cls,back,plq,body,cur){return `<div class="lab ${cls}"><div class="labbg" style="background-image:url(${LAB_BG})"></div><div class="dtop">${back}</div>${plq}${body}${labNav(cur)}</div>`}
+// 研究所（2026-10-04 第二段階）：入口＝エリオット＋機能のカード（図鑑・合体・配合表）。図鑑はデザイン参考 06（濃紺＋金・魔法図鑑・2列・No.・名前・未発見は近日公開）。合体は牧場から移した（処理 fuse・selm・cname はそのまま）。
+//  配合表は既存の規則（MMP7.resolveFusionSpecies＝子は親1の種族・能力60%・名前・技の継承・200G）だけを表示する（データの無い組み合わせは作らない）
+function museum(tab){if(p8Blocked())return;bgm("lab");if(!tab)setTimeout(()=>npcFirst("lab"),0); // 2026-10-04：初回訪問の会話（エリオット ↔ フィナ）
+ if(tab=="book")return labBook();if(tab=="fuse")return labFuse();if(tab=="table")return labTable();
+ $("#app").innerHTML=labShell("",`<button class="dback" onclick="lobby()">◀ 街にもどる</button>`,`<div class="labplq"><b>モンスター研究所</b><small>図鑑・合体・配合表</small></div>`,`<div class="labnpc nst r"><img class="nstf" src="${ELLIOT_STAND}" alt="" decoding="async"><div class="tx"><b>エリオット</b>${npcLine("lab",ELLIOT_TALK.lab)}</div></div>`,"");try{window.scrollTo(0,0)}catch(e){}}
+/** 図鑑の一覧：出会える種族（SP＝市場の2種）＋ノビトン（近日公開＝解放条件は従来どおり）。カードは正式画像（p10Img） */
+function labBook(){const n=SP.length,tot=n+1;
+ const cards=SP.map((x,i)=>`<button class="lbc" onclick="musd(${i})"><small class="lbno">No.${String(i+1).padStart(3,"0")}</small><b class="lbnm">${x[0]}</b><div class="lbim">${p10Img(i)}</div></button>`).join("")+`<div class="lbc lk" aria-label="No.003 ノビトン（近日公開）"><small class="lbno">No.003</small><b class="lbnm">ノビトン</b><div class="lbim"><span class="q">?</span><em>近日公開</em></div></div>`;
+ $("#app").innerHTML=labShell("lbk",`<button class="dback" data-nav="back" onclick="museum()">◀ 研究所</button>`,`<div class="labplq"><b>モンスター図鑑</b><small>発見 ${n} / ${tot}</small></div>`,`<div class="labbody"><div class="lbgrid">${cards}</div></div>`,"book");try{window.scrollTo(0,0)}catch(e){}}
+/** 図鑑の詳細：正式画像・種族・説明・基礎能力（999 を最大とした絶対のゲージ＋成長適性 A〜E）・初期の技。旧い base64 のプロフィールカード（AS.soL など）は出さない（データは互換のため残す） */
+function musd(i){if(p8Blocked())return;const x=SP[i];if(!x)return museum("book");const sp=MMP10M.byId(i),m0={sp:i},base=x[2];
+ const rows=KS.map((k,j)=>`<div class="lbst"><span class="lbsk" style="--c:${STAT_COLOR[k]}">${LAB[k]}</span><div class="lbg"><i style="width:${Math.round(Math.min(999,base[j])/999*100)}%;background:${STAT_COLOR[k]}"></i></div><b>${base[j]}</b><em class="lbgr g-${MMP10M.growthOf(m0,k)}">${MMP10M.growthOf(m0,k)}</em></div>`).join("");
+ const moves=(x[6]||[]).map(k=>SK[k]?`<span class="lbmv">${SK[k][4]} ${SK[k][0]}</span>`:"").join("");
+ $("#app").innerHTML=labShell("lbd",`<button class="dback" data-nav="back" onclick="museum('book')">◀ 図鑑</button>`,"",`<div class="labbody"><div class="lbdc"><div class="lbdh"><small class="lbno">No.${String(i+1).padStart(3,"0")}</small><b class="lbnm">${x[0]}</b><span class="lbkind">${sp?sp.kind:""}${sp&&sp.speed!=null?`　素早さ ${sp.speed}`:""}</span></div><div class="lbdim">${p10Img(i)}</div><p class="lbdesc">${x[3]}</p><div class="lbsts">${rows}</div><small class="lbnote">ゲージは 999 を最大とした目安。右の A〜E は成長適性（A が最も伸びやすい）</small><div class="lbmvs"><small>初期の技</small><div>${moves}</div></div></div></div>`,"book");try{window.scrollTo(0,0)}catch(e){}}
+/** 合体（研究所。2026-10-04：牧場から移動。選択 selm・誕生 fuse・名前 cname・費用 200G は従来どおり） */
+function labFuse(){const m=S.m,all=[m,...S.box].filter(Boolean),[a,c]=sel.map(i=>all[i]);
+ const body=all.length<2?`<p class="lbmsg">合体には2体以上必要です。市場でモンスターを選ぼう。</p>`:`<p class="lbmsg"><small>合体させる2体を選んでください。</small></p><div class="fz"><div class="slot">${slot(a)}</div><span>＋</span><div class="slot">${slot(c)}</div></div>`+all.map((x,i)=>`<button class="t lbpick ${sel.includes(i)?"on":""}" onclick="selm(${i})">${sel.includes(i)?["①","②"][sel.indexOf(i)]+" ":""}${p11Esc(x.name)}${x==m?"（連れている）":""}<small>${sm(x)}</small></button>`).join("")+(a&&c?`<div class="card lbprev"><b>生まれるモンスター：${p11Esc(cname(a,c))}</b><div class="st">${KS.map(k=>`<span>${LAB[k]} ${Math.min(999,Math.round((a[k]+c[k])*.6))}</span>`).join("")}</div><small>2体は消え、新しい個体（未育成）が生まれます。</small></div><button class="go" ${S.g<200?"disabled":""} onclick="fuse()">合体させる！（200G）</button>`:"");
+ $("#app").innerHTML=labShell("lbf",`<button class="dback" data-nav="back" onclick="museum()">◀ 研究所</button>`,`<div class="labplq"><b>合体</b><small>2体から新しい個体を（200G）</small></div>`,`<div class="labbody"><div class="wpanel lbwp">${body}</div></div>`,"fuse");try{window.scrollTo(0,0)}catch(e){}}
+/** 配合表：既存の規則だけ（親1 × 親2 → 子の種族は MMP7.resolveFusionSpecies。合体専用種は未登録＝【暫定】）。データの無い組み合わせは作らない */
+function labTable(){const sp=SP.map((_,i)=>i);
+ const rows=sp.flatMap(a=>sp.map(b=>{const r=MMP7.resolveFusionSpecies({sp:a},{sp:b});return `<div class="lbtr"><span>${SP[a][0]}</span><i>×</i><span>${SP[b][0]}</span><em>→</em><b>${SP[r.sp]?SP[r.sp][0]:"？？？"}</b></div>`})).join("");
+ const rules=["子の種族＝親1（左）の種族。合体専用の種族は未登録【暫定】","能力＝両親の合計の 60%（上限 999）","名前＝親1の前2文字＋親2の後ろ2文字","技＝子の初期技に加えて、両親の追加技から1つ継承（初期技・必殺技は除く）","大会ランク＝高いほうを引き継ぐ","費用 200G。2体は消え、未育成の個体として生まれる"];
+ $("#app").innerHTML=labShell("lbt",`<button class="dback" data-nav="back" onclick="museum()">◀ 研究所</button>`,`<div class="labplq"><b>配合表</b><small>合体で生まれる種族と規則</small></div>`,`<div class="labbody"><div class="lbdc lbtb"><div class="lbth"><span>親1</span><span>親2</span><span>生まれる種族</span></div>${rows}<ul class="lbrules">${rules.map(r=>`<li>${r}</li>`).join("")}</ul></div></div>`,"table");try{window.scrollTo(0,0)}catch(e){}}
 function adopt(i,nm){if(p8Blocked())return;const r=MMP10M.purchase(S,MMP10M.keyOf(i),S.box.length+(S.m?1:0));if(!r.ok)return market(P10_WHY[r.reason]||"購入できません。",MMP10M.keyOf(i));S.cnt=(S.cnt||0)+1;const x=mk(i);if(nm)x.name=nm;if(S.m)S.box.push(x);else S.m=x;sel=[];save();const go=()=>lobby(`${p11Esc(x.name)}をつれて帰った！`+(S.m==x?"":"（牧場に預けました）")+(r.rescued?`（はじめての1体のため、所持金を${MMP10M.ECONOMY.marketPrice}Gまで補填しました）`:"")+(r.continueRescued?`（育成を続けるため、不足分${r.topUp}Gを補填して購入しました）`:""));const kt=typeof karenTalk=="function"?karenTalk("bought"):null;if(kt)kt.then(go);else go()}
 function msave(){let ok=false;try{localStorage.setItem(MMP8.SAVE_KEY,JSON.stringify(S));ok=localStorage.getItem(MMP8.SAVE_KEY)==JSON.stringify(S)}catch(e){}msg0(ok?`セーブしました（${new Date().toLocaleTimeString("ja-JP")}）`:"このブラウザではセーブできません。セーブコードを使ってください。")}
 const nv=typeof navigator!="undefined"?navigator:{};
@@ -2764,7 +2870,7 @@ function exp(){const t=$("#sc");t.value=btoa(unescape(encodeURIComponent(JSON.st
 function shareCode(){exp();if(nv.share)nv.share({title:"ミスティックモンスターズ セーブコード",text:$("#sc").value}).catch(()=>{})}
 function pasteCode(){if(nv.clipboard&&nv.clipboard.readText)nv.clipboard.readText().then(x=>{$("#sc").value=x;msg0("貼り付けました。「このコードで読み込む」を押してください。")},()=>msg0("貼り付けできませんでした。入力欄を長押しして貼り付けてください。"));else msg0("入力欄を長押しして貼り付けてください。")}
 function imp(){if(p8Blocked())return;let o=null;try{o=MMP8.migrateSave(JSON.parse(decodeURIComponent(escape(atob($("#sc").value.trim())))));if(!o||!Array.isArray(o.box))throw 0}catch(e){return msg0("セーブコードが正しくありません。")}const p=S;S=o;sel=[];try{save();lobby("ロードしました！")}catch(e){S=p;sel=[];save();savescr("セーブコードが正しくありません。")}}
-function selm(i){if(p8Blocked())return;const j=sel.indexOf(i);j>=0?sel.splice(j,1):sel.length<2&&sel.push(i);farm("","c")}
+function selm(i){if(p8Blocked())return;const j=sel.indexOf(i);j>=0?sel.splice(j,1):sel.length<2&&sel.push(i);museum("fuse")}
 async function fuse(){
  const all=[S.m,...S.box].filter(Boolean),[a,b]=sel.map(i=>all[i]),rest=all.filter((x,i)=>!sel.includes(i));
  if(p8Blocked())return;if(MMP7.trainRunOf(S.m))return;if(sel.length!=2||!a||!b||a===b)return;const fsp=MMP7.resolveFusionSpecies(a,b);let c;try{c=mk(fsp.sp)}catch(e){return}if(S.g<200)return;S.g-=200;S.cnt=(S.cnt||0)+1;c.rk=Math.max(a.rk||0,b.rk||0);c.s2=b.sp!=a.sp?b.sp:(a.s2!=null&&a.s2!=a.sp?a.s2:b.s2!=null&&b.s2!=a.sp?b.s2:null);if(fsp.special)c.s2=null;c.h=((a.h||0)+(b.h||0)+(a.sp==b.sp?60:30))%360;c.name=cname(a,b);
@@ -2968,8 +3074,7 @@ function p9Ced(t){return `<div class="p9ced"><img src="${CEDRIC_FACE}" alt=""><d
 // 研究所NPC：エリオット（研究所の案内・研究・解析を担当する研究者）。会話は「フィナ ↔ エリオット」が基本。研究所画面の軽い一言は会話ウィンドウにせず、顔・名前つきの吹き出しで出す
 // 立ち絵は js/npc/npc.js の register('elliot')。小さい顔は立ち絵 normal から切り出した face.webp。図鑑の見出し・「近日公開」などのシステム表示はエリオットの発言にしない
 const ELLIOT_FACE="assets/npc/elliot/face.webp";const ELLIOT_STAND="assets/npc/elliot/closeup/guide.webp",LAB_BG="assets/lab/lab_main.webp"; // 2026-10-03：研究所の正式背景と、エリオットの半身（正式 closeup）
-/** 研究所の準備中の機能（特殊復元・合体）：システム表示だけ（エリオットの発言にしない・画面は作らない） */
-function labLock(n){const e=$("#labmsg");if(!e)return;e.hidden=false;e.textContent=`${n}は、まだ利用できません。`;MMAUDIO.se("UI_ERROR")}
+// 2026-10-04：旧 labLock（準備中の表示）は廃止＝研究所の主要機能は図鑑・合体・配合表（復元の機能は主要メニューに置かない）
 const ELLIOT_TALK={
  lab:["こんにちは。何を調べてみましょうか。","図鑑の記録も、少しずつ埋まってきましたね。","気になる子がいたら、記録を見てみましょう。"],
  book:["こちらの記録も確認してみましょう。","興味深い子ですね。記録を見てみましょう。"]};
@@ -3572,12 +3677,27 @@ async function trRoll(){if(p7Busy||!S.m||!MMP7.trainRunOf(S.m))return;p7Busy=tru
 // ---- 出発準備（バッグ⇄保管庫・Chapter選択） ----
 const p7ItemName=it=>{const d=MMP7.getItemDef(it.id);return d?d.name:it.id};
 function p7Shell(ic,title,sub,body,msg,back,o){o=o||{};return `<div class="ds${o.cls?" "+o.cls:""}" style="--dc:#e8b23a">${o.bg||`<div class="dbg" style="background-image:url(${FARM_BG})"></div>`}<div class="dtop"><button class="dback" data-nav="back" onclick="${back||"hall('t')"}">◀ ファーム</button><div class="dmoney">🪙 ${S.g}G</div></div><div class="dtitle"><div class="mico">${ic}</div><div><b>${title}</b><small>${sub}</small></div></div>${msg?`<div class="dmsg"><span>${msg}</span></div>`:""}<div class="dbody">${body}</div></div>`}
-function prepScr(msg){if(!S.m)return lobby();if(!MMP7.canAccessVault(S))return hall("t","Chapter中はバッグの準備ができません。");bgm("farm");
- const cap=MMP7.bagCap(S),bag=S.inv.bag,vt=S.inv.vault,c=MMP8.canDepart(S,S.m),nx=MMP8.nextChapterKey(S.m);
- const bagRows=[...Array(cap)].map((_,i)=>bag[i]?`<div class="p7it"><span>${i+1}. ${p7ItemName(bag[i])}</span><button onclick="p7ToVault(${i})">保管庫へ</button></div>`:`<div class="p7it emp"><span>${i+1}. （空き）</span></div>`).join("");
+const PP_ART={1:"assets/fields/ch1a/intro/ch1_intro_overview.webp",2:"assets/fields/ch2a/intro/ch2_intro_overview_v2.webp"}; // 出発準備の Chapter カードの絵（正式の俯瞰図。無い Chapter は絵なし）
+// 出発準備（2026-10-04 第二段階。デザイン参考 07）：上＝育成中モンスター（正式画像）と Chapter の札、中＝バッグの5スロット（空き＝空枠・所持＝名前。タップ＝保管庫へ／空きのタップ＝保管庫から選ぶ）、その下＝次の Chapter のカード、下＝「出発する」。
+//  バッグ・保管庫の処理（MMP7.moveBagToVault／moveVaultToBag）・出発の判定（MMP8.canDepart）・フィナの確認（p7Depart）は従来どおり
+function prepScr(msg){if(!S.m)return lobby();if(!MMP7.canAccessVault(S))return hall("t","Chapter中はバッグの準備ができません。");bgm("farm");p9Immersive(true);
+ const m=S.m,cap=MMP7.bagCap(S),bag=S.inv.bag,vt=S.inv.vault,c=MMP8.canDepart(S,m),nx=MMP8.nextChapterKey(m),sp=MMP10M.byId(m.sp);
+ const slots=[...Array(cap)].map((_,i)=>bag[i]?`<button class="ppsl on" onclick="p7ToVault(${i})" aria-label="${p11Esc(p7ItemName(bag[i]))}（保管庫へ）"><b>${p11Esc(p7ItemName(bag[i]))}</b></button>`:`<button class="ppsl" onclick="ppVault()" aria-label="空きスロット（保管庫から選ぶ）"><span>—</span></button>`).join("");
  const vtRows=vt.length?vt.map((it,i)=>`<div class="p7it"><span>${p7ItemName(it)}</span><button ${bag.length>=cap?"disabled":""} onclick="p7ToBag(${i})">バッグへ</button></div>`).join(""):`<div class="p7it emp"><span>保管庫は空です</span></div>`;
- const chs=nx==null?`<div class="p7it emp"><span>出発できるChapterはありません（育成完了）</span></div>`:c.reason=="rank_gate"?`<div class="p7it emp"><span>${p8GateNote(nx,c.need)}</span></div><button class="go" onclick="pfixFinishNoFinal(this)">育成を完了して街へ戻る</button>`:(nx==MMP8.FINAL&&!MMP8.isPlayable(MMP8.FINAL))?`<div class="p7it emp"><span>最終ルートはまだ準備中です。ここで育成を完了して街へ戻れます（大会の結果・賞金・育成の記録はそのまま）。</span></div><button class="go" onclick="pfixFinishNoFinal(this)">育成を完了して街へ戻る</button>`:`<button class="go" ${c.ok?"":"disabled"} onclick="p7Depart(this)">${p8ChLabel(nx)}へ出発${MMP7.raiseState(S.m)=="none"?"（育成開始）":""}<small>${c.ok?"準備ができたら出発しよう":(P7_ERR[c.reason]||"")}</small></button>`;
- $("#app").innerHTML=p7Shell("🎒","出発準備","バッグの中身を整えて、次のChapterへ",`<div class="dcard"><div class="dh">バッグ <small>${bag.length} / ${cap} 枠（1枠1個）</small></div>${bagRows}</div><div class="dcard"><div class="dh">保管庫 <small>${vt.length}個</small></div>${vtRows}<small class="p7note">保管庫はファームにいる間だけ使えます。Chapter中は入れ替えできません。</small></div><div class="dcard"><div class="dh">出発するChapter</div>${chs}</div>`,msg);try{window.scrollTo(0,0)}catch(e){}}
+ const chName=nx==null?"":nx==MMP8.FINAL?"最終ルート":MMP8.chapterName(nx),chNo=nx==null?"":nx==MMP8.FINAL?"FINAL":`CHAPTER ${nx}`,art=nx!=null&&PP_ART[nx]?`<div class="ppart" style="background-image:url(${PP_ART[nx]})"></div>`:`<div class="ppart none"></div>`;
+ const note=nx==null?`<p class="ppnote">出発できるChapterはありません（育成完了）</p>`:c.reason=="rank_gate"?`<p class="ppnote">${p8GateNote(nx,c.need)}</p>`:(nx==MMP8.FINAL&&!MMP8.isPlayable(MMP8.FINAL))?`<p class="ppnote">最終ルートはまだ準備中です。ここで育成を完了して街へ戻れます（大会の結果・賞金・育成の記録はそのまま）。</p>`:"";
+ const go=nx==null?"":(c.reason=="rank_gate"||(nx==MMP8.FINAL&&!MMP8.isPlayable(MMP8.FINAL)))?`<button class="ppgobtn fin" onclick="pfixFinishNoFinal(this)"><b>育成を完了して街へ戻る</b></button>`:`<button class="ppgobtn" ${c.ok?"":"disabled"} onclick="p7Depart(this)"><b>出発する</b><small>${c.ok?`${p8ChLabel(nx)}へ${MMP7.raiseState(m)=="none"?"（育成開始）":""}`:(P7_ERR[c.reason]||"")}</small></button>`;
+ $("#app").innerHTML=`<div class="pp" style="--pp-bg:url(${FARM_BG})"><div class="ppbg" aria-hidden="true"></div>
+ <header class="pphd"><button class="ppback" data-nav="back" onclick="hall('t')">◀ 拠点</button><div class="ppgold">🪙 ${S.g}G</div></header>
+ <section class="pptop"><div class="ppmon"><div class="mon">${msv(m)}</div></div><div class="ppname"><small>育成中モンスター</small><b>${p11Esc(m.name)}</b><em>${sp?sp.kind:""}</em></div>${nx!=null?`<div class="ppch"><small>${chNo}</small><b>${chName}</b></div>`:""}</section>
+ ${msg?`<div class="dmsg ppmsg"><span>${msg}</span></div>`:""}
+ <section class="ppbag"><div class="ppbagh"><b>バッグ</b><small>${bag.length} / ${cap}</small></div><div class="ppslots">${slots}</div><button class="ppvault" onclick="ppVault()"><b>保管庫</b><small>${vt.length}個</small></button></section>
+ <section class="ppcard"><div class="ppcin"><small>${chNo}</small><b>${chName||"ー"}</b>${art}${note}</div></section>
+ <div class="ppgo">${go}</div>
+ <div class="ppsheet" id="ppvault" hidden><div class="ppsh"><b>保管庫</b><small>タップでバッグへ（${bag.length} / ${cap}）</small><button class="ppclose" data-se="UI_CANCEL" onclick="ppVault(false)">閉じる</button></div><div class="ppvl">${vtRows}<small class="p7note">保管庫はファームにいる間だけ使えます。Chapter中は入れ替えできません。</small></div></div></div>`;try{window.scrollTo(0,0)}catch(e){}}
+/** 保管庫のシートを開く／閉じる（出発準備の中。画面は移らない） */
+function ppVault(on){const d=$("#ppvault");if(!d)return;d.hidden=on===false?true:on===true?false:!d.hidden;const p=$(".pp");if(p)p.classList.toggle("vault",!d.hidden)}
+
 const P7_ERR={finished:"育成は完了しています。",no_monster:"モンスターがいません。",full:"バッグがいっぱいです。",vault_full:"保管庫がいっぱいです。",vault_locked:"いまは保管庫を使えません。",not_next:"そのChapterにはまだ行けません。",no_map:"このChapterのマップは準備中です。",not_at_farm:"いまは出発できません。",rank_gate:"次のChapterの解放条件（公式ランク大会のクリア）に届いていません。",training:"特訓中です。",no_money:"お金が足りません。",no_price:"価格が設定されていません。",not_sold:"その商品はありません。"};
 function p7ToBag(i){const r=MMP7.moveVaultToBag(S,i);if(r.ok)save();prepScr(r.ok?"":P7_ERR[r.reason])}
 function p7ToVault(i){const r=MMP7.moveBagToVault(S,i);if(r.ok)save();prepScr(r.ok?"":P7_ERR[r.reason])}
@@ -3616,19 +3736,20 @@ const FINA_TALK={
  raiseAgain:[{npc:"fina",expression:"normal",text:"この子の育成を始める？",choices:[{id:"start",label:"始める"},{id:"cancel",label:"まだやめておく"}]}],
  done:[{npc:"fina",expression:"happy",text:"お疲れさまでした！　育成完了です！"},{expression:"smile",text:"ここまで育ててきた時間が、この子の力になっていますね。"},{expression:"guide",text:"育て終わったモンスターは、牧場でいつでも確認できますよ。"}]};
 function finaFlags(){if(!S.npcFlags||typeof S.npcFlags!="object"||Array.isArray(S.npcFlags))S.npcFlags={};return S.npcFlags}
-// ---- 2026-10-04（第二段階）：施設の NPC イベント（js/npc/npc-events.js の MMNPCE）。初回訪問＝フィナ ↔ NPC の会話（S.npcFlags.first）、再訪＝進行状態に合う一言（直前と同じ文は避ける S.npcFlags.rv）、Chapter の帰還＝ダン＋フィナ（m.raise.evSeen）。
+// ---- 2026-10-04（第二段階）：施設の NPC イベント（js/npc/npc-events.js の MMNPCE）。初回訪問＝フィナ ↔ NPC の会話（S.npcFlags.first）、再訪＝進行状態に合う一言（直前と同じ文は避ける＝ページの中の NPC_LAST。セーブには入れない）、Chapter の帰還＝ダン＋フィナ（m.raise.evSeen）。
 //  自動テストでは会話を出さない（MM_QA_NO_NPC。tests/e2e/harness.mjs の open({ npc:true }) で出す）。セーブ v6 の形は変えない（既存の任意項目 npcFlags・raise の中） ----
 function npcFlagsFirst(){const f=finaFlags();if(!f.first||typeof f.first!="object"||Array.isArray(f.first))f.first={};return f.first}
 /** 施設の初回訪問の会話。出したら true（先に「表示済み」を保存してから出す＝再読み込みしても二度出ない）。after＝会話のあとの処理 */
 function npcFirst(fac,after){if(window.MM_QA_NO_NPC||!window.MMNPCE||!window.MMNPC)return false;const F=npcFlagsFirst();if(F[fac])return false;const lines=MMNPCE.first(fac);if(!lines)return false;F[fac]=1;if(fac=="market")finaFlags().karenIntro=1;save();
  const o={kind:"npc",presentation:"standard"},pr=fac=="market"?karenSay(lines,o):MMNPC.talk(lines,o);pr.then(()=>{if(after)after()});return true}
-/** 再訪の一言の材料（進行状態）。last＝その施設で直前に出した一言の id */
+/** 再訪の一言の材料（進行状態）。last＝その施設で直前に出した一言の id（ページの中だけの記憶。セーブには入れない＝保存とメモリの食い違いを作らない） */
+const NPC_LAST={};
 function npcCtx(fac){const m=S.m,f=finaFlags(),box=S.box.length,st=m?MMP7.raiseState(m):"none",can=m&&st=="farm"?MMP8.canDepart(S,m):{ok:false},inv=S.inv||{};
- return {hasMon:!!m,box,full:box+(m?1:0)>=MMP10M.OWN_LIMIT,gold:S.g|0,raiseDone:MMP8.raiseDoneCount(S),rank:(S.br??-1),fatigue:m&&m.raise?(m.raise.fatigue|0):0,tickets:S.trainTix|0,items:((inv.bag||[]).length+(inv.vault||[]).length),state:st,canDepart:!!can.ok,gateBlocked:can.reason=="rank_gate",canFuse:MMP10M.fusionAvailable(S)&&(box+(m?1:0))>=2,last:(f.rv&&typeof f.rv=="object"?f.rv:{})[fac]}}
-/** 再訪の一言（文字だけ）。MMNPCE が無い・出ないときは fallback（従来の配列からランダム）。出した id は S.npcFlags.rv に残す（次の save で保存） */
-function npcLine(fac,fallback){const l=window.MMNPCE?MMNPCE.revisit(fac,npcCtx(fac)):null;if(l){const f=finaFlags();if(!f.rv||typeof f.rv!="object"||Array.isArray(f.rv))f.rv={};f.rv[fac]=l.id;return l.text}return fallback&&fallback.length?fallback[R(fallback.length)]:null}
+ return {hasMon:!!m,box,full:box+(m?1:0)>=MMP10M.OWN_LIMIT,gold:S.g|0,raiseDone:MMP8.raiseDoneCount(S),rank:(S.br??-1),fatigue:m&&m.raise?(m.raise.fatigue|0):0,tickets:S.trainTix|0,items:((inv.bag||[]).length+(inv.vault||[]).length),state:st,canDepart:!!can.ok,gateBlocked:can.reason=="rank_gate",canFuse:MMP10M.fusionAvailable(S)&&(box+(m?1:0))>=2,last:NPC_LAST[fac]}}
+/** 再訪の一言（文字だけ）。MMNPCE が無い・出ないときは fallback（従来の配列からランダム）。出した id は NPC_LAST に残す（直前と同じ文を避ける） */
+function npcLine(fac,fallback){const l=window.MMNPCE?MMNPCE.revisit(fac,npcCtx(fac)):null;if(l){NPC_LAST[fac]=l.id;return l.text}return fallback&&fallback.length?fallback[R(fallback.length)]:null}
 /** 市場の再訪：進行状態に合う一言か、一定の確率でふつうの一言（小さな窓）。無ければ何も出さない */
-function karenRevisit(){if(window.MM_QA_NO_KAREN)return;if(!window.MMNPCE)return karenAgain();const l=MMNPCE.revisit("market",npcCtx("market"));if(!l)return;const f=finaFlags();if(!f.rv||typeof f.rv!="object"||Array.isArray(f.rv))f.rv={};f.rv.market=l.id;karenSay([{npc:"karen",expression:l.expression||"smile",text:l.text}],{presentation:"compact"})}
+function karenRevisit(){if(window.MM_QA_NO_KAREN)return;if(!window.MMNPCE)return karenAgain();const l=MMNPCE.revisit("market",npcCtx("market"));if(!l)return;NPC_LAST.market=l.id;karenSay([{npc:"karen",expression:l.expression||"smile",text:l.text}],{presentation:"compact"})}
 /** Chapter を終えてファームへ戻ったとき1回：ダン＋フィナの帰還イベント（Chapter ごとに文面が違う。次の Chapter があれば噂を1回だけ添える） */
 function farmReturn(m){if(window.MM_QA_NO_NPC||!window.MMNPCE||!window.MMNPC||!m||!m.raise)return false;const r=m.raise,last=(r.log||[]).slice(-1)[0];if(!last||!last.ch)return false;const seen=Array.isArray(r.evSeen)?r.evSeen:(r.evSeen=[]),key="ret"+last.ch;if(seen.includes(key))return false;
  const k=MMP8.nextChapterKey(m),nextName=k!=null&&k!=MMP8.FINAL&&MMP8.isPlayable(k)?MMP8.chapterName(k):null;

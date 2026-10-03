@@ -192,7 +192,7 @@ T('QA-RB1：市場で購入 → ファーム → 出発準備：1回目の押下
   const dep = 'button[onclick="p7Depart(this)"]';
   await pg.waitForSelector(dep);
   const depText0 = await pg.evaluate((s) => document.querySelector(s).textContent, dep);
-  assert.match(depText0, /CHAPTER 1「はじまりの草原」へ出発（育成開始）/);
+  assert.match(depText0, /出発する[\s\S]*CHAPTER 1「はじまりの草原」へ（育成開始）/);   // 2026-10-04：出発準備の「出発する」
 
   // 1回目：フィナがプレイヤーへ確認（初回は「途中で街へ戻れない」説明つき）→ 選択肢。会話中は育成を始めない
   await pg.waitForTimeout(SETTLE);
@@ -232,7 +232,7 @@ T('QA-RB1：市場で購入 → ファーム → 出発準備：1回目の押下
   await assertSynced(pg);
   assert.equal(await bmsg(pg), 'CHAPTER 1「はじまりの草原」に出発！サイコロを振って進もう！');
   assert.equal(await pg.evaluate(() => document.querySelector('#chturn').textContent), '1');
-  assert.match(await pg.evaluate(() => document.querySelector('.chh-turn').textContent), /Turn\s*1\s*\/\s*40/);
+  assert.match(await pg.evaluate(() => document.querySelector('.chh-turn').textContent), /Turn\s*1\s*\/\s*30/);
   assert.equal(await pg.evaluate(() => document.querySelector('#chfat b').textContent), '0');
   assert.equal(await lobbyButtons(pg), 0, 'ボードに街へ戻る導線は無い');
   assert.equal(await pg.evaluate(() => MMP8.canVisitTown(S)), false);
@@ -297,7 +297,7 @@ T('QA-RB3：サイコロ（出目3）→ 1地点ずつ移動し1歩ごとに保�
   assert.deepEqual([after.g, after.trainTix], [before.g, before.trainTix]);
   assert.equal(after.m.raise.fatigue, 7, '出目3で疲れ +7');
   assert.equal(await bmsg(pg), 'START でサイコロを振る。休むこともできる。');
-  assert.match(await pg.evaluate(() => document.querySelector('.chh-turn').textContent), /Turn\s*2\s*\/\s*40/);
+  assert.match(await pg.evaluate(() => document.querySelector('.chh-turn').textContent), /Turn\s*2\s*\/\s*30/);
   assert.equal(await pg.evaluate(() => document.querySelector('#bmonw').dataset.node), 'p1_3', 'モンスターの表示位置も p1_3');
   assert.equal(await pg.evaluate(() => !document.querySelector('#brollbtn').disabled), true, '次のターンを振れる');
   await assertSynced(pg);
@@ -470,7 +470,7 @@ T('QA-RB8：Chapter 1 のゴール（大会会場。残りの移動は消える�
   const dep = 'button[onclick="p7Depart(this)"]';
   await pg.waitForSelector(dep);
   const dt = await pg.evaluate((s) => document.querySelector(s).textContent, dep);
-  assert.match(dt, /CHAPTER 2「潮風の海岸」へ出発/);
+  assert.match(dt, /出発する[\s\S]*CHAPTER 2「潮風の海岸」へ/);   // 2026-10-04：出発準備の「出発する」（下に行き先）
   assert.doesNotMatch(dt, /育成開始/);
   await pg.evaluate(() => { window.__talkSeen = false; new MutationObserver(() => { if (document.querySelector('.mmtalk')) window.__talkSeen = true; }).observe(document.body, { childList: true, subtree: true }); });
   await pg.waitForTimeout(SETTLE);
