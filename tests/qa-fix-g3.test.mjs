@@ -304,6 +304,8 @@ test('QA-G3-B2：実ブラウザ：「▶ セーブ・ロード」を3回連打�
   st = await H.storedSave(pg); assert.equal(st.m.name, 'ソラモ', '確認状態にした直後の2回目では消さない');
   await ck.thaw(); await pg.waitForTimeout(DELIBERATE);
   await press(pg, await center(pg, '#app .ghost'));
+  await pg.waitForSelector('.tpage .p15start'); st = await H.storedSave(pg); assert.equal(st.m.name, 'ソラモ', '2026-10-03：2回目でタイトルへ（まだ消さない）');
+  await pg.waitForTimeout(400); await pg.click('.p15start');
   await pg.waitForFunction(() => S.m == null);
   st = await H.storedSave(pg); assert.equal(st.m, null, '0.6秒後の2回目では従来どおり最初から'); assert.equal(st.box.length, 0); assert.equal(st.v, 6);
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);

@@ -224,7 +224,7 @@ B('QA-TD4：実行時に使う画像（正式モンスター・背景・市場�
   const uniq = [...new Set(list.map(clean))];
   assert.ok(uniq.length >= 56, '実行時の画像パスが集まっている：' + uniq.length);
   assert.equal(uniq.filter((x) => x.startsWith('assets/dice/')).length, 20, 'サイコロ（通常用・分岐用）10コマずつ');
-  assert.equal(uniq.filter((x) => x.startsWith('assets/npc/fina/')).length, 20, 'フィナの表情8枚＋アニメ2種×6コマ');
+  assert.equal(uniq.filter((x) => x.startsWith('assets/npc/fina/')).length, 30, 'フィナの表情8枚＋アニメ2種×6コマ＋全身10ポーズ（2026-10-03）');
   for (const k of ['solamo', 'gauru', 'nobiton', 'jiol']) assert.ok(uniq.includes(`assets/monsters/${k}.png`), k + ' の正式画像');
   assert.ok(uniq.includes('assets/title/title_main.jpg'));
   assert.deepEqual(uniq.filter((r) => !existsExact(r)), [], '実在しない（または大文字小文字が違う）画像パス');
@@ -264,8 +264,8 @@ B('QA-TL1：街→市場（次へ・購入確認・やめる）→街→牧場�
     await tap('button.back');
     await waitSel(pg, '.hz[onclick="museum()"]');
     await tap('.hz[onclick="museum()"]');
-    await waitSel(pg, '.mgc');
-    await tap('.dtop .dback');
+    await waitSel(pg, '.lab .labc');
+    await tap('.lab .dtop .dback');
     await waitSel(pg, '.svb');
     await tap('.svb');
     await waitSel(pg, 'button.ghost');
@@ -516,7 +516,7 @@ B('QA-TN4：立ち絵アニメ：wave／wave_blink の行では npc.js の inter
   assert.deepEqual([t.state.anim, t.npcIv, t.anim, t.img], [null, 0, false, 'assets/npc/fina/closeup/normal.webp'], '3行目：静止画・interval なし');
   await advance(3);
   t = await talkSnap(pg);
-  assert.deepEqual([t.fig, t.img, t.state.fallback, t.npcIv], ['mmtalk-fig closeup', 'assets/npc/fina/closeup/happy.webp', true, 0], '全身（未着）の指定は上半身で代わりに表示');
+  assert.deepEqual([t.fig, t.img, t.state.fallback, t.npcIv], ['mmtalk-fig fullbody', 'assets/npc/fina/fullbody/happy.webp', false, 0], '全身の指定は全身（2026-10-03 の正式素材）');
   await pg.evaluate(() => MMNPC.close());
   await assertTalkGone(pg, keydown0, '閉じた後');
   noErrors(p);

@@ -108,7 +108,7 @@ async function check(pg, name, sels, { fixed = [], filter = true, wait = 0 } = {
   if (filter) assert.deepEqual(r.filter, [], `${size}：正式モンスター画像に色のフィルタがかかっている`);
   return r;
 }
-/** 会話ウィンドウが画面に収まり、立ち絵の高さが min(44vh, 380px) 以内で、ウィンドウをタップできる */
+/** 会話ウィンドウが画面に収まり、立ち絵の高さが min(52dvh, 470px) 以内で、ウィンドウをタップできる */
 async function checkTalk(pg, name) {
   await waitSel(pg, '.mmtalk .mmtalk-win');
   await pg.waitForTimeout(300);   // 開いた直後だけ入力を受け付けない作りでも、タップが届くかを確かめられるよう待つ
@@ -116,13 +116,14 @@ async function checkTalk(pg, name) {
   const r = await pg.evaluate(() => {
     const ov = document.querySelector('.mmtalk'), w = ov.querySelector('.mmtalk-win').getBoundingClientRect(), f = ov.querySelector('.mmtalk-fig');
     const top = document.elementFromPoint(w.left + w.width / 2, w.top + w.height / 2);
-    return { W: innerWidth, H: innerHeight, sw: document.documentElement.scrollWidth, win: [w.left, w.top, w.right, w.bottom].map(Math.round), figH: f.hidden ? 0 : f.getBoundingClientRect().height, hit: !!top && ov.contains(top), n: document.querySelectorAll('.mmtalk').length };
+    return { W: innerWidth, H: innerHeight, sw: document.documentElement.scrollWidth, win: [w.left, w.top, w.right, w.bottom].map(Math.round), figH: f.hidden ? 0 : f.getBoundingClientRect().height, full: f.classList.contains('fullbody'), hit: !!top && ov.contains(top), n: document.querySelectorAll('.mmtalk').length };
   });
   const size = `${r.W}×${r.H} ${name}`;
   assert.equal(r.n, 1, size + '：会話ウィンドウは1つ');
   assert.ok(r.sw <= r.W + 1, `${size}：横にはみ出している（${r.sw}）`);
   assert.ok(r.win[0] >= -1 && r.win[1] >= -1 && r.win[2] <= r.W + 1 && r.win[3] <= r.H + 1, `${size}：会話ウィンドウが画面に収まっていない ${r.win}`);
-  assert.ok(r.figH > 0 && r.figH <= Math.min(0.44 * r.H, 380) + 1, `${size}：立ち絵の高さ ${r.figH}`);
+  const cap = r.full ? Math.min(0.64 * r.H, 600) : Math.min(0.52 * r.H, 470);   // 重要な場面（major）はフィナの全身＝min(64dvh,600px)
+  assert.ok(r.figH > 0 && r.figH <= cap + 1, `${size}：立ち絵の高さ ${r.figH}（半身 min(52dvh,470px)・全身 min(64dvh,600px)）`);
   assert.ok(r.hit, size + '：会話ウィンドウの中央をタップすると会話に届く');
 }
 /** 市場の切り替えの演出が終わるまで待つ */
@@ -289,19 +290,16 @@ describe('QA-TS：390×844 の通し（JS エラー・読み込み・壊れた�
     assert.deepEqual(await pg.evaluate(() => [S.m.raise.ch, MMP8.boardPhase(S.m), S.m.raise.turnsUsed]), [1, 'roll', 0], 'Chapter 1 に出発した（サイコロの演出は qa-e2e-tech.test.mjs で確かめる）');
   });
 
-  T('QA-TS7：ゴール → 大会（2度押し）→ 順位表 → VS（2度押し）→ 試合 → 試合中の再読み込みで試合はやり直し（順位表に戻る）', async () => {
+  T('QA-TS7：ゴール → 大会 → 順位表（能力比較・対戦開始は2度押し）→ 試合 → 試合中の再読み込みで試合はやり直し（順位表に戻る）', async () => {
     // ゴールまでの移動は、ゲームの状態を直接ゴールにして描き直す（マスの効果・分岐は qa の別ファイルで確かめる）
     await pg.evaluate(() => { const m = S.m, trk = MMP8.trackOf(m.raise.ch); Object.assign(m.raise, { node: trk.goal, goal: true, pend: null }); save(); board(); });
     await waitSel(pg, '#chrcv .rcv-row.ok');
     await check(pg, 'ゴール（大会受付）', SEL.goal, { fixed: ['.rcv-join', '.rcv-dec'] });
     await pg.click('#chrcv .rcv-row.ok'); await pg.waitForTimeout(450); await pg.click('.rcv-join');   // ランクを選んで「この大会に参加する」（選んだ直後0.35秒は無視）
-    await waitSel(pg, '[onclick="p9VsScr()"]');
-    await check(pg, '大会の順位表', ['.p9mbtn', '[onclick="p9VsScr()"]']);
-    await pg.click('[onclick="p9VsScr()"]');
-    await waitSel(pg, '.p9go');
-    await check(pg, 'VS', ['.p9go', '.p9vs .p9btn2']);
-    await press2(pg, '.p9go');
-    // 2026-10-03：大会は VS（相手の発表＋能力比較）から直接 fight()（Battle 開始前の導入は練習試合だけ）
+    await waitSel(pg, '.p9next .p9go');
+    await check(pg, '大会の順位表（次の相手の能力比較・対戦開始）', ['.p9mbtn', '.p9next .p9go']);
+    await press2(pg, '.p9next .p9go');
+    // 2026-10-03 品質向上：順位表の次の相手（能力比較）から「対戦開始」（2度押し）で直接 fight()（VS・対面の重複は fight() の導入だけ）
     await pg.waitForFunction(() => !!document.getElementById('bt'), null, { timeout: 15000 });
     await pg.waitForTimeout(800);
     const before = await pg.evaluate(() => ({ round: S.m.raise.tour.league.round, battle: !!S.m.raise.battle }));
@@ -309,10 +307,10 @@ describe('QA-TS：390×844 の通し（JS エラー・読み込み・壊れた�
     await pg.reload();
     await pg.waitForFunction(() => typeof window.MMP8 === 'object');
     await pg.click('.p15start');
-    await waitSel(pg, '[onclick="p9VsScr()"]');
+    await waitSel(pg, '.p9next .p9go');
     const after = await pg.evaluate(() => ({ round: S.m.raise.tour.league.round, battle: S.m.raise.battle, ph: MMP8.boardPhase(S.m), bt: !!document.getElementById('bt') }));
     assert.deepEqual(after, { round: before.round, battle: null, ph: 'tour', bt: false }, '試合は結果なしでやり直しになり、順位表に戻る');
-    await check(pg, '大会の順位表（再読み込み後）', ['.p9mbtn', '[onclick="p9VsScr()"]']);
+    await check(pg, '大会の順位表（再読み込み後）', ['.p9mbtn', '.p9next .p9go']);
   });
 
   T('QA-TS8：Chapter間ファーム → 修行メニュー → 修行ボード', async () => {

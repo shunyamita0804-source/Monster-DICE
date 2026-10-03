@@ -244,10 +244,10 @@ test('QA-G4-B3：実ブラウザ：大会（次の相手・順位表・星取表
     const M = load(); const p = await open({ save: j(inTour(M, n)) }); const pg = p.page;
     await start(p, '#app .p9tour');
     assert.equal((await txt(pg, '#app .p9next .nm b'))[0], n, '次の相手（自分の名前）');
-    assert.equal(await count(pg, '#app .p9next button[onclick="p9VsScr()"]'), 1, '「対戦へ」が残る');
+    assert.equal(await count(pg, '#app .p9next button[onclick="p9VsGo(this)"]'), 1, '「対戦開始」が残る（2026-10-03：順位表の次の相手から。VS 画面は fight() の導入）');
     assert.deepEqual(await txt(pg, '#app .p9r.me .nm'), [`${n}あなた`], '順位表');
     assert.ok((await txt(pg, '#app tr.me .nm')).includes(n), '星取表');
-    await pg.click('#app .p9next button[onclick="p9VsScr()"]'); await pg.waitForSelector('#app .p9vs');
+    await pg.evaluate(() => p9VsScr()); await pg.waitForSelector('#app .p9vs');   // 流れから外した VS 画面（関数は残す）でも名前は文字のまま
     assert.equal((await txt(pg, '#app .p9vs-fr .np'))[0], n, 'VS画面');
     assert.equal(await count(pg, '#app .p9vs button'), 2, '「対戦開始」「順位表にもどる」');
     await noInjected(p);

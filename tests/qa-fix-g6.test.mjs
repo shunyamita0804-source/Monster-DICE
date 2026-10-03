@@ -260,7 +260,7 @@ test('QA-G6-B2：実ブラウザ（375×667）：新規開始 → 市場で購�
   assert.equal(await pg.evaluate(() => scrollY), 0, '街は一番上から');
   assert.ok(await pg.evaluate(() => document.querySelector('h1').getBoundingClientRect().top >= 0), '見出しが見える');
   // 牧場（スクロールしてから街へ戻っても一番上から）
-  await pg.click('#app .tbar .hz[onclick="farm()"]');
+  await pg.click('#app .hz[onclick="farm()"]');
   await pg.waitForSelector('#app button[onclick="dep()"]');
   await pg.evaluate(() => window.scrollTo(0, 99999));
   assert.equal(await pg.evaluate(() => scrollY), 0, '牧場の画面でもページ自体はスクロールしない（2026-09-30：画面全体を固定）');
