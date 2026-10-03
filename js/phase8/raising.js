@@ -31,7 +31,7 @@
   // =========================================================
   // Chapter定義（ターン上限・挑戦ランク上限はここだけで管理する）
   // =========================================================
-  const DEFAULT_TURN_LIMIT = 20;   // 通常Chapterの基本ターン数（1ターン＝サイコロ1回）。25/30へ変える場合はここを変えるだけ
+  const DEFAULT_TURN_LIMIT = 20;   // 通常Chapterの基本ターン数（1ターン＝サイコロ1回）。25/30へ変える場合はここを変えるだけ。2026-10-04：正式仕様は Chapter 1〜4 とも 30 で、Chapter 1 は config（ch1a.js rules.turnLimit 30）。旧ボードの Chapter 3・4（20）と Chapter 2（40）は未調整＝ユーザー判断（CLAUDE.md §5）
   const FINAL = 'final';           // 最終Chapter（旧称：裏ボスChapter）
   const LAST_NORMAL_CHAPTER = 4;
   const RANK_LETTERS = Object.freeze(['E', 'D', 'C', 'B', 'A', 'S']);

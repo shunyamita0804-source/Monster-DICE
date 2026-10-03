@@ -9,7 +9,7 @@
 //  BACKGROUNDS：背景ごとに backgroundId・route・image・表示名【暫定】・地形・道の中央線 road [y, x, 半幅]（画像を目視で読んだ値。背景に対する割合）・
 //   nodes＝その背景のマス [x, y, 種類]（背景に対する割合。手前 → 奥）。マス数は背景ごとに違ってよい（道の長さ・見え方で決めた。固定の「1枚 N マス」は無い）。
 //   背景の最奥（遠景の道）まではマスを置かない（この先にも世界が続く景観として残す）。必要なら背景ごとに camera を書ける。ずれていたら数字を直すだけ。
-//  公式マス 60（スタートを含まない。通常19・能力18（6能力×3）・野生6・イベント6・宝4・休む3・ライバル1・分岐／合流2・ゴール1）・40ターン・サイコロ 1〜3。
+//  公式マス 54（2026-10-04。スタートを含まない。通常13・能力18（6能力×3）・野生6・イベント6・宝4・休む3・ライバル1・分岐／合流2・ゴール1）・30ターン（正式）・サイコロ 1〜3。旧（2026-10-02）：60マス＝通常19・40ターン。
 // =========================================================
 (function (root) {
   'use strict';
@@ -27,13 +27,13 @@
       nodes: [[0.513,0.87,'event'],[0.49,0.751,'stat_intelligence'],[0.49,0.65,'normal'],[0.5,0.571,'treasure'],[0.537,0.51,'stat_accuracy']] },
     { backgroundId: '03', route: 'common', image: F + 'ch1_bg_03.webp', name: '清流の石橋', terrain: 'bridge',
       road: [[0.97,0.5,0.46],[0.85,0.5,0.4],[0.75,0.5,0.33],[0.65,0.51,0.27],[0.55,0.5,0.2],[0.48,0.52,0.13],[0.44,0.56,0.09]],
-      nodes: [[0.5,0.87,'normal'],[0.501,0.742,'stat_evasion'],[0.509,0.638,'wild'],[0.5,0.555,'normal'],[0.517,0.49,'stat_toughness']] },
+      nodes: [[0.5,0.87,'normal'],[0.501,0.742,'stat_evasion'],[0.509,0.638,'wild'],[0.517,0.49,'stat_toughness']] },
     { backgroundId: '04', route: 'common', image: F + 'ch1_bg_04.webp', name: '遺跡の門', terrain: 'forest',
       road: [[0.97,0.5,0.48],[0.85,0.5,0.43],[0.75,0.51,0.36],[0.65,0.52,0.28],[0.57,0.52,0.21],[0.51,0.52,0.14],[0.47,0.53,0.1]],
       nodes: [[0.5,0.87,'rest'],[0.51,0.752,'stat_life'],[0.52,0.653,'normal'],[0.52,0.573,'wild'],[0.52,0.51,'event']] },
     { backgroundId: '05', route: 'common', image: F + 'ch1_bg_05.webp', name: '滝の見える道', terrain: 'forest',
       road: [[0.97,0.5,0.45],[0.85,0.5,0.38],[0.75,0.49,0.3],[0.68,0.5,0.24],[0.62,0.52,0.17],[0.59,0.53,0.13]],
-      nodes: [[0.5,0.87,'normal'],[0.49,0.753,'stat_intelligence'],[0.502,0.675,'normal'],[0.528,0.595,'branch']] },
+      nodes: [[0.5,0.87,'normal'],[0.49,0.753,'stat_intelligence'],[0.528,0.595,'branch']] },
     // ---- 森の道（分かれ道の左）：大樹の森 → 深い森の小道。能力・イベント・休む・宝が多い ----
     { backgroundId: '06', route: 'forest', image: F + 'ch1_bg_06.webp', name: '大樹の森', terrain: 'forest',
       road: [[0.97,0.5,0.45],[0.85,0.5,0.38],[0.75,0.51,0.31],[0.68,0.54,0.21],[0.63,0.57,0.12],[0.59,0.6,0.07]],
@@ -47,7 +47,7 @@
       nodes: [[0.5,0.87,'normal'],[0.512,0.742,'wild'],[0.545,0.639,'stat_power'],[0.6,0.56,'event']] },
     { backgroundId: '09', route: 'bridge', image: F + 'ch1_bg_09.webp', name: '天空の大橋', terrain: 'bridge',
       road: [[0.97,0.5,0.48],[0.85,0.5,0.46],[0.75,0.49,0.42],[0.65,0.48,0.37],[0.57,0.46,0.3],[0.5,0.44,0.19],[0.46,0.45,0.12],[0.43,0.46,0.07]],
-      nodes: [[0.5,0.87,'normal'],[0.49,0.752,'treasure'],[0.48,0.653,'normal'],[0.461,0.575,'wild'],[0.444,0.513,'stat_toughness'],[0.45,0.46,'normal']] },
+      nodes: [[0.5,0.87,'normal'],[0.49,0.752,'treasure'],[0.461,0.575,'wild'],[0.444,0.513,'stat_toughness']] },
     // ---- 合流後（終盤）：風の丘の最初のマス＝合流 → 古塔の遺跡 → 遺跡の高台 → 城へ続く道 → 大会会場の門前（ライバル → ゴール） ----
     { backgroundId: '10', route: 'late', image: F + 'ch1_bg_10.webp', name: '風の丘', terrain: 'highland',
       road: [[0.97,0.5,0.48],[0.85,0.5,0.46],[0.75,0.5,0.43],[0.65,0.5,0.37],[0.58,0.51,0.28],[0.53,0.52,0.18],[0.49,0.53,0.1]],
@@ -57,15 +57,17 @@
       nodes: [[0.5,0.87,'event'],[0.511,0.737,'normal'],[0.526,0.605,'stat_toughness'],[0.53,0.525,'treasure']] },
     { backgroundId: '12', route: 'late', image: F + 'ch1_bg_12.webp', name: '遺跡の高台', terrain: 'highland',
       road: [[0.97,0.5,0.48],[0.85,0.5,0.45],[0.75,0.51,0.42],[0.65,0.53,0.37],[0.59,0.53,0.27],[0.55,0.53,0.16],[0.53,0.53,0.11]],
-      nodes: [[0.5,0.87,'normal'],[0.511,0.745,'stat_accuracy'],[0.53,0.642,'rest'],[0.53,0.56,'normal']] },
+      nodes: [[0.5,0.87,'normal'],[0.511,0.745,'stat_accuracy'],[0.53,0.642,'rest']] },
     { backgroundId: '13', route: 'late', image: F + 'ch1_bg_13.webp', name: '城へ続く道', terrain: 'grass',
       road: [[0.97,0.48,0.45],[0.85,0.47,0.4],[0.75,0.47,0.32],[0.67,0.48,0.23],[0.61,0.5,0.15],[0.56,0.53,0.09],[0.52,0.55,0.06]],
-      nodes: [[0.472,0.87,'wild'],[0.477,0.69,'event'],[0.521,0.575,'normal']] },
+      nodes: [[0.472,0.87,'wild'],[0.477,0.69,'event']] },
     { backgroundId: '14', route: 'late', image: F + 'ch1_bg_14.webp', name: '大会会場の門前', terrain: 'highland',
       road: [[0.97,0.5,0.48],[0.85,0.5,0.47],[0.75,0.5,0.4],[0.7,0.5,0.3],[0.66,0.5,0.22],[0.63,0.5,0.15]],
       nodes: [[0.5,0.87,'rival'],[0.5,0.769,'normal'],[0.5,0.68,'goal']] },
   ];
-  const TOTAL_TILES = 60;   // 公式マスの総数（スタートを含まない。森・大橋の両方を合わせた全体。tests/chapter-engine.test.mjs と layoutRules.expect で確認）
+  const TOTAL_TILES = 54;   // 公式マスの総数（スタートを含まない。森・大橋の両方を合わせた全体。tests/chapter-engine.test.mjs と layoutRules.expect で確認）
+  // 2026-10-04（30ターンの正式仕様に合わせた最小限の調整）：効果の無い通常マス6つ（旧 p3_3・p5_2・p9_2・p9_5・p12_3・p13_2）を外し、森・大橋とも 46歩に。背景・サイコロ 1〜3・能力／イベント／野生／宝／休む／ライバル／ゴールの数と位置は変えていない。
+  //  旧 60マス（40ターン）では 30ターン以内の到達が 森 94%・大橋 80%（休む方針 cautious）だったのが、54マス・46歩で 森 99.5%・大橋 98.9%（10,000回。tests/chapter-sim.mjs）
   const fieldScenes = [], paths = [], landmarks = {}, foreground = {};
   const at = (pts, y, k) => { const C = [...pts].sort((a, b) => a[0] - b[0]); if (y <= C[0][0]) return C[0][k]; for (let i = 1; i < C.length; i++) if (y <= C[i][0]) { const a = C[i - 1], b = C[i]; return +(a[k] + (b[k] - a[k]) * (y - a[0]) / (b[0] - a[0])).toFixed(4); } return C[C.length - 1][k]; };
   for (const B of BACKGROUNDS) {
@@ -101,7 +103,7 @@
     playable: true,
     // 通常マス（normal）は止まれる公式のマス（2026-10-02 の60マス再設計：出目に数え、止まると何も起きずにターンが終わる。旧 passNormal＝通過専用は廃止）。
     //  歩きの見た目だけの経由点（paths[].pts の道の中央線の点）はマスではなく、出目に数えない
-    rules: { turnLimit: 40, diceSides: 3 },   // 2026-10-01 夜：通常 Chapter のサイコロは 1〜3・40ターン（Chapter 2 と同じ。4〜6 の素材・共通の仕組みは残す）【試遊用の値】
+    rules: { turnLimit: 30, diceSides: 3 },   // 2026-10-04：正式仕様＝Chapter 1〜4 すべて 30ターン（ユーザー確認 2026-10-03）。サイコロは 1〜3（4〜6 の素材・共通の仕組みは残す）。旧：試遊用の 40
     forceStopKinds: ['rival'],
     tournamentDestination: 'official',
     // ---- ゴール（14 の最後のマス）に着いたあと：到着イベント専用の背景（マス・サイコロ・操作欄なし）→ フィナの短い会話 → 大会受付（ランク選択）。
@@ -140,7 +142,7 @@
     //  expect＝正式の内訳（スタートを含まない60マス）。構成を変えたら validateLayout がこの数で確かめる ----
     layoutRules: {
       fixed: true,
-      expect: { total: TOTAL_TILES, groups: { normal: 19, stat: 18, wild: 6, event: 6, treasure: 4, rest: 3, rival: 1, branchSpecial: 2, goal: 1 }, perStat: 3 },
+      expect: { total: TOTAL_TILES, groups: { normal: 13, stat: 18, wild: 6, event: 6, treasure: 4, rest: 3, rival: 1, branchSpecial: 2, goal: 1 }, perStat: 3 },
       rareBattleRate: 0.1,   // 野生のマスがレアモンスターマスになる確率（2026-10-02 正式：10%）。配置を作るとき（Chapter開始時に1回）に決めて保存する
       eventTierWeights: { normal: 70, rare: 25, special: 5 },
     },

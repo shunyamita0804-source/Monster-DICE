@@ -249,10 +249,10 @@ test('JR-10：START の1タップだけで、サイコロは自動で止まっ�
   assert.deepEqual(p.errors, []);
 });
 
-test('JR-11：40ターン目（2026-10-01 夜）に大会会場へ着けなかった：大会なし・ランクは上がらない・Chapter は終了して能力と持ち物は保持 → ファーム → 次の Chapter へ進める', { skip: SKIP }, async () => {
+test('JR-11：30ターン目（2026-10-04 正式）に大会会場へ着けなかった：大会なし・ランクは上がらない・Chapter は終了して能力と持ち物は保持 → ファーム → 次の Chapter へ進める', { skip: SKIP }, async () => {
   const p = await open(); const pg = p.page;
   await toField(pg);
-  await pg.evaluate(() => { const r = S.m.raise; r.node = 'p2_0'; r.turnsUsed = 39; r.fatigue = 10; S.m.po = 160; S.g = 999; S.inv.bag.push({ id: 'herb' }); save(); board(); }); await idle(pg);
+  await pg.evaluate(() => { const r = S.m.raise; r.node = 'p2_0'; r.turnsUsed = 29; r.fatigue = 10; S.m.po = 160; S.g = 999; S.inv.bag.push({ id: 'herb' }); save(); board(); }); await idle(pg);
   await rollAs(pg, 2); await pg.waitForSelector('.chsheet [onclick="p8EndChapter()"]', { timeout: 20000 });
   const a = await pg.evaluate(() => ({ ph: MMP8.boardPhase(S.m), text: document.querySelector('.chsheet').innerText.replace(/\s+/g, ' '), tour: S.m.raise.tour, canRoll: MMP8.canRoll(S.m), ranks: document.querySelectorAll('.p9rank').length }));
   assert.equal(a.ph, 'timeup'); assert.match(a.text, /公式大会には参加できません/); assert.equal(a.tour, null); assert.equal(a.canRoll, false); assert.equal(a.ranks, 0, '大会の選択は出ない');

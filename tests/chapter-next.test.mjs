@@ -303,9 +303,9 @@ test('NX-15：同行者（フィナ）のリアクションの差し込み口：
   const view = rd('js/chapter/field-view.js'); assert.match(view, /registerReactionRenderer/); assert.match(view, /companionReaction\(m, fx\)/); assert.match(view, /if \(!reactionRenderer\) return;/, '描画が未登録なら何もしない（会話UIは未決）');
 });
 
-test('NX-16：Chapter 1（1〜3・正式背景14枚・40ターン・大会なしの timeup・ライバル強制停止）。ダンは Chapter に同行しない（同行者はフィナ＋育成中のモンスター）', () => {
+test('NX-16：Chapter 1（1〜3・正式背景14枚・30ターン・大会なしの timeup・ライバル強制停止）。ダンは Chapter に同行しない（同行者はフィナ＋育成中のモンスター）', () => {
   const E = loadEngine(); const { CH, P8 } = E, cfg = CH.getConfig(1), R = CH.rulesOf(cfg);
-  assert.deepEqual([R.diceSides, R.turnLimit, R.onTimeUp, new Set(cfg.fieldScenes.map((s) => s.bg)).size, cfg.forceStopKinds], [3, 40, 'end', 14, ['rival']]);
+  assert.deepEqual([R.diceSides, R.turnLimit, R.onTimeUp, new Set(cfg.fieldScenes.map((s) => s.bg)).size, cfg.forceStopKinds], [3, 30, 'end', 14, ['rival']]);
   assert.deepEqual(CH.generateLayout(cfg, 12345).assign, CH.generateLayout(cfg, 12345).assign);
   // 同じ seed の配置は基盤の追加前後で変わらない（配置の乱数は layoutRules.counts に書いた種類だけ消費する）：代表的な seed の割り当て数
   const a = CH.generateLayout(cfg, 1).assign, cnt = {}; for (const x of Object.values(a)) cnt[x.t] = (cnt[x.t] || 0) + 1;

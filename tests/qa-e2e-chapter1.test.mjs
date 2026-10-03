@@ -68,7 +68,7 @@ for (const size of [H.SIZES.base, H.SIZES.se]) {
     assert.deepEqual(r.broken, []); assert.deepEqual(r.filt, [], '正式モンスター画像に色のフィルタをかけない');
     assert.equal(r.objs, r.objsWant, '旧目印（石碑・宝箱・イベントの物）は出さない（2026-10-02：正式マスUIが種別を示す）'); assert.ok(r.tiles === r.tilesWant && r.tiles > 0 && r.ph === 0, `スタート以外のすべてのマス（通常マスを含む）を地面に置く（${r.tiles}/${r.tilesWant}）・仮表示なし（${r.ph}）`); assert.ok(r.normals >= 1 && r.peds === r.tiles, `共通の台座（${r.peds}）・通常マス（${r.normals}）`); assert.deepEqual(r.env, [], '街道の背景に素材は重ねない');
     assert.equal(r.battleObjs, 0, 'バトル地点の石碑は常設しない'); assert.equal(r.fg, 0, '手前を横切る草も置かない（石の街道）'); assert.deepEqual(r.layers, [true, true, true, true, true, true], '遠景・背景・奥・道・手前・効果の層');
-    assert.match(r.text, /Chapter 1 \/ 4/); assert.match(r.text, /Turn\s*1\s*\/ 40/); assert.match(r.text, /疲れ\s*0/); assert.match(r.text, /アイテム/); assert.match(r.text, /休む/); assert.match(r.text, /サイコロ/);
+    assert.match(r.text, /Chapter 1 \/ 4/); assert.match(r.text, /Turn\s*1\s*\/ 30/); assert.match(r.text, /疲れ\s*0/); assert.match(r.text, /アイテム/); assert.match(r.text, /休む/); assert.match(r.text, /サイコロ/);
     // 下の操作欄：正式画像（START の状態）。中央＝START（押せる領域は画像の球の上）、左右＝アイテム・休む（疲れ −30）・技設定・ステータス。フィールドは 80〜82%、操作欄は 18〜20%
     assert.ok(/START/.test(r.stop.text) && r.stop.w >= 60 && r.stop.h >= 60, JSON.stringify(r.stop)); assert.ok(r.deckImg && /deck_start\.webp$/.test(r.deckImg), `操作欄の画像 ${r.deckImg}`);
     assert.deepEqual(r.wings.map((w) => w[0]), ['chwing chwing-img chitem chw-tl', 'chwing chwing-img chrest chw-tr', 'chwing chwing-img chskill chw-bl', 'chwing chwing-img chstatus chw-br'], '4コマンド：アイテム・休む・技設定・ステータス（画像の上の押せる領域）'); assert.match(r.wings[1][1], /休む.*疲れ −30/);
@@ -111,10 +111,10 @@ test('CH1-B3：休む（1ターン・疲れ −30・移動なし）。疲れ100�
 test('CH1-B4：分かれ道（滝の見える道 05 の最後のマス）：左右の門と選択シート（森の道／大橋の道）。モンスターはシートより上に見える。選んだ道の背景（06 大樹の森）へ歩きながら切り替わる', { skip: SKIP }, async () => {
   const p = await L.open(); const pg = p.page;
   await start(p);
-  await place(pg, 'p5_1'); await idle(pg);
+  await place(pg, 'p5_0'); await idle(pg);
   await rollAs(pg, 3); await pg.waitForSelector('.chroute', { timeout: 20000 }); await pg.waitForTimeout(700);
   const a = await pg.evaluate(() => { const sh = document.querySelector('.chbr').getBoundingClientRect(), m = document.querySelector('#bmonw .mon img, #bmonw .chf-spr img.on').getBoundingClientRect(); return { node: S.m.raise.node, pend: S.m.raise.pend, routes: [...document.querySelectorAll('.chroute b')].map((b) => b.textContent), gates: [...document.querySelectorAll('#chf .chf-brgate')].map((g) => [g.dataset.id, g.querySelector('img').naturalWidth > 0]), monBottom: m.bottom, sheetTop: sh.top }; });
-  assert.deepEqual([a.node, a.pend.stage, a.pend.left, a.pend.opts], ['p5_3', 'branch', 1, ['p6_0', 'p8_0']]);
+  assert.deepEqual([a.node, a.pend.stage, a.pend.left, a.pend.opts], ['p5_2', 'branch', 1, ['p6_0', 'p8_0']]);
   assert.deepEqual(a.routes, ['森の道', '大橋の道']); assert.deepEqual(a.gates, [['forest', true], ['bridge', true]], '左右の門（正式素材）');
   assert.ok(a.monBottom <= a.sheetTop + 4, `モンスターは選択シートより上（${a.monBottom}/${a.sheetTop}）`);
   await pg.click('.chroute.k-forest'); await idle(pg);
