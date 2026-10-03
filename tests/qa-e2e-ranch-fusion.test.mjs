@@ -242,7 +242,7 @@ test('QA-RF-B2：牧場の表示：連れている個体・牧場の個体の名
     assert.equal(await pg.evaluate(() => ft), 'a');
     assert.match(await txt(pg, '.wpanel'), /ソラA.*ライフ 100.*ちから 100.*かしこさ 100.*命中 100.*回避 100.*丈夫さ 100/);
     assert.match(await txt(pg, '.fhud'), /1000G/);
-    assert.equal(await pg.evaluate(() => document.querySelectorAll('.fscene .wk').length), 3);   // 3体とも牧場を歩く
+    assert.equal(await pg.evaluate(() => document.querySelectorAll('.fscene .wk, .fscene .rnfeat').length), 3);   // 3体とも牧場に（2026-10-03：選んでいる子は大きく・ほかは歩く）
     assert.match(await txt(pg, `.ftile[onclick="farm('','b')"]`), /受け取る\(2\)/);
     // 受け取るタブ：牧場の2体の6能力
     await tap(pg, `.ftile[onclick="farm('','b')"]`);
@@ -385,7 +385,7 @@ test('QA-RF-B5：未育成の売却（50G）：1回目は確認だけ、2回目�
     assert.equal(await pg.$('.pfsell'), null);
     assert.equal(await pg.evaluate(() => document.querySelectorAll('.wpanel .row').length), 2);
     assert.match(await txt(pg, '.fhud'), /1050G/);
-    assert.equal(await pg.evaluate(() => document.querySelectorAll('.fscene .wk').length), 2);
+    assert.equal(await pg.evaluate(() => document.querySelectorAll('.fscene .wk, .fscene .rnfeat').length), 2);
     // 残った押下・直接呼び出し・同じ uid の再売却では増えない
     const again = await pg.evaluate((uc) => { pfSellGo(document.createElement('button')); pfSellGo(document.createElement('button')); return [S.g, MMP10M.sell(S, uc).reason, S.g]; }, uc);
     assert.deepEqual(again, [1050, 'not_found', 1050]);

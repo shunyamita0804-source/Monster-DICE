@@ -125,13 +125,13 @@ test('PF-B4（4サイズ）：街は1画面で固定（スクロールしない�
     const bg0 = await pg.evaluate(() => document.querySelector('.tbg').getBoundingClientRect().top);
     await pg.mouse.move(size[0] / 2, size[1] / 3); await pg.mouse.wheel(0, 1500); await pg.waitForTimeout(300);
     const r = await pg.evaluate(() => { const a = document.getElementById('app'), sv = document.querySelector('.tbar .tsave.svb').getBoundingClientRect(), hit = document.elementFromPoint(sv.left + sv.width / 2, sv.top + sv.height / 2),
-      cells = [...document.querySelectorAll('.tbar .tcmd')].slice(4).map((b) => Math.round(b.getBoundingClientRect().width));
+      cells = [...document.querySelectorAll('.tbar .tcmd')].map((b) => Math.round(b.getBoundingClientRect().width));
       return { st: a.scrollTop, can: a.scrollHeight > a.clientHeight, y: scrollY, bg: document.querySelector('.tbg').getBoundingClientRect().top, hit: !!hit && hit.closest('.svb') != null, lab: document.querySelector('.tbar .tsave b').innerText.split('\n'), cells, tlow: getComputedStyle(document.querySelector('#app>.tlow')).display }; });
     const tag = size.join('×');
     assert.deepEqual([r.st, r.can, r.y], [0, false, 0], `${tag}：街はスクロールしない`);
     assert.equal(r.bg, bg0, `${tag}：背景は動かない`);
     assert.ok(r.hit, `${tag}：セーブ・ロードは押せる`); assert.deepEqual(r.lab, ['セーブ', 'ロード'], `${tag}：セーブ・ロードは2行`);
-    const all = r.cells.reduce((a, b) => a + b, 0); assert.ok(Math.abs(r.cells[0] / all - 0.55) < 0.03 && Math.abs(r.cells[1] - r.cells[2]) <= 1, `${tag}：2段目は ファーム 55%・プロフィールとセーブ・ロードが半分ずつ（${r.cells}）`);
+    const all = r.cells.reduce((a, b) => a + b, 0); assert.ok(Math.abs(r.cells[0] / all - 0.55) < 0.03 && Math.abs(r.cells[1] - r.cells[2]) <= 1, `${tag}：下のバー（1段・2026-10-03）は ファーム 55%・プロフィールとセーブ・ロードが半分ずつ（${r.cells}）`);
     assert.equal(r.tlow, 'none', `${tag}：知らせることが無いときは案内文を背景に重ねない`);
     await pg.click('.tbar .svb'); await pg.waitForSelector('#sc', { state: 'attached' });
     await pg.evaluate(() => lobby()); await pg.waitForTimeout(300); await settle(pg);
