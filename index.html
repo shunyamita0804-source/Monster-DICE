@@ -1568,6 +1568,28 @@ button.mkc b{font-size:.9rem}button.mkc small{font-size:.66rem;color:#ffe9b0}
 @keyframes chfmring{0%{opacity:0;scale:.5}30%{opacity:1}100%{opacity:0;scale:1.35}}
 .chf-obj.shake img{animation:chfshake .32s ease-in-out}@keyframes chfshake{20%{rotate:-6deg}45%{rotate:5deg}70%{rotate:-3deg}100%{rotate:0deg}}
 .chf-gfly{position:absolute;z-index:40;transform:translate(-50%,-50%);padding:3px 10px;border-radius:999px;background:linear-gradient(#fff3c4,#e9bf55);color:#5a3a06;font:800 15px/1.2 var(--mm-font-head);box-shadow:0 2px 8px rgba(0,0,0,.35),0 0 12px rgba(255,214,110,.6);pointer-events:none;white-space:nowrap}
+/* ===== 2026-10-04 第二段階 PHASE E：能力UPの成長演出（アイコン → 数値 → 正式色のゲージ（999 まで）→ 粒子）・疲れの増減・休憩の帯・宝箱の光 ===== */
+.chpop.grow{text-align:center}.chpop.framed.grow small{margin-bottom:1px}
+.chf-grow{position:relative;display:grid;grid-template-columns:34px 1fr;gap:3px 8px;align-items:center;width:100%;max-width:240px;margin:3px auto 0;text-align:left}
+.chf-grow+.chf-grow{margin-top:6px}
+.chf-grow-ic{grid-row:span 2;width:34px;height:34px;display:grid;place-items:center;opacity:0;transform:translateY(10px) scale(.6);transition:transform .3s cubic-bezier(.2,.9,.3,1.35),opacity .2s}
+.chf-grow.on .chf-grow-ic{opacity:1;transform:translateY(0) scale(1.1)}
+.chf-grow-ic img{width:34px;height:34px;object-fit:contain;transform:scale(1.6)}   /* マスUIの絵は余白が広いので少し拡大して見せる（色は変えない） */
+.chf-grow-t{display:block;font:800 18px/1.2 var(--mm-font-head);color:#fff;text-shadow:0 2px 0 rgba(0,0,0,.6);letter-spacing:.03em}.chf-grow-t .cnt{color:var(--c)}
+.chf-gauge{height:9px;border-radius:5px;background:rgba(8,15,34,.85);border:1px solid rgba(240,232,212,.5);overflow:hidden}
+.chf-gauge i{display:block;height:100%;min-width:2px;border-radius:5px;background:var(--c);box-shadow:0 0 8px var(--c);transition:width .34s ease-out}
+.chf-sparks{position:absolute;left:62%;top:50%;width:0;height:0;pointer-events:none}.chf-sparks i{position:absolute;left:0;top:0;width:5px;height:5px;border-radius:50%;background:var(--c);box-shadow:0 0 6px var(--c);opacity:0}
+.chf-grow.grown .chf-sparks i{animation:chfSpark .6s ease-out forwards}
+.chf-sparks i:nth-child(1){--dx:-34px;--dy:-22px}.chf-sparks i:nth-child(2){--dx:30px;--dy:-26px}.chf-sparks i:nth-child(3){--dx:-18px;--dy:-34px;animation-delay:.05s}.chf-sparks i:nth-child(4){--dx:22px;--dy:-12px;animation-delay:.08s}.chf-sparks i:nth-child(5){--dx:-40px;--dy:4px;animation-delay:.04s}.chf-sparks i:nth-child(6){--dx:38px;--dy:6px;animation-delay:.1s}
+@keyframes chfSpark{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.3)}}
+.chf-fatfly{position:absolute;z-index:41;transform:translate(-50%,0);padding:2px 7px;border-radius:999px;font:800 13px/1.2 var(--mm-font-head);white-space:nowrap;pointer-events:none;animation:chfFatFly .9s ease-out forwards}
+.chf-fatfly.up{background:rgba(120,40,40,.92);color:#ffd4c4;border:1px solid rgba(255,150,130,.7)}.chf-fatfly.dn{background:rgba(30,80,120,.92);color:#c8f0ff;border:1px solid rgba(140,210,255,.7)}
+@keyframes chfFatFly{0%{opacity:0;transform:translate(-50%,-4px)}20%{opacity:1}75%{opacity:1}100%{opacity:0;transform:translate(-50%,14px)}}
+.chf-restveil{position:absolute;inset:0;z-index:30;pointer-events:none;background:radial-gradient(ellipse at 50% 62%,rgba(150,215,255,.3),rgba(60,120,200,.1) 55%,transparent 76%);animation:chfRestVeil .95s ease-in-out forwards}
+@keyframes chfRestVeil{0%{opacity:0}35%{opacity:1}100%{opacity:0}}
+.chf-csparks{position:absolute;width:0;height:0;pointer-events:none;z-index:6}.chf-csparks i{position:absolute;left:0;top:0;width:calc(6px * var(--d,1));height:calc(6px * var(--d,1));border-radius:50%;background:#ffe9a8;box-shadow:0 0 8px #ffd25a;animation:chfSpark .8s ease-out forwards}
+.chf-csparks i:nth-child(1){--dx:-44px;--dy:-40px}.chf-csparks i:nth-child(2){--dx:40px;--dy:-44px}.chf-csparks i:nth-child(3){--dx:-22px;--dy:-58px;animation-delay:.05s}.chf-csparks i:nth-child(4){--dx:26px;--dy:-54px;animation-delay:.08s}.chf-csparks i:nth-child(5){--dx:-56px;--dy:-12px;animation-delay:.04s}.chf-csparks i:nth-child(6){--dx:54px;--dy:-10px;animation-delay:.1s}.chf-csparks i:nth-child(7){--dx:-10px;--dy:-70px;animation-delay:.12s}.chf-csparks i:nth-child(8){--dx:12px;--dy:-66px;animation-delay:.02s}
+@media (prefers-reduced-motion:reduce){.chf-grow-ic{transition:none;opacity:1;transform:none}.chf-gauge i{transition:none}.chf-sparks i,.chf-csparks i,.chf-fatfly,.chf-restveil{animation:none;display:none}}
 .chpop .cnt{display:inline-block;min-width:2.2em;font-variant-numeric:tabular-nums}
 @media (prefers-reduced-motion:reduce){.chf-mon.react .chf-flip,.chf-mring,.chf-obj.shake img,.chf-tile.touch .chf-tped{animation:none}}
 .chf-tile.ph{border:2px dashed rgba(255,255,255,.9);border-radius:50%;background:rgba(255,0,170,.16);box-shadow:0 0 0 1.5px rgba(0,0,0,.45),inset 0 0 0 1.5px rgba(0,0,0,.35)}

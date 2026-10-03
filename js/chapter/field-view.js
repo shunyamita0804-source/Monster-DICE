@@ -761,7 +761,7 @@
       refreshDeck(m, 'サイコロを振った…'); lockUi(true);
       await pressKick($('#brollbtn'));   // START の手ごたえ：押す → 小さく戻る → サイコロが出る（約0.2秒。強い光り方はしない）
       if (root.MMCHD) await MMCHD.play(r.value, { host, from, land: { x: fr.left + fr.width / 2 - hr.left, y: fr.top + fr.height * 0.44 - hr.top } });   // 着地はモンスターの頭より上（モンスターを隠さない）。自動停止
-      rollToast(r.value, m.raise.pend ? m.raise.pend.fatigueAdded || 0 : 0); refreshDeck(m, ''); lockUi(true);
+      rollToast(r.value, m.raise.pend ? m.raise.pend.fatigueAdded || 0 : 0); refreshDeck(m, ''); lockUi(true); fatFly(m.raise.pend ? m.raise.pend.fatigueAdded || 0 : 0);   // 2026-10-04 PHASE E：疲れの増減の小さな表示
     } finally { busySet(false); }
     chfContinue();
   }
@@ -807,7 +807,7 @@
     try {
       const before = MMCH.fatigue(m); res = P8().rest(gS(), m); doSave();
       const w = $('#bmonw'); if (w) { w.insertAdjacentHTML('beforeend', '<i class="chf-zz">Z<small>z</small></i>'); anim('rest'); w.classList.add('resting'); }
-      refreshHud(m); setMsg(`ひと休みした。　疲れ −${before - MMCH.fatigue(m)}`);
+      restVeil(); refreshHud(m); fatFly(MMCH.fatigue(m) - before); setMsg(`ひと休みした。　疲れ −${before - MMCH.fatigue(m)}`);   // 2026-10-04 PHASE E：落ち着いた回復の帯＋疲れの増減
       await wait(900);
       if (w) { w.classList.remove('resting'); const z = w.querySelector('.chf-zz'); if (z) z.remove(); }
     } finally { busySet(false); }
@@ -852,8 +852,39 @@
     }
     feel('gold.get'); bump(g); await countUp(b, from, to, 420);
   }
-  /** 疲れの HUD：回復・増加を数字の動きで見せる */
-  async function fatigueHud(from, to) { const f = $('#chfat'), b = f && f.querySelector('b'); if (!b || from === to) return; bump(f); await countUp(b, from, to, 360); }
+  /** 疲れの HUD：回復・増加を数字の動きで見せる（2026-10-04 第二段階 PHASE E：増減の小さな表示＋チップの色の段階も合わせる） */
+  async function fatigueHud(from, to) { const f = $('#chfat'), b = f && f.querySelector('b'); if (!b || from === to) return; fatFly(to - from); bump(f); await countUp(b, from, to, 360); fatLevel(to); }
+  /** 疲れのチップの段階（lo／mid／hi）と目盛りを今の値に合わせる */
+  function fatLevel(v) { const f = $('#chfat'); if (!f) return; f.classList.remove('f-lo', 'f-mid', 'f-hi'); f.classList.add(v >= 80 ? 'f-hi' : v >= 50 ? 'f-mid' : 'f-lo'); const i = f.querySelector('i'); if (i) i.style.setProperty('--f', `${v}%`); }
+  /** 疲れの増減（「+5」「−30」）をチップの脇に短く浮かべる（2026-10-04 PHASE E。大きな演出はしない） */
+  function fatFly(delta) {
+    const ui = $('#chf-ui'), f = $('#chfat'); if (!ui || !f || !delta || V.calm) return;
+    const hr = ui.getBoundingClientRect(), fr = f.getBoundingClientRect(); const d = document.createElement('i'); d.className = `chf-fatfly ${delta > 0 ? 'up' : 'dn'}`; d.textContent = delta > 0 ? `+${delta}` : `−${-delta}`;
+    d.style.left = `${fr.left + fr.width / 2 - hr.left}px`; d.style.top = `${fr.bottom - hr.top + 2}px`; ui.appendChild(d); setTimeout(() => d.remove(), 1000);
+  }
+  // ---- 2026-10-04 第二段階 PHASE E：能力UPの成長演出（光 → 能力のアイコン → 「ちから +5」→ ゲージ（999 を最大とした絶対の目盛り・正式色）→ 粒子）。0.6〜1.2秒・タップで短縮 ----
+  const STAT_COLOR_DEF = { li: '#f2c94c', po: '#e5533c', in: '#4fbf6a', hi: '#f08cb4', ev: '#5cc8e8', de: '#4a74e0' };   // 正式色（index.html の STAT_COLOR と同じ。あればそちら）
+  const statColor = (k) => ((root.STAT_COLOR || {})[k]) || STAT_COLOR_DEF[k] || '#ffe08a';
+  const STAT_TILE = { li: 'stat_life', po: 'stat_power', in: 'stat_intelligence', hi: 'stat_accuracy', ev: 'stat_evasion', de: 'stat_toughness' };
+  const gaugePct = (v) => Math.round(Math.min(999, Math.max(0, v | 0)) / 999 * 1000) / 10;
+  /** 成長の行（能力ごと）。before＝上がる前の値・after＝上がった後の値。複数の能力は縦に並べて重ねない */
+  function growRows(m, gains) {
+    return gains.map(({ key, amount }) => { const after = (m[key] | 0), before = Math.max(0, after - amount), ic = tileSpriteOf(V.cfg, STAT_TILE[key]);
+      return `<div class="chf-grow" data-key="${key}" style="--c:${statColor(key)}"><span class="chf-grow-ic">${ic ? `<img src="${ic}" alt="" decoding="async">` : ''}</span><b class="chf-grow-t">${esc(labOf(key))} <span class="cnt">${amount >= 0 ? '+0' : '−0'}</span></b><div class="chf-gauge" role="img" aria-label="${esc(labOf(key))} ${after}（999 まで）"><i style="width:${gaugePct(before)}%" data-to="${gaugePct(after)}"></i></div><span class="chf-sparks" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span></div>`; }).join('');
+  }
+  /** 成長演出を動かす：アイコンが浮く → 数値が上がる → ゲージが伸びる → 粒子（約0.55秒。残りは余韻＝popup の ms） */
+  async function growPlay(d, gains) {
+    const rows = [...d.querySelectorAll('.chf-grow')]; if (!rows.length) return;
+    rows.forEach((r) => r.classList.add('on'));
+    await wait(V.calm ? 0 : 140);
+    await Promise.all(rows.map((r, i) => { const g = gains[i] || gains[0], c = r.querySelector('.cnt'); return countUp(c, 0, Math.abs(g.amount), (FEEL() ? Math.min(FEEL().MOTION.count[3], 260) : 260), (v) => `${g.amount >= 0 ? '+' : '−'}${v}`); }));
+    rows.forEach((r) => { const i = r.querySelector('.chf-gauge i'); if (i) i.style.width = `${i.dataset.to}%`; r.classList.add('grown'); });
+    await wait(V.calm ? 0 : 260);
+  }
+  /** 休憩・回復の落ち着いた演出：画面にやわらかい青の帯を一瞬かぶせる（絵の色は変えない。約0.9秒） */
+  function restVeil() { const ui = $('#chf-ui'); if (!ui || V.calm) return; const v = document.createElement('i'); v.className = 'chf-restveil'; ui.appendChild(v); setTimeout(() => v.remove(), 1000); }
+  /** 宝箱の開封の光の粒（宝箱の位置から。約0.8秒） */
+  function chestSparks(obj) { const fx = $('#chffx'); if (!fx || !obj || V.calm) return; const P = objPoint(obj) || V.monPos; if (!P) return; fx.insertAdjacentHTML('beforeend', `<span class="chf-csparks" style="left:${P.x.toFixed(1)}px;top:${P.y.toFixed(1)}px;--d:${P.d || 1}"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>`); const e = fx.querySelector('.chf-csparks:last-child'); setTimeout(() => e && e.remove(), 900); }
   function fxText(fx) {
     const L = (k) => labOf(k);
     if (fx.kind === 'chstat') return { h: `<small>${L(fx.key)}のマス</small><b>${L(fx.key)} +${fx.amount}</b>`, c: 'ok stat', frame: 'statUp', t: `${L(fx.key)} +${fx.amount}` };   // 能力マス：成長適性の値だけ上がる（失敗・大成功なし）
@@ -948,7 +979,7 @@
       const T = fxText(fx), obj = $(`#chf .chf-obj[data-id="${id}"]`), tile = $(`#chf .chf-tile[data-id="${id}"]`);
       refreshHud(m);
       // HUD は結果の演出が届くまで前の値（所持金・疲れ）を見せ、演出に合わせて動かす
-      const g1 = (gS().g) | 0, f1 = MMCH.fatigue(m), gb = $('#chgold b'), fb = $('#chfat b'); if (gb) gb.textContent = String(g0); if (fb && fx.kind === 'fatigue') fb.textContent = String(f0);
+      const g1 = (gS().g) | 0, f1 = MMCH.fatigue(m), gb = $('#chgold b'), fb = $('#chfat b'); if (gb) gb.textContent = String(g0); if (fb && (fx.kind === 'fatigue' || fx.fatigueAdded > 0)) { fb.textContent = String(f0); fatLevel(f0); }
       const gold = g1 - g0;
       if (fx.kind === 'chstat') {
         // 能力UP（LEVEL 3）：間 → マスが光る → モンスターが反応 → 能力UPの枠（数値は +0 から上がる）→ 余韻
@@ -956,8 +987,9 @@
         await wait(V.calm ? 0 : 160); monReact('up'); feel('stat.up', { key: fx.key, amount: fx.amount });
         await wait(V.calm ? 0 : 150);   // モンスターの反応を見せてから枠
         setMsg(T.t);
-        await popup(`<small>${esc(labOf(fx.key))}のマス</small><b>${esc(labOf(fx.key))} <span class="cnt">+0</span></b>`, T.c, holdOf(3, 800), T.frame ? effectAsset(T.frame) : null,
-          (d) => countUp(d.querySelector('.cnt'), 0, fx.amount, (FEEL() ? FEEL().MOTION.count[3] : 500), (v) => `+${v}`));
+        // 2026-10-04 PHASE E：成長演出（能力のアイコンが浮く → 「ちから +5」→ 正式色のゲージが伸びる（999 を最大とした目盛り）→ 粒子）。枠は正式素材 frame_stat_up のまま。0.6〜1.2秒・タップで短縮
+        const gains = [{ key: fx.key, amount: fx.amount }];
+        await popup(`<small>${esc(labOf(fx.key))}のマス</small>${growRows(m, gains)}`, `${T.c} grow`, Math.min(holdOf(3, 800), 300), T.frame ? effectAsset(T.frame) : null, (d) => growPlay(d, gains));
         tail = T.t;
       } else if (fx.kind === 'treasure') {
         // 宝箱（LEVEL 3）：間 → 宝箱が現れる → 揺れて開く → 報酬 → 所持金へ
@@ -965,7 +997,7 @@
         const P = objPoint(obj); if (P) camFocus(P, 0.45, CA().zoom.focus);
         if (obj && obj.classList.contains('hid')) { obj.classList.remove('hid'); await wait(V.calm ? 0 : 300); }
         if (obj) { obj.classList.add('shake'); await wait(V.calm ? 0 : 320); obj.classList.remove('shake'); const im = obj.querySelector('img[data-open]'); await chestFrames(im); if (im && im.dataset.open) im.src = im.dataset.open; obj.classList.add('open', 'hit'); }
-        feel('chest.open', { tier: fx.tier }); monReact('treasure');
+        feel('chest.open', { tier: fx.tier }); monReact('treasure'); chestSparks(obj);   // 2026-10-04 PHASE E：開封の光の粒
         setMsg(T.t);
         await popup(T.h, T.c, holdOf(3, 900), null, async (d) => { await wait(V.calm ? 0 : 260); if (gold > 0) await goldToHud(g0, g1, d.querySelector('b') || d); });
         if (obj) { obj.classList.remove('hit'); obj.classList.add('used'); }
@@ -974,9 +1006,12 @@
         // イベント（LEVEL 2〜3）：間 → マスが光る → 出来事の文 → 結果（所持金・疲れは HUD まで動かす）
         await wait(beatOf(2)); if (tile) { tile.classList.remove('hit'); void tile.offsetWidth; tile.classList.add('hit'); }
         await eventLines(fx);   // 2026-10-04：出来事の会話（フィナの吹き出し。eventPool[].lines）→ 結果
-        feel('event', { ev: fx.ev }); if (fx.kind === 'stat' || fx.kind === 'multi') monReact(fx.amount < 0 ? 'down' : 'up'); else if (fx.kind === 'fatigue') monReact('rest');
+        feel('event', { ev: fx.ev }); if (fx.kind === 'stat' || fx.kind === 'multi') monReact(fx.amount < 0 ? 'down' : 'up'); else if (fx.kind === 'fatigue') { monReact('rest'); restVeil(); }
         setMsg(T.t);
-        await popup(T.h, T.c, holdOf(fx.tier === 'special' ? 3 : 2, 1200), null, async (d) => { await wait(V.calm ? 0 : 200); if (gold > 0) await goldToHud(g0, g1, d.querySelector('b') || d); if (fx.kind === 'fatigue') await fatigueHud(f0, f1); });
+        // 2026-10-04 PHASE E：能力が動く出来事は成長のゲージ（複数の能力は縦に並べる）。休憩は青の帯＋疲れの増減。少し疲れる出来事（stat_tired）は疲れの増減も見せる
+        const eg = fx.kind === 'stat' ? [{ key: fx.key, amount: fx.amount }] : fx.kind === 'multi' ? fx.gains.map((x) => ({ key: x.key, amount: x.amount })) : [];
+        const eh = eg.length ? `<small>${esc(fx.text)}</small>${growRows(m, eg)}` : T.h;
+        await popup(eh, `${T.c}${eg.length ? ' grow' : ''}`, holdOf(fx.tier === 'special' ? 3 : 2, 1200), null, async (d) => { await wait(V.calm ? 0 : 200); if (eg.length) await growPlay(d, eg); if (gold > 0) await goldToHud(g0, g1, d.querySelector('b') || d); if (fx.kind === 'fatigue') await fatigueHud(f0, f1); else if (fx.fatigueAdded > 0 && f1 !== f0) await fatigueHud(f0, f1); });
         tail = T.t;
       } else if (fx.kind === 'battle') { if (tile) { tile.classList.remove('hit'); void tile.offsetWidth; tile.classList.add('hit'); } await encounter(m, fx.battleType); }
       else touchTile(tile);   // 通常マス・分かれ道・合流：最小限

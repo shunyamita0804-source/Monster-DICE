@@ -153,7 +153,7 @@ test('GF-09：Chapter の演出の流れ（field-view・サイコロ）：能力
   const res = FV.slice(FV.indexOf('  async function chfResolve() {'), FV.indexOf('  // ---- 同行者（フィナ）のリアクションの差し込み口'));
   const order = (src, ws) => { let i = -1; for (const w of ws) { const k = src.indexOf(w, i + 1); assert.ok(k > i, `${w} の順`); i = k; } };
   const stat = res.slice(res.indexOf("if (fx.kind === 'chstat')"), res.indexOf("} else if (fx.kind === 'treasure')"));
-  order(stat, ['beatOf(3)', "tile.classList.add('hit')", "monReact('up')", "feel('stat.up'", 'holdOf(3', 'countUp(']);
+  order(stat, ['beatOf(3)', "tile.classList.add('hit')", "monReact('up')", "feel('stat.up'", 'growRows(m, gains)', 'holdOf(3', 'growPlay(d, gains)']);   // 2026-10-04 PHASE E：枠の中は成長の行（アイコン → 数値のカウントアップ → ゲージ → 粒子＝growPlay）
   const chest = res.slice(res.indexOf("} else if (fx.kind === 'treasure')"), res.indexOf("} else if (fx.ev && fx.kind !== 'none')"));
   order(chest, ['beatOf(3)', "classList.remove('hid')", "classList.add('shake')", "feel('chest.open'", 'goldToHud(g0, g1']);
   assert.match(FV, /async function goldToHud\(from, to, srcEl\)/); assert.match(FV, /feel\('gold\.get'\); bump\(g\); await countUp\(b, from, to, 420\);/);
