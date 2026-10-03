@@ -227,9 +227,10 @@
       },
       // 宝箱のマスに止まったとき、マスの脇に現れて開く宝箱（tier ごと。書いていない tier＝rare は従来の表示＝マスUIだけ）
       chests: { normal: { closed: 'chest_normal_closed', open: 'chest_normal_open', w: 128 }, special: { closed: 'chest_special_closed', open: 'chest_special_open', w: 134 } },
-      // 大きさ：基準 w × 奥行き^depthPow（背景の画素）。flat＝縦の潰れ（奥 far ほど平たい楕円・手前 near ほど円に近い。奥行き d で補間）。normal＝通常マスの大きさの倍率（控えめ）。
+      // 大きさ（2026-10-03 試遊で最優先）：roadFit＝その地点で見えている道幅に対する割合（通常マス 0.55・能力 0.58・宝／イベント／休憩 0.62・バトル／分かれ道／合流／ゴール 0.66。道を覆わない）。
+      //  roadFit が無いときの旧方式：基準 w × 奥行き^depthPow（背景の画素）。flat＝縦の潰れ（奥 far ほど平たい楕円・手前 near ほど円に近い。奥行き d で補間）。normal＝通常マスの大きさの倍率（控えめ）。
       //  pedestal＝道に刻まれたマス（ごく薄い接地影・細い金属の縁 rim。厚みは見せない＝thick 0。CSS だけ）。farOpacity＝いちばん奥のマスの濃さ（奥ほど控えめ）。ノードごとの上書きは BACKGROUNDS[].nodes の4番目 { s, f }
-      size: { w: 186, depthPow: 0.82, flat: { near: 0.5, far: 0.28, dNear: 1.12, dFar: 0.4 }, normal: 0.78, thick: 0, rim: 0.011, farOpacity: 0.62 }, pedestal: true, placeholder: false, replacesLandmarks: true,
+      size: { roadFit: { normal: 0.55, stat: 0.58, mid: 0.62, big: 0.66 }, w: 186, depthPow: 0.82, flat: { near: 0.5, far: 0.28, dNear: 1.12, dFar: 0.4 }, normal: 0.78, thick: 0, rim: 0.011, farOpacity: 0.62 }, pedestal: true, placeholder: false, replacesLandmarks: true,
       gates: { gate_left: TL + 'branch_gate_left.webp', gate_right: TL + 'branch_gate_right.webp' },   // 分かれ道で道の先に立てる左右の門（branches[].options[].gate）   // 表示の大きさ：基準 230px × 奥行き^0.65（手前 約250px・奥 約130px＝背景の画素。縦は 0.46 に潰して地面に置いた見え方）
     },
     // 演出の割り当て（config.assets のキー）。statUp＝能力マスの結果の枠（文字は HTML）。turnWarning.at＝警告を出す残りターン（未決＝空＝出さない。例：[5, 1]）

@@ -164,11 +164,17 @@
    * マスの見た目の大きさ（背景の画素）：幅＝基準 × 奥行き^depthPow × 倍率、縦の潰れ（flat）＝奥行きで変える（奥ほど平たい楕円・手前ほど円に近い）。
    *  size.flat が数なら従来どおり一定、{ near, far, dNear, dFar } なら奥行きで補間。ノードごとの上書きは path.tileLook（node.look＝{ s, f }）
    */
-  function tileBox(T, n, key) {
+  /** マスの大きさの区分（size.roadFit のキー）：通常マス＝normal（小さめ）・能力＝stat（小）・宝・イベント・休憩＝mid（中）・バトル・分かれ道・合流・ゴール＝big（中〜やや大） */
+  function tileFitKind(key) { if (key === 'normal') return 'normal'; const g = TILE_GROUP[key] || key; return g === 'stat' ? 'stat' : (g === 'battle' || key === 'branch' || key === 'merge' || key === 'goal') ? 'big' : 'mid'; }
+  /** その地点で見えている道幅（背景の画素）：絵の道幅と、その奥行きのカメラで画面に入る幅（縦長の画面は幅で決まる＝背景の幅 ÷ ズーム）の小さいほう */
+  function seenRoadW(sc, n) { const r = sc && MMCH.roadAt(sc, n.my); if (!r || !sc.depth || !sc.zoom) return 0; return Math.min(2 * r.half * sc.w, sc.w / zoomAt(sc, n.d)); }
+  function tileBox(T, n, key, sc) {
     const S = T.size || {}, W0 = S.w || 170, dp = S.depthPow != null ? S.depthPow : 1, L = n.look || {};
     let flat = S.flat || 0.34;
     if (isObj(flat)) { const t = clamp((n.d - (flat.dFar != null ? flat.dFar : 0.4)) / ((flat.dNear != null ? flat.dNear : 1.12) - (flat.dFar != null ? flat.dFar : 0.4)), 0, 1); flat = flat.far + (flat.near - flat.far) * t; }
-    const w = W0 * Math.pow(n.d, dp) * (L.s || 1) * (key === 'normal' && S.normal ? S.normal : 1), f = L.f || flat;
+    // 2026-10-03：size.roadFit があれば、幅＝その地点で見えている道幅 × 区分ごとの割合（通常 55%・能力 58%・宝／イベント 62%・バトル 66%。道を覆わない）。無ければ従来の 基準 × 奥行き^depthPow
+    const road = S.roadFit && sc ? seenRoadW(sc, n) : 0;
+    const w = road ? road * (S.roadFit[tileFitKind(key)] || S.roadFit.stat || 0.58) * (L.s || 1) : W0 * Math.pow(n.d, dp) * (L.s || 1) * (key === 'normal' && S.normal ? S.normal : 1), f = L.f || flat;
     const t = clamp((n.d - 0.4) / (1.12 - 0.4), 0, 1), op = S.farOpacity != null ? S.farOpacity + (1 - S.farOpacity) * t : 1;   // 奥のマスほど控えめ（UI のアイコンに見えない）
     return { w, h: w * f, f, op, th: Math.max(0, w * f * (S.thick != null ? S.thick : 0.12)), rim: Math.max(1.2, w * (S.rim != null ? S.rim : 0.018)) };
   }
@@ -177,7 +183,7 @@
     const ped = !!T.pedestal;   // 共通の台座（地面 → 薄い接地影 → 石の台座（厚み）→ 金属の縁 → マスの絵）。CSS だけ（.chf-tile.ped）
     return ids.map((id) => {
       const n = g.nodes[id], key = tileKeyOf(m, id); if (key === 'start') return '';
-      const src = tileSpriteOf(cfg, key), B = tileBox(T, n, key), no = g.order.indexOf(id) + 1;
+      const src = tileSpriteOf(cfg, key), B = tileBox(T, n, key, sc), no = g.order.indexOf(id) + 1;
       const box = `left:${(n.mx * sc.w).toFixed(1)}px;top:${(n.my * sc.h).toFixed(1)}px;width:${B.w.toFixed(1)}px;height:${B.h.toFixed(1)}px;--d:${n.d};--f:${B.f.toFixed(3)}${ped ? `;--th:${B.th.toFixed(1)}px;--rim:${B.rim.toFixed(1)}px;--op:${B.op.toFixed(2)}` : ''}`;
       const under = ped ? '<i class="chf-tsh"></i><i class="chf-tped"></i>' : '';
       if (src) return `<i class="chf-tile${ped ? ' ped' : ''}" data-id="${id}" data-type="${key}" style="${box}">${under}<img src="${esc(src)}" alt="" draggable="false" decoding="async"></i>`;   // 使ったマス（能力・イベント・宝箱）は chfBoard で .used（少し暗く）
@@ -969,5 +975,5 @@
   root.MMCHV = Object.freeze({ STEP_MS, FACING, DEFAULTS: DEF,
     state: () => ({ field: V.field, cam: { ...V.cam }, target: { ...V.tgt }, key: V.key, moving: V.moving, look: [...V.look], focus: V.focus ? { ...V.focus } : null, monster: V.monPos ? { ...V.monPos } : null, animator: (V.animator || DEFAULT_ANIMATOR).id }),
     lookOf, sideOffset, landmarkPos: (id) => { const n = V.g && V.g.nodes[id]; if (!n) return null; const m = gS() && gS().m, a = MMCH.fieldOf(m).nodeAssignments[id] || (['strong', 'rival'].includes(n.kind) ? { t: 'battle', bt: n.kind } : null), look = lookOf(V.cfg, a); return look ? landmarkPos(V.cfg, V.g, V.sc, id, look) : null; },
-    zoomAt, registerMonsterAnimator, registerReactionRenderer, focusPoint, tileKeyOf, tileSpriteOf, tileBox, roadX: (x, y, d) => roadX(x, y, d != null ? d : depthAtY(y)), stepDuration: (from, to) => { const r = MMCH.routeBetween(V.g, from, to).map((p) => [p[0] * V.sc.w, p[1] * V.sc.h]); return stepDuration(r, to); } });
+    zoomAt, registerMonsterAnimator, registerReactionRenderer, focusPoint, tileKeyOf, tileSpriteOf, tileBox, seenRoadW, tileFitKind, roadX: (x, y, d) => roadX(x, y, d != null ? d : depthAtY(y)), stepDuration: (from, to) => { const r = MMCH.routeBetween(V.g, from, to).map((p) => [p[0] * V.sc.w, p[1] * V.sc.h]); return stepDuration(r, to); } });
 })(typeof window !== 'undefined' ? window : globalThis);

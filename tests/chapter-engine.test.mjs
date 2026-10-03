@@ -490,6 +490,13 @@ test('CH1-30：マスUI（config.tileUI。2026-10-02 正式素材）：能力6�
   const near = box('p2_0'), far = box('p2_4'); assert.ok(near.w > far.w * 1.4 && near.f > far.f + 0.12, `手前 ${near.w.toFixed(0)}×${near.f.toFixed(2)} ／ 奥 ${far.w.toFixed(0)}×${far.f.toFixed(2)}`);
   assert.ok(near.f <= 0.55 && far.f >= 0.25, '手前でも少し潰れた円・奥は強い楕円'); assert.equal(near.th, 0, '側面の厚みは見せない（道に刻まれた印。2026-10-02 商用品質化）'); assert.ok(far.op < near.op && far.op >= 0.6, `奥のマスほど控えめ（${far.op.toFixed(2)} → ${near.op.toFixed(2)}）`);
   assert.ok(box('p1_1').w < V.tileBox(cfg.tileUI, g.nodes.p1_1, 'stat_life').w, '通常マスは控えめ（少し小さい）');
+  // 2026-10-03（試遊で最優先）：大きさ＝その地点で見えている道幅（絵の道幅とカメラに入る幅の小さいほう）× 区分の割合。通常 55%・能力 58%・宝／イベント 62%・バトル 66%（道を覆わない）
+  assert.deepEqual({ ...cfg.tileUI.size.roadFit }, { normal: 0.55, stat: 0.58, mid: 0.62, big: 0.66 });
+  for (const id of g.order.filter((i) => g.nodes[i].kind !== 'start')) {
+    const n = g.nodes[id], sc = cfg.fieldScenes.find((x) => x.id === n.field), seen = V.seenRoadW(sc, n);
+    assert.ok(seen > 0, id);
+    for (const [k, want] of [['normal', 0.55], ['stat_life', 0.58], ['treasure', 0.62], ['event', 0.62], ['wild', 0.66], ['rival', 0.66], ['goal', 0.66]]) { const r = V.tileBox(cfg.tileUI, n, k, sc).w / seen; assert.ok(Math.abs(r - want) < 1e-6 && r < 0.7, `${id} ${k}：道幅の ${(r * 100).toFixed(0)}%`); }
+  }
   assert.equal(CH.getConfig(2).tileUI, undefined, 'Chapter 2 は従来どおり（マスUIを出さない）');
 });
 
