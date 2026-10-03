@@ -15,7 +15,7 @@ const HTML = rd('index.html');
 const fnOf = (name) => { const i = HTML.indexOf(`function ${name}(`); return HTML.slice(i, HTML.indexOf('\nfunction ', i + 10)); };
 function loadPro() { const w = { matchMedia: () => ({ matches: false }) }; new Function('window', rd('js/prologue/prologue.js'))(w); return w.MMPRO; }
 
-test('QU-01：プロローグは A〜E の5枚（F は無い）。文字は画像に焼き込まず HTML の層。役割（A＝世界と百年前・B＝五年前の三人のレジェンドと聖獣の共闘・C＝現在・D＝ミストリアへ・E＝到着）。新しいゲームの名前登録の前に1回。背景5枚がそろうまで出さない', () => {
+test('QU-01：プロローグは A〜E の5枚（F は無い）。文字は画像に焼き込まず HTML の層。役割（A＝世界と百年前・B＝五年前の三人のレジェンドと聖獣の共闘・C＝現在・D＝ミストリアへ・E＝到着）。新しいゲームの名前登録の前に1回。背景5枚（A〜E）がそろっている', () => {
   const P = loadPro(), txt = (id) => P.SLIDES.find((s) => s.id === id).pages.flat().join('');
   assert.deepEqual(P.SLIDES.map((s) => s.id), ['A', 'B', 'C', 'D', 'E']);
   assert.match(txt('A'), /『聖獣』がいる。/); assert.match(txt('A'), /およそ百年前/); assert.match(txt('A'), /一人の英雄と、一体の聖獣。/); assert.match(txt('A'), /『聖獣士』という道/);
@@ -24,8 +24,7 @@ test('QU-01：プロローグは A〜E の5枚（F は無い）。文字は画�
   assert.match(txt('D'), /あなたもまた、その一人だった。/);
   assert.match(txt('E'), /アステリア地方――大都市、ミストリア。/); assert.match(txt('E'), /ここから始まる。$/);
   assert.doesNotMatch(P.SLIDES.map((s) => s.pages.flat().join('')).join(''), /ブリーダー/);
-  for (const id of ['c', 'd', 'e']) assert.ok(existsSync(path.join(ROOT, `assets/prologue/prologue_${id}.webp`)), id);
-  assert.deepEqual([P.SLIDES[0].bg, P.SLIDES[1].bg], [null, null], 'A・B は受け取り待ち（null＝読みに行かない・プロローグは出さない）'); for (const s of P.SLIDES.slice(2)) assert.equal(s.bg, `./assets/prologue/prologue_${s.id.toLowerCase()}.webp`);
+  for (const s of P.SLIDES) { const f = `assets/prologue/prologue_${s.id.toLowerCase()}.webp`; assert.equal(s.bg, './' + f); assert.ok(existsSync(path.join(ROOT, f)), f); }   // 2026-10-03：A・B の正式画像を受け取り、5枚そろった
   assert.ok(P.T.tapGuard >= 400, '誤タップで何枚も飛ばない'); for (const s of P.SLIDES) for (const pg of s.pages) assert.ok(P.pageMs(pg) >= 4000 && P.pageMs(pg) <= 14000, `${s.id}：1ページ ${P.pageMs(pg)}ms（速すぎず長すぎず）`);
   const nm = fnOf('p11NameScr'); assert.match(nm, /if\(!finaFlags\(\)\.prologue&&window\.MMPRO&&!window\.MM_QA_NO_PROLOGUE&&!P11_PRO\.has\(S\)\)/); assert.match(nm, /MMPRO\.ready\(\)\.then\(ok=>ok\?MMPRO\.play\(\)/, '背景がそろったときだけ');
   assert.match(rd('tests/e2e/harness.mjs'), /MM_QA_NO_PROLOGUE = true/);
