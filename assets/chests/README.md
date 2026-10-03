@@ -8,5 +8,5 @@ ZIP mystic-monsters-design-pack-2026-10-03 の `01_treasure_chests`（manifest�
   - 限界：chest_03_anim_03（金の光の柱）の右側に、ごく薄い灰色の筋が残る（約0.1秒だけ見える1枚・画面上 約130px）。透過 PNG の元データが届けば差し替えるだけ。
 - 使い方（js/chapter/configs/ch1a.js の tileUI.chests）：宝箱のマスに止まると、マスの脇に本体が現れ → 揺れ → 開封4枚を 0.11秒ずつ → 開いたまま（anim_04）。報酬・確率・セーブは変えていない（見た目だけ）。
   - normal（通常の宝箱）＝chest_01（木）、special（特別な宝箱）＝chest_04（虹色）。
-  - **rare（珍しい宝箱）は未決**：chest_02（青い金具）・chest_03（金）のどちらを使うか仕様に無い＝従来どおり宝箱の絵を出さない（マスUIだけ）。
+  - **4種類はすべて正式素材で、それぞれ別のランク・別の用途（正式の対応表はユーザーから後日）**。2026-10-03 に入れた normal＝chest_01・special＝chest_04 は維持（ユーザー確認 2026-10-03）。chest_02・chest_03 は保存のみ（統合しない・用途を推測で固定しない）。rare（珍しい宝箱）は対応表が届くまで従来どおり宝箱の絵を出さない（マスUIだけ）。
 - 旧（2026-10-02）の宝箱 assets/fields/ch1a/tiles/chest_normal_*・chest_rainbow_* はファイルだけ残す（参照しない）。

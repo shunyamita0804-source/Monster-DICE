@@ -1,7 +1,7 @@
 // =========================================================
 // デザイン素材一括（mystic-monsters-design-pack-2026-10-03 part1〜3）の取り扱い（assets/design_pack_2026-10-03/README.md）
 //  DP-01：置いた元ファイルは manifest の sha256 と一致（無加工）。参考専用・UI参考（02・03・04）はリポジトリに置かない
-//  DP-02：宝箱 4種類（本体＋開封4）の派生 WebP（透過）。Chapter 1 は normal＝chest_01・special＝chest_04。rare は未決（絵を出さない）
+//  DP-02：宝箱 4種類（本体＋開封4）の派生 WebP（透過）。Chapter 1 は normal＝chest_01・special＝chest_04。4種類は別ランク・別用途（対応表待ち）＝02・03 は保存のみ・rare は絵を出さない
 //  DP-03：アイテム屋：正式背景・正式NPC（名前・セリフは出さない）。商品・売買の処理は変えない
 //  DP-04：共通会話 UI の再構築・ライバルの「RIVAL」の一瞬・レアの後光（見た目だけ。出現率・バトルへの進み方は変えない）
 //  DP-05：保存のみ：野生聖獣（再生器は準備・どこからも呼ばない）・合体（要確認）・報酬演出／エンブレム（透過元 PNG 待ち・割り当て保留）
@@ -46,7 +46,7 @@ test('DP-01：正式素材の元ファイルは無加工（manifest の sha256 �
   assert.match(rd('assets/fx/fusion/README.md'), /食い違い（要確認）/);
 });
 
-test('DP-02：宝箱 4種類の派生（透過 WebP・同じ種類は同じ大きさ）。Chapter 1：normal＝chest_01・special＝chest_04（開封4枚）。rare は未決＝宝箱の絵を出さない。報酬は変えない', () => {
+test('DP-02：宝箱 4種類の派生（透過 WebP・同じ種類は同じ大きさ）。Chapter 1：normal＝chest_01・special＝chest_04（開封4枚）。02・03 は保存のみ（対応表待ち）・rare は宝箱の絵を出さない。報酬は変えない', () => {
   for (const n of ['01', '02', '03', '04']) {
     const sizes = new Set();
     for (const k of ['base', 'anim_01', 'anim_02', 'anim_03', 'anim_04']) {
@@ -60,7 +60,7 @@ test('DP-02：宝箱 4種類の派生（透過 WebP・同じ種類は同じ大�
   const CF = rd('js/chapter/configs/ch1a.js');
   assert.match(CF, /normal: \{ closed: 'chest_01_base', open: 'chest_01_anim_04', frames: \['chest_01_anim_01', 'chest_01_anim_02', 'chest_01_anim_03', 'chest_01_anim_04'\]/);
   assert.match(CF, /special: \{ closed: 'chest_04_base', open: 'chest_04_anim_04', frames: \['chest_04_anim_01', 'chest_04_anim_02', 'chest_04_anim_03', 'chest_04_anim_04'\]/);
-  assert.doesNotMatch(CF, /rare: \{ closed:/, 'rare は未決');
+  assert.doesNotMatch(CF, /rare: \{ closed:/, 'rare は対応表待ち'); assert.doesNotMatch(CF, /'chest_0[23]_base'|chest_0[23]_anim_0\d'/, 'chest_02・03 は保存のみ（統合しない・用途を推測で固定しない）');
   assert.match(CF, /treasurePool: \{ tierWeights: \{ normal: 70, rare: 25, special: 5 \}, contents: \{ handler: 'gold_table', params: \{ table: \[\{ w: 4, gold: 50 \}, \{ w: 1, gold: 150 \}\] \} \} \}/, '確率・報酬は変えていない');
 });
 
@@ -97,4 +97,23 @@ test('DP-05：保存のみの素材：野生聖獣の再生器は準備だけ（
   assert.doesNotMatch(code, /reward_unlock|rank_emblems|assets\/fx\/fusion/, '報酬演出・エンブレム・合体は参照しない');
   for (let i = 1; i <= 6; i++) assert.ok(existsSync(path.join(ROOT, `assets/tournament/rank_emblems/slices/emblem_slot${i}.jpeg`)));
   assert.match(rd('assets/tournament/README.md'), /E〜S への割り当ては保留/);
+});
+
+test('DP-06：75枚の素材管理表（ASSET_TABLE.md／asset_table.csv）：manifest の全75枚が1行ずつ（通し番号・元ZIP・sha256 が一致）。保存済みの行のパスは実在し、未保存の行は参考画像（02・03・04）だけ', () => {
+  const csv = rd('assets/design_pack_2026-10-03/asset_table.csv').replace(/^\uFEFF/, '').trim().split(/\r?\n/);
+  const head = csv[0].split(','); assert.deepEqual(head.slice(0, 6), ['通し番号', '元ZIP', '元フォルダ', 'ファイル名（パック内）', '元ファイル名（manifest）', 'カテゴリ']);
+  const rows = csv.slice(1).map((l) => l.split(','));
+  assert.equal(rows.length, 75);
+  const bySha = new Map(MAN.map((e) => [e.sha256, e]));
+  const PART = { '01': 'part1', '02': 'part1', '03': 'part2', '04': 'part2', '06': 'part2', '05': 'part3', '07': 'part3', '08': 'part3', '09': 'part3', '10': 'part3', '11': 'part3' };
+  rows.forEach((r, i) => {
+    assert.equal(+r[0], i + 1, '通し番号');
+    const e = bySha.get(r[r.length - 1]); assert.ok(e, `manifest にある（${r[3]}）`);
+    assert.equal(r[2], e.group); assert.equal(r[3], path.basename(e.pack_name)); assert.equal(r[1], PART[e.group.slice(0, 2)]);
+    const p = r[r.length - 2], saved = r[10];
+    if (saved === '保存済み') { assert.ok(existsSync(path.join(ROOT, p)), p); assert.equal(sha(p), e.sha256, p); }
+    else { assert.equal(saved, '未保存'); assert.ok(['02', '03', '04'].includes(e.group.slice(0, 2)), `未保存は参考画像だけ（${r[3]}）`); }
+  });
+  assert.equal(new Set(rows.map((r) => r[r.length - 1])).size, 75);
+  assert.match(rd('assets/design_pack_2026-10-03/ASSET_TABLE.md'), /保存のみ 40枚・参考のみ（未保存） 17枚/);
 });

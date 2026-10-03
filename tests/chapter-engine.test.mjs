@@ -475,7 +475,7 @@ test('CH1-30：マスUI（config.tileUI。2026-10-02 正式素材）：能力6�
   assert.match(FV, /if \(cfg\.tileUI && cfg\.tileUI\.replacesLandmarks && \['stat', 'event', 'treasure'\]\.includes\(a\.t\)\) \{/, '旧目印（石碑・イベントの物・道端の宝箱）は出さない');
   // 宝箱：normal＝通常の宝箱、special＝虹色の宝箱（止まったとき現れて開く）。rare は従来の表示（この2つを流用しない＝宝箱の絵は出さない）
   const V = loadView(), C = cfg.tileUI.chests;
-  // 2026-10-03 正式4種類（assets/chests/。本体＋開封4枚）：normal＝chest_01・special＝chest_04。rare は未決（chest_02・03 は保存だけ）
+  // 2026-10-03 正式4種類（assets/chests/。本体＋開封4枚）：normal＝chest_01・special＝chest_04。4種類は別ランク・別用途（対応表待ち）。chest_02・03 は保存だけ
   const CB = './assets/chests/';
   assert.deepEqual([cfg.assets[C.normal.closed], cfg.assets[C.normal.open], cfg.assets[C.special.closed], cfg.assets[C.special.open]], [CB + 'chest_01_base.webp', CB + 'chest_01_anim_04.webp', CB + 'chest_04_base.webp', CB + 'chest_04_anim_04.webp']);
   for (const [t, n] of [['normal', '01'], ['special', '04']]) assert.deepEqual(C[t].frames.map((k) => cfg.assets[k]), [1, 2, 3, 4].map((i) => `${CB}chest_${n}_anim_0${i}.webp`), `${t} の開封アニメーション（4枚の順）`);

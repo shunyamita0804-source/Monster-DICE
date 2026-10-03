@@ -199,7 +199,7 @@
       // 演出（2026-10-02。ZIP mystic-monsters-board-ui-assets-2026-10-01-v2 の 03_board_effects を透過化。assets/fields/ch1a/effects/README.md）
       fx_battle_encounter: A + 'effects/effect_battle_encounter.webp', fx_stat_up: A + 'effects/frame_stat_up.webp', fx_turn_warning: A + 'effects/ui_turn_warning.webp',
       // 宝箱（2026-10-03 正式素材 4種類＝assets/chests/。各＝本体1枚＋開封アニメーション4枚。README.md）：normal＝chest_01（木）、special＝chest_04（虹色）。
-      //  rare は従来の表示のまま（chest_02・03 のどちらを使うかは未決＝要確認）。旧（2026-10-02）の chest_normal／rainbow は tiles/ にファイルだけ残す
+      //  4種類はそれぞれ別ランク・別用途（正式の対応表は後日）。chest_02・03 は保存のみ（統合しない）。rare は対応表が届くまで従来の表示のまま。旧（2026-10-02）の chest_normal／rainbow は tiles/ にファイルだけ残す
       ...['01', '02', '03', '04'].reduce((o, n) => Object.assign(o, { [`chest_${n}_base`]: `${CB}chest_${n}_base.webp` },
         ...[1, 2, 3, 4].map((i) => ({ [`chest_${n}_anim_0${i}`]: `${CB}chest_${n}_anim_0${i}.webp` }))), {}),
     },
@@ -227,7 +227,7 @@
         branch: TL + 'tile_branch.webp', merge: TL + 'tile_merge.webp',   // 分かれ道・合流（2026-10-02。ZIP の 02_branching の board_node_branch／merge を透過化）
       },
       // 宝箱のマスに止まったとき、マスの脇に現れて開く宝箱（tier ごと。書いていない tier＝rare は従来の表示＝マスUIだけ）
-      //  frames＝開封アニメーション（順に切り替え、最後の1枚が開いたままの姿＝open）。2026-10-03 正式4種類のうち normal＝chest_01・special＝chest_04（rare は未決）
+      //  frames＝開封アニメーション（順に切り替え、最後の1枚が開いたままの姿＝open）。2026-10-03 正式4種類のうち normal＝chest_01・special＝chest_04（ほかは対応表待ち）
       chests: {
         normal: { closed: 'chest_01_base', open: 'chest_01_anim_04', frames: ['chest_01_anim_01', 'chest_01_anim_02', 'chest_01_anim_03', 'chest_01_anim_04'], w: 136 },
         special: { closed: 'chest_04_base', open: 'chest_04_anim_04', frames: ['chest_04_anim_01', 'chest_04_anim_02', 'chest_04_anim_03', 'chest_04_anim_04'], w: 150 },
