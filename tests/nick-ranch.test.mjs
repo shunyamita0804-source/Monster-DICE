@@ -78,15 +78,16 @@ async function buyFirst(pg) {
   await pg.waitForSelector('#p10ov'); await pg.fill('#mnm', 'ソラ'); await pg.waitForTimeout(600); await pg.click('.p10ok', { force: true });
   await pg.waitForSelector('#app .map');
 }
-const bub = (pg) => pg.evaluate(() => { const b = document.querySelector('.fbub'), i = b.querySelector('img');
+// 2026-10-03 品質向上：ニックは半身の立ち絵（.rnnick .nstf）＋会話窓（.tx.fnick）。通知（.fbub.sys）は名前・顔なし
+const bub = (pg) => pg.evaluate(() => { const b = document.querySelector('.fbub.sys') || document.querySelector('.rnnick .tx'), i = b && b.classList.contains('fnick') ? document.querySelector('.rnnick .nstf') : b.querySelector('img');
   return { cls: b.className, name: b.querySelector('b') ? b.querySelector('b').textContent : null, img: i ? [i.getAttribute('src'), i.complete && i.naturalWidth > 0] : null, text: b.textContent }; });
 
 test('NICK-B1：牧場：ふだんはニックの吹き出し（名前・顔が読み込める・一言は NICK_TALK）。預ける／受け取るの通知は名前・顔なし。旧「ダン」は出ない', { skip: SKIP }, async () => {
   const p = await L.open(); const pg = p.page;
   await buyFirst(pg);
-  await pg.click('.hz[onclick="farm()"]'); await pg.waitForSelector('#app .fscene .fbub'); await pg.waitForTimeout(300);
+  await pg.click('.hz[onclick="farm()"]'); await pg.waitForSelector('#app .fscene .rnnick .tx'); await pg.waitForFunction(() => { const i = document.querySelector('.rnnick .nstf'); return i && i.complete && i.naturalWidth > 0; });
   let b = await bub(pg);
-  assert.equal(b.cls, 'fbub fnick'); assert.equal(b.name, 'ニック'); assert.deepEqual(b.img, ['assets/npc/nick/face.webp', true]);
+  assert.equal(b.cls, 'tx fnick'); assert.equal(b.name, 'ニック'); assert.deepEqual(b.img, ['assets/npc/nick/closeup/smile.webp', true]);
   assert.ok((await pg.evaluate(() => NICK_TALK.ranch)).some((s) => b.text.endsWith(s)), `ニックの一言：${b.text}`);
   assert.doesNotMatch(await H.text(pg), /ダン/, '牧場に旧「ダン」の名前を出さない');
   // 預ける（手持ち → 牧場）：通知は名前・顔なし
@@ -107,8 +108,8 @@ test('NICK-B2：4つの画面サイズで、牧場の吹き出し（ニックの
     const p = await L.open({ size }); const pg = p.page;
     await buyFirst(pg);
     for (const msg of ['', 'ソラを預けました。牧場で元気に過ごしています。']) {
-      await pg.evaluate((m) => farm(m), msg); await pg.waitForSelector('#app .fscene .fbub'); await pg.waitForTimeout(300);
-      const r = await pg.evaluate(() => { const s = document.querySelector('.fscene').getBoundingClientRect(), b = document.querySelector('.fbub').getBoundingClientRect();
+      await pg.evaluate((m) => farm(m), msg); await pg.waitForSelector(msg ? '#app .fscene .fbub' : '#app .fscene .rnnick .tx'); await pg.waitForTimeout(300);
+      const r = await pg.evaluate(() => { const s = document.querySelector('.fscene').getBoundingClientRect(), b = (document.querySelector('.fbub') || document.querySelector('.rnnick .tx')).getBoundingClientRect();
         return { inside: b.left >= s.left - 1 && b.right <= s.right + 1 && b.top >= s.top - 1 && b.bottom <= s.bottom + 1, sw: document.documentElement.scrollWidth, W: innerWidth }; });
       assert.ok(r.inside, `${size.join('×')}：吹き出しが牧場の枠に収まる（${msg ? '通知' : 'ニック'}）`);
       assert.ok(r.sw <= r.W + 1, `${size.join('×')}：横にはみ出さない`);

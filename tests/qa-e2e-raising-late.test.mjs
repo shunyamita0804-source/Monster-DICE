@@ -400,18 +400,16 @@ T('QA-RL4：Chapter 3（旧ボード）のゴール → ランク選択（クリ
   assert.deepEqual(r.tour, tourBefore, '大会の状態（参加者・結果・次の試合）はそのまま');
   assert.equal((await H.getS(pg)).g, s0.g);
   await assertSynced(pg);
-  // VS画面（6能力の比較）→ 再読み込み → 順位表へ戻る（状態は変わらない）
+  // 次の相手（6能力の比較・2026-10-03 から順位表の中）→ 対戦開始の1回目（2度押しの確認）→ 再読み込み → 順位表へ戻る（状態は変わらない）
   const opp = await pg.evaluate(() => MMP8L.entrantView(S.m.raise.tour.league, MMP8.tourNext(S.m).opp).name);
   await pg.waitForTimeout(SETTLE);
-  await pg.click('button[onclick="p9VsScr()"]');
-  await pg.waitForSelector('.p9vs .p9go');
-  const vs = await textOf(pg, '.p9vs');
-  assert.match(vs, /第2試合 \/ 全7試合/);
-  assert.ok(vs.includes(opp), 'VS画面の相手＝次の対戦相手');
-  assert.equal(await pg.evaluate(() => document.querySelectorAll('.p9vs-tb .vr').length), 6);
+  const nx = await textOf(pg, '.p9next');
+  assert.match(nx, /第2試合 \/ 全7試合/);
+  assert.ok(nx.includes(opp), '次の相手＝次の対戦相手');
+  assert.equal(await pg.evaluate(() => document.querySelectorAll('.p9next .p9cmp .c').length), 6);
+  await pg.click('.p9next .p9go'); await pg.waitForTimeout(100); assert.equal(await pg.evaluate(() => S.m.raise.battle), null, '1回目では試合は始まらない');
   const raw = await rawSave(pg);
   await reloadAndStart(pg, '.p9tour');
-  assert.equal(await pg.evaluate(() => !!document.querySelector('.p9vs')), false);
   assert.equal(await rawSave(pg), raw);
   noErrors(p);
 });

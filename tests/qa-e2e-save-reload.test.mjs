@@ -105,10 +105,9 @@ T('QA-SR1：ボード（待機）・ゴール（大会受付）・大会の順�
   await pg.waitForSelector('.p9tour');
   const t1 = await reloadKeepsS(pg, '.p9tour', '大会の順位表');
   assert.equal(t1.m.raise.tour.status, 'league'); assert.equal(t1.m.raise.tour.league.round, 0);
-  // VS画面：再開先は順位表（試合は始まっていない）
-  await pg.evaluate(() => p9VsScr());
-  await pg.waitForSelector('.p9vs');
-  await reloadKeepsS(pg, '.p9tour', 'VS画面');
+  // 対戦開始の1回目（2度押しの確認。2026-10-03 から VS 画面は無い）：再開先は順位表（試合は始まっていない）
+  await pg.waitForTimeout(450); await pg.click('.p9next .p9go');
+  await reloadKeepsS(pg, '.p9tour', '対戦開始の確認中');
   noErrors(p);
 });
 

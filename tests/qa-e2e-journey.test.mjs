@@ -159,23 +159,18 @@ test('JR-7：大会開始：ランクを選んで「この大会に参加する�
 });
 
 for (const size of [H.SIZES.base, H.SIZES.se]) {
-  test(`JR-8（${size.join('×')}）：VS（相手の発表＋能力比較の1枚。2026-10-03）：バトルの背景の上で、中央の VS のあと、自分が左から・相手が右から入る。能力＝Battle Engine と同じ値。対戦開始（2度押し）で、間の画面なしに従来の fight() が始まる`, { skip: SKIP }, async () => {
+  test(`JR-8（${size.join('×')}）：対戦前の画面を1つに（2026-10-03 品質向上）：順位表の「次の相手」に両者・6能力の比較（Battle Engine と同じ値）・対戦開始。対戦開始（2度押し）で、間の画面なしに従来の fight()（導入の対面＋VS）が始まる`, { skip: SKIP }, async () => {
     const p = await open({ size }); const pg = p.page;
     await toGoal(pg);
-    await pg.evaluate(() => { MMP8.startTournament(S, S.m, 0); save(); p9VsScr(); });
-    await pg.waitForSelector('.p9vs.p9vs-anim .p9go');
-    const v = await pg.evaluate(() => { const me = document.querySelector('.p9vs-fr .fr.me'), op = document.querySelector('.p9vs-fr .fr:not(.me)'), vs = document.querySelector('.vsx'); const a = (e) => e.getAnimations().map((x) => x.animationName || (x.effect && x.effect.getKeyframes && x.effect.getKeyframes()[0] && 'kf')); return { me: a(me), op: a(op), vs: a(vs) }; });
-    assert.ok(v.me.includes('p9vsL') && v.op.includes('p9vsR') && v.vs.includes('p9vsx'), `左右から入る（${JSON.stringify(v)}）`);
-    await pg.waitForTimeout(1300);
-    const pre = await pg.evaluate(() => { const st = [...document.querySelectorAll('.p9vs-tb .vr')].map((r) => [...r.querySelectorAll('.v')].map((x) => +x.textContent)); const go = document.querySelector('.p9go').getBoundingClientRect(); return { battle: S.m.raise.battle, bt: !!document.querySelector('#bt'), names: [...document.querySelectorAll('.p9vs-fr .np')].map((b) => b.textContent), st, opp: MMP8L.PROVISIONAL_OPPONENT_STAT[0], inside: go.bottom <= innerHeight && go.top >= 0, bg: /url\(/.test(getComputedStyle(document.querySelector('.p9vs')).backgroundImage) }; });
+    await pg.evaluate(() => { MMP8.startTournament(S, S.m, 0); save(); board(); });
+    await pg.waitForSelector('.p9next .p9go'); await pg.waitForTimeout(500);
+    const pre = await pg.evaluate(() => { const st = [...document.querySelectorAll('.p9next .p9cmp .c')].map((r) => [...r.querySelectorAll('b')].map((x) => +x.textContent)); const go = document.querySelector('.p9next .p9go').getBoundingClientRect(); return { battle: S.m.raise.battle, bt: !!document.querySelector('#bt'), st, opp: MMP8L.PROVISIONAL_OPPONENT_STAT[0], go: [go.top, go.bottom] }; });
     assert.equal(pre.battle, null, '対戦開始までは試合を始めない'); assert.equal(pre.bt, false, 'fight() は動いていない');
-    assert.equal(pre.names[0], 'ソラ');
     assert.deepEqual(pre.st, [[100, pre.opp], [100, pre.opp], [100, pre.opp], [100, pre.opp], [100, pre.opp], [100, pre.opp]], '能力の比較＝自分の6能力と、fight() が作る相手と同じ値（MMP8L.PROVISIONAL_OPPONENT_STAT）');
-    assert.ok(pre.inside && pre.bg, '対戦開始のボタンまで画面に収まり、バトルの背景の上');
-    await pg.click('.p9go'); await pg.waitForTimeout(600); await pg.click('.p9go');
+    await pg.click('.p9next .p9go'); await pg.waitForTimeout(600); await pg.click('.p9next .p9go');
     await pg.waitForSelector('#bt'); await pg.waitForTimeout(600);
-    const after = await pg.evaluate(() => ({ kind: S.m.raise.battle && S.m.raise.battle.kind, pbt: !!document.querySelector('#pbt'), bt: !!document.querySelector('#bt') }));
-    assert.deepEqual(after, { kind: 'league', pbt: false, bt: true }, '対戦開始で、間の画面なしに従来の fight() が始まる');
+    const after = await pg.evaluate(() => ({ kind: S.m.raise.battle && S.m.raise.battle.kind, pbt: !!document.querySelector('#pbt'), vs: !!document.querySelector('.p9vs'), bt: !!document.querySelector('#bt') }));
+    assert.deepEqual(after, { kind: 'league', pbt: false, vs: false, bt: true }, '対戦開始で、間の画面なしに従来の fight() が始まる');
     assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
   });
 }

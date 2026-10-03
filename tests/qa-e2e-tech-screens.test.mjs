@@ -243,7 +243,9 @@ describe('QA-TS：390×844 の通し（JS エラー・読み込み・壊れた�
   });
 
   T('QA-TS5：博物館（一覧・詳細）とセーブ（セーブコードの欄も開く）', async () => {
-    await pg.click('.hz[onclick="museum()"]', { force: true });   // 博物館のピンは揺れる演出があるため、位置の安定を待たずに押す
+    await pg.click('.hz[onclick="museum()"]', { force: true });
+    await waitSel(pg, '.lab .labc'); await check(pg, '研究所', ['.lab .dtop .dback', '.lab .labc']);   // 2026-10-03：研究所の入口（エリオットの半身・機能のカード）
+    await pg.click('.lab .labc[onclick="museum(\'book\')"]');
     await waitSel(pg, '.mgc');
     await check(pg, '博物館', SEL.museum);
     await pg.click('.mgc');
@@ -252,6 +254,7 @@ describe('QA-TS：390×844 の通し（JS エラー・読み込み・壊れた�
     await pg.click('.mk2 .dback.wide');
     await waitSel(pg, '.mgc');
     await pg.click('.dtop .dback');
+    await waitSel(pg, '.lab .labc'); await pg.click('.lab .dtop .dback');
     await waitSel(pg, '.svb');
     await pg.click('.svb');
     await waitSel(pg, 'button.ghost');
