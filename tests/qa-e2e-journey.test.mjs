@@ -64,7 +64,7 @@ test('JR-3：操作欄の4コマンド（アイテム・休む・技設定・ス
   await pg.evaluate(() => { S.g = 1234; board(); }); await idle(pg);
   const r = await pg.evaluate(() => ({ cmds: [...document.querySelectorAll('.chwing')].map((w) => [w.className.replace(/chwing |chw-\w+/g, '').trim(), w.textContent.replace(/\s+/g, ' ').trim(), w.disabled]), gold: document.querySelector('#chgold').textContent.replace(/\s+/g, ''), stop: !document.querySelector('#brollbtn').disabled }));
   assert.deepEqual(r.cmds, [['chwing-img chitem', 'アイテム', false], ['chwing-img chrest', '休む疲れ −30', false], ['chwing-img chskill', '技設定', false], ['chwing-img chstatus', 'ステータス', false]]);
-  assert.match(r.gold, /所持金1234G/); assert.equal(r.stop, true);
+  assert.match(r.gold, /^1234$/, '2026-10-03：所持金は硬貨の印＋数値'); assert.equal(r.stop, true);
   await rollAs(pg, 2); await pg.waitForFunction(() => bBusy || MMCHD.isLocked());
   assert.deepEqual(await pg.evaluate(() => [...document.querySelectorAll('.chwing')].map((w) => w.disabled)), [true, true, true, true], '演出・移動中は4コマンドを押せない');
   await idle(pg);
@@ -335,7 +335,7 @@ test('JR-14：マスUI（正式素材）：今の背景のマスに正式素材�
   await H.newGame(pg, 'テスト');
   await pg.evaluate(() => { const m = mk(1); m.name = 'ガル'; MMP7.ensureProg(m); S.m = m; save(); MMP8.depart(S, m, () => 0.37); const a = S.m.raise.field.nodeAssignments; a.p1_1 = { t: 'stat', k: 'de' }; a.p1_2 = { t: 'treasure', tier: 'normal' }; delete a.p1_3; a.p1_4 = { t: 'treasure', tier: 'rare' }; save(); board(); });
   await pg.waitForSelector('#chf .chf-bg'); await idle(pg);
-  const read = () => pg.evaluate(() => { const g = MMCH.graphFor(S.m), sc = MMCH.getConfig(1).fieldScenes[0]; return { objs: document.querySelectorAll('#chf .chf-obj:not(.hid)').length, tiles: [...document.querySelectorAll('#chf .chf-tile')].map((t) => { const n = g.nodes[t.dataset.id], im = t.querySelector('img'); return { id: t.dataset.id, ph: t.classList.contains('ph'), text: t.textContent, img: im && im.getAttribute('src'), ok: !!(im && im.complete && im.naturalWidth), dx: Math.abs(parseFloat(t.style.left) - n.mx * sc.w), dy: Math.abs(parseFloat(t.style.top) - n.my * sc.h), type: t.dataset.type }; }) }; });
+  const read = () => pg.evaluate(() => { const g = MMCH.graphFor(S.m), sc = MMCH.getConfig(1).fieldScenes[0]; return { objs: document.querySelectorAll('#chf .chf-obj:not(.hid)').length, tiles: [...document.querySelectorAll('#chf .chf-tile')].map((t) => { const n = g.nodes[t.dataset.id], im = t.querySelector('img:not(.chf-tbase)'); return { id: t.dataset.id, ph: t.classList.contains('ph'), text: t.textContent, img: im && im.getAttribute('src'), ok: !!(im && im.complete && im.naturalWidth), dx: Math.abs(parseFloat(t.style.left) - n.mx * sc.w), dy: Math.abs(parseFloat(t.style.top) - n.my * sc.h), type: t.dataset.type }; }) }; });
   const a = await read();
   assert.equal(a.objs, 0, '旧目印は出さない'); assert.ok(a.tiles.every((t) => !t.ph && !/仮/.test(t.text) && (t.ok || t.type === 'normal') && t.dx < 0.5 && t.dy < 0.5), `正式素材がノードの座標に：${JSON.stringify(a.tiles)}`);
   const by = Object.fromEntries(a.tiles.map((t) => [t.id, t.img]));

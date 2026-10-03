@@ -184,7 +184,7 @@ T('QA-NG2：開始ボタン → 名前登録画面（初期値「アルト」・
     msg: document.querySelector('#msg').textContent, bar: document.querySelectorAll('.topbar').length,
     sw: document.documentElement.scrollWidth, iw: innerWidth, fina: document.querySelectorAll('img[src*="npc/fina"]:not(.dmf):not(.nstf)').length,   // 案内欄のフィナの顔（.dmf）は台詞の札なので数えない（2026-09-30）
   }));
-  assert.deepEqual(t.hz, [['market()', false], ['farm()', false], ['museum()', false], ['townArena()', false], ['hall()', true], ['profileScr()', false], ['savescr()', false]]);
+  assert.deepEqual(t.hz, [['market()', false], ['farm()', false], ['museum()', false], ['townArena()', false], ['townGuild()', false], ['townShop()', true], ['hall()', true], ['profileScr()', false], ['savescr()', false]], '2026-10-03：背景の上の施設の札6つ＋下のバー3つ');
   assert.equal(t.topUi, 0, '街の上部に「街」の札・プレイヤー情報は出さない（プロフィールへまとめた）');
   assert.equal(t.prof, 0, '街の下の欄（bprof）は廃止（2026-09-30。育成完了・大会の勝利はプロフィールへ）');
   assert.equal(t.bar, 0, '旧い上部の帯（大会優勝・所持金）は出さない');

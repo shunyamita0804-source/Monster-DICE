@@ -530,7 +530,7 @@ T('QA-RL7：Chapter 4 で B ランクまでのまま大会を辞退 → 育成�
   await pg.click('button.back');
   await pg.waitForSelector('.map');
   assert.deepEqual(await pg.evaluate(() => [...document.querySelectorAll('.hz')].map((b) => [b.getAttribute('onclick'), b.disabled])),
-    [['market()', false], ['farm()', false], ['museum()', false], ['townArena()', false], ['hall()', false], ['profileScr()', false], ['savescr()', false]], '街の7コマンド（市場・牧場・研究所・闘技場の案内・ファーム・プロフィール・セーブ／ロード）');
+    [['market()', false], ['farm()', false], ['museum()', false], ['townArena()', false], ['townGuild()', false], ['townShop()', false], ['hall()', false], ['profileScr()', false], ['savescr()', false]], '街の7コマンド（市場・牧場・研究所・闘技場の案内・ファーム・プロフィール・セーブ／ロード）');
   // 育成完了の回数はプロフィールに出す（2026-09-30 に街の下の欄から移した）
   await pg.evaluate(() => profileScr()); await pg.waitForSelector('.pfds');
   assert.match(await textOf(pg, '.pfds'), /育成完了\s*1\s*回/);
