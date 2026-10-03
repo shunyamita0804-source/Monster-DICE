@@ -145,16 +145,20 @@
         await Promise.race([a1.finished.catch(() => {}), wait(T + 200)]);
       } else { phase = 'auto'; ov.dataset.phase = 'auto'; mv.style.transform = `translate(-50%,-50%) translate(${lx.toFixed(1)}px,${ly.toFixed(1)}px)`; await wait(T); }
       if (!ov.dataset.stopped) { ov.dataset.stopped = '1'; feel('dice.stop'); }   // 旧い見せ方・視差を減らす設定：ここで止まった
-      tSpin = tick(); phase = 'result'; ov.dataset.phase = 'result'; feel('dice.result');
+      // 2026-10-04：LOCK 済み（物理的な見せ方）なら data-phase は 'lock' のまま（見た目は何も変えない。MMCHD.phase() だけ 'result'）。従来の見せ方は 'result'
+      const wasLocked = ov.dataset.phase === 'lock';
+      tSpin = tick(); phase = 'result'; if (!wasLocked) ov.dataset.phase = 'result'; feel('dice.result');
       // 停止：停止画像があれば差し替え、無ければ金色の光の輪＋数字
       //  停止面（出目ごとの画像）があれば、回転中の絵から停止面へ短くクロスフェード（急に差し替えない）。無ければ金色の光の輪＋数字
       const rs = resultSprite(value), res = ov.querySelector('.chdz-res');
       if (rs && ov.dataset.phase === 'lock') {
-        // 物理的な見せ方（LOCK 済み）：止まった絵をそのまま出目の面として見せる（新しい画像に差し替えない・弾ませない＝止まったあとに面が動いて見えない）。金の光の輪だけ後ろに
-        img.classList.add('chdz-stop', 'on', 'locked'); mv.insertAdjacentHTML('afterbegin', '<i class="chdz-glow"></i>'); ov.dataset.face = 'sprite'; await wait(calm ? 0 : 160);
+        // 物理的な見せ方（LOCK 済み）：止まった絵をそのまま出目の面として見せる（新しい画像に差し替えない・弾ませない・光の輪も足さない＝LOCK のあとは何も変えない。
+        //  2026-10-04：光の輪は転がっている間（SETTLE）に出し終えている。class は LOCK の瞬間に physical() が付けている（ここは念のため同じ class を付け直すだけ＝見た目は変わらない）
+        img.classList.add('chdz-stop', 'on', 'locked'); ov.dataset.face = 'sprite';
       } else if (rs) {
+        // 従来の見せ方（視差を減らす設定・10コマの先読みが終わっていないとき）：回転中の絵から停止面へ短くクロスフェード（2026-10-04：弾み（pop）・光の輪の動きは止めたあとに出さない）
         const stop = document.createElement('img'); stop.className = 'chdz-stop'; stop.alt = `出目 ${value}`; stop.src = rs; stop.draggable = false; mv.appendChild(stop);
-        void stop.offsetWidth; stop.classList.add('on', 'pop'); img.classList.add('off'); mv.insertAdjacentHTML('beforeend', '<i class="chdz-glow"></i>');   // 出目の面が小さく弾み、金の光の輪＝「3が出た」と分かる間（resultMs）
+        void stop.offsetWidth; stop.classList.add('on'); img.classList.add('off');
         ov.dataset.face = 'sprite'; await wait(calm ? 0 : 160);
       } else { res.hidden = false; ov.dataset.face = 'number'; }
       await wait(opts.fast ? 120 : C.resultMs);
@@ -193,13 +197,16 @@
     ev(air + imp, () => { fr.src = F[9]; setPhase('bounce'); });
     // ---- 停止面で転がる（SETTLE）：面の切り替えは減速に合わせて間隔が伸びる。最後の約0.3秒は出目の面のまま滑る（LOCK）----
     const faces = faceSet(), r0 = air + imp + bnc * 0.55, lock = total - 300; let t = r0, n = 0, prev = 0;
-    ev(r0, () => { setPhase('settle'); face(resultSprite(faces[(n++ * 5 + 3) % faces.length])); img.classList.remove('off'); fr.classList.add('off'); });
+    // 2026-10-04（実機で「止まったあともドット・面・向きが変わる」）：出目の面に固定する時刻（lock）＝動き（位置・傾き・影）も完全に止まる時刻。そのあとの約0.3秒は何も変えない。
+    //  金の光の輪は転がっている間に出し終える（LOCK のあとに新しい動き・要素を足さない）
+    ev(r0, () => { setPhase('settle'); face(resultSprite(faces[(n++ * 5 + 3) % faces.length])); img.classList.remove('off'); fr.classList.add('off');
+      mv.insertAdjacentHTML('afterbegin', `<i class="chdz-glow" style="animation-duration:${Math.max(120, lock - r0 - 60)}ms"></i>`); });
     while (true) { const p = (t - r0) / Math.max(1, lock - r0); t += 70 + 170 * p * p; if (t >= lock) break; let v; do { v = faces[(n++ * 5 + 3) % faces.length]; } while (v === prev && faces.length > 1); prev = v; const src = resultSprite(v); ev(t, () => face(src)); }
-    ev(lock, () => { img.src = resultSprite(value); faceLock = true; });   // 出目の面に固定（このあと 0.3秒は面を変えずに滑って止まる＝SETTLE の終わり）
+    ev(lock, () => { img.src = resultSprite(value); faceLock = true; img.classList.add('chdz-stop', 'on', 'locked'); phase = 'lock'; ov.dataset.phase = 'lock'; });   // 出目の面に固定＝LOCK（動きもここで止まる。このあと約0.3秒は何も変えない＝完全停止。動きを終わらせたあとにも同じ値を入れ直す）
     E.sort((a, b) => a[0] - b[0]);
     img.dataset.faces = String(n + 1);
     const P = (x, y, s = 1) => `translate(-50%,-50%) translate(${x.toFixed(1)}px,${y.toFixed(1)}px) scale(${s})`;
-    const o1 = air / total, o2 = (air + imp) / total, o3 = (air + imp + bnc * 0.5) / total, o4 = (air + imp + bnc) / total;
+    const o1 = air / total, o2 = (air + imp) / total, o3 = (air + imp + bnc * 0.5) / total, o4 = (air + imp + bnc) / total, oL = lock / total;   // oL＝完全停止（LOCK）。oL〜1 は同じ姿のまま
     const a1 = mv.animate([
       { transform: P(0, 0, 0.85), offset: 0, easing: 'cubic-bezier(.15,.7,.35,1)' },
       { transform: P(lx * 0.4, ly - 96, 1.16), offset: o1 * 0.45, easing: 'cubic-bezier(.55,0,.85,.5)' },   // 投げ上げて頂点
@@ -207,17 +214,19 @@
       { transform: P(lx + dir * 3, ly + 2, 1.04), offset: o2, easing: 'cubic-bezier(.2,.7,.4,1)' },           // 着地の衝撃（少し沈む）
       { transform: P(lx + dir * 10, ly - 20, 1), offset: o3, easing: 'cubic-bezier(.6,0,.9,.6)' },           // 小さく跳ねる
       { transform: P(lx + dir * 16, ly, 1), offset: o4, easing: 'cubic-bezier(.1,.6,.3,1)' },                // もう一度着地 → 転がって減速
-      { transform: P(lx + dir * 44, ly, 1), offset: 1 },                                                     // 完全に止まる
+      { transform: P(lx + dir * 44, ly, 1), offset: oL },                                                    // 完全に止まる（LOCK）
+      { transform: P(lx + dir * 44, ly, 1), offset: 1 },                                                     // そのまま（何も変えない）
     ], { duration: total, easing: 'linear', fill: 'forwards' });
     const rr = img.animate([   // 転がる間の傾き：揺れながら小さくなり、正式の角度（0°）で止まる
       { transform: `rotate(${dir * 28}deg)`, offset: 0 }, { transform: `rotate(${dir * 28}deg)`, offset: o3 },
-      { transform: `rotate(${-dir * 12}deg)`, offset: o4 + (1 - o4) * 0.3, easing: 'ease-in-out' }, { transform: `rotate(${dir * 4}deg)`, offset: o4 + (1 - o4) * 0.65, easing: 'ease-out' },
-      { transform: 'rotate(0deg)', offset: 1 },
+      { transform: `rotate(${-dir * 12}deg)`, offset: o4 + (oL - o4) * 0.3, easing: 'ease-in-out' }, { transform: `rotate(${dir * 4}deg)`, offset: o4 + (oL - o4) * 0.65, easing: 'ease-out' },
+      { transform: 'rotate(0deg)', offset: oL }, { transform: 'rotate(0deg)', offset: 1 },
     ], { duration: total, easing: 'linear', fill: 'forwards' });
-    sh.animate([
+    const shA = sh.animate([
       { transform: 'translate(-50%,-50%) scale(.3)', opacity: 0 }, { transform: 'translate(-50%,-50%) scale(.45)', opacity: 0.18, offset: o1 * 0.45 },
       { transform: 'translate(-50%,-50%) scale(1.05)', opacity: 0.6, offset: o1 }, { transform: `translate(calc(-50% + ${dir * 10}px),-50%) scale(.8)`, opacity: 0.4, offset: o3 },
-      { transform: `translate(calc(-50% + ${dir * 16}px),-50%) scale(1)`, opacity: 0.55, offset: o4 }, { transform: `translate(calc(-50% + ${dir * 44}px),-50%) scale(1)`, opacity: 0.55, offset: 1 },
+      { transform: `translate(calc(-50% + ${dir * 16}px),-50%) scale(1)`, opacity: 0.55, offset: o4 }, { transform: `translate(calc(-50% + ${dir * 44}px),-50%) scale(1)`, opacity: 0.55, offset: oL },
+      { transform: `translate(calc(-50% + ${dir * 44}px),-50%) scale(1)`, opacity: 0.55, offset: 1 },
     ], { duration: total, easing: 'linear', fill: 'forwards' });
     // 動きの時刻で切り替えを進める（rAF。タブが裏に回って rAF が止まっても、最後は下でそろえる）
     let ei = 0, done = false; const t0 = (typeof performance !== 'undefined' ? performance.now() : Date.now());
@@ -226,10 +235,16 @@
     const raf = root.requestAnimationFrame ? (f) => root.requestAnimationFrame(f) : (f) => setTimeout(f, 16);
     const loop = () => { if (done) return; run(clock()); if (ei < E.length) raf(loop); };
     raf(loop);
-    try { await Promise.race([Promise.all([a1.finished, rr.finished]).catch(() => {}), wait(total + 250)]); } finally { done = true; run(Infinity); }
-    img.src = resultSprite(value); faceLock = true; setPhase('lock'); fr.remove();
+    // 動きが lock の時刻に達したら（それ以降の keyframe は同じ姿）LOCK。遅れて動きが終わらないときは finish() で最後の姿に飛ばす（LOCK のあとに動き続けない）
+    const anims = [a1, rr, shA];
+    const reached = () => { const c = a1.currentTime; return typeof c === 'number' && c >= lock; };
+    try { await Promise.race([Promise.all(anims.map((a) => a.finished)).catch(() => {}), (async () => { while (!reached()) { await frame(); if (done) return; } })(), wait(total + 1500)]); }
+    finally { done = true; run(Infinity); }
+    for (const a of anims) { try { a.finish(); } catch (e) {} }   // LOCK：動き（位置・傾き・影）をすべて終わらせる（最後の姿＝lock 以降の keyframe と同じ。動いているアニメーションを残さない）
+    img.src = resultSprite(value); faceLock = true; img.classList.add('chdz-stop', 'on', 'locked'); setPhase('lock'); fr.remove();
     await frame();   // 止まった姿が描かれたフレームで「完全停止」
     ov.dataset.stopped = '1'; feel('dice.stop');
+    await wait(Math.max(0, total - lock));   // 完全停止のあと約0.3秒は何も変えない（この間も出目の面のまま。出現〜dice.result の長さは従来どおり約1.66秒）
   }
   /** STOP：宙で回っているサイコロを止める（出目は既に決まっている）。回っていなければ false */
   function requestStop() { if (!stopResolve) return false; const f = stopResolve; stopResolve = null; f(); return true; }

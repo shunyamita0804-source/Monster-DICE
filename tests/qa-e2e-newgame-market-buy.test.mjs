@@ -101,7 +101,7 @@ T('QA-BY1：新規ゲーム（300G・0体）の初回購入：案内と確認画
   assert.match(st.m.uid, /^m-/); assert.deepEqual(st.box, []); assert.equal(st.cnt, 1);
   assert.deepEqual(st.raiseRec, { done: 0, fromStart: true }, '購入では育成完了回数は増えない');
   const town = await pg.evaluate(() => ({ hz: [...document.querySelectorAll('.hz')].map((b) => b.disabled) }));
-  assert.deepEqual(town.hz, Array(9).fill(false), 'モンスターがいるのでファーム・アイテム屋も押せる（2026-10-03：街の札＝市場・牧場・研究所・闘技場・聖獣士管理局（未開放の案内）・アイテム屋／下のバー＝ファーム・プロフィール・セーブ／ロード）');
+  assert.deepEqual(town.hz, Array(8).fill(false), 'モンスターがいるのでファームも押せる（2026-10-04：街の札＝市場・牧場・研究所・闘技場・聖獣士管理局（未開放の案内）／下のバー＝ファーム・プロフィール・セーブ／ロード。アイテム屋は街に無い）');
   await pg.evaluate(() => profileScr()); await pg.waitForSelector('.pfds');
   assert.equal(await pg.evaluate(() => document.querySelector('.pfrow dd').innerText.replace(/\s+/g, '')), '0G', 'プロフィールの所持金');
   await pg.evaluate(() => lobby()); await pg.waitForSelector('.tbar .tcmd');

@@ -346,7 +346,7 @@ test('CH1-B15：1タップ：START を押すまでサイコロは画面に無い
   const t0 = await st(pg); await pg.evaluate(() => { chfRoll(); chfRoll(); chfRest(); }); assert.deepEqual(await st(pg), t0, '演出中の START・休むの連打は無視');
   await pg.waitForFunction(() => !!window.__res, null, { timeout: 15000 });
   const r = await pg.evaluate(() => window.__res);
-  assert.ok(Math.abs(r.a - 1) < 0.02 && Math.abs(r.b) < 0.02, `止まったサイコロは正式の角度（matrix ${r.a}, ${r.b}）`); assert.equal(r.src, './assets/fields/ch1a/dice/dice_stop_2.webp', '出目2 → 2が上の停止面'); assert.match(r.roll, /dice_stop_2\.webp$/, '着地の前から出目の面に落ち着いている'); assert.equal(r.ring, 'none'); assert.equal(r.phase, 'result');
+  assert.ok(Math.abs(r.a - 1) < 0.02 && Math.abs(r.b) < 0.02, `止まったサイコロは正式の角度（matrix ${r.a}, ${r.b}）`); assert.equal(r.src, './assets/fields/ch1a/dice/dice_stop_2.webp', '出目2 → 2が上の停止面'); assert.match(r.roll, /dice_stop_2\.webp$/, '着地の前から出目の面に落ち着いている'); assert.equal(r.ring, 'none'); assert.equal(r.phase, 'lock', '停止面が出た瞬間＝LOCK（2026-10-04：出目の面に固定した時点で動きも止まる）');
   await idle(pg);
   const tm = await pg.evaluate(() => ({ spin: window.__faceAt - window.__t0, face: window.__goneAt - window.__faceAt, moveAfterGone: window.__moveAt - window.__goneAt, last: MMCHD.lastTiming(), dice: document.querySelectorAll('.chdz,.chdf').length, text: document.querySelector('#brollbtn').textContent.trim(), on: !document.querySelector('#brollbtn').disabled, busy: bBusy }));
   assert.ok(tm.spin >= 1300 && tm.spin <= 2800, `出現〜完全停止 ${tm.spin.toFixed(0)}ms（設計 約1.66秒。2026-10-03。負荷で伸びることがある）`);

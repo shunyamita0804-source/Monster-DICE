@@ -17,10 +17,11 @@ import * as H from './e2e/harness.mjs';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const HTML = readFileSync(path.join(ROOT, 'index.html'), 'utf8');
 const line = (p) => HTML.split('\n').find((l) => l.startsWith(p));
-// 2026-10-03 品質向上：施設（市場・牧場・研究所・闘技場・聖獣士管理局・アイテム屋）は街の背景の上の札（押せる）、下のバーはファーム・プロフィール・セーブ・ロード
-const LABELS = ['市場', '牧場', '研究所', '闘技場', '聖獣士管理局', 'アイテム屋', 'ファーム', 'プロフィール', 'セーブ・ロード'];
-const CALLS = ['market()', 'farm()', 'museum()', 'townArena()', 'townGuild()', 'townShop()', 'hall()', 'profileScr()', 'savescr()'];
-const PINS = 6;
+// 2026-10-03 品質向上：施設（市場・牧場・研究所・闘技場・聖獣士管理局）は街の背景の上の札（押せる）、下のバーはファーム・プロフィール・セーブ・ロード。
+//  2026-10-04：アイテム屋は街の施設ではない（正式）＝ファームの屋台から。街の札から外した
+const LABELS = ['市場', '牧場', '研究所', '闘技場', '聖獣士管理局', 'ファーム', 'プロフィール', 'セーブ・ロード'];
+const CALLS = ['market()', 'farm()', 'museum()', 'townArena()', 'townGuild()', 'hall()', 'profileScr()', 'savescr()'];
+const PINS = 5;
 
 test('TW-1：街の背景は TOWN_BG の1か所だけで参照し、ファイルが存在する（2026-10-03：正式ミストリア mistria_main.webp。旧 town_main.jpg はファイルだけ残す）', () => {
   const bg = line('const TOWN_BG=');
@@ -33,13 +34,13 @@ test('TW-1：街の背景は TOWN_BG の1か所だけで参照し、ファイル
   assert.match(HTML, /\.tpin\{[^}]*top:calc\(var\(--tva\) - \(var\(--tih\) - var\(--y\)\) \* var\(--ts\)\)/, '施設の札も同じ下寄せの計算');
 });
 
-test('TW-2：施設は街の背景の上の札（押せる。下のバーと二重に出さない）＝市場・牧場・研究所・闘技場・聖獣士管理局・アイテム屋。下のバーはファーム・プロフィール・セーブ・ロード（1段）。行き先は従来の画面', () => {
+test('TW-2：施設は街の背景の上の札（押せる。下のバーと二重に出さない）＝市場・牧場・研究所・闘技場・聖獣士管理局（アイテム屋は街に無い＝2026-10-04）。下のバーはファーム・プロフィール・セーブ・ロード（1段）。行き先は従来の画面', () => {
   const src = line('const TOWN_CMDS=');
   const f = new Function(`${src}\nreturn TOWN_CMDS;`)();
   assert.deepEqual(f({}).map((c) => [c[0], c[3], c[4]]), LABELS.map((l, i) => [l, CALLS[i], [3, 4].includes(i) ? 'lock' : 'ok']));
-  assert.deepEqual(f({}).map((c) => !!c[6]), LABELS.map((l, i) => i < PINS), '6つの施設は地図の上の札（7番目に背景の画素の位置）');
-  assert.equal(f(null)[5][4], 'dis', 'アイテム屋は連れているモンスターがいるときだけ（従来の shopScr の条件）'); assert.equal(f(null)[6][4], 'dis', 'モンスターがいないときファームは押せない（従来どおり）');
-  assert.equal(f(null)[7][4], 'ok'); assert.equal(f(null)[8][4], 'ok'); assert.equal(f({})[8][5], 'セーブ<br>ロード', 'セーブ・ロードは2行');
+  assert.deepEqual(f({}).map((c) => !!c[6]), LABELS.map((l, i) => i < PINS), '5つの施設は地図の上の札（7番目に背景の画素の位置）');
+  assert.equal(f(null)[5][4], 'dis', 'モンスターがいないときファームは押せない（従来どおり）');
+  assert.equal(f(null)[6][4], 'ok'); assert.equal(f(null)[7][4], 'ok'); assert.equal(f({})[7][5], 'セーブ<br>ロード', 'セーブ・ロードは2行');
   const lobby = HTML.slice(HTML.indexOf('function lobby('), HTML.indexOf('\n}', HTML.indexOf('function lobby(')));
   assert.match(lobby, /\$\{townPins\(m\)\.map\(c=>`<button class="hz tpin /, '施設は背景の上の札（ボタン）');
   assert.match(lobby, /<\/div><nav class="tcmds tbar" aria-label="街のコマンド">\$\{townBar\(m\)\.map/, 'バーは街の枠の外（画面下に固定）');
@@ -50,7 +51,7 @@ test('TW-2：施設は街の背景の上の札（押せる。下のバーと二�
   assert.doesNotMatch(lobby, /townTop|tttl|tpinfo/, '街の上部の「街」の札・プレイヤー情報は置かない');
   assert.doesNotMatch(HTML.match(/\n\.tbar\{[^}]*\}/)[0], /transform/, 'バーの位置に transform を使わない'); assert.doesNotMatch(lobby, /mupin|博物館/, '旧マップのタップ領域・博物館ピンは使わない');
   assert.match(HTML, /function townGuild\(\)\{townLock\("聖獣士管理局は、まだ利用できません。"\)\}/, '聖獣士管理局は街の上の存在だけ（中は素材・仕様が無いので作らない）');
-  assert.match(HTML, /function townShop\(\)\{SHOP_FROM="town";shopScr\(\)\}/, 'アイテム屋は従来の shopScr（戻るは街へ）');
+  assert.doesNotMatch(HTML, /function townShop\(|SHOP_FROM=/, '2026-10-04：街の独立したアイテム屋は無い（ファームの屋台 shopScr だけ）');
 });
 
 test('TW-6：コマンドは施設名だけ（補足は title に残す）。アイコンは .ti に独立し、画像ファイルのパスを書けば画像で表示できる', () => {

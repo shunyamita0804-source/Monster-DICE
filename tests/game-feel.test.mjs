@@ -162,6 +162,7 @@ test('GF-09：Chapter の演出の流れ（field-view・サイコロ）：能力
   assert.match(res, /else touchTile\(tile\);/, '通常マスは足元が軽く光るだけ');
   assert.match(res, /await storyAt\(m, 'land', \{ fx \}\);/);
   assert.match(DR, /feel\('dice\.throw'\); landT = setTimeout\(\(\) => \{ ov\.classList\.add\('landed'\); feel\('dice\.land'\); \}, T \* 0\.6\);/);
-  assert.match(DR, /stop\.classList\.add\('on', 'pop'\)/, '出目の面が弾む＝出目が分かる間');
+  assert.doesNotMatch(DR, /stop\.classList\.add\('on', 'pop'\)|'afterbegin', '<i class="chdz-glow"><\/i>'/, '2026-10-04：止まったあとに弾み・光の輪の動きを足さない（光の輪は転がっている間に出し終える）');
+  assert.match(DR, /ev\(r0, \(\) => \{ setPhase\('settle'\);[\s\S]*?chdz-glow/, '光の輪は SETTLE の始まりで出す');
   assert.doesNotMatch(res, /await wait\(1000\)|await wait\(1500\)/, '意味のない長い待ちを入れない');
 });

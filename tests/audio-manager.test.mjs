@@ -420,8 +420,9 @@ test('AUDIO-25：2026-10-03 総監査：登録済みで呼ばれていなかっ�
   assert.match(se.UI_CANCEL.src, /back_style_4_002\.ogg$/); assert.match(se.UI_SELECT.src, /cursor_style_2\.ogg$/);
   for (const k of ['UI_CANCEL', 'UI_SELECT']) assert.doesNotMatch(se[k].src, /confirm_style_1_004|confirm_style_5_001|pluck_3|pluck_5|fx_1\.ogg/, `${k} は NG の音ではない`);
   // 戻る：街へ戻るボタン（MMFEEL の back）は、押下を見せる経路（game-feel）でも、すぐ移る経路（index.html の共通のクリック）でも UI_CANCEL を1回
-  assert.match(rd('js/feel/game-feel.js'), /emit\(kind === 'back' \? 'ui\.cancel' : 'ui\.confirm'\)/);
-  assert.match(HTML, /MMAUDIO\.se\(b\.dataset&&b\.dataset\.se\|\|\(window\.MMFEEL&&MMFEEL\.navKind\(b\)=="back"\?"UI_CANCEL":"UI_CONFIRM"\)\)/, 'data-se＝そのボタンの SE（牧場のタブ＝UI_TAB）・戻る＝UI_CANCEL・ほか＝UI_CONFIRM の差し込み口');
+  // 2026-10-04 SE 監査：通常のコマンド・施設へ移動＝既存の UI_SELECT（決定音の正式素材が無いため「既存 UI_SELECT で統一」＝ユーザー指示）。戻る＝UI_CANCEL。バトル画面（#bt）の中は fight() の sfx だけ（二重にしない）
+  assert.match(rd('js/feel/game-feel.js'), /emit\(kind === 'back' \? 'ui\.cancel' : \(el\.dataset\.se \? null : 'ui\.select'\)\)/);
+  assert.match(HTML, /&&!\(b\.closest&&b\.closest\("#bt"\)\)\)MMAUDIO\.se\(b\.dataset&&b\.dataset\.se\|\|\(window\.MMFEEL&&MMFEEL\.navKind\(b\)=="back"\?"UI_CANCEL":"UI_SELECT"\)\)/, 'data-se＝そのボタンの SE・戻る＝UI_CANCEL・ほか＝UI_SELECT・バトル画面の中は鳴らさない');
   // 選択の切り替え：p10Step の始まりで1回（遠い候補へ1つずつ回す続きの p10Step では鳴らさない）。矢印は決定音を重ねない（data-nsfx）
   assert.match(HTML, /p10Place\(\);if\(!p10Step\.ch&&window\.MMAUDIO\)MMAUDIO\.se\("UI_SELECT"\);/);
   assert.match(HTML, /p10Step\.ch=1;try\{p10Step\(/);

@@ -24,7 +24,7 @@
   });
   /** 出来事 → 重さ・SE・ハプティクス（ハプティクスの強さは将来のネイティブ側で解釈する名前） */
   const EVENTS = fz({
-    'ui.confirm': { level: 0, se: 'UI_CONFIRM' }, 'ui.cancel': { level: 0, se: 'UI_CANCEL' }, 'ui.error': { level: 0, se: 'UI_ERROR', haptic: 'warning' }, 'ui.open': { level: 1, se: 'UI_OPEN' },
+    'ui.confirm': { level: 0, se: 'UI_CONFIRM' }, 'ui.select': { level: 0, se: 'UI_SELECT' }, 'ui.cancel': { level: 0, se: 'UI_CANCEL' }, 'ui.error': { level: 0, se: 'UI_ERROR', haptic: 'warning' }, 'ui.open': { level: 1, se: 'UI_OPEN' },
     'dice.throw': { level: 1, se: 'DICE_THROW', haptic: 'light' }, 'dice.land': { level: 2, se: 'DICE_LAND', haptic: 'medium' }, 'dice.stop': { level: 2, se: 'DICE_STOP' }, 'dice.result': { level: 2, se: 'DICE_ROLL' },
     'step': { level: 0, se: 'STEP' }, 'tile.stop': { level: 1, se: 'TILE_STOP' }, 'stat.up': { level: 3, se: 'STAT_UP', haptic: 'success' }, 'gold.get': { level: 3, se: 'GOLD_GET', haptic: 'light' },
     'chest.open': { level: 3, se: 'CHEST_OPEN', haptic: 'medium' }, 'event': { level: 2, se: 'EVENT' }, 'wild.alert': { level: 4, se: 'WILD_ALERT', haptic: 'heavy' },
@@ -69,7 +69,7 @@
   const PRESS = 'button, [role="button"], .skt, .p10sl';
   /** 画面を移るボタン：onclick が画面を開く関数で始まるもの、または data-nav を持つもの。値＝入りかた */
   const NAV_FN = fz({ market: 'facility', farm: 'facility', museum: 'facility', profileScr: 'facility', savescr: 'facility', newsScr: 'facility', confScr: 'facility', shopScr: 'facility',
-    hall: 'facility', prepScr: 'facility', townShop: 'facility', lobby: 'back' });
+    hall: 'facility', prepScr: 'facility', lobby: 'back' });
   const NAV_ONLY_BARE = fz(['farm']);   // 引数なしで呼んだときだけ画面を移る関数
   function navKind(el) {
     if (!el || el.disabled) return null;
@@ -102,7 +102,8 @@
       if (NAV.pending || (Date.now() < NAV.until && !root.MM_QA_NAV_INSTANT)) { e.preventDefault(); e.stopImmediatePropagation(); return; }
       if (!e.isTrusted || calm() || root.MM_QA_NAV_INSTANT) { transition(kind); NAV.until = Date.now() + MOTION.nav.guard; NAV.count++; return; }   // スクリプトからのクリック・視差を減らす設定・自動テスト（MM_QA_NAV_INSTANT。押下の待ちは tests/qa-e2e-feel の FE-1 で確かめる）はすぐ移る
       e.preventDefault(); e.stopImmediatePropagation();
-      NAV.pending = el; el.classList.add('mm-press', 'mm-go'); emit(kind === 'back' ? 'ui.cancel' : 'ui.confirm');   // 戻る＝UI_CANCEL（登録済みの戻る音）・ほか＝UI_CONFIRM（いまは無音）
+      NAV.pending = el; el.classList.add('mm-press', 'mm-go'); emit(kind === 'back' ? 'ui.cancel' : (el.dataset.se ? null : 'ui.select'));   // 戻る＝UI_CANCEL（登録済みの戻る音）・ほか＝UI_SELECT（2026-10-04 SE 監査：決定音の正式素材が無いので既存の UI_SELECT で統一）
+      if (el.dataset.se && kind !== 'back') { try { root.MMAUDIO && root.MMAUDIO.se(el.dataset.se); } catch (e) {} }   // data-se のあるボタンはその音を1回だけ
       const h = doc.documentElement;
       setTimeout(() => {
         el.classList.remove('mm-press', 'mm-go');

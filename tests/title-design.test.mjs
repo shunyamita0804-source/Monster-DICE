@@ -30,7 +30,7 @@ test('TD-1：開始画面は正式開始画面画像（assets/title/title_main.j
 
 test('TD-2：開始ボタンは画像に描かれたボタンの位置（x230〜925・y1730〜1900）に重ねた透明なボタン。処理は従来どおり startGame → p8Resume', () => {
   const t = between('function title(){', '\nfunction togh(');
-  assert.match(t, /<button class="p15start" data-nsfx="1" onclick="startGame\(this\)">タップしてはじめる<\/button><\/div><p class="tcap"><small>\$\{P_NEWGAME\?"新しいゲームをはじめます（いまのセーブは、はじめたときに消えます）":S\.m\|\|S\.box\.length\?"つづきからはじめます":"はじめてのプレイです"\}<\/small>\$\{P_NEWGAME\?`<button class="tcancel" onclick="P_NEWGAME=false;p8Resume\(\)">つづきからにもどる<\/button>`:""\}<\/p><\/div>`\}$/, '2026-10-03：セーブ・ロードの「最初からやり直す」から来たときは新しいゲーム（つづきからにもどれる）');
+  assert.match(t, /<button class="p15start" data-nsfx="1" onclick="startGame\(this\)">タップしてはじめる<\/button><\/div><p class="tcap"><small>\$\{P_NEWGAME\?"新しいゲームをはじめます（いまのセーブは、はじめたときに消えます）":S\.m\|\|S\.box\.length\?"つづきからはじめます":"はじめてのプレイです"\}<\/small>\$\{P_NEWGAME\?`<button class="tcancel" data-se="UI_CANCEL" onclick="P_NEWGAME=false;p8Resume\(\)">つづきからにもどる<\/button>`:""\}<\/p><\/div>`\}$/, '2026-10-03：セーブ・ロードの「最初からやり直す」から来たときは新しいゲーム（つづきからにもどれる）');
   const css = HTML.match(/\.tpage\.mmt \.p15start\{([^}]*)\}/)[1];
   const pct = (k) => parseFloat(css.match(new RegExp(`(?:^|;)${k}:([\\d.]+)%`))[1]);
   assert.ok(Math.abs(pct('left') - 230 / 1152 * 100) < 0.01 && Math.abs(pct('top') - 1730 / 2048 * 100) < 0.01, '左上');

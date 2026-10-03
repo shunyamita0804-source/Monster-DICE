@@ -325,8 +325,10 @@
     }
   }
   /** SE（出来事の名前）。ミュート中・音源の無い出来事は合成音へ（無ければ何もしない）。失敗しても投げない */
+  const SE_LOG = [];   // 直近に頼まれた SE（登録・ミュート・silent に関係なく、名前だけ。テスト・監査用。MMAUDIO.seLog()）
   function se(name, opts = {}) {
     if (!SE.includes(name)) { note('se', name); return false; }
+    SE_LOG.push(name); if (SE_LOG.length > 60) SE_LOG.shift();
     if (isMuted()) return false;
     const now = Date.now(); if (st.lastSe[name] && now - st.lastSe[name] < SE_DEBOUNCE_MS) return true; st.lastSe[name] = now;
     try {
@@ -394,6 +396,6 @@
     slots: st.slots.map((s) => ({ i: s.i, src: s.src, scene: s.scene, active: s.active, paused: !!s.el.paused, loop: s.loopRange ? [s.loopRange.start, s.loopRange.end] : null, waiting: !!s.waiting, time: Number.isFinite(s.el.currentTime) ? Math.round(s.el.currentTime * 100) / 100 : null, gain: s.gain ? s.gain.gain.value : s.el.volume })) });
   const registryOf = (kind) => (kind === 'se' ? Object.fromEntries(Object.keys(SEF).map((k) => [k, { srcs: [...SEF[k].srcs], gain: SEF[k].gain, silent: !!SEF[k].silent, maxMs: SEF[k].maxMs }])) : Object.fromEntries(Object.keys(BGM).map((k) => [k, { ...BGM[k], srcs: [...BGM[k].srcs] }])));
 
-  root.MMAUDIO = fz({ SCENES, SCENE_ALIAS, SE, FADE, registerBgm, registerSe, registerAll, clearRegistry, registryOf, attachLegacy, resolveScene, resolveBgm, scene, stopBgm, se, setVolume, setMuted, unlock, context, legacyInput, status });
+  root.MMAUDIO = fz({ SCENES, SCENE_ALIAS, SE, FADE, registerBgm, registerSe, registerAll, clearRegistry, registryOf, attachLegacy, resolveScene, resolveBgm, scene, stopBgm, se, setVolume, setMuted, unlock, context, legacyInput, status, seLog: () => SE_LOG.slice() });
   try { if (root.document) { ['pointerdown', 'touchend', 'keydown'].forEach((e) => root.document.addEventListener(e, unlock, { passive: true })); root.document.addEventListener('visibilitychange', onVisibility); } } catch (e) {}
 })(typeof window !== 'undefined' ? window : globalThis);
