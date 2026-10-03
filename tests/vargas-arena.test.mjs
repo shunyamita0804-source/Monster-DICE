@@ -50,12 +50,12 @@ test('VAR-3：一言は VARGAS_TALK.locked。短く重い口調（〜だ／〜�
 });
 
 test('VAR-4：闘技場はロック表示のまま。押すと案内文（システム表示）と、ヴァルガスの一言だけ。画面遷移・セーブ・バトル・開放条件は無い。Phase 6 には入れない', () => {
-  assert.match(lineOf('const TOWN_CMDS='), /\["闘技場","未開放","#tic-arena","townArena\(\)","lock"\]/, '街のボタンはロックのまま');
-  assert.ok(lineOf('function townArena(').startsWith('function townArena(){const e=$("#msg");if(e)e.textContent="闘技場は、まだ利用できません。";const t=$("#app>.tlow");if(t)t.classList.add("on");vgSay()}'), '案内文とヴァルガスの一言を背景の上に出す（2026-09-30：街は1画面で固定）');
+  assert.match(lineOf('const TOWN_CMDS='), /\["闘技場","未開放","#tic-arena","townArena\(\)","lock",0,\[\d+,\d+\]\]/, '街の札（地図の上の闘技場）はロックのまま');
+  assert.equal(lineOf('function townArena('), 'function townArena(){townLock("闘技場は、まだ利用できません。");vgSay()}', '案内文（townLock＝システム表示）とヴァルガスの一言を背景の上に出す（2026-09-30：街は1画面で固定）');
   const vg = lineOf('function vgSay(');
   assert.doesNotThrow(() => new Function(vg), 'vgSay は構文として正しい');
   assert.ok(vg.endsWith('</div></div>`);try{document.getElementById("vgsay").scrollIntoView({block:"nearest"})}catch(e){}}'), '出したら画面内へ（小さい画面で案内欄の下に隠れないように）');
-  assert.ok(vg.includes('<div class="vgsay" id="vgsay"><img src="${VARGAS_FACE}" alt=""><div class="tx"><b>ヴァルガス</b>${VARGAS_TALK.locked[R(VARGAS_TALK.locked.length)]}</div></div>'));
+  assert.ok(vg.includes('<div class="vgsay nst" id="vgsay" onclick="townMsgClose(this)"><img class="nstf" src="${VARGAS_STAND}" alt="" decoding="async"><div class="tx"><b>ヴァルガス</b>${VARGAS_TALK.locked[R(VARGAS_TALK.locked.length)]}</div></div>'), '2026-10-03：半身の立ち絵（正式 closeup）と会話窓');
   assert.ok(vg.includes('const o=document.getElementById("vgsay");if(o)o.remove();'), '押すたびに増えない');
   assert.doesNotMatch(vg, /save\(|lobby\(|fight\(|MMP8\.|S\./, '画面遷移・セーブ・バトル・状態の変更をしない');
   assert.equal((HTML.match(/vgSay\(/g) || []).length, 2, '定義＋闘技場のボタンの1か所だけ');

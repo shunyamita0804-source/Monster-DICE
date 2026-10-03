@@ -398,6 +398,19 @@
   const fieldOf = (m) => (m && isObj(m.raise) && isObj(m.raise.field) ? m.raise.field : null);
   function configFor(m) { const f = fieldOf(m); return f ? getConfig(f.chapterId, f.patternId) : null; }
   const graphFor = (m) => { const c = configFor(m); return c ? buildGraph(c) : null; };
+  /**
+   * 進行度（2026-10-03 HUD の進行ライン）：今の地点までに進んだ数 ÷（進んだ数＋ゴールまでの残り）。ターン数ではなく道の上の位置で決める。
+   *  分かれ道で道を選んだあとは選んだ道（m.raise.field.branch）、選ぶ前は短いほうの残りで数える。{ p:0〜1, done, left }
+   */
+  function progressOf(m) {
+    const g = graphFor(m), r = m && m.raise; if (!g || !r) return null;
+    const node = r.node && g.nodes[r.node] ? r.node : g.start;
+    let rs = g.routes.filter((rt) => rt.seq.includes(node)); const br = r.field && r.field.branch;
+    if (br) { const b = rs.filter((rt) => rt.branch === br); if (b.length) rs = b; }
+    if (!rs.length) return { p: 0, done: 0, left: 0 };
+    const done = Math.min(...rs.map((rt) => rt.seq.indexOf(node))), left = Math.min(...rs.map((rt) => rt.seq.length - 1 - rt.seq.indexOf(node)));
+    return { p: done + left ? done / (done + left) : 0, done, left };
+  }
   /** 読み込み時の検査：壊れた・手で書き換えた配置は作り直さず null（Chapter の開始地点から作り直す既存の安全処理に任せる） */
   function validField(f) {
     if (!isObj(f) || !Number.isInteger(f.chapterId) || typeof f.patternId !== 'string' || !Number.isInteger(f.layoutSeed) || !isObj(f.nodeAssignments)) return false;
@@ -681,7 +694,7 @@
   function attach(P8 = root.MMP8) { if (P8 && typeof P8.registerChapterDriver === 'function') P8.registerChapterDriver(DRIVER); }
 
   root.MMCH = fz({ STATS, SPECIAL, TIERS, BATTLE_TYPES, NODE_TYPES, REACTION_KEYS, DEFAULT_RULES, rng, newSeed, registerConfig, getConfig, patterns, handles, selectPattern,
-    SKELETON, tileCensus, censusErrors, buildGraph, trackOf, alongPersp, smoothCurve, measure, pointAt, routeBetween, depthOf, roadAt, clampToRoad, stepsToMerge, sceneNodes, nextFields, sceneOrder, routeLengths,
+    SKELETON, tileCensus, censusErrors, buildGraph, trackOf, alongPersp, smoothCurve, measure, pointAt, routeBetween, depthOf, roadAt, clampToRoad, stepsToMerge, sceneNodes, nextFields, sceneOrder, progressOf, routeLengths,
     validateLayout, generateLayout, initRun, fieldOf, configFor, graphFor, validField, sanitize, typeAt, nodeTypeName, assignOfType, turnInfo,
     fatigue, addFatigue, rollFatigue, canRoll, recover, carryFatigue, registerFatigueItem, fatigueItemEffect, useFatigueItem,
     statGain, isWaypoint, storyEvents, markStory, STORY_CONDS: fz(Object.keys(STORY_CONDS)), registerEventHandler, registerPassHandler, onPass, resolve, reactionKeyOf, registerReactionResolver, companionReaction, DRIVER, attach, rulesOf });

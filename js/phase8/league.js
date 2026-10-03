@@ -37,12 +37,13 @@
   function setSpeciesCount(n) { speciesCount = Math.max(1, n | 0); }
   const provisionalStats = (rank) => Object.fromEntries(STAT_KEYS.map((k) => [k, PROVISIONAL_OPPONENT_STAT[rank]]));
   const PROVISIONAL_NPC_NAMES = Object.freeze(['アカネ', 'ソウマ', 'ルリ', 'ハヤテ', 'コハク', 'シオン', 'ユズ', 'レン', 'カエデ', 'ミナト', 'ツバキ', 'ヒナタ', 'サクヤ', 'イブキ']);
+  // 2026-10-03：聖獣を育て共に戦う者の正式名称は「聖獣士」（旧「ブリーダー」。保存済みの大会の名前はそのまま）
   const PROVISIONAL_NPC_TITLE = Object.freeze(['見習い', '町の', '腕利きの', '歴戦の', '名門の', '伝説の']);
   function provisionalNpcs(rank, count, rnd) {
     const names = [...PROVISIONAL_NPC_NAMES], out = [];
     for (let i = 0; i < count; i++) {
       const name = names.splice(Math.floor(rnd() * names.length), 1)[0];
-      out.push({ name: `${PROVISIONAL_NPC_TITLE[rank]}ブリーダー ${name}`, power: 10 + rank * 10 + Math.floor(rnd() * 10),
+      out.push({ name: `${PROVISIONAL_NPC_TITLE[rank]}聖獣士 ${name}`, power: 10 + rank * 10 + Math.floor(rnd() * 10),
         sp: Math.floor(rnd() * speciesCount), stats: provisionalStats(rank), provisional: true });
     }
     return out;

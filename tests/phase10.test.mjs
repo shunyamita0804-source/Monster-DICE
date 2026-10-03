@@ -211,7 +211,7 @@ test('M4-1：新規ゲームの初期所持金は300G（既存セーブの所持
   const { P8, M } = load();
   const p10NewSave = new Function('MMP8', 'MMP10M', `${line('function p10NewSave(')}\nreturn p10NewSave;`)(P8, M);
   assert.equal(p10NewSave().g, 300); assert.equal(p10NewSave().v, 6);
-  assert.match(HTML, /let S=P8_LOAD\.S\|\|p10NewSave\(\),sel=\[\],ht="t";/); assert.match(HTML, /S=p10NewSave\(\);save\(\);render\(\)/, 'はじめから（リセット）も300G');
+  assert.match(HTML, /let S=P8_LOAD\.S\|\|p10NewSave\(\),sel=\[\],ht="t";/); assert.match(HTML, /if\(P_NEWGAME\)\{P_NEWGAME=false;sel=\[\];S=p10NewSave\(\);save\(\)\}p8Resume\(\)/, 'はじめから（リセット）も300G（2026-10-03：タイトルで実際に始めたときに初期化）');
   const st = store({ mr4v6: JSON.stringify({ ...P8.newSave(), g: 4321 }) });
   assert.equal(P8.loadFromStorage(st).S.g, 4321, '既存セーブの所持金はそのまま');
 });

@@ -124,7 +124,7 @@ test('GF-07：フィナ／ダン／システム通知の役割：ダンはファ
   assert.deepEqual(D.handoff.map((l) => [l.npc, l.text]), [['fina', 'ダン、この子と一緒に行ってくるね！'], ['dan', 'ああ。準備はできてるな。気をつけて行ってこい。']]);
   for (const l of D.handoff) assert.doesNotMatch(l.text, /任せて|お願い|一緒に行こう|ついて/, 'ダンが同行・預かるように読める言葉は使わない');
   const lobby = HTML.slice(HTML.indexOf('function lobby(msg,open){'), HTML.indexOf('\nfunction ', HTML.indexOf('function lobby(msg,open){') + 10));
-  assert.match(lobby, /\?" fina":" sys"\}/); assert.match(lobby, /`<i class="dsys" aria-hidden="true"><\/i>`/); assert.doesNotMatch(lobby, /<div class="mon dm">\$\{svg\(0,0\)\}<\/div>/, 'システム通知にモンスターの絵を付けない');
+  assert.match(lobby, /\?" fina nst r":" sys"\}/, '2026-10-03：フィナは半身の立ち絵（.nst）'); assert.match(lobby, /`<i class="dsys" aria-hidden="true"><\/i>`/); assert.doesNotMatch(lobby, /<div class="mon dm">\$\{svg\(0,0\)\}<\/div>/, 'システム通知にモンスターの絵を付けない');
   assert.match(HTML, /lobby\(`\$\{p11Esc\(r\.name\)\}の育成を放棄しました。`\)/, '育成放棄は lobby のシステム通知');
 });
 

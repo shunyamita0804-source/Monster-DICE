@@ -150,7 +150,7 @@ T('QA-NG2：開始ボタン → 名前登録画面（初期値「アルト」・
   const nm = await pg.evaluate(() => ({ v: document.querySelector('#p11nm').value, ml: document.querySelector('#p11nm').getAttribute('maxlength'), lb: document.querySelector('.p11lb').textContent, t: document.querySelector('.p11t').textContent, talk: !!document.querySelector('.mmtalk') }));
   assert.equal(nm.v, 'アルト', '名前の初期値');
   assert.equal(nm.lb, 'プレイヤー名（8文字まで）');
-  assert.equal(nm.t, 'ブリーダー登録');
+  assert.equal(nm.t, '聖獣士登録', '2026-10-03：正式名称「聖獣士」');
   assert.equal(nm.talk, false, '名前を決める前にフィナは出ない');
   assert.ok(Number(nm.ml) >= 8, '入力欄は8文字以上入る');
   await pg.fill('#p11nm', 'ゆうしゃ');

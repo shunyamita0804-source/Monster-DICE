@@ -135,7 +135,7 @@ test('PF-B4（4サイズ）：街は1画面で固定（スクロールしない�
     assert.equal(r.tlow, 'none', `${tag}：知らせることが無いときは案内文を背景に重ねない`);
     await pg.click('.tbar .svb'); await pg.waitForSelector('#sc', { state: 'attached' });
     await pg.evaluate(() => lobby()); await pg.waitForTimeout(300); await settle(pg);
-    await pg.click('.tbar .hz[onclick="townArena()"]'); await pg.waitForSelector('#vgsay'); await settle(pg);
+    await pg.click('.hz[onclick="townArena()"]'); await pg.waitForSelector('#vgsay'); await settle(pg);
     const v = await pg.evaluate(() => { const bar = document.querySelector('.tbar').getBoundingClientRect(), g = document.getElementById('vgsay').getBoundingClientRect(), m = document.getElementById('msg').getBoundingClientRect(); return { ok: m.top >= 0 && g.bottom <= bar.top + 1, msg: document.getElementById('msg').textContent }; });
     assert.ok(v.ok && v.msg === '闘技場は、まだ利用できません。', `${tag}：案内文とヴァルガスの一言がバーの上に見える`);
     assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);

@@ -85,6 +85,7 @@ const SCRIPTS = [
   'js/battle/fit.js',   // 2026-09-30：バトル画面の表示だけの補正（fight()・.bt 系 CSS は変えない）
   'js/battle/fx.js',    // 2026-10-03：バトル共通演出の正式素材（fight()・.bt 系 CSS は変えない。外から見て重ねる）
   'js/fx/sequence.js',  // 2026-10-03：連続コマの演出の再生器（野生聖獣の遭遇の正式8コマ。今はどこからも呼ばない＝将来つなぐ準備）
+  'js/prologue/prologue.js',  // 2026-10-03：プロローグ A〜E（MMPRO。新しいゲームの最初に1回）
 ];
 // 旧名称（大文字小文字・区切りの違いも含む）。正式名称「ミスティックモンスターズ／MYSTIC MONSTERS」は含まない
 const OLD_NAME = /モンスターマスター|monster[\s_-]?master|monster[\s_-]?dice|ミスティックモンスター(?!ズ)|mystic[\s_-]?monster(?!s)/gi;
@@ -219,13 +220,13 @@ test('QA-G10：ルーレットは技6枠＋固定MISS1枠。新しく生まれ�
 // =========================================================
 // 2) 読み込むスクリプト・head
 // =========================================================
-test('QA-S1：index.html の <script src> は18ファイルをこの順番で読み込む（重複なし・全ファイル実在・module なし）', () => {
+test('QA-S1：index.html の <script src> は19ファイルをこの順番で読み込む（重複なし・全ファイル実在・module なし）', () => {
   const tags = [...HTML.matchAll(/<script\b[^>]*\bsrc="([^"]*)"[^>]*>/g)].map((m) => m[1]);
   assert.deepEqual(tags, SCRIPTS.map((f) => './' + f));
   for (const f of SCRIPTS) assert.ok(existsSync(path.join(ROOT, f)), f);
   assert.doesNotMatch(NODATA, /<script\b[^>]*type="module"/, 'ES module として読み込まない');
   // 本体のインラインスクリプトは、18本すべての後に置かれている（MMP 系を使うため）
-  const lastSrc = CODE.lastIndexOf('<script src="./js/fx/sequence.js"></script>');
+  const lastSrc = CODE.lastIndexOf('<script src="./js/prologue/prologue.js"></script>');
   const inline = [...CODE.matchAll(/<script>/g)].map((m) => m.index);
   assert.ok(inline.length >= 1 && inline.every((i) => i > lastSrc));
 });
@@ -309,7 +310,7 @@ test('QA-N5：大会の暫定NPC名は、現在の種族名（ソラモ・ガウ
     const lg = L.createLeague(rank, seed, 'テスト');
     assert.equal(lg.entrants.length, L.LEAGUE_SIZE[rank]);
     const names = lg.entrants.filter((e) => !e.player).map((e) => e.name);
-    for (const n of names) { assert.match(n, /ブリーダー /); assert.ok(!species.has(n.split('ブリーダー ')[1]), `${rank}/${seed}: ${n}`); }
+    for (const n of names) { assert.match(n, /聖獣士 /); assert.ok(!species.has(n.split('聖獣士 ')[1]), `${rank}/${seed}: ${n}`); }
     assert.equal(new Set(names).size, names.length, `${rank}/${seed}`);
   }
 });

@@ -5,7 +5,7 @@
 // =========================================================
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
@@ -71,8 +71,10 @@ test('NT-5：フィナは案内役として登録（Chapterボードには置か
   const M = load(), f = M.get('fina');
   assert.deepEqual([f.name, f.role, f.board, f.defaultView, f.defaultExpr], ['フィナ', '案内役', false, 'closeup', 'normal']);
   assert.deepEqual(M.expressionsOf('fina', 'closeup'), ['normal', 'smile', 'happy', 'surprised', 'troubled', 'worried', 'serious', 'guide']);
-  assert.deepEqual(M.expressionsOf('fina', 'fullbody'), []); assert.deepEqual(M.animationsOf('fina', 'closeup'), ['wave', 'wave_blink']);
-  const fb = M.imageOf('fina', 'fullbody', 'happy'); assert.deepEqual([fb.view, fb.expr, fb.fallback, fb.src], ['closeup', 'happy', true, 'assets/npc/fina/closeup/happy.webp']);
+  // 2026-10-03：全身の正式素材 10ポーズ（重要な会話＝major で同じ表情の全身を使う）
+  assert.deepEqual(M.expressionsOf('fina', 'fullbody'), ['normal', 'smile', 'happy', 'surprised', 'troubled', 'worried', 'serious', 'guide', 'wave', 'greet']); assert.deepEqual(M.animationsOf('fina', 'closeup'), ['wave', 'wave_blink']);
+  const fb = M.imageOf('fina', 'fullbody', 'happy'); assert.deepEqual([fb.view, fb.expr, fb.fallback, fb.src], ['fullbody', 'happy', false, 'assets/npc/fina/fullbody/happy.webp']);
+  for (const e of M.expressionsOf('fina', 'fullbody')) assert.ok(existsSync(path.join(ROOT, `assets/npc/fina/fullbody/${e}.webp`)), e);
   for (const a of ['wave', 'wave_blink']) { const x = M.animOf('fina', 'closeup', a); assert.equal(x.frames.length, 6); assert.ok(x.loop); x.frames.forEach((s, i) => assert.equal(s, `assets/npc/fina/animations/${a}/${a}_0${i + 1}.webp`)); }
   assert.equal(M.animOf('fina', 'closeup', 'dance'), null, '存在しないアニメーションは静止画のまま');
   // 素材：すべて透過あり（2026-09-30：透過PNGから画素を変えずに可逆WebP（VP8L・透過あり）へ変換）
@@ -95,7 +97,7 @@ test('NT-6：既存NPC会話（NP）は文章を変えずに共通会話へ変�
   const L = M.fromLegacy(NP.b, [0, 1]); assert.deepEqual(L, [{ name: 'コウ', text: NP.b.t[0] }, { name: 'コウ', text: NP.b.t[1] }]);
   assert.equal(M.fromLegacy(NP.f).length, NP.f.t.length); assert.equal(JSON.stringify(NP), before, '既存の会話データは変えない');
   assert.equal((HTML.match(/<script src="\.\/js\/npc\/npc\.js"><\/script>/g) || []).length, 1);
-  assert.deepEqual(HTML.match(/MMNPC\.[a-zA-Z]+/g), ['MMNPC.imageOf', 'MMNPC.imageOf', 'MMNPC.talk', 'MMNPC.imageOf', 'MMNPC.talk'], '画面からは finaTalk・karenTalk（会話）と、顔・立ち絵の画像（街のフィナの案内 finaFaceSrc・大会開始のセドリック p9TourIntro・購入確認の karenLine）だけで呼ぶ');
+  assert.deepEqual(HTML.match(/MMNPC\.[a-zA-Z]+/g), ['MMNPC.imageOf', 'MMNPC.imageOf', 'MMNPC.imageOf', 'MMNPC.talk', 'MMNPC.imageOf', 'MMNPC.talk'], '画面からは finaTalk・karenTalk（会話）と、顔・立ち絵の画像（街のフィナの立ち絵 finaStandSrc（2026-10-03）・街のフィナの案内 finaFaceSrc・大会開始のセドリック p9TourIntro・購入確認の karenLine）だけで呼ぶ');
   for (const f of ['function farm(', 'function _hall(', 'function board(', 'function museum(']) { const i = HTML.indexOf(f); if (i >= 0) assert.doesNotMatch(HTML.slice(i, HTML.indexOf('\nfunction ', i + 10)), /finaTalk|MMNPC/, `${f} には置かない`); }
   const css = HTML.slice(HTML.indexOf('/* ===== 共通NPC会話（MMNPC'), HTML.indexOf('</style></head>'));
   assert.doesNotMatch(css, /filter|hue-rotate/, '立ち絵の色を変えない'); assert.match(css, /font-family:"Noto Sans JP"/); assert.match(css, /font-family:"Shippori Mincho"/);

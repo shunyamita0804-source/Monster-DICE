@@ -244,7 +244,7 @@ test('S3-5：育成中は預け／受け取り／合体／市場／街などを�
 
 test('S3-6：起動・再読み込みは街を経由せず育成状態へ復帰／中断はターンを消費しない', () => {
   const { P7, P8 } = load(); const S = raisingSave(P7, P8);
-  assert.match(fnLine('function startGame('), /setTimeout\(\(\)=>p8Resume\(\),900\)/, 'タイトルから p8Resume へ');
+  assert.match(fnLine('function startGame('), /setTimeout\(\(\)=>\{if\(P_NEWGAME\)\{P_NEWGAME=false;sel=\[\];S=p10NewSave\(\);save\(\)\}p8Resume\(\)\},900\)/, 'タイトルから p8Resume へ（「はじめから」で来たときだけ、ここで新しいゲームに初期化）');
   const sus = fnLine('function p8Suspend(');
   assert.match(sus, /save\(\);title\(\)/); assert.doesNotMatch(sus, /MMP8\.(roll|step|depart)/, '中断で進行を動かさない');
   const go = [];
@@ -569,7 +569,7 @@ test('S6-7：【暫定】NPCの生成・NPC同士の勝敗は差し替えられ�
   const lg = LG.createLeague(2, 1, 'A');
   assert.deepEqual(lg.entrants.slice(1).map((e) => e.name), ['正式NPC0', '正式NPC1', '正式NPC2', '正式NPC3', '正式NPC4', '正式NPC5', '正式NPC6']);
   LG.setNpcProvider(null);
-  assert.match(LG.createLeague(2, 1, 'A').entrants[1].name, /ブリーダー/);
+  assert.match(LG.createLeague(2, 1, 'A').entrants[1].name, /聖獣士/, '2026-10-03：正式名称「聖獣士」');
 });
 
 test('S6-8：画面：ゴールで挑戦できるランクだけを表示し、参加は2度押し。大会画面に順位表・次の相手・試合開始', () => {
@@ -577,7 +577,7 @@ test('S6-8：画面：ゴールで挑戦できるランクだけを表示し、�
   assert.match(goal, /MMP8\.eligibleRanks\(m,r\.ch\)/); assert.match(goal, /辞退/);
   assert.match(fnLine('function p8TourStart('), /arm\(b,/);
   const scr = between('function p8TourScr(msg){', '\nfunction p9TourResult(');
-  assert.match(scr, /MMP8L\.standings\(lg\)/); assert.match(scr, /次の相手/); assert.match(scr, /onclick="p9VsScr\(\)"/, 'Phase 9：試合はVS画面を経由して開始');
+  assert.match(scr, /MMP8L\.standings\(lg\)/); assert.match(scr, /次の相手/); assert.match(scr, /\$\{p9Cmp\(m,o\)\}<button class="p9btn p9go" data-nsfx="1" onclick="p9VsGo\(this\)">⚔️ 対戦開始<\/button>/, '2026-10-03：次の相手の能力比較と「対戦開始」（2度押し）を順位表に。VS・対面は fight() の導入だけ（二重にしない）');
   assert.match(fnLine('function p9VsGo('), /p9arm\(b,[^)]*\)\)return;p8TourFight\(\)/);
   assert.match(fnLine('function p8TourFight('), /MMP8\.beginBattle\(S,m,\{kind:"league",rank:t\.rank\}\)[^;]*;save\(\);fight\(t\.rank\)/);
   assert.ok(HTML.indexOf('js/phase8/league.js') < HTML.indexOf('js/phase8/raising.js'), 'league.js を先に読み込む');

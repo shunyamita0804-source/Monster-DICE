@@ -181,14 +181,14 @@
   }
   function tilesHtml(cfg, g, sc, m, ids) {
     const T = cfg.tileUI; if (!T) return '';
-    const ped = !!T.pedestal;   // 共通の台座（地面 → 薄い接地影 → 石の台座（厚み）→ 金属の縁 → マスの絵）。CSS だけ（.chf-tile.ped）
+    const ped = !!T.pedestal, base = T.base && T.base.src ? T.base : null;   // 共通の台座（地面 → 薄い接地影 → 石の台座（厚み）→ 金属の縁 → マスの絵）。base＝正式の共通土台の画像（2026-10-03。有れば CSS の台座の代わりに敷く）
     return ids.map((id) => {
       const n = g.nodes[id], key = tileKeyOf(m, id); if (key === 'start') return '';
       const src = tileSpriteOf(cfg, key), B = tileBox(T, n, key, sc), no = g.order.indexOf(id) + 1;
       const box = `left:${(n.mx * sc.w).toFixed(1)}px;top:${(n.my * sc.h).toFixed(1)}px;width:${B.w.toFixed(1)}px;height:${B.h.toFixed(1)}px;--d:${n.d};--f:${B.f.toFixed(3)}${ped ? `;--th:${B.th.toFixed(1)}px;--rim:${B.rim.toFixed(1)}px;--op:${B.op.toFixed(2)}` : ''}`;
-      const under = ped ? '<i class="chf-tsh"></i><i class="chf-tped"></i>' : '';
-      if (src) return `<i class="chf-tile${ped ? ' ped' : ''}" data-id="${id}" data-type="${key}" style="${box}">${under}<img src="${esc(src)}" alt="" draggable="false" decoding="async"></i>`;   // 使ったマス（能力・イベント・宝箱）は chfBoard で .used（少し暗く）
-      if (ped && key === 'normal') return `<i class="chf-tile ped k-normal" data-id="${id}" data-type="normal" style="${box}">${under}<i class="chf-tface"></i></i>`;   // 通常マス：絵は無く、台座の石の面だけ（控えめ）
+      const under = base ? `<img class="chf-tbase" src="${esc(base.src)}" alt="" draggable="false" decoding="async" style="--bs:${base.scale || 1.25};--bh:${base.h || 1.25};--bl:${base.lift != null ? base.lift : 0.43}">` : ped ? '<i class="chf-tsh"></i><i class="chf-tped"></i>' : '';
+      if (src) return `<i class="chf-tile${ped ? ' ped' : ''}${base ? ' pb' : ''}" data-id="${id}" data-type="${key}" style="${box}${base ? `;--bi:${base.icon || 0.9}` : ''}">${under}<img class="chf-ticon" src="${esc(src)}" alt="" draggable="false" decoding="async"></i>`;   // 使ったマス（能力・イベント・宝箱）は chfBoard で .used（少し暗く）
+      if (ped && key === 'normal') return `<i class="chf-tile ped k-normal${base ? ' pb' : ''}" data-id="${id}" data-type="normal" style="${box}">${under}${base ? '' : '<i class="chf-tface"></i>'}</i>`;   // 通常マス：絵は無く、土台（または台座の石の面）だけ   // 通常マス：絵は無く、台座の石の面だけ（控えめ）
       return T.placeholder === false && !debug() ? '' : `<i class="chf-tile ph" data-id="${id}" data-type="${key}" style="${box}" title="仮表示（位置確認用）"><b>仮 #${no}</b></i>`;
     }).join('');
   }
@@ -501,13 +501,22 @@
   // ---------------------------------------------------------
   // HUD・下の操作欄（command deck）
   // ---------------------------------------------------------
+  /**
+   * HUD（2026-10-03 品質向上で全面刷新）：上に細い進行ライン（START → GOAL。今の位置に育成中の子の小さな顔。進み具合は MMCH.progressOf＝道の上の位置）、
+   *  その下に小さな情報のチップ（Turn・疲れ・所持金・特訓チケット）。背景を隠しすぎない。id（chturn・chfat・chgold）と .chh-turn・.chh-menu は従来どおり
+   */
+  const COIN_SVG = '<svg class="chh-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10.5" fill="#e6bf62" stroke="#8a611f" stroke-width="1"/><circle cx="12" cy="12" r="7.6" fill="none" stroke="#9c7430" stroke-width="1"/><path d="M12 7.2l1.4 3 3.2.3-2.4 2.1.7 3.2L12 14.2l-2.9 1.6.7-3.2-2.4-2.1 3.2-.3z" fill="#fff4c4" stroke="#9c7430" stroke-width=".6"/></svg>';   // 街のプロフィールと同じ硬貨の印（#tic-coin と同じ形）
+  function faceSrc(m) { const sp = root.MMP10M && MMP10M.byId ? MMP10M.byId(m.sp) : null; return sp && sp.image ? sp.image.src : ''; }
   function hudHtml(m) {
     const r = m.raise, cfg = V.cfg, fat = MMCH.fatigue(m), lv = fat >= 80 ? 'hi' : fat >= 50 ? 'mid' : 'lo';
-    return `<header class="chh"><div class="chh-l"><small>Chapter <b>${cfg.chapterId}</b> / ${P7().CHAPTER_COUNT}</small><b class="chh-nm">${esc(cfg.title)}</b><span class="chh-fd" id="chfd">${esc(V.sc ? V.sc.name : '')}</span></div>
-      <div class="chh-r"><div class="chh-turn">Turn <b id="chturn">${Math.min(r.turnsUsed + (P8().boardPhase(m) === 'roll' ? 1 : 0), r.turnLimit)}</b><small> / ${r.turnLimit}</small></div>
-      <div class="chh-fat f-${lv}" id="chfat"><span>疲れ</span><b>${fat}</b><i style="--f:${fat}%"></i></div>
-      <div class="chh-gold" id="chgold"><span>所持金</span><b>${(gS() && gS().g) | 0}</b><small>G</small></div></div>
-      <button class="p9mbtn chh-menu" onclick="p9Menu()" aria-label="メニュー">☰</button></header>`;
+    const pr = MMCH.progressOf ? MMCH.progressOf(m) : null, pc = Math.round(clamp(pr ? pr.p : 0, 0, 1) * 1000) / 10, tix = (gS() && gS().trainTix) | 0, fs = faceSrc(m);
+    return `<header class="chh" data-p="${pc}"><div class="chh-top"><div class="chh-l chh-prog"><div class="chh-cap"><small>Chapter <b>${cfg.chapterId}</b></small><b class="chh-nm">${esc(cfg.title)}</b><span class="chh-fd" id="chfd">${esc(V.sc ? V.sc.name : '')}</span></div>
+      <div class="chh-line" role="img" aria-label="ゴールまでの進み具合 ${Math.round(pc)}%"><span class="chh-se">START</span><div class="chh-track"><i class="chh-fill" style="width:${pc}%"></i><span class="chh-face" id="chface" style="left:${pc}%">${fs ? `<img src="${fs}" alt="" decoding="async">` : ''}</span></div><span class="chh-se g">GOAL</span></div></div>
+      <button class="p9mbtn chh-menu" onclick="p9Menu()" aria-label="メニュー">☰</button></div>
+      <div class="chh-r chh-chips"><div class="chh-turn chip">Turn <b id="chturn">${Math.min(r.turnsUsed + (P8().boardPhase(m) === 'roll' ? 1 : 0), r.turnLimit)}</b><small> / ${r.turnLimit}</small></div>
+      <div class="chh-fat chip f-${lv}" id="chfat"><span>疲れ</span><b>${fat}</b><i style="--f:${fat}%"></i></div>
+      <div class="chh-gold chip" id="chgold">${COIN_SVG}<b>${(gS() && gS().g) | 0}</b></div>
+      <div class="chh-tix chip" id="chtix" title="特訓チケット"><span>特訓チケット</span><b>×${tix}</b></div></div></header>`;
   }
   function refreshHud(m) { const h = $('#chf-ui .chh'); if (h) h.outerHTML = hudHtml(m); }
   const ICON = {

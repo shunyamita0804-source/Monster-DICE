@@ -41,7 +41,8 @@ test('NICK-2：素材は透過PNG（RGBA）。立ち絵6枚は高さ760px、小�
 test('NICK-3：牧場の吹き出し：通知（msg）は名前・顔なし。ふだんはニックの一言（顔・名前）。旧データ NP.f（旧「ダン」）は画面に出さない', () => {
   assert.match(lineOf('const NICK_FACE='), /^const NICK_FACE="assets\/npc\/nick\/face\.webp";/);
   const f = farmSrc();
-  assert.ok(f.includes('${msg?`<div class="fbub sys">${msg}</div>`:`<div class="fbub fnick"><img class="fbface" src="${NICK_FACE}" alt=""><b>ニック</b><br>${NICK_TALK.ranch[R(NICK_TALK.ranch.length)]}</div>`}'));
+  assert.ok(f.includes('${msg?`<div class="fbub sys">${msg}</div>`:""}'), '通知は名前・顔なし');
+  assert.ok(f.includes('<div class="rnnick nst r"><img class="nstf" src="${NICK_STAND}" alt="" decoding="async">${msg?"":`<div class="tx fnick"><b>ニック</b>${NICK_TALK.ranch[R(NICK_TALK.ranch.length)]}</div>`}</div>'), '2026-10-03：ニックは半身の立ち絵（正式 closeup）＋会話窓。通知のときは立ち絵だけ');
   assert.doesNotMatch(f, /NP\.f|<b>ダン<\/b>/, '牧場に旧「ダン」を出さない');
   assert.doesNotMatch(HTML, /\.fbub::after|\.fbub\.fnick::after/, '吹き出しのしっぽ（背景の絵の人物を指す）は無い');
   assert.match(HTML, /\.fbub\{position:absolute;left:3%;top:3%;width:52%;/, '正式背景では左上の空に出す（牧舎を隠さない。旧い吹き出しを隠す位置・最小の高さは不要になった）');
@@ -123,7 +124,7 @@ test('NICK-B2：4つの画面サイズで、牧場の吹き出し（ニックの
 test('NICK-6：牧場の4コマンドは 預ける・受け取る／様子を見る・売る。合体のコマンドは無い。合体の処理（fuse・selm・選択画面）は研究所から呼ぶために残す', () => {
   const f = lineOf('function farm(msg,tab){') + HTML.slice(HTML.indexOf('function farm(msg,tab){'), HTML.indexOf('\nfunction dep('));
   assert.match(f, /\[\["a","dep","預ける",""\],\["b","wd",`受け取る<small>\(\$\{S\.box\.length\}\)<\/small>`,""\],\["e","look","様子を見る"," rnlook"\]\]/);
-  assert.match(f, /<button class="fsell rnsell\$\{ft=="d"\?" on":""\}" onclick="farm\('','d'\)">\$\{rnIc\("sell"\)\}<span class="fl">売る<\/span><\/button>/);
+  assert.match(f, /<button class="fsell rnsell\$\{ft=="d"\?" on":""\}" data-se="UI_TAB" onclick="farm\('','d'\)">\$\{rnIc\("sell"\)\}<span class="fl">売る<\/span><\/button>/);
   assert.doesNotMatch(f, /"合体"|rnfuse|\["c",/, '牧場のコマンドに合体を置かない');
   assert.match(f, /ft=tab\|\|\(ft=="c"\?"a":ft\);/, '街から入ったときに合体の選択画面を出さない');
   assert.match(f, /b=all\.length<2\?"<p>合体には2体以上必要です。/, '合体の選択画面（内部）は残す');

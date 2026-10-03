@@ -471,7 +471,10 @@ test('CH1-30：マスUI（config.tileUI。2026-10-02 正式素材）：能力6�
   assert.equal(T.normal, undefined, '通常マスの絵は無い（共通の台座の石の面だけ）'); assert.equal(T.start, undefined);
   assert.deepEqual([cfg.tileUI.placeholder, cfg.tileUI.replacesLandmarks, cfg.tileUI.pedestal], [false, true, true]);
   assert.match(FV, /T\.placeholder === false && !debug\(\) \? '' :/, '仮表示は ?chdebug=1 のときだけ');
-  assert.match(FV, /if \(ped && key === 'normal'\) return `<i class="chf-tile ped k-normal"/, '通常マスは台座だけ');
+  assert.match(FV, /if \(ped && key === 'normal'\) return `<i class="chf-tile ped k-normal\$\{base \? ' pb' : ''\}"/, '通常マスは土台（台座）だけ');
+  // 2026-10-03 品質向上：正式の共通土台（tiles/pedestal_common）をマスの絵の下に敷く（マスの絵の代わりにしない）
+  const B = cfg.tileUI.base; assert.equal(B.src, './assets/fields/ch1a/tiles/pedestal_common.webp'); assert.ok(existsSync(path.join(ROOT, B.src)), B.src);
+  assert.match(FV, /<img class="chf-tbase" src=/); assert.match(FV, /\$\{under\}<img class="chf-ticon" src="\$\{esc\(src\)\}"/, '土台の上にマスの絵');
   assert.match(FV, /if \(cfg\.tileUI && cfg\.tileUI\.replacesLandmarks && \['stat', 'event', 'treasure'\]\.includes\(a\.t\)\) \{/, '旧目印（石碑・イベントの物・道端の宝箱）は出さない');
   // 宝箱：normal＝通常の宝箱、special＝虹色の宝箱（止まったとき現れて開く）。rare は従来の表示（この2つを流用しない＝宝箱の絵は出さない）
   const V = loadView(), C = cfg.tileUI.chests;
@@ -496,7 +499,8 @@ test('CH1-30：マスUI（config.tileUI。2026-10-02 正式素材）：能力6�
   assert.ok(box('p1_1').w < V.tileBox(cfg.tileUI, g.nodes.p1_1, 'stat_life').w, '通常マスは控えめ（少し小さい）');
   // 2026-10-03（試遊で最優先）：大きさ＝その地点で見えている道幅（絵の道幅とカメラに入る幅の小さいほう）× 区分の割合。通常 55%・能力 58%・宝／イベント 62%・バトル 66%（道を覆わない）
   assert.deepEqual({ ...cfg.tileUI.size.roadFit }, { normal: 0.55, stat: 0.58, mid: 0.62, big: 0.66 });
-  const FS = cfg.tileUI.size.fitScale; assert.equal(FS, 0.72, '共通の基準で全体を縮める（2026-10-03 総監査。区分の比率は保つ）');
+  const FS = cfg.tileUI.size.fitScale; assert.equal(FS, 0.66, '共通の基準で全体を縮める（2026-10-03 総監査 0.72 → 土台を敷いた品質向上で 0.66。区分の比率は保つ）');
+  assert.ok(0.66 * FS * B.scale <= 0.56, '土台を含めても道幅の 56% 以下');
   for (const id of g.order.filter((i) => g.nodes[i].kind !== 'start')) {
     const n = g.nodes[id], sc = cfg.fieldScenes.find((x) => x.id === n.field), seen = V.seenRoadW(sc, n);
     assert.ok(seen > 0, id);
@@ -721,4 +725,27 @@ test('CH1-36：ガウル・ノビトン・ジオルの歩行アニメ（2026-10-
   for (const k of ['fx_battle_encounter', 'fx_stat_up', 'fx_turn_warning']) assert.ok(existsSync(path.join(ROOT, cfg.assets[k])), k);
   const FV = rd('js/chapter/field-view.js');
   assert.match(FV, /cut = BT\.cutin \? effectAsset\(BT\.cutin\) : null/); assert.match(FV, /if \(!ui \|\| V\.calm \|\| \(!cut && !text\)\)/);   // 2026-10-03：カットインは encounterShow（絵と文を同時に） assert.match(FV, /c: 'ok stat', frame: 'statUp'/); assert.match(FV, /if \(!W \|\| !Array\.isArray\(W\.at\) \|\| !W\.at\.length/, '発火ターンが空なら出さない');
+});
+
+test('CH1-38：2026-10-03 品質向上：HUD の進行ライン＝MMCH.progressOf（ターン数ではなく道の上の位置）。START 0 → ゴール 1。分かれ道のあとは選んだ道の残りで数える。HUD は進行ライン・Turn・疲れ・所持金・特訓チケットの小さなチップ', () => {
+  const E = onCh1(101), { CH, m } = E, g = CH.graphFor(m);
+  const at = (node, branch) => { m.raise.node = node; m.raise.field.branch = branch || null; return CH.progressOf(m); };
+  assert.deepEqual([at(g.start).p, at(g.goal).p], [0, 1]);
+  const a = at('p3_1'), b = at('p5_3'), c = at('p10_0', 'forest'), d = at('p12_1', 'bridge');
+  assert.ok(a.p > 0 && a.p < b.p && b.p < c.p && c.p < d.p && d.p < 1, `進むほど増える ${[a.p, b.p, c.p, d.p].map((x) => x.toFixed(2))}`);
+  const f = at('p6_0', 'forest'), br = at('p8_0', 'bridge');
+  assert.equal(f.done + f.left, 50, '森の道＝50歩'); assert.equal(br.done + br.left, 52, '大橋の道＝52歩');
+  m.raise.turnsUsed = 39; assert.equal(at('p3_1').p, a.p, 'ターン数では変わらない');
+  const FV = rd('js/chapter/field-view.js');
+  for (const k of ['chh-line', 'chh-track', 'chh-face', 'id="chturn"', 'id="chfat"', 'id="chgold"', 'id="chtix"', 'chh-menu', 'MMCH.progressOf(m)']) assert.ok(FV.includes(k), k);
+  assert.match(FV, /<span class="chh-se">START<\/span>[\s\S]*<span class="chh-se g">GOAL<\/span>/);
+});
+
+test('DICE-07：2026-10-03（実機で「止まったあとも面が変わる」）：物理的な見せ方は ROLL → LAND → BOUNCE → SETTLE → LOCK。切り替えは動きの時刻（currentTime・rAF）で進め、LOCK のあとは差し替え・弾みをしない', () => {
+  const D = rd('js/chapter/dice-renderer.js'), ph = D.slice(D.indexOf('  async function physical('), D.indexOf('  /** STOP：'));
+  for (const p of ["setPhase('roll')", "setPhase('land')", "setPhase('bounce')", "setPhase('settle')", "setPhase('lock')"]) assert.ok(ph.includes(p), p);
+  assert.ok(ph.indexOf("setPhase('lock')") > ph.indexOf('await Promise.race'), 'LOCK は動きが終わってから');
+  assert.doesNotMatch(ph, /setTimeout\(\(\) => \{ if \(ov\.isConnected\) fn\(\); \}/, '面の切り替えに setTimeout の予約を使わない');
+  assert.match(ph, /const c = a1\.currentTime;/); assert.match(ph, /face = \(src\) => \{ if \(!faceLock\) img\.src = src; \}/, '出目の面に固定したあとは面を変えない');
+  assert.match(D, /if \(rs && ov\.dataset\.phase === 'lock'\) \{[\s\S]*?img\.classList\.add\('chdz-stop', 'on', 'locked'\)/, 'LOCK 済みなら止まった絵をそのまま出目の面に（新しい画像・弾みなし）');
 });

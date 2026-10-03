@@ -300,7 +300,7 @@ test('AUDIO-19：index.html：開始のタップは TITLE_START の1音だけ（
   assert.match(HTML, /class="p15start" data-nsfx="1"/, '開始ボタンは UI_CONFIRM を鳴らさない');
   assert.match(HTML, /function p11NameScr\(msg\)\{bgm\("title"\);/);
   assert.match(HTML, /bgm\("matchup"\);try\{MMFEEL\.emit\("battle\.matchup"\)\}catch\(e\)\{\}p9Immersive\(true\);/, 'VS は BGM を止めて発表の音');
-  assert.match(HTML, /data-nsfx="1" onclick="p9VsScr\(\)"/, 'VS へ進むボタンの決定音と発表の音を重ねない');
+  assert.match(HTML, /data-nsfx="1" onclick="p9VsGo\(this\)"/, '対戦開始のボタンの決定音と開始の音を重ねない（2026-10-03：VS 画面は fight() の導入だけ）');
   assert.match(HTML, /function p9PreBattle\(kind,rank,go\)\{const m=S\.m;bgm\("matchup"\);/, '能力比較は発表と同じ場面（音を重ねない）');
   const fight = HTML.slice(HTML.indexOf('async function fight(i,teach){'), HTML.indexOf('$("#snd").textContent', HTML.indexOf('async function fight(i,teach){')));
   assert.ok(fight.startsWith('async function fight(i,teach){if(document.getElementById("bt")||!S.m)return;bgm(teach!=null?"dojo":"battle");'), 'fight() は変えていない');
@@ -421,7 +421,7 @@ test('AUDIO-25：2026-10-03 総監査：登録済みで呼ばれていなかっ�
   for (const k of ['UI_CANCEL', 'UI_SELECT']) assert.doesNotMatch(se[k].src, /confirm_style_1_004|confirm_style_5_001|pluck_3|pluck_5|fx_1\.ogg/, `${k} は NG の音ではない`);
   // 戻る：街へ戻るボタン（MMFEEL の back）は、押下を見せる経路（game-feel）でも、すぐ移る経路（index.html の共通のクリック）でも UI_CANCEL を1回
   assert.match(rd('js/feel/game-feel.js'), /emit\(kind === 'back' \? 'ui\.cancel' : 'ui\.confirm'\)/);
-  assert.match(HTML, /MMAUDIO\.se\(window\.MMFEEL&&MMFEEL\.navKind\(b\)=="back"\?"UI_CANCEL":"UI_CONFIRM"\)/);
+  assert.match(HTML, /MMAUDIO\.se\(b\.dataset&&b\.dataset\.se\|\|\(window\.MMFEEL&&MMFEEL\.navKind\(b\)=="back"\?"UI_CANCEL":"UI_CONFIRM"\)\)/, 'data-se＝そのボタンの SE（牧場のタブ＝UI_TAB）・戻る＝UI_CANCEL・ほか＝UI_CONFIRM の差し込み口');
   // 選択の切り替え：p10Step の始まりで1回（遠い候補へ1つずつ回す続きの p10Step では鳴らさない）。矢印は決定音を重ねない（data-nsfx）
   assert.match(HTML, /p10Place\(\);if\(!p10Step\.ch&&window\.MMAUDIO\)MMAUDIO\.se\("UI_SELECT"\);/);
   assert.match(HTML, /p10Step\.ch=1;try\{p10Step\(/);

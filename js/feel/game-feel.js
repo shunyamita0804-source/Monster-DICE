@@ -69,7 +69,7 @@
   const PRESS = 'button, [role="button"], .skt, .p10sl';
   /** 画面を移るボタン：onclick が画面を開く関数で始まるもの、または data-nav を持つもの。値＝入りかた */
   const NAV_FN = fz({ market: 'facility', farm: 'facility', museum: 'facility', profileScr: 'facility', savescr: 'facility', newsScr: 'facility', confScr: 'facility', shopScr: 'facility',
-    hall: 'facility', prepScr: 'facility', lobby: 'back' });
+    hall: 'facility', prepScr: 'facility', townShop: 'facility', lobby: 'back' });
   const NAV_ONLY_BARE = fz(['farm']);   // 引数なしで呼んだときだけ画面を移る関数
   function navKind(el) {
     if (!el || el.disabled) return null;

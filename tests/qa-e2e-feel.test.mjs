@@ -25,9 +25,9 @@ async function rollAs(pg, v) { await pg.evaluate((v) => { window.__mr = Math.ran
 test('FE-1：押下の手ごたえ：指が触れた瞬間にボタンがごく軽く沈み（scale のみ）、離すと戻る。画面を移るボタンは押下を少し見せてから移り、連打しても1回だけ。施設へは施設の入りかた', { skip: SKIP }, async () => {
   const p = await open({ navDelay: true }); const pg = p.page;
   await H.newGame(pg, 'テスト'); await pg.waitForTimeout(400);
-  const b = await (await pg.$('nav.tcmds button')).boundingBox(), x = b.x + b.width / 2, y = b.y + b.height / 2;
+  const b = await (await pg.$('.tpin[onclick="market()"]')).boundingBox(), x = b.x + b.width / 2, y = b.y + b.height / 2;
   await pg.mouse.move(x, y); await pg.mouse.down(); await pg.waitForTimeout(50);
-  const d = await pg.evaluate(() => { const e = document.querySelector('nav.tcmds button'); return [e.classList.contains('mm-press'), +getComputedStyle(e).scale, getComputedStyle(e).filter]; });
+  const d = await pg.evaluate(() => { const e = document.querySelector('.tpin[onclick="market()"]'); return [e.classList.contains('mm-press'), +getComputedStyle(e).scale, getComputedStyle(e).filter]; });
   assert.ok(d[0] && d[1] >= 0.96 && d[1] < 1, `押している間は少し沈む（${d[1]}）`); assert.equal(d[2], 'none', '色は変えない');
   await pg.mouse.up(); await pg.waitForSelector('.p10mk'); await pg.waitForTimeout(300);   // 1回のタップ＝押下を見せてから市場へ
   assert.equal(await pg.evaluate(() => document.querySelectorAll('.mm-press,.mm-go').length), 0, '離すと戻る（押下の印は残らない）');

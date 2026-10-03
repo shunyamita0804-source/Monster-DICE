@@ -230,11 +230,11 @@ test('QA-G2-8：育成放棄（p8AbandonGo）・最初からやり直す（reset
     { m: {} }, () => ({ disabled: false }), { abandon: () => ({ ok: false }) }, () => {}, () => {}, () => { throw new Error('保存しない'); }, () => {});
   ng.go('u1'); assert.deepEqual(ng.sel, [2, 0]);
   const clk = { t: 1000 };   // QA G3：reset の2回目は確認状態から0.4秒以上たってから（連打対策）。時計を差し替える
-  const rs = new Function('p8Blocked', 'p10NewSave', 'save', 'render', 'performance',
-    `let S={g:1},sel=[1,0];${lineOf('function tapAt(')}\n${lineOf('function tapSoon(')}\n${lineOf('function reset(')};return {reset,get sel(){return sel},get S(){return S}};`)(() => false, () => ({ g: 300 }), () => {}, () => {}, { now: () => clk.t });
+  const ttl = []; const rs = new Function('p8Blocked', 'p10NewSave', 'save', 'render', 'performance', 'title',
+    `let S={g:1},sel=[1,0];${lineOf('function tapAt(')}\n${lineOf('function tapSoon(')}\n${lineOf('function reset(')};return {reset,get sel(){return sel},get S(){return S}};`)(() => false, () => ({ g: 300 }), () => {}, () => {}, { now: () => clk.t }, () => ttl.push('title'));
   const b = { dataset: {}, textContent: '' };
   rs.reset(b); assert.deepEqual(rs.sel, [1, 0], '1回目の押下では何も変えない');
-  clk.t += 600; rs.reset(b); assert.deepEqual(rs.sel, []); assert.deepEqual(rs.S, { g: 300 });
+  clk.t += 600; rs.reset(b); assert.deepEqual(rs.sel, []); assert.deepEqual(rs.S, { g: 1 }, '2026-10-03：2回目でタイトルへ（セーブはまだ消さない＝タイトルで始めたときに初期化）'); assert.deepEqual(ttl, ['title']);
 });
 
 /** index.html の fuse()（src を差し替えると変更前のコードでも動かせる） */

@@ -149,7 +149,10 @@
       // 停止：停止画像があれば差し替え、無ければ金色の光の輪＋数字
       //  停止面（出目ごとの画像）があれば、回転中の絵から停止面へ短くクロスフェード（急に差し替えない）。無ければ金色の光の輪＋数字
       const rs = resultSprite(value), res = ov.querySelector('.chdz-res');
-      if (rs) {
+      if (rs && ov.dataset.phase === 'lock') {
+        // 物理的な見せ方（LOCK 済み）：止まった絵をそのまま出目の面として見せる（新しい画像に差し替えない・弾ませない＝止まったあとに面が動いて見えない）。金の光の輪だけ後ろに
+        img.classList.add('chdz-stop', 'on', 'locked'); mv.insertAdjacentHTML('afterbegin', '<i class="chdz-glow"></i>'); ov.dataset.face = 'sprite'; await wait(calm ? 0 : 160);
+      } else if (rs) {
         const stop = document.createElement('img'); stop.className = 'chdz-stop'; stop.alt = `出目 ${value}`; stop.src = rs; stop.draggable = false; mv.appendChild(stop);
         void stop.offsetWidth; stop.classList.add('on', 'pop'); img.classList.add('off'); mv.insertAdjacentHTML('beforeend', '<i class="chdz-glow"></i>');   // 出目の面が小さく弾み、金の光の輪＝「3が出た」と分かる間（resultMs）
         ov.dataset.face = 'sprite'; await wait(calm ? 0 : 160);
@@ -169,26 +172,31 @@
    *  出目は play の前に決まっている（見た目だけ。乱数・確率には触れない）
    */
   async function physical(ov, mv, img, sh, value, lx, ly, dir) {
-    phase = 'auto'; ov.dataset.phase = 'auto';
+    // 2026-10-03（実機で「止まったあとも面が変わって見える」）：状態を ROLL → LAND → BOUNCE → SETTLE → LOCK に分け、絵の切り替えは setTimeout ではなく
+    //  動き（Web Animations）の時刻 currentTime に合わせて rAF で進める（タイマーの遅れで、止まって見えたあとに面が変わらない）。LOCK のあとは
+    //  動きが完全に終わった時点で LOCK。LOCK のあとは絵・向き・面・出目を一切変えない（最後の約0.3秒は出目の面に固定したまま滑る）
+    const setPhase = (p) => { phase = p === 'lock' ? 'lock' : 'auto'; ov.dataset.phase = p; };
+    setPhase('roll');
     const B = C.frameBox, box = mv.clientWidth || 88, k = box / B.dh, F = C.throwFrames;
     const fr = document.createElement('img'); fr.className = 'chdz-fr'; fr.alt = ''; fr.draggable = false; fr.src = F[0];
     fr.style.cssText = `width:${(B.w * k).toFixed(1)}px;height:${(B.h * k).toFixed(1)}px;left:${(box / 2 - B.cx * k).toFixed(1)}px;top:${(box / 2 - B.cy * k).toFixed(1)}px`;
     mv.appendChild(fr); img.classList.add('off');
-    const T = [];   // 予約したコマの切り替え（終わったら消す）
-    const at = (ms, fn) => T.push(setTimeout(() => { if (ov.isConnected) fn(); }, ms));
     const air = C.airMs, imp = C.impactMs, bnc = C.bounceMs, rol = C.rollMs, total = air + imp + bnc + rol;
+    let faceLock = false; const E = [];   // 時刻（ms）→ 切り替え。LOCK のあとの面の切り替えは無視
+    const ev = (ms, fn) => E.push([ms, fn]), face = (src) => { if (!faceLock) img.src = src; };
     // ---- 投げる → 空中（01〜07）：START の位置から弧を描いて着地点へ ----
     feel('dice.throw');
-    for (let i = 1; i <= 6; i++) at(Math.round(air * i / 7), () => { fr.src = F[i]; });
+    for (let i = 1; i <= 6; i++) ev(Math.round(air * i / 7), () => { fr.src = F[i]; });
     // ---- 着地の衝撃（08・09）→ 跳ねる（10）----
-    at(air, () => { fr.src = F[7]; ov.classList.add('landed'); feel('dice.land'); });
-    at(air + imp * 0.5, () => { fr.src = F[8]; });
-    at(air + imp, () => { fr.src = F[9]; });
-    // ---- 停止面で転がる：面の切り替えは減速に合わせて間隔が伸びる。最後の約0.3秒は出目の面のまま ----
+    ev(air, () => { fr.src = F[7]; ov.classList.add('landed'); setPhase('land'); feel('dice.land'); });
+    ev(air + imp * 0.5, () => { fr.src = F[8]; });
+    ev(air + imp, () => { fr.src = F[9]; setPhase('bounce'); });
+    // ---- 停止面で転がる（SETTLE）：面の切り替えは減速に合わせて間隔が伸びる。最後の約0.3秒は出目の面のまま滑る（LOCK）----
     const faces = faceSet(), r0 = air + imp + bnc * 0.55, lock = total - 300; let t = r0, n = 0, prev = 0;
-    at(r0, () => { img.src = resultSprite(faces[(n++ * 5 + 3) % faces.length]); img.classList.remove('off'); fr.classList.add('off'); });
-    while (true) { const p = (t - r0) / Math.max(1, lock - r0); t += 70 + 170 * p * p; if (t >= lock) break; let v; do { v = faces[(n++ * 5 + 3) % faces.length]; } while (v === prev && faces.length > 1); prev = v; const src = resultSprite(v); at(t, () => { img.src = src; }); }
-    at(lock, () => { img.src = resultSprite(value); });
+    ev(r0, () => { setPhase('settle'); face(resultSprite(faces[(n++ * 5 + 3) % faces.length])); img.classList.remove('off'); fr.classList.add('off'); });
+    while (true) { const p = (t - r0) / Math.max(1, lock - r0); t += 70 + 170 * p * p; if (t >= lock) break; let v; do { v = faces[(n++ * 5 + 3) % faces.length]; } while (v === prev && faces.length > 1); prev = v; const src = resultSprite(v); ev(t, () => face(src)); }
+    ev(lock, () => { img.src = resultSprite(value); faceLock = true; });   // 出目の面に固定（このあと 0.3秒は面を変えずに滑って止まる＝SETTLE の終わり）
+    E.sort((a, b) => a[0] - b[0]);
     img.dataset.faces = String(n + 1);
     const P = (x, y, s = 1) => `translate(-50%,-50%) translate(${x.toFixed(1)}px,${y.toFixed(1)}px) scale(${s})`;
     const o1 = air / total, o2 = (air + imp) / total, o3 = (air + imp + bnc * 0.5) / total, o4 = (air + imp + bnc) / total;
@@ -211,8 +219,15 @@
       { transform: 'translate(-50%,-50%) scale(1.05)', opacity: 0.6, offset: o1 }, { transform: `translate(calc(-50% + ${dir * 10}px),-50%) scale(.8)`, opacity: 0.4, offset: o3 },
       { transform: `translate(calc(-50% + ${dir * 16}px),-50%) scale(1)`, opacity: 0.55, offset: o4 }, { transform: `translate(calc(-50% + ${dir * 44}px),-50%) scale(1)`, opacity: 0.55, offset: 1 },
     ], { duration: total, easing: 'linear', fill: 'forwards' });
-    try { await Promise.race([Promise.all([a1.finished, rr.finished]).catch(() => {}), wait(total + 250)]); } finally { T.forEach(clearTimeout); }
-    img.src = resultSprite(value); fr.remove();
+    // 動きの時刻で切り替えを進める（rAF。タブが裏に回って rAF が止まっても、最後は下でそろえる）
+    let ei = 0, done = false; const t0 = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+    const clock = () => { const c = a1.currentTime; return typeof c === 'number' ? c : ((typeof performance !== 'undefined' ? performance.now() : Date.now()) - t0); };
+    const run = (upTo) => { while (ei < E.length && E[ei][0] <= upTo) { if (ov.isConnected) E[ei][1](); ei++; } };
+    const raf = root.requestAnimationFrame ? (f) => root.requestAnimationFrame(f) : (f) => setTimeout(f, 16);
+    const loop = () => { if (done) return; run(clock()); if (ei < E.length) raf(loop); };
+    raf(loop);
+    try { await Promise.race([Promise.all([a1.finished, rr.finished]).catch(() => {}), wait(total + 250)]); } finally { done = true; run(Infinity); }
+    img.src = resultSprite(value); faceLock = true; setPhase('lock'); fr.remove();
     await frame();   // 止まった姿が描かれたフレームで「完全停止」
     ov.dataset.stopped = '1'; feel('dice.stop');
   }

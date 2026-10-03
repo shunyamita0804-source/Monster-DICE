@@ -52,16 +52,18 @@ test('ELI-3：一言は ELLIOT_TALK。柔らかい敬語。博士口調（なの
 
 test('ELI-4：表示場所は研究所の図鑑一覧（museum）と図鑑の詳細（musd）だけ。図鑑の中身・背景（AS.*）・入口の制限（p8Blocked）・関数名は従来どおり', () => {
   assert.match(lineOf('function elSay('), /^function elSay\(t\)\{return `<div class="elsay"><img src="\$\{ELLIOT_FACE\}" alt=""><div class="tx"><b>エリオット<\/b>\$\{t\}<\/div><\/div>`\}$/);
-  const mu = lineOf('function museum(') + HTML.split('\n')[HTML.split('\n').findIndex((l) => l.startsWith('function museum(')) + 1];
-  assert.ok(mu.startsWith('function museum(){if(p8Blocked())return;bgm("lab");'), '研究所の入口の制限はそのまま');
-  assert.ok(mu.includes('<div class="dbg" style="background-image:url(${AS.mkt})"></div>'), '背景（base64 の AS.mkt）はそのまま');
+  const L0 = HTML.split('\n').findIndex((l) => l.startsWith('function museum(')), mu = HTML.split('\n').slice(L0, L0 + 3).join('\n');
+  assert.ok(mu.startsWith('function museum(tab){if(p8Blocked())return;bgm("lab");'), '研究所の入口の制限はそのまま');
+  // 2026-10-03 品質向上：正式な研究所の背景（assets/lab/lab_main.webp）が届いた＝入口（エリオットの半身・機能のカード）と図鑑の一覧の背景を差し替え（AS.mkt のデータは消さない）
+  assert.ok(mu.includes('<div class="labnpc nst r"><img class="nstf" src="${ELLIOT_STAND}" alt="" decoding="async"><div class="tx"><b>エリオット</b>${ELLIOT_TALK.lab[R(ELLIOT_TALK.lab.length)]}</div></div>'), '入口：エリオットの半身＋会話窓');
+  assert.ok(mu.includes('<div class="dbg" style="background-image:url(${LAB_BG})"></div>'), '図鑑の一覧の背景も研究所の正式背景'); assert.ok(HTML.includes('"mkt":"data:image/jpeg;base64,'), 'AS.mkt のデータは残す');
   assert.ok(mu.includes('<small>出会えるモンスターの記録</small></div></div><div class="dbody">${elSay(ELLIOT_TALK.lab[R(ELLIOT_TALK.lab.length)])}<div class="mgrid">'));
   assert.ok(mu.includes('<span>ノビトン</span><small>近日公開</small>'), '「近日公開」（ロック表示）はシステム表示のまま');
   const md = lineOf('function musd(');
   assert.ok(md.startsWith('function musd(i){if(p8Blocked())return;'));
   assert.ok(md.includes('<div class="mush">No.${String(i+1).padStart(3,"0")}　${SP[i][0]}</div>${elSay(ELLIOT_TALK.book[R(ELLIOT_TALK.book.length)])}<img class="pcard" src="${AS[AK[i]+"L"]}"'));
   assert.ok(md.includes('<img class="pcard" src="${AS[AK[i]+"R"]}"'), 'プロフィールカード（base64 の AS.*L／AS.*R）はそのまま');
-  assert.equal((HTML.match(/elSay\(/g) || []).length, 3, '定義＋2か所だけ');
+  assert.equal((HTML.match(/elSay\(/g) || []).length, 3, '定義＋2か所だけ（一覧・詳細。入口は半身の立ち絵）');
   for (const f of ['function farm(', 'function market(', 'function _hall(', 'function p9TourResult(']) {
     const i = HTML.indexOf(f); assert.doesNotMatch(HTML.slice(i, HTML.indexOf('\nfunction ', i + 10)), /elSay|ELLIOT/, `${f} には出さない`);
   }

@@ -116,9 +116,9 @@ test('QA-G3-3：p9arm()（大会のランク・対戦開始）：0.4秒未満の
 test('QA-G3-4：最初からやり直す（reset）：画面を出した直後（0.35秒未満）の押下は受け付けず、確認状態にしてから0.4秒未満の2回目でも消さない。期限は従来どおり無し', () => {
   // 守ること：以前は街の「▶ セーブ・ロード」を3回すばやく押すと、次の画面の同じ位置の「最初からやり直す」が確定し、セーブが消えていた
   const clk = { t: 10000 }; const log = [];
-  const R = new Function('p8Blocked', 'p10NewSave', 'save', 'render', 'performance',
+  const R = new Function('p8Blocked', 'p10NewSave', 'save', 'render', 'performance', 'title',
     `let S={g:4000,m:{name:'ソラ'}},sel=[1,0];${GUARD()}\n${lineOf('function reset(')};return {reset,tapAt,get S(){return S},get sel(){return sel}};`)(
-    () => false, () => ({ g: 300, m: null }), () => log.push('save'), () => log.push('render'), { now: () => clk.t });
+    () => false, () => ({ g: 300, m: null }), () => log.push('save'), () => log.push('render'), { now: () => clk.t }, () => log.push('title'));
   const b = el('最初からやり直す');
   R.tapAt(b);   // セーブ・ロード画面（savescr）を出した時刻
   for (const dt of [0, 60, 150, 250, 349]) { clk.t += dt; R.reset(b); assert.equal(b.dataset.s, undefined, `画面を出して（前の押下から）${dt}ms の押下では確認状態にもしない`); }
@@ -127,7 +127,7 @@ test('QA-G3-4：最初からやり直す（reset）：画面を出した直後�
   for (const dt of [0, 50, 399]) { clk.t += dt; R.reset(b); assert.deepEqual(R.S, { g: 4000, m: { name: 'ソラ' } }, `確認状態の直後（前の押下から ${dt}ms）では消さない`); }
   assert.deepEqual(log, []); assert.deepEqual(R.sel, [1, 0]);
   clk.t += 60000; R.reset(b);   // 期限を付けるかは要判断（reset-arm-never-expires）のため従来どおり：時間がたっても2回目で最初から
-  assert.deepEqual(R.S, { g: 300, m: null }); assert.deepEqual(R.sel, []); assert.deepEqual(log, ['save', 'render']);
+  assert.deepEqual(R.S, { g: 4000, m: { name: 'ソラ' } }, '2026-10-03：2回目はタイトルへ（セーブはまだ消さない）'); assert.deepEqual(R.sel, []); assert.deepEqual(log, ['title']);
   assert.doesNotMatch(lineOf('function reset('), /setTimeout/, 'reset に取り消しのタイマーは足していない');
   // セーブ・ロード画面を出すたびに「最初からやり直す」の表示時刻を記録する（画面に .ghost はこのボタン1つだけ）
   const scr = lineOf(' $("#app").innerHTML=`<div class="svs"><header class="svhead"><button class="back" onclick="lobby()">◀ 街にもどる</button><h2>セーブ・ロード</h2></header>');

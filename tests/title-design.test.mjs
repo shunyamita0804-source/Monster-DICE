@@ -30,13 +30,13 @@ test('TD-1：開始画面は正式開始画面画像（assets/title/title_main.j
 
 test('TD-2：開始ボタンは画像に描かれたボタンの位置（x230〜925・y1730〜1900）に重ねた透明なボタン。処理は従来どおり startGame → p8Resume', () => {
   const t = between('function title(){', '\nfunction togh(');
-  assert.match(t, /<button class="p15start" data-nsfx="1" onclick="startGame\(this\)">タップしてはじめる<\/button><\/div><p class="tcap"><small>\$\{S\.m\|\|S\.box\.length\?"つづきからはじめます":"はじめてのプレイです"\}<\/small><\/p><\/div>`\}$/);
+  assert.match(t, /<button class="p15start" data-nsfx="1" onclick="startGame\(this\)">タップしてはじめる<\/button><\/div><p class="tcap"><small>\$\{P_NEWGAME\?"新しいゲームをはじめます（いまのセーブは、はじめたときに消えます）":S\.m\|\|S\.box\.length\?"つづきからはじめます":"はじめてのプレイです"\}<\/small>\$\{P_NEWGAME\?`<button class="tcancel" onclick="P_NEWGAME=false;p8Resume\(\)">つづきからにもどる<\/button>`:""\}<\/p><\/div>`\}$/, '2026-10-03：セーブ・ロードの「最初からやり直す」から来たときは新しいゲーム（つづきからにもどれる）');
   const css = HTML.match(/\.tpage\.mmt \.p15start\{([^}]*)\}/)[1];
   const pct = (k) => parseFloat(css.match(new RegExp(`(?:^|;)${k}:([\\d.]+)%`))[1]);
   assert.ok(Math.abs(pct('left') - 230 / 1152 * 100) < 0.01 && Math.abs(pct('top') - 1730 / 2048 * 100) < 0.01, '左上');
   assert.ok(Math.abs(pct('width') - 695 / 1152 * 100) < 0.01 && Math.abs(pct('height') - 170 / 2048 * 100) < 0.01, '大きさ');
   assert.match(css, /background:transparent;/); assert.match(css, /color:transparent;font-size:0;animation:none/, '文字・枠を描かず、画像のボタンと二重にしない');
-  assert.match(lineOfStart('function startGame('), /setTimeout\(\(\)=>p8Resume\(\),900\)/, '開始処理は変えない');
+  assert.match(lineOfStart('function startGame('), /setTimeout\(\(\)=>\{if\(P_NEWGAME\)\{P_NEWGAME=false;sel=\[\];S=p10NewSave\(\);save\(\)\}p8Resume\(\)\},900\)/, '開始処理は従来どおり p8Resume（「はじめから」で来たときだけ先に初期化）');
 });
 const lineOfStart = (p) => HTML.split('\n').find((l) => l.startsWith(p));
 

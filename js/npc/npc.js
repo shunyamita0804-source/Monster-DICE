@@ -155,6 +155,17 @@
    * 会話を表示する。lines = [{ npc:'fina', view:'closeup', expression:'smile', text:'…' }, …]（name で名前を上書き可）。
    *  会話が終わると解決する Promise を返す（選択肢があれば選んだ id、無ければ null）。opts.branches＝選択肢ごとの続きの行。すでに会話中なら、前の会話をきちんと終わらせてから始める。
    */
+  /** 重要な会話（major）：行に view・anim の指定が無く、同じ表情の全身（fullbody）が登録されていれば全身で出す（無ければ上半身のまま。表情を変えない） */
+  function preferFullbody(lines) {
+    if (!Array.isArray(lines)) return lines;
+    let npc = null, ex = null;
+    return lines.map((l) => {
+      if (!l || typeof l !== 'object') return l;
+      if (l.npc !== undefined) { if (l.npc !== npc) ex = null; npc = l.npc; }
+      ex = l.expression || l.expr || ex; const n = get(npc); if (!n || l.view || l.anim) return l;
+      const e = ex || n.defaultExpr; return { ...l, view: n.views.fullbody && n.views.fullbody[e] ? 'fullbody' : n.defaultView };
+    });
+  }
   function talk(lines, opts = {}) {
     if (typeof document === 'undefined') return Promise.resolve();
     close();
@@ -162,6 +173,7 @@
       // 表示の種類（2026-10-02）：opts.presentation＝'compact'（短い一言。背景を隠さない小さな窓・小さな立ち絵・暗幕なし）／'standard'（既定）／'major'（重要な出来事。背景を少し暗くして会話に集中）。
       //  opts.kind＝話の種類（'npc'＝NPC会話・'fina'＝フィナの案内・'event'＝重要イベント）。見た目と読み上げの区別に使う（システム通知は会話ウィンドウにしない）
       const pres = ['compact', 'major'].includes(opts.presentation) ? opts.presentation : 'standard';
+      if (pres === 'major') lines = preferFullbody(lines);
       const ov = h('div', `mmtalk mmtalk-${pres}`), stage = h('div', 'mmtalk-stage'), fig = h('div', 'mmtalk-fig'), img = h('img'), win = h('div', 'mmtalk-win'), nm = h('div', 'mmtalk-name'), tx = h('p', 'mmtalk-text'), nx = h('span', 'mmtalk-next'), ch = h('div', 'mmtalk-choices');
       ov.dataset.pres = pres; if (opts.kind) ov.dataset.kind = String(opts.kind);
       ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); img.alt = ''; img.draggable = false; nx.textContent = '▼'; nx.setAttribute('aria-hidden', 'true');
@@ -188,7 +200,7 @@
               bt.addEventListener('click', (e) => { e.stopPropagation(); c.choose(x.id); }); ch.appendChild(bt); } }
         },
         onEnd(choice) { stopAnim(); clearTimeout(keyT); document.removeEventListener('keydown', onKey); if (ov.animate && ov.classList && !ov.__instant) { ov.classList.add('mmtalk-out'); const a = ov.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 220, easing: 'ease-in', fill: 'forwards' }); const done = () => { ov.remove(); resolve(choice == null ? null : choice); }; a.finished.then(done, done); } else { ov.remove(); resolve(choice == null ? null : choice); } if (CUR && CUR.c === c) CUR = null; },   // 退場：短くフェード（急に消さない）。Promise はフェードが終わって DOM を消してから解決する（次の画面が会話の上に出ない・会話の要素が残らない）。220ms 後に DOM から外す
-        branches: opts.branches,
+        branches: pres === 'major' && opts.branches ? Object.fromEntries(Object.entries(opts.branches).map(([k, v]) => [k, preferFullbody(v)])) : opts.branches,
       });
       ov.addEventListener('click', (e) => { e.stopPropagation(); c.tap(); });
       keyT = setTimeout(() => { keyT = null; document.addEventListener('keydown', onKey); }, 0);   // 名前欄の Enter で開いたとき、その同じ keydown が document へ伝わって1行目を飛ばさないよう、次のタスクから受け付ける
@@ -207,10 +219,10 @@
   // 登録済みNPC
   // ---------------------------------------------------------
   // フィナ：主要な案内役（Chapterボードには置かない）。正式素材（上半身の透過PNG）を assets/npc/fina/ に置いている（README.md に元画像との対応）。
-  //  全身（fullbody）は正式素材が未着のため空。fullbody を指定しても上半身（closeup）で代わりに表示する。
-  const FINA = 'assets/npc/fina/', FE = ['normal', 'smile', 'happy', 'surprised', 'troubled', 'worried', 'serious', 'guide'], fr = (a) => [1, 2, 3, 4, 5, 6].map((i) => `${FINA}animations/${a}/${a}_0${i}.webp`);
+  //  全身（fullbody）：2026-10-03 の正式素材 10ポーズ（assets/npc/fina/fullbody/。README.md）。重要な会話（presentation 'major'）で同じ表情の全身があれば全身で出す
+  const FINA = 'assets/npc/fina/', FE = ['normal', 'smile', 'happy', 'surprised', 'troubled', 'worried', 'serious', 'guide'], FBE = [...FE, 'wave', 'greet'], fr = (a) => [1, 2, 3, 4, 5, 6].map((i) => `${FINA}animations/${a}/${a}_0${i}.webp`);
   register('fina', { name: 'フィナ', role: '案内役', board: false, defaultView: 'closeup', defaultExpr: 'normal',
-    views: { closeup: Object.fromEntries(FE.map((e) => [e, `${FINA}closeup/${e}.webp`])), fullbody: {} },
+    views: { closeup: Object.fromEntries(FE.map((e) => [e, `${FINA}closeup/${e}.webp`])), fullbody: Object.fromEntries(FBE.map((e) => [e, `${FINA}fullbody/${e}.webp`])) },
     anims: { closeup: { wave: { frames: fr('wave'), fps: 8, loop: true }, wave_blink: { frames: fr('wave_blink'), fps: 6, loop: true } } } });
 
   // カレン：市場担当（アップ画像のみで運用。全身は使わない）。正式素材（背景を透明にした透過PNG）を assets/npc/karen/closeup/ に置いている（README.md に元画像との対応）

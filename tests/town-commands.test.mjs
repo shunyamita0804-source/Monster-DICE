@@ -17,35 +17,40 @@ import * as H from './e2e/harness.mjs';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const HTML = readFileSync(path.join(ROOT, 'index.html'), 'utf8');
 const line = (p) => HTML.split('\n').find((l) => l.startsWith(p));
-const LABELS = ['市場', '牧場', '研究所', '闘技場', 'ファーム', 'プロフィール', 'セーブ・ロード'];   // 2026-09-30：街を1画面で固定し、セーブ・ロードを下のバーへ   // 下部コマンドバー（2026-09-29）で「ファームへ」→「ファーム」（行き先は同じ hall()）。再調整でプロフィールを追加
-const CALLS = ['market()', 'farm()', 'museum()', 'townArena()', 'hall()', 'profileScr()', 'savescr()'];
+// 2026-10-03 品質向上：施設（市場・牧場・研究所・闘技場・聖獣士管理局・アイテム屋）は街の背景の上の札（押せる）、下のバーはファーム・プロフィール・セーブ・ロード
+const LABELS = ['市場', '牧場', '研究所', '闘技場', '聖獣士管理局', 'アイテム屋', 'ファーム', 'プロフィール', 'セーブ・ロード'];
+const CALLS = ['market()', 'farm()', 'museum()', 'townArena()', 'townGuild()', 'townShop()', 'hall()', 'profileScr()', 'savescr()'];
+const PINS = 6;
 
-test('TW-1：街の背景は TOWN_BG の1か所だけで参照し、ファイルが存在する（旧マップの埋め込み画像 MAPIMG は使わない）', () => {
+test('TW-1：街の背景は TOWN_BG の1か所だけで参照し、ファイルが存在する（2026-10-03：正式ミストリア mistria_main.webp。旧 town_main.jpg はファイルだけ残す）', () => {
   const bg = line('const TOWN_BG=');
-  assert.equal(bg, 'const TOWN_BG="assets/town/town_main.jpg";');
-  assert.ok(existsSync(path.join(ROOT, 'assets/town/town_main.jpg')));
-  assert.equal((HTML.match(/town_main\.jpg/g) || []).length, 2, '定義の1行とコメントの1か所だけ');
+  assert.equal(bg, 'const TOWN_BG="assets/town/mistria_main.webp",TOWN_IMG={w:768,h:1360,top:26};');
+  assert.ok(existsSync(path.join(ROOT, 'assets/town/mistria_main.webp'))); assert.ok(existsSync(path.join(ROOT, 'assets/town/town_main.jpg')), '旧背景は消さない');
   assert.equal((HTML.match(/\$\{TOWN_BG\}/g) || []).length, 1, 'lobby() から1回だけ使う');
   assert.doesNotMatch(HTML, /MAPIMG/);
-  assert.match(HTML, /\.tbg\{[^}]*top:calc\(var\(--tva\) - 2048 \* var\(--ts\)\)[^}]*background:var\(--town-bg\) center\/100% 100% no-repeat/, '下寄せ：画像の下端を街の枠（バーの上端）にそろえる');
-  assert.match(HTML, /--ts:max\(min\(max\(100cqw \/ 1152,var\(--tva\) \/ 2048\),\(var\(--tva\) - 4px\) \/ 1808\),var\(--tva\) \/ 2048\)/, '幅いっぱいが基本。闘技場の上部（y=240）が画面の上端で切れるときは縮める');
-  assert.match(HTML, /\.tlbl\{[^}]*top:calc\(var\(--tva\) - \(2048 - var\(--y\)\) \* var\(--ts\)\)/, '建物ラベルも同じ下寄せの計算');
+  assert.match(HTML, /\.tbg\{[^}]*top:calc\(var\(--tva\) - var\(--tih\) \* var\(--ts\)\)[^}]*background:var\(--town-bg\) center\/100% 100% no-repeat/, '下寄せ：画像の下端を街の枠（バーの上端）にそろえる');
+  assert.match(HTML, /--tiw:768;--tih:1360;--ttop:26;--ts:max\(min\(max\(100cqw \/ var\(--tiw\),var\(--tva\) \/ var\(--tih\)\),\(var\(--tva\) - 4px\) \/ \(var\(--tih\) - var\(--ttop\)\)\),var\(--tva\) \/ var\(--tih\)\)/, '幅いっぱいが基本。闘技場の上端（y=26）が画面の上端で切れるときは縮める');
+  assert.match(HTML, /\.tpin\{[^}]*top:calc\(var\(--tva\) - \(var\(--tih\) - var\(--y\)\) \* var\(--ts\)\)/, '施設の札も同じ下寄せの計算');
 });
 
-test('TW-2：施設コマンドは 市場・牧場・研究所・闘技場・ファーム・プロフィール・セーブ・ロード の7つ（この順番）。行き先は従来の画面。画面下のバー（.tbar）に並べ、右側の縦並び（.map.town の中）は廃止', () => {
+test('TW-2：施設は街の背景の上の札（押せる。下のバーと二重に出さない）＝市場・牧場・研究所・闘技場・聖獣士管理局・アイテム屋。下のバーはファーム・プロフィール・セーブ・ロード（1段）。行き先は従来の画面', () => {
   const src = line('const TOWN_CMDS=');
   const f = new Function(`${src}\nreturn TOWN_CMDS;`)();
-  assert.deepEqual(f({}).map((c) => [c[0], c[3], c[4]]), LABELS.map((l, i) => [l, CALLS[i], i === 3 ? 'lock' : 'ok']));
-  assert.equal(f(null)[4][4], 'dis', 'モンスターがいないときファームは押せない（従来どおり）');
-  assert.equal(f(null)[5][4], 'ok', 'プロフィールはいつでも押せる'); assert.equal(f(null)[6][4], 'ok', 'セーブ・ロードはいつでも押せる'); assert.equal(f({})[6][5], 'セーブ<br>ロード', 'セーブ・ロードは2行');
+  assert.deepEqual(f({}).map((c) => [c[0], c[3], c[4]]), LABELS.map((l, i) => [l, CALLS[i], [3, 4].includes(i) ? 'lock' : 'ok']));
+  assert.deepEqual(f({}).map((c) => !!c[6]), LABELS.map((l, i) => i < PINS), '6つの施設は地図の上の札（7番目に背景の画素の位置）');
+  assert.equal(f(null)[5][4], 'dis', 'アイテム屋は連れているモンスターがいるときだけ（従来の shopScr の条件）'); assert.equal(f(null)[6][4], 'dis', 'モンスターがいないときファームは押せない（従来どおり）');
+  assert.equal(f(null)[7][4], 'ok'); assert.equal(f(null)[8][4], 'ok'); assert.equal(f({})[8][5], 'セーブ<br>ロード', 'セーブ・ロードは2行');
   const lobby = HTML.slice(HTML.indexOf('function lobby('), HTML.indexOf('\n}', HTML.indexOf('function lobby(')));
-  assert.match(lobby, /<\/div><nav class="tcmds tbar" aria-label="街の施設">\$\{TOWN_CMDS\(m\)\.map/, 'バーは街の枠の外（画面下に固定）');
-  assert.doesNotMatch(HTML, /\.map\.town \.tcmds/, '右側の縦並びの指定は残さない');
-  assert.match(HTML, /\.tbar\{position:fixed;[^}]*bottom:0;[^}]*grid-template-columns:repeat\(40,minmax\(0,1fr\)\);grid-template-rows:var\(--tbr1\) var\(--tbr2\)/, '2段：40列');
-  assert.match(HTML, /button\.hz\.tcmd\{position:relative;left:auto;top:auto;grid-column:span 10;/); assert.match(HTML, /button\.hz\.tcmd\.tfarm\{grid-column:span 22\}/); assert.match(HTML, /\.tbar button\.hz\.tcmd\.tprof,\.tbar button\.hz\.tcmd\.tsave\{grid-column:span 9;/, '40列で 10・10・10・10／22・9・9（ファーム 55%・プロフィール 22.5%・セーブ・ロード 22.5%）');
-  assert.match(lobby, /\$\{i==4\?" tsub tfarm":i==5\?" tsub tprof":i==6\?" tsub tsave svb":""\}/);
+  assert.match(lobby, /\$\{townPins\(m\)\.map\(c=>`<button class="tpin /, '施設は背景の上の札（ボタン）');
+  assert.match(lobby, /<\/div><nav class="tcmds tbar" aria-label="街のコマンド">\$\{townBar\(m\)\.map/, 'バーは街の枠の外（画面下に固定）');
+  assert.doesNotMatch(lobby, /tlbl|TOWN_LABELS/, '押せない建物ラベルと施設コマンドの二重表示はやめた');
+  assert.match(HTML, /\.tbar\{position:fixed;[^}]*bottom:0;[^}]*grid-template-columns:repeat\(40,minmax\(0,1fr\)\);grid-template-rows:var\(--tbr2\);/, '1段：40列');
+  assert.match(HTML, /button\.hz\.tcmd\.tfarm\{grid-column:span 22\}/); assert.match(HTML, /\.tbar button\.hz\.tcmd\.tprof,\.tbar button\.hz\.tcmd\.tsave\{grid-column:span 9;/, 'ファーム 55%・プロフィール 22.5%・セーブ・ロード 22.5%');
+  assert.match(lobby, /\$\{i==0\?" tsub tfarm":i==1\?" tsub tprof":" tsub tsave svb"\}/);
   assert.doesNotMatch(lobby, /townTop|tttl|tpinfo/, '街の上部の「街」の札・プレイヤー情報は置かない');
-  assert.doesNotMatch(HTML.match(/\n\.tbar\{[^}]*\}/)[0], /transform/, 'バーの位置に transform を使わない（#app>* の登場アニメが transform を上書きして、表示直後にボタンがずれ押し間違えるため）'); assert.doesNotMatch(lobby, /mupin|博物館|style="left:/, '旧マップのタップ領域・博物館ピンは使わない');
+  assert.doesNotMatch(HTML.match(/\n\.tbar\{[^}]*\}/)[0], /transform/, 'バーの位置に transform を使わない'); assert.doesNotMatch(lobby, /mupin|博物館/, '旧マップのタップ領域・博物館ピンは使わない');
+  assert.match(HTML, /function townGuild\(\)\{townLock\("聖獣士管理局は、まだ利用できません。"\)\}/, '聖獣士管理局は街の上の存在だけ（中は素材・仕様が無いので作らない）');
+  assert.match(HTML, /function townShop\(\)\{SHOP_FROM="town";shopScr\(\)\}/, 'アイテム屋は従来の shopScr（戻るは街へ）');
 });
 
 test('TW-6：コマンドは施設名だけ（補足は title に残す）。アイコンは .ti に独立し、画像ファイルのパスを書けば画像で表示できる', () => {
@@ -57,9 +62,9 @@ test('TW-6：コマンドは施設名だけ（補足は title に残す）。ア
 });
 
 test('TW-3：闘技場は開放条件を新設せず、押しても案内を出すだけ（画面遷移・セーブをしない）。案内文はシステム表示のまま、ヴァルガスの一言（vgSay）を添える', () => {
-  const fn = line('function townArena(');
-  assert.equal(fn, 'function townArena(){const e=$("#msg");if(e)e.textContent="闘技場は、まだ利用できません。";const t=$("#app>.tlow");if(t)t.classList.add("on");vgSay()} // ロック表示のまま（開放条件・内容は未決）。案内文はシステム表示、ヴァルガスは一言だけ');
-  assert.doesNotMatch(line('function vgSay('), /save\(|lobby\(|innerHTML=|fight\(|MMP8\./, 'ヴァルガスの一言は、画面遷移・セーブ・バトルをしない');
+  assert.equal(line('function townArena('), 'function townArena(){townLock("闘技場は、まだ利用できません。");vgSay()}');
+  assert.match(line('function townLock('), /^function townLock\(t\)\{const e=\$\("#msg"\);if\(e\)e\.textContent=t;const w=\$\("#app>\.tlow"\);if\(w\)\{w\.classList\.add\("on"\);/);
+  assert.doesNotMatch(line('function townLock(') + line('function vgSay('), /save\(|lobby\(|innerHTML=|fight\(|MMP8\./, '案内とヴァルガスの一言は、画面遷移・セーブ・バトルをしない');
 });
 
 test('TW-4：博物館は研究所へ（表示名・戻るボタン・育成中の案内）。中身の図鑑はそのまま', () => {
