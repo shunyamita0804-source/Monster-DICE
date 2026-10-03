@@ -25,7 +25,7 @@ test('QU-01：プロローグは A〜E の5枚（F は無い）。文字は画�
   assert.match(txt('E'), /アステリア地方――大都市、ミストリア。/); assert.match(txt('E'), /ここから始まる。$/);
   assert.doesNotMatch(P.SLIDES.map((s) => s.pages.flat().join('')).join(''), /ブリーダー/);
   for (const id of ['c', 'd', 'e']) assert.ok(existsSync(path.join(ROOT, `assets/prologue/prologue_${id}.webp`)), id);
-  assert.equal(P.SLIDES[0].bg, './assets/prologue/prologue_a.webp'); assert.equal(P.SLIDES[1].bg, './assets/prologue/prologue_b.webp');
+  assert.deepEqual([P.SLIDES[0].bg, P.SLIDES[1].bg], [null, null], 'A・B は受け取り待ち（null＝読みに行かない・プロローグは出さない）'); for (const s of P.SLIDES.slice(2)) assert.equal(s.bg, `./assets/prologue/prologue_${s.id.toLowerCase()}.webp`);
   assert.ok(P.T.tapGuard >= 400, '誤タップで何枚も飛ばない'); for (const s of P.SLIDES) for (const pg of s.pages) assert.ok(P.pageMs(pg) >= 4000 && P.pageMs(pg) <= 14000, `${s.id}：1ページ ${P.pageMs(pg)}ms（速すぎず長すぎず）`);
   const nm = fnOf('p11NameScr'); assert.match(nm, /if\(!finaFlags\(\)\.prologue&&window\.MMPRO&&!window\.MM_QA_NO_PROLOGUE&&!P11_PRO\.has\(S\)\)/); assert.match(nm, /MMPRO\.ready\(\)\.then\(ok=>ok\?MMPRO\.play\(\)/, '背景がそろったときだけ');
   assert.match(rd('tests/e2e/harness.mjs'), /MM_QA_NO_PROLOGUE = true/);

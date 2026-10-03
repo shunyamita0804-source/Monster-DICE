@@ -102,11 +102,11 @@ try {
 
   await page.evaluate(() => farm()); await sleep(1200);
   const f = await page.evaluate(() => {
-    const b = document.querySelector('.fbub'); const img = b && b.querySelector('img');
+    const b = document.querySelector('.rnnick .tx'); const img = document.querySelector('.rnnick .nstf');   // 2026-10-03：ニックは半身の立ち絵＋会話窓
     return { cls: b && b.className, name: b && b.querySelector('b') && b.querySelector('b').textContent,
       src: img && img.getAttribute('src'), nw: img && img.naturalWidth, dan: document.body.innerText.includes('ダン') };
   });
-  rec('牧場：ニックの吹き出し（顔が読める・「ダン」なし）', f.cls === 'fbub fnick' && f.name === 'ニック' && /assets\/npc\/nick\/face\.webp/.test(f.src || '') && f.nw > 0 && !f.dan, JSON.stringify(f));
+  rec('牧場：ニックの立ち絵と一言（画像が読める・「ダン」なし）', f.cls === 'tx fnick' && f.name === 'ニック' && /assets\/npc\/nick\/closeup\/smile\.webp/.test(f.src || '') && f.nw > 0 && !f.dan, JSON.stringify(f));
   await page.screenshot({ path: `${OUT}/ranch_390.png` });
 
   await page.evaluate(() => { farm('', 'a'); dep(); }); await sleep(800);

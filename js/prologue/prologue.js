@@ -10,12 +10,12 @@
   'use strict';
   const fz = Object.freeze, P = './assets/prologue/';
   const SLIDES = fz([
-    fz({ id: 'A', bg: P + 'prologue_a.webp', pages: fz([
+    fz({ id: 'A', bg: null /* 受け取り待ち：届いたら P + 'prologue_a.webp' */, pages: fz([
       fz(['この世界には、', '人と共に生きる不思議な生命――', '『聖獣』がいる。', '', '人々は彼らと暮らし、', '時にその力を借りながら、', '長い歴史を歩んできた。']),
       fz(['今から、およそ百年前――。', '', '大陸全土を覆う、', 'かつてない災厄が起きた。', '', 'その脅威に立ち向かったのは、', '一人の英雄と、一体の聖獣。', '長い戦いの末、', '災厄は退けられた。']),
       fz(['この出来事を境に、', '聖獣と共に戦う者たちの制度は整えられ、', 'やがて『聖獣士』という道が', '広く知られるようになった。', '', 'その仕組みは、いまの', '聖獣士管理局へと受け継がれている。']),
     ]) }),
-    fz({ id: 'B', bg: P + 'prologue_b.webp', pages: fz([
+    fz({ id: 'B', bg: null /* 受け取り待ち：届いたら P + 'prologue_b.webp' */, pages: fz([
       fz(['それから時は流れ――', '五年前。', '', '再び、', '大きな魔物災害が人々を襲った。']),
       fz(['その危機に立ち向かったのは、', 'ミストリアを拠点とする', '三人の聖獣士と、', 'それぞれの聖獣たちだった。', '', '三人と三体は力を合わせ、', '災厄を退けた。']),
       fz(['彼らは今も、', '『レジェンド』として', '多くの聖獣士たちの', '憧れであり続けている。']),
@@ -43,6 +43,7 @@
   function ready() {
     if (readyMemo) return readyMemo;
     if (typeof Image === 'undefined') return (readyMemo = Promise.resolve(false));
+    if (SLIDES.some((s) => !s.bg)) return (readyMemo = Promise.resolve(false));   // 背景が未着（null）の間は読みに行かない（404 を出さない）
     readyMemo = Promise.all(SLIDES.map((s) => new Promise((ok) => { const im = new Image(); im.onload = () => ok(im.naturalWidth > 0); im.onerror = () => ok(false); im.src = s.bg; }))).then((a) => a.every(Boolean));
     return readyMemo;
   }
