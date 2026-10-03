@@ -188,9 +188,9 @@
           if (s.ended) return;
           ov.dataset.npc = s.npc || ''; stage.dataset.side = s.side || 'left'; fig.className = 'mmtalk-fig ' + (s.view || 'closeup'); fig.hidden = !(s.img || s.frames);   // アニメーションだけのNPCでも立ち絵を隠さない
           const key = s.frames ? `${s.idx}:${s.anim}` : '';
-          if (key !== ANIM.key) { stopAnim(); if (s.frames) { ANIM.key = key; ANIM.name = s.anim; s.frames.forEach((f) => { const p = new Image(); p.src = f; });
+          if (key !== ANIM.key) { stopAnim(); if (s.frames) { ANIM.key = key; ANIM.name = s.anim; ANIM.pre = s.frames.map((f) => { const p = new Image(); p.src = f; return p; });   // 先読みした絵を持っておく（2026-10-03：読み込み途中のコマへは切り替えない＝途中で画面を移っても読み込みを打ち切らない）
             img.src = s.frames[0]; fig.hidden = false; const fr = s.frames, loop = s.loop;
-            ANIM.timer = setInterval(() => { if (ANIM.key !== key) return; if (ANIM.frame >= fr.length - 1 && !loop) { clearInterval(ANIM.timer); ANIM.timer = null; return; } ANIM.frame = (ANIM.frame + 1) % fr.length; img.src = fr[ANIM.frame]; }, Math.round(1000 / s.fps)); } }
+            ANIM.timer = setInterval(() => { if (ANIM.key !== key) return; if (ANIM.frame >= fr.length - 1 && !loop) { clearInterval(ANIM.timer); ANIM.timer = null; return; } const nx = (ANIM.frame + 1) % fr.length, pi = ANIM.pre && ANIM.pre[nx]; if (pi && !(pi.complete && pi.naturalWidth > 0)) return; ANIM.frame = nx; img.src = fr[ANIM.frame]; }, Math.round(1000 / s.fps)); } }
           if (!s.frames && s.img && img.getAttribute('src') !== s.img) img.src = s.img;
           img.alt = s.name ? `${s.name}（${s.expr || ''}）` : '';
           nm.textContent = s.name; nm.hidden = !s.name; tx.textContent = s.text; win.setAttribute('aria-label', (s.name ? s.name + '：' : '') + s.full); nx.hidden = s.typing || !!s.choices;

@@ -1333,8 +1333,9 @@ button.mkc b{font-size:.9rem}button.mkc small{font-size:.66rem;color:#ffe9b0}
 .chfw.chf-intro #chf-ui,.chfw.chf-intro .chf-mon,.chfw.chf-intro .chf-tile,.chfw.chf-intro .chf-obj{opacity:0!important}
 .chfw.chf-uiin #chf-ui,.chfw.chf-uiin .chf-mon,.chfw.chf-uiin .chf-tile{transition:opacity .3s ease}
 .chintro-tap{position:absolute;left:0;right:0;bottom:calc(var(--chdeck) + 14px);margin:0;text-align:center;font:600 11px/1 var(--mm-font-body);color:rgba(255,246,216,.8);letter-spacing:.1em;text-shadow:0 1px 2px rgba(0,0,0,.7);pointer-events:none}
-.chf-fina{position:absolute;left:10px;right:10px;bottom:calc(var(--chdeck) + 10px);z-index:9;display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:14px;border:1.5px solid #d9b465;background:linear-gradient(180deg,rgba(20,36,82,.96),rgba(8,18,46,.97));color:#fff;box-shadow:0 6px 18px rgba(0,0,0,.45);animation:chsheet .26s ease-out;pointer-events:auto;cursor:pointer}
-.chf-fina img{flex:none;width:40px;height:40px;border-radius:50%;object-fit:cover;object-position:50% 12%;border:1.5px solid #d9b465;background:#0b1636}
+.chf-fina{position:absolute;left:10px;right:10px;bottom:calc(var(--chdeck) + 10px);z-index:9;display:flex;align-items:center;gap:8px;padding:12px 12px 9px;border-radius:10px;border:1px solid rgba(240,232,212,.62);background:linear-gradient(180deg,rgba(16,27,54,.95),rgba(8,15,34,.96));color:#fff;box-shadow:0 6px 18px rgba(0,0,0,.45);animation:chsheet .26s ease-out;pointer-events:auto;cursor:pointer}
+.chf-fina img{position:absolute;left:2px;bottom:calc(100% - 14px);flex:none;width:auto;height:min(22dvh,180px);border:0;border-radius:0;background:none;object-fit:contain;pointer-events:none;-webkit-mask-image:linear-gradient(#000 80%,transparent);mask-image:linear-gradient(#000 80%,transparent)} /* 2026-10-03 品質向上：顔の丸ではなく半身の立ち絵（正式 closeup）を吹き出しの上に */
+.chf-fina>div{position:relative;z-index:1}
 .chf-fina b{display:block;font:800 11px/1 var(--mm-font-head);color:#f3d98e;margin-bottom:3px}
 .chf-fina span{font-size:12.5px;line-height:1.35}
 .chf-fina.out{opacity:0;transition:opacity .22s}
@@ -1877,12 +1878,12 @@ main:has(>#app>.map.town) h1{display:none}
 /* 街の施設の札（2026-10-03 品質向上）：背景の上の建物を指す札がそのまま押せるボタン（下のバーと二重に出さない）。位置は背景画像の画素（--x・--y＝札の下の点が指す所）から .tbg と同じ倍率で計算。
    ネイビー＋アイボリーの細い罫線・小さな金の点。押せる高さは 40px 以上。未開放（闘技場・聖獣士管理局）は錠の印、今は行けない（アイテム屋＝モンスターがいない）は沈めた色 */
 button.tpin{position:absolute;z-index:2;left:calc(50cqw + (var(--x) - var(--tiw) / 2) * var(--ts));top:calc(var(--tva) - (var(--tih) - var(--y)) * var(--ts));transform:translate(-50%,-100%);display:flex;flex-direction:column;align-items:center;margin:0;padding:6px 4px 0;min-height:0;width:auto;background:none;border:0;box-shadow:none;color:#fff;animation:none;-webkit-tap-highlight-color:transparent}
-.tpin span{display:block;min-height:34px;box-sizing:border-box;padding:7px 13px 7px;font-family:var(--mm-font-head);font-weight:800;font-size:14.5px;line-height:1.3;letter-spacing:.06em;white-space:nowrap;color:#fbf6e8;background:linear-gradient(180deg,rgba(20,36,82,.92),rgba(8,18,46,.92));border:1px solid rgba(240,230,205,.8);border-radius:8px;box-shadow:0 3px 10px rgba(0,0,0,.4),inset 0 0 0 2px rgba(8,18,46,.9),inset 0 0 0 2.6px rgba(217,180,101,.55)}
+.tpin span{display:block;min-height:40px;min-width:78px;box-sizing:border-box;padding:9px 14px 9px;text-align:center;font-family:var(--mm-font-head);font-weight:800;font-size:14.5px;line-height:1.3;letter-spacing:.06em;white-space:nowrap;color:#fbf6e8;background:linear-gradient(180deg,rgba(20,36,82,.92),rgba(8,18,46,.92));border:1px solid rgba(240,230,205,.8);border-radius:8px;box-shadow:0 3px 10px rgba(0,0,0,.4),inset 0 0 0 2px rgba(8,18,46,.9),inset 0 0 0 2.6px rgba(217,180,101,.55)}
 .tpin i{display:block;width:7px;height:7px;margin-top:3px;border-radius:50%;background:#e6bf62;box-shadow:0 0 0 2px rgba(8,18,46,.85),0 0 8px rgba(255,220,140,.8)}
-.tpin.lock span{color:#dfe4ee;background:linear-gradient(180deg,rgba(40,48,76,.92),rgba(18,24,44,.92));display:flex;align-items:center;gap:6px}.tpin.lock span svg{width:13px;height:13px;flex:none}
+.tpin.lock span{color:#dfe4ee;background:linear-gradient(180deg,rgba(40,48,76,.92),rgba(18,24,44,.92));display:flex;align-items:center;justify-content:center;gap:6px}.tpin.lock span svg{width:13px;height:13px;flex:none}
 .tpin:disabled{opacity:1;cursor:default}.tpin:disabled span{color:#c9cfdc;background:linear-gradient(180deg,rgba(40,48,76,.85),rgba(18,24,44,.85))}.tpin:disabled i{background:#8b8f9c;box-shadow:0 0 0 2px rgba(8,18,46,.85)}
 .tpin:active span{background:linear-gradient(180deg,rgba(40,70,140,.95),rgba(14,30,72,.95))}
-@media (max-height:720px){.tpin span{font-size:13.5px;min-height:32px;padding:6px 11px}}
+@media (max-height:720px){.tpin span{font-size:13.5px;min-height:38px;min-width:72px;padding:8px 11px}}
 /* 画面下に固定の施設コマンド（実際に押す操作UI）。2段：1段目は 市場・牧場・研究所・闘技場 を4等分（アイコンの下に施設名）、
    2段目は ファーム 55%・プロフィール 45%（アイコンの横に施設名）。20列のグリッドで 5・5・5・5／11・9 に分ける。上に金の線。スクロールしても画面下に出たまま。
    街の下の案内・カードなどがバーの裏に隠れないよう、街の画面では #app の下にバーの高さ分の余白をとる。
@@ -2204,6 +2205,7 @@ main>h1{flex:none}
 .nst>.dbub .dnm,.nst>.tx b{position:absolute;top:-12px;left:12px;display:block;margin:0;padding:2px 13px 3px;border-radius:4px;border:1px solid rgba(240,232,212,.7);background:linear-gradient(#17284f,#0b1631);color:#f3ecd9;font-family:"Shippori Mincho",var(--mm-font-head,serif);font-weight:700;font-size:13px;letter-spacing:.08em;line-height:1.3}
 .nst.r>.dbub .dnm,.nst.r>.tx b{left:12px}
 #app>.tlow .dlg.nst{display:block;margin:0 0 8px}
+#app>.tlow.on>.nst{pointer-events:none}#app>.tlow.on>.nst>.dbub,#app>.tlow.on>.nst>.tx{pointer-events:auto} /* 立ち絵の横の空いた所は下の施設の札を押せる（窓だけが押せる＝タップで閉じる） */
 #app>.tlow .vgsay.nst{display:block}#app>.tlow .vgsay.nst .nstf{--nsh:min(22dvh,190px)}
 #app>.tlow .vgsay.nst .tx{font-size:14px}
 .vgsay.nst>img.nstf{width:auto;border:0;border-radius:0;background:none}
@@ -2537,7 +2539,7 @@ const TOWN_BG="assets/town/mistria_main.webp",TOWN_IMG={w:768,h:1360,top:26};
 var SHOP_FROM=null; // アイテム屋をどこから開いたか（"town"＝街の札から。戻るボタンの行き先だけ。セーブしない）
 // 街の施設コマンド［表示名, 補足, アイコン, 押したとき, 状態］。状態：ok＝行ける／dis＝今は行けない（ボタンを無効）／lock＝未開放（押すと案内だけ）
 // アイコンは金色の線画（下の TOWN_SVG の #tic-*）。画像ファイルのパス（.png／.webp／.jpg／.svg）を書けば、その画像で表示する
-const TOWN_CMDS=m=>[["市場","モンスター市場","#tic-market","market()","ok",0,[168,985]],["牧場","ぽかぽか牧場","#tic-ranch","farm()","ok",0,[604,318]],["研究所","モンスター研究所","#tic-lab","museum()","ok",0,[186,318]],["闘技場","未開放","#tic-arena","townArena()","lock",0,[466,112]],["聖獣士管理局","準備中","","townGuild()","lock",0,[500,594]],["アイテム屋","購入・売却","","townShop()",m?"ok":"dis",0,[452,1078]],["ファーム","育成","#tic-farm","hall()",m?"ok":"dis"],["プロフィール","プレイヤーの記録","#tic-profile","profileScr()","ok"],["セーブ・ロード","セーブ・ロード","#tic-save","savescr()","ok","セーブ<br>ロード"]];
+const TOWN_CMDS=m=>[["市場","モンスター市場","#tic-market","market()","ok",0,[168,985]],["牧場","ぽかぽか牧場","#tic-ranch","farm()","ok",0,[604,318]],["研究所","モンスター研究所","#tic-lab","museum()","ok",0,[186,318]],["闘技場","未開放","#tic-arena","townArena()","lock",0,[466,150]],["聖獣士管理局","準備中","","townGuild()","lock",0,[500,594]],["アイテム屋","購入・売却","","townShop()",m?"ok":"dis",0,[452,1078]],["ファーム","育成","#tic-farm","hall()",m?"ok":"dis"],["プロフィール","プレイヤーの記録","#tic-profile","profileScr()","ok"],["セーブ・ロード","セーブ・ロード","#tic-save","savescr()","ok","セーブ<br>ロード"]];
 // 2026-10-03（品質向上）：7番目［x, y］がある施設＝街の背景の上の札（押せる。地図で施設が分かる＝下のバーと二重に出さない）。無い物＝下のバー（ファーム・プロフィール・セーブ）。札の位置（市場・アイテム屋・聖獣士管理局）は絵から読んだ【要確認】
 const TPIN_LOCK='<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 7V5.2a3 3 0 0 1 6 0V7" fill="none" stroke="#e6bf62" stroke-width="1.6"/><rect x="3.5" y="7" width="9" height="6.5" rx="1.2" fill="#e6bf62"/></svg>';
 const townPins=m=>TOWN_CMDS(m).filter(c=>c[6]),townBar=m=>TOWN_CMDS(m).filter(c=>!c[6]);
@@ -2578,7 +2580,7 @@ function confScr(){if(p8Blocked())return;$("#app").innerHTML=`<div class="ds pfd
 function gameScroller(){const a=document.getElementById("app");if(!a)return null;return [a.querySelector(":scope>.ds>.dbody"),a.querySelector(":scope>.ds,:scope>.mk2,:scope>.p9tour,:scope>.p9vs,:scope>.rn"),a].find(e=>e&&e.scrollHeight>e.clientHeight+1)||a}
 function lobby(msg,open){if(p8Blocked())return;if(S.playerNamePending)return p11NameScr(msg); // Phase 11：新規ゲームは最初にプレイヤー名を決める
  const h1=$("h1");if(h1)h1.style.display="";bgm("town");const m=S.m; // 街では見出し（h1）を CSS で隠す（main:has(>#app>.map.town)）。ほかの画面へ移れば元どおり
- $("#app").innerHTML=`<div class="map town" style="--town-bg:url(${TOWN_BG})"><div class="tbg" aria-hidden="true"></div>${TOWN_SVG}<button class="tround tnews" onclick="newsScr()" aria-label="お知らせ" title="お知らせ"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="#tic-news"/></svg></button><button class="tround tconf" onclick="confScr()" aria-label="設定" title="設定"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="#tic-conf"/></svg></button>${townPins(m).map(c=>`<button class="hz tpin ${c[4]=="ok"?"":c[4]}" style="--x:${c[6][0]};--y:${c[6][1]}" ${c[4]=="dis"?"disabled":""} onclick="${c[3]}" aria-label="${c[0]}${c[4]=="lock"?"（未開放）":""}" title="${c[1]}"><span>${c[4]=="lock"?TPIN_LOCK:""}${c[0]}</span><i></i></button>`).join("")}</div><nav class="tcmds tbar" aria-label="街のコマンド">${townBar(m).map((c,i)=>`<button class="hz tcmd ${c[4]=="ok"?"":c[4]}${i==0?" tsub tfarm":i==1?" tsub tprof":" tsub tsave svb"}" ${c[4]=="dis"?"disabled":""} onclick="${c[3]}" aria-label="${c[0]}" title="${c[1]}"><span class="ti">${townIcon(c[2])}</span><b>${c[5]||c[0]}</b></button>`).join("")}</nav>
+ townPreload();$("#app").innerHTML=`<div class="map town" style="--town-bg:url(${TOWN_BG})"><div class="tbg" aria-hidden="true"></div>${TOWN_SVG}<button class="tround tnews" onclick="newsScr()" aria-label="お知らせ" title="お知らせ"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="#tic-news"/></svg></button><button class="tround tconf" onclick="confScr()" aria-label="設定" title="設定"><svg viewBox="0 0 32 32" aria-hidden="true"><use href="#tic-conf"/></svg></button>${townPins(m).map(c=>`<button class="hz tpin ${c[4]=="ok"?"":c[4]}" style="--x:${c[6][0]};--y:${c[6][1]}" ${c[4]=="dis"?"disabled":""} onclick="${c[3]}" aria-label="${c[0]}${c[4]=="lock"?"（未開放）":""}" title="${c[1]}"><span>${c[4]=="lock"?TPIN_LOCK:""}${c[0]}</span><i></i></button>`).join("")}</div><nav class="tcmds tbar" aria-label="街のコマンド">${townBar(m).map((c,i)=>`<button class="hz tcmd ${c[4]=="ok"?"":c[4]}${i==0?" tsub tfarm":i==1?" tsub tprof":" tsub tsave svb"}" ${c[4]=="dis"?"disabled":""} onclick="${c[3]}" aria-label="${c[0]}" title="${c[1]}"><span class="ti">${townIcon(c[2])}</span><b>${c[5]||c[0]}</b></button>`).join("")}</nav>
  <div class="tlow${msg||!m?" on":""}"><div class="dlg${msg&&/class="fmsg"/.test(msg)?" fina nst r":" sys"}" onclick="townMsgClose(this)">${msg&&/class="fmsg"/.test(msg)?`<img class="nstf" src="${finaStandSrc()}" alt="" decoding="async">`:`<i class="dsys" aria-hidden="true"></i>`}<div class="dbub" id="msg">${msg&&/class="fmsg"/.test(msg)?`<span class="dnm">フィナ</span>`:""}${msg||(m?"行きたい場所をタップしよう！":"モンスターがいません。まずは市場で選ぼう。")}</div></div></div>`;try{window.scrollTo(0,0)}catch(e){} // 街は1画面で固定（2026-09-30）：案内文は知らせることがあるときだけ背景の上に出す。セーブ・ロードは下のバー、大会・育成完了の回数はプロフィールへ
 }
 // ---- Phase 11：プレイヤー名（新規ゲームの最初に決める。空欄なら「アルト」） ----
@@ -2596,6 +2598,8 @@ function p11NameGo(){const e=$("#p11nm"),n=MMP11P.confirmName(S,e?e.value:"");sa
 function finaMsg(t){return `<span class="fmsg" data-npc="fina">${t}</span>`}
 /** 街のフィナ（2026-10-03 品質向上）：小さな顔ではなく半身の立ち絵（正式 closeup の guide＝案内）を案内欄の右上に立たせる */
 function finaStandSrc(){const im=window.MMNPC&&MMNPC.imageOf("fina","closeup","guide");return im?im.src:""}
+/** 施設の背景・立ち絵の先読み（2026-10-03：大きな絵を足した画面へ移ったときの読み込みのちらつきを防ぐ。街を出したとき1回だけ） */
+function townPreload(){if(townPreload.done||typeof Image=="undefined")return;townPreload.done=1;setTimeout(()=>{[LAB_BG,RANCH_BG,SHOP_BG,SHOP_NPC,NICK_STAND,ELLIOT_STAND,VARGAS_STAND,finaStandSrc()].filter(Boolean).forEach(src=>{const im=new Image();im.decoding="async";im.src=src})},600)}
 /** 街の案内欄：タップで閉じる（下の施設の札を押せるように。システム通知も同じ） */
 function townMsgClose(d){const w=d&&d.closest(".tlow");if(w)w.classList.remove("on")}
 function finaFaceSrc(){const im=window.MMNPC&&MMNPC.imageOf("fina","closeup","smile");return im?im.src:""}

@@ -87,7 +87,11 @@ const fit = (pg) => pg.evaluate(() => ({ sw: document.documentElement.scrollWidt
 test('ELI-B1：研究所：図鑑一覧と詳細（ソラモ・ガウル）にエリオットの名前・顔・一言。図鑑の中身・「近日公開」・戻る操作は従来どおり', { skip: SKIP }, async () => {
   const p = await L.open(); const pg = p.page; const T = await pg.evaluate(() => ELLIOT_TALK);
   await H.newGame(pg, 'テスト');
-  await pg.click('.hz[onclick="museum()"]', { force: true }); await pg.waitForSelector('.mgrid'); await waitImgs(pg);
+  await pg.click('.hz[onclick="museum()"]', { force: true }); await pg.waitForSelector('.lab .labnpc');
+  // 2026-10-03 品質向上：入口＝正式背景・エリオットの半身（正式 closeup）と会話窓・下に機能のカード
+  const hero = await pg.evaluate(() => { const i = document.querySelector('.lab .labnpc img'); return { src: i.getAttribute('src'), name: document.querySelector('.lab .labnpc .tx b').textContent, text: document.querySelector('.lab .labnpc .tx').textContent.replace(/^エリオット/, ''), cards: [...document.querySelectorAll('.lab .labc b')].map((b) => b.textContent) }; });
+  assert.deepEqual([hero.src, hero.name, hero.cards], ['assets/npc/elliot/closeup/guide.webp', 'エリオット', ['図鑑', '特殊復元', '合体']]); assert.ok(T.lab.includes(hero.text), hero.text);
+  await pg.click('.labc[onclick="museum(\'book\')"]'); await pg.waitForSelector('.mgrid'); await waitImgs(pg);
   let s = await say(pg);
   assert.equal(s.length, 1); assert.deepEqual([s[0].name, s[0].src, s[0].ok], ['エリオット', 'assets/npc/elliot/face.webp', true]);
   assert.ok(T.lab.includes(s[0].text), s[0].text);
@@ -102,7 +106,7 @@ test('ELI-B1：研究所：図鑑一覧と詳細（ソラモ・ガウル）に�
     assert.match(await pg.evaluate(() => document.querySelector('.mush').textContent), new RegExp(`No\\.00${i + 1}`));
     await pg.click('.mk2 .dback.wide'); await pg.waitForSelector('.mgrid');
   }
-  await pg.click('.dtop .dback'); await pg.waitForSelector('.hz[onclick="museum()"]');
+  await pg.click('.dtop .dback'); await pg.waitForSelector('.lab .labnpc'); await pg.click('.lab .dtop .dback'); await pg.waitForSelector('.hz[onclick="museum()"]');
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, [], '404なし');
   await p.ctx.close();
 });
@@ -111,7 +115,7 @@ test('ELI-B2：4つの画面サイズで、研究所の一覧・詳細のエリ�
   for (const size of Object.values(H.SIZES)) {
     const p = await L.open({ size }); const pg = p.page; const tag = size.join('×');
     await H.newGame(pg, 'テスト');
-    await pg.evaluate(() => museum()); await pg.waitForSelector('.mgrid'); await waitImgs(pg);
+    await pg.evaluate(() => museum('book')); await pg.waitForSelector('.mgrid'); await waitImgs(pg);
     let r = await fit(pg); assert.ok(r.inside, `${tag} 一覧：吹き出しが画面内`); assert.ok(r.sw <= r.W + 1, `${tag} 一覧：横にはみ出さない（${r.sw}/${r.W}）`);
     await pg.evaluate(() => musd(0)); await pg.waitForSelector('.mk2 .pcard'); await waitImgs(pg);
     r = await fit(pg); assert.ok(r.inside, `${tag} 詳細：吹き出しが画面内`); assert.ok(r.sw <= r.W + 1, `${tag} 詳細：横にはみ出さない（${r.sw}/${r.W}）`);

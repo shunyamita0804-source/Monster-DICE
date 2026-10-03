@@ -40,7 +40,7 @@ async function setup(p) {
 const SCREENS = [
   ['街', 'lobby()', '.tbg'], ['市場', 'market()', '.p10mk'], ['牧場（預ける）', "farm('','a')", '.fscene'], ['牧場（様子を見る）', "rnView=null;farm('','e')", '.fscene'], ['牧場（売る）', "farm('','d')", '.fscene'],
   ['ファーム', "hall('t')", '.fm'], ['ステータス', "hall('st')", '.dbg'], ['技管理', "hall('w')", '.dbg'], ['特訓メニュー', "hall('s')", '.dbg'], ['出発準備', 'prepScr()', '.dbg'], ['アイテム', 'shopScr()', '.dbg'],
-  ['プロフィール', 'profileScr()', '#app>.ds'], ['お知らせ', 'newsScr()', '#app>.ds'], ['設定', 'confScr()', '#app>.ds'], ['セーブ', 'savescr()', 'main'], ['研究所', 'museum()', '.dbg'], ['図鑑の詳細', 'musd(0)', '.mk2'],
+  ['プロフィール', 'profileScr()', '#app>.ds'], ['お知らせ', 'newsScr()', '#app>.ds'], ['設定', 'confScr()', '#app>.ds'], ['セーブ', 'savescr()', 'main'], ['研究所', 'museum()', '.labbg'], ['図鑑', "museum('book')", '.dbg'], ['図鑑の詳細', 'musd(0)', '.mk2'],   // 2026-10-03：研究所の入口（正式背景・1画面）と図鑑の一覧
 ];
 /** 画面の登場アニメ（#app>* の scr：12px 下から0.3秒）など、終わりのあるアニメが止まるまで待つ（背景の位置を正しく測るため） */
 const settle = (pg) => pg.waitForFunction(() => document.getAnimations().every((a) => a.playState !== 'running' || !Number.isFinite(a.effect && a.effect.getComputedTiming().endTime)), null, { timeout: 10000 }).then(() => pg.waitForTimeout(60));

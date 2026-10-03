@@ -143,10 +143,10 @@ test('CED-B1：ゴールのランク選択 → 順位表 → 試合後 → VS画
   assert.equal(await pg.evaluate(() => document.querySelector('.p9tmsg').textContent), '第1試合：勝ち！');
   assert.ok(await sysClean(pg), '試合結果の通知にセドリックの顔・名前は付かない');
   assert.deepEqual((await ceds(pg)).map((c) => c.text), [T.next[1]]);
-  // VS画面（試合開始の直前）
-  await pg.waitForTimeout(550); await pg.click('button[onclick="p9VsScr()"]'); await pg.waitForSelector('.p9vs .p9go'); await waitImg(pg);
-  assert.deepEqual((await ceds(pg)).map((c) => [c.name, c.ok, c.text]), [['セドリック', true, T.vs]]);
-  assert.equal(await pg.evaluate(() => S.m.raise.battle), null, 'VS画面では試合はまだ始まらない（従来どおり）');
+  // 2026-10-03 品質向上：対戦前の画面を1つに＝順位表の「次の相手」に能力の比較と「対戦開始」（2度押し）。VS 画面（p9VsScr）は流れから外した
+  assert.equal(await pg.evaluate(() => document.querySelectorAll('.p9next .p9cmp .c').length), 6, '次の相手との6能力の比較');
+  await pg.waitForTimeout(550); await pg.click('.p9next .p9go'); await pg.waitForTimeout(100);
+  assert.equal(await pg.evaluate(() => S.m.raise.battle), null, '1回目の押下では試合はまだ始まらない（2度押し）');
   await pg.evaluate(() => board()); await pg.waitForSelector('.p9tour .p9next');
   // 残り4試合も勝って優勝 → 結果画面
   for (let i = 0; i < 4; i++) assert.ok(await simMatch(pg, true));
@@ -177,8 +177,6 @@ test('CED-B3：4つの画面サイズで、ランク選択・順位表・VS画�
     const check = async (label) => { await waitImg(pg); const r = await noOverflow(pg); assert.ok(r.inside, `${tag} ${label}：吹き出しが画面内`); assert.ok(r.sw <= r.W + 1, `${tag} ${label}：横にはみ出さない（${r.sw}/${r.W}）`); };
     await check('ランク選択');
     await joinD(pg); await check('順位表');
-    await pg.evaluate(() => p9VsScr()); await pg.waitForSelector('.p9vs .p9go'); await check('VS画面');
-    await pg.evaluate(() => board()); await pg.waitForSelector('.p9tour .p9next');
     for (let i = 0; i < 5; i++) assert.ok(await simMatch(pg, true));
     await pg.waitForSelector('.p9tour.p9won'); await check('結果画面');
     assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
