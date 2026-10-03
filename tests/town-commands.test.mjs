@@ -41,7 +41,7 @@ test('TW-2：施設は街の背景の上の札（押せる。下のバーと二�
   assert.equal(f(null)[5][4], 'dis', 'アイテム屋は連れているモンスターがいるときだけ（従来の shopScr の条件）'); assert.equal(f(null)[6][4], 'dis', 'モンスターがいないときファームは押せない（従来どおり）');
   assert.equal(f(null)[7][4], 'ok'); assert.equal(f(null)[8][4], 'ok'); assert.equal(f({})[8][5], 'セーブ<br>ロード', 'セーブ・ロードは2行');
   const lobby = HTML.slice(HTML.indexOf('function lobby('), HTML.indexOf('\n}', HTML.indexOf('function lobby(')));
-  assert.match(lobby, /\$\{townPins\(m\)\.map\(c=>`<button class="tpin /, '施設は背景の上の札（ボタン）');
+  assert.match(lobby, /\$\{townPins\(m\)\.map\(c=>`<button class="hz tpin /, '施設は背景の上の札（ボタン）');
   assert.match(lobby, /<\/div><nav class="tcmds tbar" aria-label="街のコマンド">\$\{townBar\(m\)\.map/, 'バーは街の枠の外（画面下に固定）');
   assert.doesNotMatch(lobby, /tlbl|TOWN_LABELS/, '押せない建物ラベルと施設コマンドの二重表示はやめた');
   assert.match(HTML, /\.tbar\{position:fixed;[^}]*bottom:0;[^}]*grid-template-columns:repeat\(40,minmax\(0,1fr\)\);grid-template-rows:var\(--tbr2\);/, '1段：40列');
