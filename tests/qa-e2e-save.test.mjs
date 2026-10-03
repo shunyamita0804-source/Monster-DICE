@@ -449,7 +449,7 @@ T('QA-SV10：新しい版・壊れたセーブコードは読み込まず mr4v6 
   noErrors(p);
 });
 
-T('QA-SV11：最初からやり直すは2度押し。1回目では何も消えず、2回目で新規（300G・0体・名前登録から）。スロットは消えない', async () => {
+T('QA-SV11：最初からやり直すは2度押し。1回目では何も消えず、2回目でタイトル画面へ（まだ消さない）→ 開始で新規（300G・0体・名前登録から）。スロットは消えない', async () => {
   const p = await openPage(); const pg = p.page;
   await setupTown(pg, { g: 5000 });
   await openSaveScreen(pg);
@@ -463,6 +463,10 @@ T('QA-SV11：最初からやり直すは2度押し。1回目では何も消え�
   assert.equal(await stored(pg), cur, '1回目の押下では消さない');
   assert.match(await pg.evaluate(() => document.querySelector('[onclick^="reset"]').textContent), /もう一度押すと最初から/);
   await pg.click('[onclick^="reset"]');
+  // 2026-10-03：2回目でタイトル画面へ（タイトルの曲と画面が一致）。まだ消さない＝タイトルで始めたときに新規
+  await pg.waitForSelector('.tpage .p15start'); assert.equal(await stored(pg), cur, 'タイトルへ移っただけでは消さない');
+  assert.equal(await pg.evaluate(() => MMAUDIO.status().scene), 'TITLE');
+  await pg.waitForTimeout(400); await pg.click('.p15start');
   await pg.waitForSelector('#p11nm');
   const s = JSON.parse(await stored(pg));
   assert.equal(s.v, 6); assert.equal(s.g, 300); assert.equal(s.m, null); assert.deepEqual(s.box, []);
