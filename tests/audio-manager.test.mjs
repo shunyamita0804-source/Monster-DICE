@@ -263,7 +263,7 @@ test('AUDIO-15：assets/audio に同じ曲の別形式（ogg／mp3／wav…）�
   const { got } = loadRegistry(); const ref = new Set([...Object.values(got.bgm), ...Object.values(got.se)].flatMap(srcsOf).map(onDisk));
   for (const f of audio) assert.ok(ref.has(f), `registry から参照されていないファイル：${path.relative(ROOT, f)}`);
   assert.ok(existsSync(path.join(ROOT, 'AUDIO_CREDITS.md')) && existsSync(path.join(ROOT, 'assets/audio/README.md')));
-  const credits = rd('AUDIO_CREDITS.md'); for (const n of ['JP Soundworks', 'CC BY 4.0', 'Interface SFX Pack 1', 'Ivokard', 'CC0']) assert.ok(credits.includes(n), n);
+  const credits = rd('AUDIO_CREDITS.md'); for (const n of ['JP Soundworks', 'CC BY 4.0', 'Interface SFX Pack 1', 'Ivokard', 'CC0', 'alkakrab', 'Free 25 Fantasy RPG Game Tracks Vol.3', 'HydroGene']) assert.ok(credits.includes(n), n);
 });
 
 test('AUDIO-16：場面の別名（旧名）は正式名へ読み替える。fallback の連鎖で曲を引き継ぐ場面は、同じ曲なら鳴らし直さない', async () => {
@@ -328,4 +328,56 @@ test('AUDIO-19：index.html：開始のタップは TITLE_START の1音だけ（
   assert.match(FV, /markCur\(id\); if \(!last\) feel\('step', \{ id \}\);/);
   assert.equal((FV.match(/id="brollbtn" data-nsfx="1"/g) || []).length, 2, 'START は決定音を鳴らさない（投げる音だけ）');
   assert.match(HTML, /if\(AU\.on\)setTimeout\(\(\)=>MMAUDIO\.se\("UI_CONFIRM"\),250\)\}/, '音を戻した合図は UI_CONFIRM（バトル中の sfx(3)＝開始・勝利と取り違えない）'); assert.match(FV, /feel\('tournament\.arrive'\);/); assert.match(FV, /if \(root\.bgm\) root\.bgm\('chapter'\);/);
+});
+
+test('AUDIO-20：ループ区間（loopStart／loopEnd）：終わりの手前で次の1本を loopStart で待たせ、loopEnd でクロスフェード。鳴っているのは1本だけ・常駐のタイマーなし。最後まで来たら loopStart へ。次の1本を鳴らせなければ元の1本へ戻す', async () => {
+  const { A, log } = env(); legacySpy(A); A.registerBgm('TOWN', './bgm/t.ogg', { gain: 0.8, loopStart: 2, loopEnd: 20, loopXfade: 0.5 }); A.unlock(); A.scene('TOWN'); await tick(10);
+  const el0 = log.audios.find((x) => x.src === './bgm/t.ogg');
+  assert.equal(el0.loop, false, 'ループ区間のある曲は <audio> の loop を使わない');
+  el0.currentTime = 15; el0.emit('timeupdate'); assert.equal(log.audios.filter((x) => /t\.ogg#t=2$/.test(x.src)).length, 0, 'まだ準備しない');
+  el0.currentTime = 16.6; el0.emit('timeupdate');
+  const el1 = log.audios.find((x) => x.src === './bgm/t.ogg#t=2'); assert.ok(el1 && el1.paused, '次の1本を loopStart（#t=2）で待たせる（鳴らさない）');
+  assert.equal(A.status().slots.filter((s) => s.waiting).length, 1);
+  const p1 = el1.plays;   // 最初の操作のときに無音で1回鳴らしてある（iPhone 用の準備）
+  el0.currentTime = 19.2; el0.emit('timeupdate'); el0.emit('timeupdate');   // 渡すのは1回だけ
+  await tick(450);
+  const s1 = A.status(); assert.equal(s1.slots.filter((s) => s.active).length, 1, '鳴らしているのは1本'); assert.ok(!el1.paused, '次の1本が鳴る'); assert.equal(el1.plays - p1, 1, 'play() は1回');
+  await tick(650); assert.ok(el0.paused, '前の1本はクロスフェードのあと止まる'); assert.equal(log.audios.filter((x) => !x.paused).length, 1);
+  assert.equal(A.status().slots.find((s) => s.active).gain, 0.8, '音量は registry の gain');
+  // 最後まで来た（裏でタイマーが遅れたなど）→ loopStart から
+  const cur = log.audios.find((x) => !x.paused); cur.currentTime = 30; cur.emit('ended'); assert.equal(cur.currentTime, 2);
+  // 次の1本を鳴らせない（iPhone の自動再生の制約など）→ 元の1本で続ける
+  cur.currentTime = 16.6; cur.emit('timeupdate'); const nx = log.audios.find((x) => x !== cur && /#t=2$/.test(x.src) && x.paused);
+  assert.ok(nx); nx.play = () => Promise.reject(Object.assign(new Error('NotAllowedError'), { name: 'NotAllowedError' }));
+  cur.currentTime = 19.3; cur.emit('timeupdate'); await tick(400);
+  assert.equal(A.status().slots.filter((s) => s.active).length, 1); assert.ok(!cur.paused, '元の1本が鳴り続ける'); assert.equal(cur.currentTime, 2, 'loopStart から');
+  // 不正なループ区間はふつうのループ
+  const e2 = env(); legacySpy(e2.A); e2.A.registerBgm('TOWN', './bgm/u.ogg', { loopStart: 10, loopEnd: 12 }); e2.A.unlock(); e2.A.scene('TOWN'); await tick(5);
+  assert.equal(e2.log.audios.find((x) => x.src === './bgm/u.ogg').loop, true);
+  // 場面を変えたら、待たせていた1本はその場面の曲に使い回す（増えない）
+  const e3 = env(); legacySpy(e3.A); e3.A.registerBgm('TOWN', './bgm/t.ogg', { loopEnd: 20 }); e3.A.registerBgm('MARKET', './bgm/m.ogg'); e3.A.unlock(); e3.A.scene('TOWN'); await tick(5);
+  const t0 = e3.log.audios.find((x) => x.src === './bgm/t.ogg'); t0.currentTime = 17; t0.emit('timeupdate');
+  e3.A.scene('MARKET'); await tick(800);
+  assert.equal(e3.A.status().slots.filter((s) => s.active).length, 1); assert.equal(e3.log.audios.filter((x) => !x.paused).length, 1); assert.ok(e3.log.audios.length <= 3);
+});
+
+test('AUDIO-21：SE の maxMs／fadeMs：長い余韻の素材を、ファイルを変えずに短く鳴らす（最後に音量を下げて止める）', async () => {
+  const { A, log } = env(); legacySpy(A); A.registerSe('WILD_ALERT', './se/fx3.ogg', { gain: 2, maxMs: 2000, fadeMs: 700 }); A.registerSe('UI_CONFIRM', './se/ok.ogg');
+  const c = A.context(); await tick(20); const gains = [], stops = [];
+  const cg = c.createGain.bind(c); c.createGain = () => { const g = cg(); const p = g.gain, sv = p.setValueAtTime.bind(p), lr = p.linearRampToValueAtTime.bind(p); p.setValueAtTime = (v, t) => { gains.push(['set', v, t]); sv(v, t); }; p.linearRampToValueAtTime = (v, t) => { gains.push(['ramp', v, t]); lr(v, t); }; return g; };
+  const cs = c.createBufferSource.bind(c); c.createBufferSource = () => { const n = cs(); n.stop = (t) => stops.push(t); return n; };
+  assert.equal(A.se('WILD_ALERT'), true); assert.equal(log.plays, 1);
+  assert.deepEqual(gains, [['set', 2, 1.3], ['ramp', 0, 2]], '1.3秒から下げて2秒で0'); assert.deepEqual(stops, [2.02], '2秒で止める');
+  gains.length = 0; stops.length = 0; A.se('UI_CONFIRM'); assert.deepEqual([gains, stops], [[], []], 'maxMs の無い SE は最後まで');
+  assert.equal(A.registryOf('se').WILD_ALERT.maxMs, 2000);
+});
+
+test('AUDIO-22：registry のループ区間・maxMs は正しい値（loopEnd は loopStart＋4秒より後・クロスフェードは区間の半分以下）。第3弾で採用したファイルは alkakrab のパック', () => {
+  const { got } = loadRegistry(), { A } = env(); A.registerAll({ bgm: got.bgm, se: got.se });
+  const R = A.registryOf('bgm');
+  for (const [k, v] of Object.entries(got.bgm)) if (v.loopEnd != null) assert.ok(R[k].loopRange, `${k} のループ区間が有効`);
+  for (const k of ['TOWN', 'FARM', 'RIVAL_BATTLE', 'TOURNAMENT_BATTLE_HIGH']) assert.match(srcsOf(got.bgm[k])[0], /alkakrab_fantasy_rpg_vol3\//, k);
+  for (const k of ['CHAPTER_START', 'WILD_ALERT', 'MATCHUP']) assert.match(srcsOf(got.se[k])[0], /alkakrab_fantasy_rpg_vol3\//, k);
+  for (const [k, v] of Object.entries(got.se)) if (v.maxMs != null) assert.ok(v.maxMs >= 300 && v.maxMs <= 4000 && (v.fadeMs == null || v.fadeMs <= v.maxMs), k);
+  assert.equal(got.bgm.CHAPTER_1.silent, true, 'Chapter 1 は第3弾でも見送り（候補が戦闘曲並みに忙しい）');
 });

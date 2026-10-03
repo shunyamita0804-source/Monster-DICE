@@ -61,14 +61,24 @@
     if (!srcs.length && !fb) throw new Error('MMAUDIO：BGM の登録が不正です（ファイルか fallback か silent が要る）');
     if (opts.fallback && !fb) throw new Error('MMAUDIO：BGM の fallback の場面が不正です');
     const g = opts.gain != null ? opts.gain : (opts.volume != null ? opts.volume : 1);
-    BGM[key] = fz({ srcs: fz(srcs), gain: Number.isFinite(g) ? Math.max(0, g) : 1, loop: opts.loop !== false, fallback: fb });
+    BGM[key] = fz({ srcs: fz(srcs), gain: Number.isFinite(g) ? Math.max(0, g) : 1, loop: opts.loop !== false, fallback: fb, loopRange: loopRangeOf(opts) });
+  }
+  /**
+   * ループ区間（秒）：{ loopStart, loopEnd, loopXfade }。曲の終わりがフェードアウトする素材を、ファイルを加工せずに自然につなぐ。
+   *  loopEnd に来たら、もう1本の <audio> を loopStart から鳴らし、loopXfade 秒かけてクロスフェードする（GainNode）。不正な値は null（＝ふつうのループ）
+   */
+  function loopRangeOf(o) {
+    const a = Number(o.loopStart || 0), b = Number(o.loopEnd), x = o.loopXfade != null ? Number(o.loopXfade) : 1.5;
+    if (o.loopEnd == null || !Number.isFinite(a) || !Number.isFinite(b) || !Number.isFinite(x) || a < 0 || b < a + 4 || x < 0 || x > (b - a) / 2) return null;
+    return fz({ start: a, end: b, xf: x });
   }
   function registerSe(name, src, opts = {}) {
     if (!SE.includes(name)) throw new Error('MMAUDIO：SE の登録が不正です（名前）');
     if (opts.silent) { SEF[name] = { srcs: fz([]), gain: 0, silent: true, data: null, buffer: null, failed: false, loading: false }; return; }   // この出来事は鳴らさない（合成音も鳴らさない）
     const srcs = srcList(src); if (!srcs.length) throw new Error('MMAUDIO：SE の登録が不正です（ファイルか silent が要る）');
     const g = opts.gain != null ? opts.gain : (opts.volume != null ? opts.volume : 1);
-    SEF[name] = { srcs: fz(srcs), gain: Number.isFinite(g) ? Math.max(0, g) : 1, data: null, buffer: null, failed: false, loading: false };
+    const mx = Number(opts.maxMs), fd = Number(opts.fadeMs);   // maxMs：再生する長さ（ms。長い余韻の素材を、ファイルを変えずに短く鳴らす）、fadeMs：最後に音量を下げる長さ
+    SEF[name] = { srcs: fz(srcs), gain: Number.isFinite(g) ? Math.max(0, g) : 1, maxMs: Number.isFinite(mx) && mx > 0 ? mx : 0, fadeMs: Number.isFinite(fd) && fd > 0 ? fd : 300, data: null, buffer: null, failed: false, loading: false };
     loadSe(name);
   }
   /** registry をまとめて登録する（js/audio/audio-registry.js から）。値は文字列（ファイル）か { src|srcs, gain, loop, fallback } */
@@ -133,8 +143,8 @@
   function makeSlot(i) {
     if (typeof root.Audio !== 'function') return null;
     let el; try { el = new root.Audio(); } catch (e) { note('audio', e); return null; }
-    const s = { i, el, src: null, scene: null, node: null, gain: null, token: 0, timer: null, active: false, primed: false, plain: false };
-    try { el.preload = 'auto'; el.loop = true; if (el.addEventListener) el.addEventListener('error', () => onElError(s)); } catch (e) {}
+    const s = { i, el, src: null, scene: null, node: null, gain: null, token: 0, timer: null, active: false, primed: false, plain: false, loopRange: null, loopT: null, prepared: false };
+    try { el.preload = 'auto'; el.loop = true; if (el.addEventListener) { el.addEventListener('error', () => onElError(s)); el.addEventListener('timeupdate', () => onTick(s)); el.addEventListener('ended', () => onEnded(s)); } } catch (e) {}
     return s;
   }
   function slots() {
@@ -160,6 +170,7 @@
   }
   function fadeOutSlot(s, ms) {
     if (!s) return;
+    if (s.loopT) { clearTimeout(s.loopT); s.loopT = null; }
     s.active = false; s.token++;
     setGain(s, 0, ms);
     if (s.timer) clearTimeout(s.timer);
@@ -176,13 +187,14 @@
     const src = pickSrc(entry.srcs); if (!src) return false;
     const all = slots(); if (!all.length) return false;
     const cur = st.cur;
-    if (cur && cur.active && cur.src === src) { cur.scene = key; cur.gainTarget = entry.gain; st.source = 'file'; legacyStop(); setGain(cur, slotTarget(cur), ms); return true; }   // 同じ曲なら鳴らし直さない
+    if (cur && cur.active && cur.src === src) { cur.scene = key; cur.gainTarget = entry.gain; cur.loopRange = entry.loopRange || null; st.source = 'file'; legacyStop(); setGain(cur, slotTarget(cur), ms); return true; }   // 同じ曲なら鳴らし直さない
     const s = all.find((x) => x !== cur) || all[0];
     if (s.timer) { clearTimeout(s.timer); s.timer = null; }
+    if (s.loopT) { clearTimeout(s.loopT); s.loopT = null; }
     const token = ++s.token;
-    s.src = src; s.scene = key; s.gainTarget = entry.gain; s.active = true;
+    s.src = src; s.scene = key; s.gainTarget = entry.gain; s.active = true; s.prepared = false; s.waiting = false; s.loopRange = entry.loopRange || null;
     attachSlot(s);
-    try { s.el.loop = entry.loop !== false; s.el.src = src; if (s.el.load) s.el.load(); } catch (e) { note('bgm-src', e); s.active = false; s.src = null; return false; }
+    try { s.el.loop = entry.loop !== false && !s.loopRange; s.el.src = src; if (s.el.load) s.el.load(); } catch (e) { note('bgm-src', e); s.active = false; s.src = null; return false; }
     setGain(s, 0, 0);
     if (cur && cur !== s) fadeOutSlot(cur, ms);
     st.cur = s; st.source = 'file'; legacyStop();
@@ -193,6 +205,41 @@
       else up();
     } catch (e) { note('bgm-play', e); st.pendingScene = key; }
     return true;
+  }
+  // ---- ループ区間（loopStart／loopEnd）：もう1本の <audio> へクロスフェードで渡す。タイマーは常駐させない（timeupdate と、渡す直前の1回だけ） ----
+  const otherSlot = (s) => st.slots.find((x) => x !== s) || null;
+  function onTick(s) {
+    const L = s.loopRange; if (!L || s !== st.cur || !s.active || st.hidden) return;
+    const t = s.el.currentTime; if (!Number.isFinite(t)) return;
+    const at = L.end - L.xf;   // ここで次の1本を鳴らし始める
+    if (t >= at - 3 && !s.prepared) prepLoop(s);
+    if (t >= at - 1.2 && !s.loopT) s.loopT = setTimeout(() => { s.loopT = null; loopHandoff(s); }, Math.max(0, (at - t) * 1000));
+  }
+  /** 次の1本を loopStart の位置で待たせる（鳴らさない） */
+  function prepLoop(s) {
+    s.prepared = true;   // このループで1回だけ試す
+    const o = otherSlot(s); if (!o || o.active || o.timer) return;
+    o.token++; o.src = s.src; o.scene = s.scene; o.gainTarget = s.gainTarget; o.loopRange = s.loopRange; o.prepared = false; o.waiting = true;
+    attachSlot(o); setGain(o, 0, 0);
+    try { o.el.loop = false; o.el.src = s.src + '#t=' + s.loopRange.start; if (o.el.load) o.el.load(); } catch (e) { o.waiting = false; note('loop-prep', e); }
+  }
+  function loopHandoff(s) {
+    const L = s.loopRange; if (!L || s !== st.cur || !s.active) return;
+    if (st.hidden) { s.prepared = false; return; }   // 裏に回っている間は渡さない（戻ったあと最後まで来たら ended で loopStart へ）
+    const o = otherSlot(s);
+    if (!o || !o.waiting || o.src !== s.src || o.active) { try { s.el.currentTime = L.start; } catch (e) {} s.prepared = false; return; }   // 次の1本が無い：その場で戻す
+    o.waiting = false; o.active = true; o.prepared = false; const tok = o.token, ms = L.xf * 1000;
+    try { if (Math.abs((o.el.currentTime || 0) - L.start) > 0.3) o.el.currentTime = L.start; } catch (e) {}
+    st.cur = o; fadeOutSlot(s, ms);
+    const back = () => { if (o.token !== tok) return; o.active = false; if (st.cur === o) { st.cur = s; s.active = true; s.token++; if (s.timer) { clearTimeout(s.timer); s.timer = null; } setGain(s, slotTarget(s), 120); try { s.el.currentTime = L.start; const q = s.el.play(); if (q && q.catch) q.catch(() => {}); } catch (e) {} } };   // 次の1本を鳴らせなかった：元の1本へ戻す
+    try { const p = o.el.play(); if (p && typeof p.then === 'function') p.then(() => { if (o.token === tok && o.active) setGain(o, slotTarget(o), ms); }).catch((e) => { note('loop-play', e); back(); }); else setGain(o, slotTarget(o), ms); }
+    catch (e) { note('loop-play', e); back(); }
+  }
+  /** 曲の最後まで来てしまった（裏に回ってタイマーが遅れたなど）：loopStart へ戻して続ける */
+  function onEnded(s) {
+    const L = s.loopRange; if (!L || s !== st.cur || !s.active) return;
+    try { s.el.currentTime = L.start; const p = s.el.play(); if (p && p.catch) p.catch(() => {}); } catch (e) {}
+    s.prepared = false;
   }
   function legacyStop() { try { if (legacy && typeof legacy.stop === 'function') legacy.stop(); } catch (e) { note('legacy-stop', e); } }
   function startLegacy(key) {
@@ -270,7 +317,12 @@
     g.gain.value = Math.max(0, f.gain * (opts.volume != null ? opts.volume : 1));
     src.buffer = f.buffer; src.connect(g); g.connect(st.seGain);
     src.onended = () => { try { src.disconnect(); g.disconnect(); } catch (e) {} };
-    src.start(c.currentTime + Math.max(0, opts.delay || 0));
+    const t0 = c.currentTime + Math.max(0, opts.delay || 0);
+    src.start(t0);
+    if (f.maxMs) {   // 長い余韻の素材を短く鳴らす（ファイルは変えない。最後の fadeMs で音量を下げて止める）
+      const end = t0 + f.maxMs / 1000, fs = Math.min(f.fadeMs, f.maxMs) / 1000, v = g.gain.value;
+      try { g.gain.setValueAtTime(v, Math.max(t0, end - fs)); g.gain.linearRampToValueAtTime(0, end); src.stop(end + 0.02); } catch (e) {}
+    }
   }
   /** SE（出来事の名前）。ミュート中・音源の無い出来事は合成音へ（無ければ何もしない）。失敗しても投げない */
   function se(name, opts = {}) {
@@ -339,8 +391,8 @@
     files: { bgm: Object.keys(BGM).filter((k) => BGM[k].srcs.length), se: Object.keys(SEF).filter((k) => !SEF[k].silent) }, inherits: Object.keys(BGM).filter((k) => !BGM[k].srcs.length && !BGM[k].silent),
     silent: { bgm: Object.keys(BGM).filter((k) => BGM[k].silent), se: Object.keys(SEF).filter((k) => SEF[k].silent) },
     se: Object.fromEntries(Object.keys(SEF).map((k) => [k, SEF[k].silent ? 'silent' : SEF[k].buffer ? 'ready' : (SEF[k].failed ? 'failed' : 'loading')])),
-    slots: st.slots.map((s) => ({ i: s.i, src: s.src, scene: s.scene, active: s.active, paused: !!s.el.paused, time: Number.isFinite(s.el.currentTime) ? Math.round(s.el.currentTime * 100) / 100 : null, gain: s.gain ? s.gain.gain.value : s.el.volume })) });
-  const registryOf = (kind) => (kind === 'se' ? Object.fromEntries(Object.keys(SEF).map((k) => [k, { srcs: [...SEF[k].srcs], gain: SEF[k].gain, silent: !!SEF[k].silent }])) : Object.fromEntries(Object.keys(BGM).map((k) => [k, { ...BGM[k], srcs: [...BGM[k].srcs] }])));
+    slots: st.slots.map((s) => ({ i: s.i, src: s.src, scene: s.scene, active: s.active, paused: !!s.el.paused, loop: s.loopRange ? [s.loopRange.start, s.loopRange.end] : null, waiting: !!s.waiting, time: Number.isFinite(s.el.currentTime) ? Math.round(s.el.currentTime * 100) / 100 : null, gain: s.gain ? s.gain.gain.value : s.el.volume })) });
+  const registryOf = (kind) => (kind === 'se' ? Object.fromEntries(Object.keys(SEF).map((k) => [k, { srcs: [...SEF[k].srcs], gain: SEF[k].gain, silent: !!SEF[k].silent, maxMs: SEF[k].maxMs }])) : Object.fromEntries(Object.keys(BGM).map((k) => [k, { ...BGM[k], srcs: [...BGM[k].srcs] }])));
 
   root.MMAUDIO = fz({ SCENES, SCENE_ALIAS, SE, FADE, registerBgm, registerSe, registerAll, clearRegistry, registryOf, attachLegacy, resolveScene, resolveBgm, scene, stopBgm, se, setVolume, setMuted, unlock, context, legacyInput, status });
   try { if (root.document) { ['pointerdown', 'touchend', 'keydown'].forEach((e) => root.document.addEventListener(e, unlock, { passive: true })); root.document.addEventListener('visibilitychange', onVisibility); } } catch (e) {}
