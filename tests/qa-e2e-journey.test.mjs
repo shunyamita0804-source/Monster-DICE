@@ -97,7 +97,7 @@ test('JR-5：街：名前登録の直後の案内はフィナの台詞（顔・�
   const p = await open({ karen: true }); const pg = p.page;
   await pg.click('[onclick*="startGame"]'); await pg.waitForSelector('#p11nm'); await pg.fill('#p11nm', 'アルト'); await pg.click('[onclick*="p11NameGo"]'); await pg.waitForTimeout(150);
   await H.finishTalk(pg); await pg.waitForFunction(() => !document.querySelector('.mmtalk'));
-  const t = await pg.evaluate(() => ({ fina: !!document.querySelector('.dlg.fina img.dmf'), name: document.querySelector('.dlg.fina .dnm').textContent, text: document.querySelector('#msg').textContent }));
+  const t = await pg.evaluate(() => ({ fina: !!document.querySelector('.dlg.fina img.nstf'), name: document.querySelector('.dlg.fina .dnm').textContent, text: document.querySelector('#msg').textContent }));
   assert.equal(t.fina, true); assert.equal(t.name, 'フィナ'); assert.match(t.text, /ようこそ、アルトさん！ まずは市場でモンスターを選ぼう。/);
   await pg.evaluate(() => market()); await pg.waitForSelector('.mmtalk'); await pg.waitForTimeout(300);
   const m1 = await pg.evaluate(() => ({ talk: document.querySelector('.p10mk').classList.contains('talk'), sl: getComputedStyle(document.querySelector('.p10sl')).opacity, karen: document.querySelector('.mmtalk').dataset.npc, arrows: getComputedStyle(document.querySelector('.p10arw')).visibility }));

@@ -114,7 +114,7 @@ test('FE-6：システム通知（育成放棄など）は顔・名前の無い�
   const s = await pg.evaluate(() => { const d = document.querySelector('#app>.tlow .dlg'); return { cls: d.className, mon: !!d.querySelector('.mon,svg'), sys: !!d.querySelector('.dsys'), name: !!d.querySelector('.dnm') }; });
   assert.deepEqual(s, { cls: 'dlg sys', mon: false, sys: true, name: false });
   await pg.evaluate(() => lobby(finaMsg('ようこそ！'))); await pg.waitForTimeout(400);
-  assert.deepEqual(await pg.evaluate(() => { const d = document.querySelector('#app>.tlow .dlg'); return [d.className, !!d.querySelector('.dmf'), d.querySelector('.dnm').textContent]; }), ['dlg fina', true, 'フィナ']);
+  assert.deepEqual(await pg.evaluate(() => { const d = document.querySelector('#app>.tlow .dlg'); return [d.className, (d.querySelector('img.nstf') || {}).getAttribute && d.querySelector('img.nstf').getAttribute('src'), d.querySelector('.dnm').textContent]; }), ['dlg fina nst r', 'assets/npc/fina/closeup/guide.webp', 'フィナ'], '2026-10-03：フィナの案内は半身の立ち絵（正式 closeup の guide）');
   assert.deepEqual(p.errors, []);
 });
 

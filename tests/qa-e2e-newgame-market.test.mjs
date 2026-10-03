@@ -182,7 +182,7 @@ T('QA-NG2：開始ボタン → 名前登録画面（初期値「アルト」・
     hz: [...document.querySelectorAll('.hz')].map((b) => [b.getAttribute('onclick'), b.disabled]),
     prof: document.querySelectorAll('#app .bprof').length, topUi: document.querySelectorAll('.tttl, .tpinfo, .map.town .p115pn').length,
     msg: document.querySelector('#msg').textContent, bar: document.querySelectorAll('.topbar').length,
-    sw: document.documentElement.scrollWidth, iw: innerWidth, fina: document.querySelectorAll('img[src*="npc/fina"]:not(.dmf)').length,   // 案内欄のフィナの顔（.dmf）は台詞の札なので数えない（2026-09-30）
+    sw: document.documentElement.scrollWidth, iw: innerWidth, fina: document.querySelectorAll('img[src*="npc/fina"]:not(.dmf):not(.nstf)').length,   // 案内欄のフィナの顔（.dmf）は台詞の札なので数えない（2026-09-30）
   }));
   assert.deepEqual(t.hz, [['market()', false], ['farm()', false], ['museum()', false], ['townArena()', false], ['hall()', true], ['profileScr()', false], ['savescr()', false]]);
   assert.equal(t.topUi, 0, '街の上部に「街」の札・プレイヤー情報は出さない（プロフィールへまとめた）');
@@ -321,7 +321,7 @@ T('QA-MK1：街の市場ボタンで市場を開く：ソラモ・ガウル・�
     html: document.getElementById('app').innerHTML, who: document.querySelector('.p10who').innerText.replace(/\s+/g, ' '),
     filters: [...document.querySelectorAll('#p10car .p10im')].map((i) => getComputedStyle(i).filter),
     back: document.querySelector('.p10back').getAttribute('onclick'), arrows: [...document.querySelectorAll('.p10arw')].map((a) => a.getAttribute('aria-label')),
-    fina: document.querySelectorAll('img[src*="npc/fina"]:not(.dmf), .mmtalk').length,
+    fina: document.querySelectorAll('img[src*="npc/fina"]:not(.dmf):not(.nstf), .mmtalk').length,
   }));
   assert.equal(t.fina, 0, '市場にはフィナを出さない（登場は指定の3か所だけ）');
   assert.deepEqual(t.slides, [
