@@ -471,7 +471,7 @@ test('CH1-30：マスUI（config.tileUI。2026-10-02 正式素材）：能力6�
   assert.equal(T.normal, undefined, '通常マスの絵は無い（共通の台座の石の面だけ）'); assert.equal(T.start, undefined);
   assert.deepEqual([cfg.tileUI.placeholder, cfg.tileUI.replacesLandmarks, cfg.tileUI.pedestal], [false, true, true]);
   assert.match(FV, /T\.placeholder === false && !debug\(\) \? '' :/, '仮表示は ?chdebug=1 のときだけ');
-  assert.match(FV, /if \(ped && key === 'normal'\) return `<i class="chf-tile ped k-normal\$\{base \? ' pb' : ''\}"/, '通常マスは土台（台座）だけ');
+  assert.match(FV, /if \(ped && key === 'normal'\) return `<i class="chf-tile ped k-normal\$\{base \? ' pb' : ''\}\$\{u\}"/, '通常マスは土台（台座）だけ');
   // 2026-10-03 品質向上：正式の共通土台（tiles/pedestal_common）をマスの絵の下に敷く（マスの絵の代わりにしない）
   const B = cfg.tileUI.base; assert.equal(B.src, './assets/fields/ch1a/tiles/pedestal_common.webp'); assert.ok(existsSync(path.join(ROOT, B.src)), B.src);
   assert.match(FV, /<img class="chf-tbase" src=/); assert.match(FV, /\$\{under\}<img class="chf-ticon" src="\$\{esc\(src\)\}"/, '土台の上にマスの絵');
@@ -492,20 +492,22 @@ test('CH1-30：マスUI（config.tileUI。2026-10-02 正式素材）：能力6�
   assert.match(FV, /left:\$\{\(n\.mx \* sc\.w\)\.toFixed\(1\)\}px;top:\$\{\(n\.my \* sc\.h\)\.toFixed\(1\)\}px/, 'マスUIの位置はノードの座標（止まる位置）');
   const g = CH.buildGraph(cfg); assert.equal(g.order.length, 61);
   assert.deepEqual([g.nodes.p1_0.x, g.nodes.p1_0.y, g.nodes.p9_3.x, g.nodes.p9_3.y, g.nodes.p14_2.x, g.nodes.p14_2.y], [0.483, 0.87, 0.461, 0.575, 0.5, 0.68]);
-  // 遠近の補正：奥（d が小さい）ほど小さく平たい楕円、手前ほど大きく円に近い。通常マスは少し小さい
-  const box = (id) => V.tileBox(cfg.tileUI, g.nodes[id], g.nodes[id].tile);
-  const near = box('p2_0'), far = box('p2_4'); assert.ok(near.w > far.w * 1.4 && near.f > far.f + 0.12, `手前 ${near.w.toFixed(0)}×${near.f.toFixed(2)} ／ 奥 ${far.w.toFixed(0)}×${far.f.toFixed(2)}`);
-  assert.ok(near.f <= 0.55 && far.f >= 0.25, '手前でも少し潰れた円・奥は強い楕円'); assert.equal(near.th, 0, '側面の厚みは見せない（道に刻まれた印。2026-10-02 商用品質化）'); assert.ok(far.op < near.op && far.op >= 0.6, `奥のマスほど控えめ（${far.op.toFixed(2)} → ${near.op.toFixed(2)}）`);
-  assert.ok(box('p1_1').w < V.tileBox(cfg.tileUI, g.nodes.p1_1, 'stat_life').w, '通常マスは控えめ（少し小さい）');
-  // 2026-10-03（試遊で最優先）：大きさ＝その地点で見えている道幅（絵の道幅とカメラに入る幅の小さいほう）× 区分の割合。通常 55%・能力 58%・宝／イベント 62%・バトル 66%（道を覆わない）
-  assert.deepEqual({ ...cfg.tileUI.size.roadFit }, { normal: 0.55, stat: 0.58, mid: 0.62, big: 0.66 });
-  const FS = cfg.tileUI.size.fitScale; assert.equal(FS, 0.66, '共通の基準で全体を縮める（2026-10-03 総監査 0.72 → 土台を敷いた品質向上で 0.66。区分の比率は保つ）');
-  assert.ok(0.66 * FS * B.scale <= 0.56, '土台を含めても道幅の 56% 以下');
+  // 2026-10-03 夜（試遊で「マスの大きさがバラバラ・薄い」）：外側の土台の大きさは種類・背景に関係なく奥行きだけで決める（size.uniform＝w × 奥行き^pow）。
+  //  種類の違いは中の紋様・色だけ。道の絵が細い所だけ、見えている道幅 × roadMax を上限にする（道を覆わない）。濃さは奥でも 1（薄くしない）
+  const U = cfg.tileUI.size.uniform; assert.deepEqual({ ...U }, { w: 193, pow: 0.9, roadMax: 0.62, opacity: 1 });
+  const box = (id, k) => V.tileBox(cfg.tileUI, g.nodes[id], k || g.nodes[id].tile, cfg.fieldScenes.find((x) => x.id === g.nodes[id].field));
+  const near = box('p2_0'), far = box('p2_3'); assert.ok(near.w > far.w * 1.4 && near.f > far.f + 0.12, `手前 ${near.w.toFixed(0)}×${near.f.toFixed(2)} ／ 奥 ${far.w.toFixed(0)}×${far.f.toFixed(2)}`);
+  assert.ok(near.f <= 0.55 && far.f >= 0.25, '手前でも少し潰れた円・奥は強い楕円'); assert.equal(near.th, 0); assert.deepEqual([near.op, far.op], [1, 1], '奥のマスも薄くしない');
+  let capped = 0;
   for (const id of g.order.filter((i) => g.nodes[i].kind !== 'start')) {
-    const n = g.nodes[id], sc = cfg.fieldScenes.find((x) => x.id === n.field), seen = V.seenRoadW(sc, n);
-    assert.ok(seen > 0, id);
-    for (const [k, want] of [['normal', 0.55], ['stat_life', 0.58], ['treasure', 0.62], ['event', 0.62], ['wild', 0.66], ['rival', 0.66], ['goal', 0.66]]) { const r = V.tileBox(cfg.tileUI, n, k, sc).w / seen; assert.ok(Math.abs(r - want * FS) < 1e-6 && r < 0.5, `${id} ${k}：道幅の ${(r * 100).toFixed(0)}%`); }
+    const n = g.nodes[id], sc = cfg.fieldScenes.find((x) => x.id === n.field), seen = V.seenRoadW(sc, n), want = Math.min(193 * Math.pow(n.d, 0.9), seen * 0.62);
+    assert.ok(seen > 0, id); if (want < 193 * Math.pow(n.d, 0.9) - 1e-6) capped++;
+    const ws = ['normal', 'stat_life', 'treasure', 'event', 'rest', 'wild', 'rare', 'rival', 'goal', 'branch', 'merge'].map((k) => box(id, k).w);
+    for (const w of ws) assert.ok(Math.abs(w - want) < 1e-6, `${id}：種類が違っても外側の大きさは同じ（${w.toFixed(1)} / ${want.toFixed(1)}）`);
+    assert.ok(want * B.scale <= seen * 0.78 + 1e-6, `${id}：土台を含めても見えている道幅の 78% 以下`);
   }
+  assert.ok(capped <= 6, `道が細くて小さくするマスは少しだけ（${capped}）`);
+  const FV2 = rd('index.html'); assert.match(FV2, /\.chf-tile\.pb\.u \.chf-ticon\{filter:drop-shadow\(/, '中の紋様の輪郭と金の発光（絵の色は変えない）');
   assert.equal(CH.getConfig(2).tileUI, undefined, 'Chapter 2 は従来どおり（マスUIを出さない）');
 });
 

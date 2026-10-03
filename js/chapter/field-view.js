@@ -174,6 +174,11 @@
     if (isObj(flat)) { const t = clamp((n.d - (flat.dFar != null ? flat.dFar : 0.4)) / ((flat.dNear != null ? flat.dNear : 1.12) - (flat.dFar != null ? flat.dFar : 0.4)), 0, 1); flat = flat.far + (flat.near - flat.far) * t; }
     // 2026-10-03：size.roadFit があれば、幅＝その地点で見えている道幅 × 区分ごとの割合（通常 55%・能力 58%・宝／イベント 62%・バトル 66%。道を覆わない）。無ければ従来の 基準 × 奥行き^depthPow
     //  fitScale＝区分の比率を保ったまま全体を縮める共通の基準（2026-10-03 総監査：動画で「道に対して大きすぎる」→ 0.72）
+    // 2026-10-03 夜（試遊で「マスの大きさがバラバラ」）：size.uniform があれば、マスの種類・背景の道幅に関係なく、外側の土台の大きさは奥行きだけで決める（w × 奥行き^pow）。
+    //  道の絵が細い所だけ、見えている道幅 × roadMax を上限にする（道を覆わない）。種類の違いは中の紋様・色だけで見せる
+    const U = S.uniform;
+    if (U) { const cap = sc ? seenRoadW(sc, n) * (U.roadMax || 0.62) : 0, w0 = U.w * Math.pow(n.d, U.pow != null ? U.pow : 1) * (L.s || 1), w = cap > 0 ? Math.min(w0, cap) : w0, f = L.f || flat;
+      return { w, h: w * f, f, op: U.opacity != null ? U.opacity : 1, th: 0, rim: Math.max(1.2, w * (S.rim != null ? S.rim : 0.018)) }; }
     const road = S.roadFit && sc ? seenRoadW(sc, n) : 0;
     const w = road ? road * (S.roadFit[tileFitKind(key)] || S.roadFit.stat || 0.58) * (S.fitScale || 1) * (L.s || 1) : W0 * Math.pow(n.d, dp) * (L.s || 1) * (key === 'normal' && S.normal ? S.normal : 1), f = L.f || flat;
     const t = clamp((n.d - 0.4) / (1.12 - 0.4), 0, 1), op = S.farOpacity != null ? S.farOpacity + (1 - S.farOpacity) * t : 1;   // 奥のマスほど控えめ（UI のアイコンに見えない）
@@ -187,8 +192,9 @@
       const src = tileSpriteOf(cfg, key), B = tileBox(T, n, key, sc), no = g.order.indexOf(id) + 1;
       const box = `left:${(n.mx * sc.w).toFixed(1)}px;top:${(n.my * sc.h).toFixed(1)}px;width:${B.w.toFixed(1)}px;height:${B.h.toFixed(1)}px;--d:${n.d};--f:${B.f.toFixed(3)}${ped ? `;--th:${B.th.toFixed(1)}px;--rim:${B.rim.toFixed(1)}px;--op:${B.op.toFixed(2)}` : ''}`;
       const under = base ? `<img class="chf-tbase" src="${esc(base.src)}" alt="" draggable="false" decoding="async" style="--bs:${base.scale || 1.25};--bh:${base.h || 1.25};--bl:${base.lift != null ? base.lift : 0.43}">` : ped ? '<i class="chf-tsh"></i><i class="chf-tped"></i>' : '';
-      if (src) return `<i class="chf-tile${ped ? ' ped' : ''}${base ? ' pb' : ''}" data-id="${id}" data-type="${key}" style="${box}${base ? `;--bi:${base.icon || 0.9}` : ''}">${under}<img class="chf-ticon" src="${esc(src)}" alt="" draggable="false" decoding="async"></i>`;   // 使ったマス（能力・イベント・宝箱）は chfBoard で .used（少し暗く）
-      if (ped && key === 'normal') return `<i class="chf-tile ped k-normal${base ? ' pb' : ''}" data-id="${id}" data-type="normal" style="${box}">${under}${base ? '' : '<i class="chf-tface"></i>'}</i>`;   // 通常マス：絵は無く、土台（または台座の石の面）だけ   // 通常マス：絵は無く、台座の石の面だけ（控えめ）
+      const u = T.size && T.size.uniform ? ' u' : '';   // 大きさの共通の基準（size.uniform）と、見え方を少し強くする CSS（.u）
+      if (src) return `<i class="chf-tile${ped ? ' ped' : ''}${base ? ' pb' : ''}${u}" data-id="${id}" data-type="${key}" style="${box}${base ? `;--bi:${base.icon || 0.9}` : ''}">${under}<img class="chf-ticon" src="${esc(src)}" alt="" draggable="false" decoding="async"></i>`;   // 使ったマス（能力・イベント・宝箱）は chfBoard で .used（少し暗く）
+      if (ped && key === 'normal') return `<i class="chf-tile ped k-normal${base ? ' pb' : ''}${u}" data-id="${id}" data-type="normal" style="${box}">${under}${base ? '' : '<i class="chf-tface"></i>'}</i>`;   // 通常マス：絵は無く、土台（または台座の石の面）だけ   // 通常マス：絵は無く、台座の石の面だけ（控えめ）
       return T.placeholder === false && !debug() ? '' : `<i class="chf-tile ph" data-id="${id}" data-type="${key}" style="${box}" title="仮表示（位置確認用）"><b>仮 #${no}</b></i>`;
     }).join('');
   }
@@ -877,8 +883,9 @@
     await wait(V.calm ? 0 : 300);   // 草むらが揺れる（予兆）
     fx.insertAdjacentHTML('beforeend', `<i class="chf-alert" style="left:${V.monPos.x.toFixed(1)}px;top:${(V.monPos.y - monH() * d * 1.02).toFixed(1)}px;--d:${d}">！</i>`);
     await wait(V.calm ? 0 : 260);   // 「！」を見せてから
-    await encounterShow(BT, bt);
+    // 2026-10-03 夜（試遊で「遭遇の文の下に草むらの絵が残る」）：予兆（草むら・！）は遭遇の演出を出す前に必ず消す（確定の表示に予兆の絵を重ねない）
     fx.querySelectorAll('.chf-rustle,.chf-alert').forEach((e) => e.remove());
+    await encounterShow(BT, bt);
   }
   /**
    * 遭遇の演出（2026-10-03）：絵（野生だけカットイン config.battleTypes.wild.cutin）と文（battleTypes[bt].encounter）を同じフレームで出す（ずらさない）。
@@ -975,11 +982,16 @@
     const ui = $('#chf-ui'); if (!ui || !rx || !rx.text) return;
     const old = ui.querySelector('.chf-fina'); if (old) old.remove();
     const d = document.createElement('div'); d.className = 'chf-fina'; d.setAttribute('aria-live', 'polite');
-    d.innerHTML = `<img src="${FINA_FACE}${esc(rx.expression || 'normal')}.webp" alt=""><div><b>フィナ</b><span>${esc(rx.text)}</span></div>`;
+    // 2026-10-03 夜（試遊で「どこを押せば進むか分からない」）：会話欄の右下に「タップで進む ▼」（点滅）。会話欄のタップで進む。この会話の間だけ START でも進む
+    //  （START の上に透明な「会話を進める」ボタンを重ねる＝サイコロは振らない）。出てから0.3秒の押下は無視（直前の操作の取り違え防止）。読める長さが過ぎたら自動でも進む
+    d.innerHTML = `<img src="${FINA_FACE}${esc(rx.expression || 'normal')}.webp" alt=""><div><b>フィナ</b><span>${esc(rx.text)}</span></div><i class="chf-fina-go" aria-hidden="true">タップで進む<em>▼</em></i>`;
     ui.appendChild(d);
+    const st = $('#brollbtn') || $('#chdock .chstop'), host = st && st.parentElement;   // 移動・結果の間の START は押せない飾り（id なし）＝その枠に重ねる
+    let go = null; if (host) { go = document.createElement('button'); go.type = 'button'; go.className = 'chf-fina-st'; go.setAttribute('aria-label', '会話を進める'); go.dataset.nsfx = '1'; host.appendChild(go); }
     // 読める長さだけ見せる（文字数に合わせる・タップで次へ）。通常マスでは出さない（節目だけ）
-    const ms = V.calm ? 900 : Math.min(3200, 1100 + 70 * String(rx.text).length);
-    await new Promise((ok) => { const t = setTimeout(ok, ms); d.addEventListener('click', () => { clearTimeout(t); ok(); }); });
+    const ms = V.calm ? 900 : Math.min(4200, 1600 + 80 * String(rx.text).length), t0 = Date.now();
+    await new Promise((ok) => { const t = setTimeout(ok, ms); const next = (e) => { if (e) { e.preventDefault(); e.stopPropagation(); } if (Date.now() - t0 < 300) return; clearTimeout(t); ok(); }; d.addEventListener('click', next); if (go) go.addEventListener('click', next); });
+    if (go) go.remove();
     d.classList.add('out'); await wait(220); d.remove();
   }
   /**
