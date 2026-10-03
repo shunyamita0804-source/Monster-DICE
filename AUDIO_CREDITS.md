@@ -10,7 +10,7 @@ ZIP の README・LICENSE の原文は、受け取った ZIP の中にある（�
 | PGS Fantasy RPG Music Pack（BGM） | JP Soundworks（公開：Platonic Game Studio） | ZIP の README：https://www.youtube.com/c/JPSoundworks/ ・ https://store.steampowered.com/developer/platonicgamestudio | CC BY 4.0（https://creativecommons.org/licenses/by/4.0/）。README の原文：「You are free to use this for your Free and Commercial Projects … As long you credits JP SOUNDWORKS」「DO NOT REPOST OR SELL THIS MUSIC」 | 可（表記が条件） | **必須**：「Music by JP Soundworks (https://www.youtube.com/c/JPSoundworks/)」。「Pack Published by Platonic Game Studio」は任意 | assets/audio/bgm/pgs_fantasy_rpg/ |
 | Interface SFX Pack 1（OGG 版・SE） | ObsydianX | https://obsydianx.itch.io/interface-sfx-pack-1（ZIP の Ogg/README.txt） | CC0 | 可 | 不要 | assets/audio/se/interface_sfx_pack_1/ |
 | Free 25 Fantasy RPG Game Tracks Vol.3（BGM・Fx） | alkakrab（OGG の埋め込み情報 ARTIST=alkakrab・2023） | https://alkakrab.itch.io/free-25-fantasy-rpg-game-tracks | 配布ページに「Absolutely Free For Commercial use」（ユーザー確認 2026-10-03） | 可 | 必須ではない（出典はこの表に記録） | assets/audio/bgm/alkakrab_fantasy_rpg_vol3/・assets/audio/se/alkakrab_fantasy_rpg_vol3/ |
-| High Quality 16-bit RPG Music（28曲） | HydroGene | https://hydrogene.itch.io/high-quality-16-bit-music | CC0 1.0（ユーザー確認 2026-10-03。商用可・クレジット不要・加工可） | 可 | 不要 | 今回は採用なし（受け取り・解析のみ） |
+| High Quality 16-bit RPG Music（28曲） | HydroGene | https://hydrogene.itch.io/high-quality-16-bit-music | CC0 1.0（ユーザー確認 2026-10-03。商用可・クレジット不要・加工可） | 可 | 不要 | assets/audio/bgm/hydrogene_16bit_rpg/（2026-10-03 第5弾の仮採用・8曲） |
 | Mix of SFX by Ivokard（SE） | Ivokard | ZIP の License.txt（SNS：https://www.youtube.com/@ivokard ほか） | CC0（Creative Commons Zero。「free to use in personal, educational and commercial projects」） | 可 | 不要 | assets/audio/se/ivokard/ |
 
 ### 正式なクレジット表記（ゲーム内のクレジット画面・配布ページに載せる文）
@@ -19,10 +19,11 @@ ZIP の README・LICENSE の原文は、受け取った ZIP の中にある（�
 Music by JP Soundworks (https://www.youtube.com/c/JPSoundworks/)
 Pack Published by Platonic Game Studio
 Music: "Free 25 Fantasy RPG Game Tracks Vol.3" by alkakrab (https://alkakrab.itch.io/free-25-fantasy-rpg-game-tracks)
+Music: "High Quality 16-bit RPG Music" by HydroGene (CC0, https://hydrogene.itch.io/high-quality-16-bit-music)
 Sound effects: Interface SFX Pack 1 by ObsydianX (CC0), Mix of SFX by Ivokard (CC0)
 ```
 
-CC0 の2つは表記不要だが、礼儀として載せる。
+CC0 の3つ（HydroGene・ObsydianX・Ivokard）は表記不要だが、礼儀として載せる。
 
 ### 要確認（判断待ち）
 
@@ -44,7 +45,9 @@ CC0 の2つは表記不要だが、礼儀として載せる。
 | Ivokard「ping.ogg」の DICE_ROLL への割り当て | DICE_ROLL（出目＝サイコロの停止の音。ping は EVENT ではそのまま） |
 | Ivokard「pluck_5.ogg」 | TILE_STOP（通常マスに止まった） |
 
-ほかに無音のまま：DICE_THROW（サイコロを振る）・DICE_STOP（サイコロが完全に止まったフレームの差し込み口）・STEP・TOURNAMENT_ARRIVAL（大会会場への到着）・TOURNAMENT_MATCHUP（BGM）・CHAPTER_1（BGM）。大会開始の演出の合成音（風切り音）も鳴らさない。OK のまま：CHAPTER_START（alkakrab Fx 2）・MARKET ほか。
+ほかに無音のまま：DICE_THROW（サイコロを振る）・DICE_STOP（サイコロが完全に止まったフレームの差し込み口）・STEP・TOURNAMENT_ARRIVAL（大会会場への到着）・TOURNAMENT_MATCHUP（BGM）・CHAPTER_1（BGM）。大会開始の演出の合成音（風切り音）も鳴らさない。
+
+**2026-10-03 第5弾**：BGM の TOWN・FARM・CHAPTER_1・大会（TOURNAMENT_ENTRY・LOBBY_LOW／HIGH・TOURNAMENT_MATCHUP・RESULT）は、ユーザーが選んだ別の曲（HydroGene・下の表）を仮採用した。上の NG の曲そのものは使っていない（SE の MATCHUP・TOURNAMENT_ARRIVAL などは無音のまま）。OK のまま：CHAPTER_START（alkakrab Fx 2）・MARKET ほか。
 
 ## 使用したファイル（2026-10-03 の iPhone 試遊の結果で見直し）
 
@@ -117,7 +120,20 @@ PGS の曲は「暫定の試遊用」。新しく採用しない（公開リポ�
 
 ### High Quality 16-bit RPG Music（HydroGene・CC0）
 
-受け取ったもの：OGG 版を5つの ZIP（ogg1〜ogg5）に分けたもの＝1つのパック（28曲。戦闘曲・魔王城は intro／loop／full に分かれている）。今回は採用なし：左右の広がりがとても狭く残響の少ないくっきりした音（SFC 風）で、街・主要施設・Chapter には「チープ・ゲーム感」の試遊結果に近い恐れがあるため、今回は alkakrab を優先した。今後の候補（要試聴）：大会の受付 Royal Castle、Chapter 2〜4 の Unknown Island・Traveling the Sky・Volcanic Crater、戦闘の intro＋loop の組み合わせ。
+受け取ったもの：OGG 版を5つの ZIP（ogg1〜ogg5）に分けたもの＝1つのパック（28曲。戦闘曲・魔王城・Spirits Forest は intro／loop／full に分かれている）。埋め込みのタイトル・作者情報は無い（曲名はファイル名）。第3弾では「SFC 風のくっきりした音が街・主要施設で浮く恐れ」から見送ったが、**2026-10-03 第5弾でユーザーが下の8曲を仮採用**（BGM 整理の提案から選択）。ファイルは無加工（元の 320kbps OGG のまま。名前だけ「番号_曲名」の英小文字）。音量は gain で約 -18 LUFS に合わせた。
+
+| ZIP の元ファイル | リポジトリのファイル（bgm/hydrogene_16bit_rpg/） | 使う所 | 長さ | 元の音量（LUFS） | gain | ループ |
+|---|---|---|---:|---:|---:|---|
+| ogg1「02. Lively City.ogg」 | 02_lively_city.ogg | TOWN（街。お知らせ・設定・プロフィールも） | 65秒 | -13.8 | 0.62 | ファイル全体（終わりにフェード・無音なし） |
+| ogg1「03. Royal Castle.ogg」 | 03_royal_castle.ogg | TOURNAMENT_ENTRY（到着・受付・ランク選択）。LOBBY_LOW／HIGH・TOURNAMENT_MATCHUP・RESULT は fallback で同じ曲を続ける | 64秒 | -14.6 | 0.68 | 0〜64.28秒・0.08秒のクロスフェード（ファイルの終わりと頭の波形に段差があるため） |
+| ogg1「04. Peaceful Village.ogg」 | 04_peaceful_village.ogg | FARM（ファーム・出発準備・アイテム屋・育成完了） | 86秒 | -16.8 | 0.87 | ファイル全体 |
+| ogg2「07. Spirits Forest (full).ogg」 | 07_spirits_forest_full.ogg | CHAPTER_1 | 82秒 | -18.8 | 1.1 | 27.344〜81.98秒・0.2秒（full＝intro 27.34秒＋loop 54.64秒。波形の照合で境目を確認。2周目からは前奏を除くループ部だけ） |
+| ogg3「14. Traveling the Sky.ogg」 | 14_traveling_the_sky.ogg | CHAPTER_3（空） | 70秒 | -14.4 | 0.66 | ファイル全体 |
+| ogg3「15. Volcanic Crater.ogg」 | 15_volcanic_crater.ogg | CHAPTER_4（火山） | 86秒 | -13.1 | 0.57 | ファイル全体 |
+| ogg3「17. Unknown Island.ogg」 | 17_unknown_island.ogg | CHAPTER_2（海岸） | 57秒 | -16.7 | 0.86 | ファイル全体 |
+| ogg4「20. Military Base.ogg」 | 20_military_base.ogg | TRAINING（特訓。旧：合成音） | 49秒 | -15.4 | 0.74 | ファイル全体 |
+
+Spirits Forest の intro／loop の別ファイルは置かない（full の1本でループ区間を指定）。使っていない：ほかの20曲（Battle Theme I〜IV・Demon King Castle・Holy Sanctuary など）。
 
 ## 受け取ったが今回は使っていない素材
 

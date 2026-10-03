@@ -9,7 +9,7 @@
 //  SE_REGISTRY：出来事（MMAUDIO.SE）→ { src, gain }。登録の無い出来事は合成音（index.html の LEGACY_SE。表に無いものは鳴らない）
 //  ファイルの置き場：assets/audio/bgm/<素材パック>/、assets/audio/se/<素材パック>/（出どころ・ライセンスは AUDIO_CREDITS.md）
 //  音量の目安：BGM は約 -18 LUFS、SE は約 -16 LUFS に gain でそろえる（ピークが 0 dBFS を超えないよう上限あり）
-//  【暫定】2026-10-02 夜の選定 → 2026-10-03 に iPhone の試遊の結果で見直し（NG は silent）→ 同日 第3弾（alkakrab Vol.3 を採用。HydroGene 16-bit は今回は不採用）。曲名・解析で選んだもので、最終判断は試聴。PGS の曲は暫定の試遊用（新しく採用しない）
+//  【暫定】2026-10-02 夜の選定 → 2026-10-03 に iPhone の試遊の結果で見直し（NG は silent）→ 同日 第3弾（alkakrab Vol.3 を採用。HydroGene 16-bit は今回は不採用）→ 第4弾で NG の曲を無音に → 第5弾で街・ファーム・特訓・Chapter 1〜4・大会（受付〜結果）に HydroGene 16-bit を仮採用。曲名・解析で選んだもので、最終判断は試聴。PGS の曲は暫定の試遊用（新しく採用しない）
 // =========================================================
 (function (root) {
   'use strict';
@@ -19,28 +19,32 @@
   const IV = SE_DIR + 'ivokard/';                     // Mix of SFX by Ivokard（CC0）
   const AK = BGM_DIR + 'alkakrab_fantasy_rpg_vol3/';  // alkakrab「Free 25 Fantasy RPG Game Tracks Vol.3」（商用利用可・クレジット任意。AUDIO_CREDITS.md）
   const AKSE = SE_DIR + 'alkakrab_fantasy_rpg_vol3/'; // 同じパックの Fx（短い効果音）
+  const HG = BGM_DIR + 'hydrogene_16bit_rpg/';         // HydroGene「High Quality 16-bit RPG Music」（CC0。AUDIO_CREDITS.md）
 
   // 書き方：{ src, gain, loopStart, loopEnd, loopXfade } ＝ファイルで鳴らす（loopEnd を書くと、曲の終わりのフェードアウトの前で loopStart へクロスフェードで戻る。秒）／{ fallback: '場面' } ＝ほかの場面の曲を使う／{ silent: true } ＝鳴らさない（合成音にも落とさない。試遊で「合わない」となった音の一時的な置き場）／行が無い ＝合成音
   //  【2026-10-03 実機試遊（iPhone）の結果】で NG になった音は silent にした（追加の音源パックで選び直す。行の横の「待ち」）
   const BGM_REGISTRY = {
     // ---- 開始画面・街・施設 ----
     TITLE:      { src: PGS + 'event_music_1.ogg', gain: 0.85 },        // 開始画面は最初のタップまで音を出せない（ブラウザの制約）→ 名前登録の画面まで続ける【暫定】
-    TOWN:       { silent: true },                                     // 2026-10-03 第4弾の試遊で NG → 無音（代わりの音は選ばない）。旧：alkakrab「Tranquil Radiance」（AUDIO_CREDITS.md に記録）
+    TOWN:       { src: HG + '02_lively_city.ogg', gain: 0.62 },     // 2026-10-03 第5弾の仮採用：HydroGene「Lively City」65秒・明るい長調（第4弾で NG の Tranquil Radiance は使わない）
     MARKET:     { src: PGS + 'town_village_theme_2.ogg', gain: 0.9 },   // 試遊で OK（変更しない）
     RANCH:      { src: PGS + 'town_village_theme_3.ogg', gain: 0.8 },   // 77秒・温かい【暫定】
     LABORATORY: { src: PGS + 'event_music_2.ogg', gain: 0.65 },        // 103秒・ゆっくり・神秘的【暫定】
-    FARM:       { silent: true },                                     // 2026-10-03 第4弾の試遊で NG → 無音（代わりの音は選ばない）。旧：alkakrab「Lost River」（AUDIO_CREDITS.md に記録）
-    // TRAINING：合う曲が無い → 合成音（LEGACY_BGM）
+    FARM:       { src: HG + '04_peaceful_village.ogg', gain: 0.87 }, // 2026-10-03 第5弾の仮採用：HydroGene「Peaceful Village」86秒・穏やか（第4弾で NG の Lost River は使わない）
+    TRAINING:   { src: HG + '20_military_base.ogg', gain: 0.74 },    // 2026-10-03 第5弾の仮採用：HydroGene「Military Base」49秒・行進曲調（旧：合成音）
     // ---- Chapter ----
-    CHAPTER_1:  { silent: true },                                     // 待ち：Dungeon-Exploration Music 1 は試遊で NG。第3弾の候補 alkakrab「Epic Quest」「Forest of Mysteries」は解析で戦闘曲と同じくらい忙しい（40ターン聞くには強すぎる）ため見送り
-    // CHAPTER_2〜4：追加パックで選定（今は合成音）
+    CHAPTER_1:  { src: HG + '07_spirits_forest_full.ogg', gain: 1.1, loopStart: 27.344, loopEnd: 81.98, loopXfade: 0.2 },   // 2026-10-03 第5弾の仮採用：HydroGene「Spirits Forest」82秒＝前奏 27.3秒＋ループ部 54.6秒（配布の intro／loop と同じ境目）。2周目からはループ部だけ
+    CHAPTER_2:  { src: HG + '17_unknown_island.ogg', gain: 0.86 },   // 2026-10-03 第5弾の仮採用：海岸。HydroGene「Unknown Island」57秒（旧：合成音）
+    CHAPTER_3:  { src: HG + '14_traveling_the_sky.ogg', gain: 0.66 }, // 2026-10-03 第5弾の仮採用：空。HydroGene「Traveling the Sky」70秒（旧：合成音）
+    CHAPTER_4:  { src: HG + '15_volcanic_crater.ogg', gain: 0.57 },  // 2026-10-03 第5弾の仮採用：火山。HydroGene「Volcanic Crater」86秒（旧：合成音）
     // ---- 大会：受付（到着・ランク選択）→ 順位表 → 対戦相手の発表・能力比較 → 実戦 ----
-    //  受付・順位表・結果の曲（PGS Event Music 4）は 2026-10-03 第4弾の試遊で NG → 無音（代わりの音は選ばない）
-    TOURNAMENT_ENTRY:       { silent: true },   // 大会会場への到着・受付・ランク選択
-    TOURNAMENT_LOBBY_LOW:   { silent: true },   // 順位表（E〜C）
-    TOURNAMENT_LOBBY_HIGH:  { silent: true },   // 順位表（B〜S）
-    TOURNAMENT_MATCHUP:     { silent: true },   // 対戦相手の発表・能力比較（1枚の画面）
-    RESULT:                 { silent: true },   // 大会の結果
+    //  2026-10-03 第5弾の仮採用：大会の受付 → 順位表 → 対戦前 → 結果は HydroGene「Royal Castle」1曲。ENTRY だけに曲を書き、ほかは fallback＝同じファイルなので場面が変わっても鳴らし直さない（頭出ししない）。
+    //  実戦（battle）の前は fight() の bgm("battle") で止め、FIGHT! のあと大会の戦闘曲。バトル後の順位表・結果でまた Royal Castle（頭から）。旧：PGS Event Music 4（第4弾で NG・使わない）
+    TOURNAMENT_ENTRY:       { src: HG + '03_royal_castle.ogg', gain: 0.68, loopStart: 0, loopEnd: 64.28, loopXfade: 0.08 },   // 大会会場への到着・受付・ランク選択。64秒（ファイルの終わりと頭の波形に段差があるので、ごく短いクロスフェードで戻す）
+    TOURNAMENT_LOBBY_LOW:   { fallback: 'TOURNAMENT_ENTRY' },   // 順位表（E〜C）：Royal Castle を続ける
+    TOURNAMENT_LOBBY_HIGH:  { fallback: 'TOURNAMENT_ENTRY' },   // 順位表（B〜S）：Royal Castle を続ける
+    TOURNAMENT_MATCHUP:     { fallback: 'TOURNAMENT_ENTRY' },   // 対戦相手の発表・能力比較（1枚の画面）：Royal Castle を続ける（発表の SE MATCHUP は無音のまま）
+    RESULT:                 { fallback: 'TOURNAMENT_ENTRY' },   // 大会の結果（勝ち・負け共通）：Royal Castle
     // ---- 実戦（「FIGHT!」の開始音のあとで始まる）----
     WILD_BATTLE:            { src: PGS + 'battle_music_1.ogg', gain: 0.58 },   // 104秒・147BPM【暫定】
     RARE_WILD_BATTLE:       { fallback: 'WILD_BATTLE' },                       // 専用曲が届くまで野生と同じ

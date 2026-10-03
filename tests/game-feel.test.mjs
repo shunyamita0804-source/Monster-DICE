@@ -51,10 +51,10 @@ test('GF-03：Audio Registry（js/audio/audio-registry.js）：BGM・SE の対�
   const A = w.MMAUDIO, R = w.MMAUDIO_REGISTRY;
   assert.ok(R && R.bgm && R.se);
   const s = A.status(); assert.ok(s.files.bgm.includes('MARKET') && s.files.bgm.includes('WILD_BATTLE') && s.files.se.includes('STAT_UP'));
-  assert.ok(s.silent.bgm.includes('CHAPTER_1') && s.silent.se.includes('STEP') && s.silent.se.includes('UI_CONFIRM'), '合う音が無い・試遊で NG の場面・出来事は silent');
+  assert.ok(s.files.bgm.includes('CHAPTER_1') && s.silent.se.includes('STEP') && s.silent.se.includes('UI_CONFIRM'), '合う音が無い・試遊で NG の出来事は silent（Chapter 1 は第5弾で曲を仮採用）');
   assert.ok(s.inherits.includes('RARE_WILD_BATTLE') && s.inherits.includes('SPECIAL_BATTLE'), '専用曲が無い場面は fallback で曲を引き継ぐ（registry に明記）');
   assert.equal(A.resolveBgm('RARE_WILD_BATTLE').key, 'WILD_BATTLE');
-  assert.equal(A.resolveBgm('CHAPTER_2'), null, '曲の無い場面は合成音（明日のパックで選定）');
+  assert.equal(A.resolveBgm('SPECIAL_BATTLE').key, 'TOURNAMENT_BATTLE_HIGH'); assert.equal(A.resolveBgm('TOURNAMENT_MATCHUP').key, 'TOURNAMENT_ENTRY', '大会の対戦前は受付の曲を引き継ぐ（第5弾）');
   assert.ok(Object.values(R.bgm).every((v) => typeof v === 'object'), '値は { src, gain, loop, fallback }');
   assert.deepEqual(JSON.parse(w.localStorage.getItem('mmaudio') || 'null'), null, '読み込んだだけでは何も保存しない');
 });

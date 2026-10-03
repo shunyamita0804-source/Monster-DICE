@@ -379,19 +379,37 @@ test('AUDIO-22：registry のループ区間・maxMs は正しい値（loopEnd �
   for (const k of ['RIVAL_BATTLE', 'TOURNAMENT_BATTLE_HIGH']) assert.match(srcsOf(got.bgm[k])[0], /alkakrab_fantasy_rpg_vol3\//, k);   // TOWN・FARM は 2026-10-03 第4弾の試遊で NG → silent（AUDIO-23）
   for (const k of ['CHAPTER_START', 'WILD_ALERT']) assert.match(srcsOf(got.se[k])[0], /alkakrab_fantasy_rpg_vol3\//, k);   // MATCHUP は第4弾で NG → silent
   for (const [k, v] of Object.entries(got.se)) if (v.maxMs != null) assert.ok(v.maxMs >= 300 && v.maxMs <= 4000 && (v.fadeMs == null || v.fadeMs <= v.maxMs), k);
-  assert.equal(got.bgm.CHAPTER_1.silent, true, 'Chapter 1 は第3弾でも見送り（候補が戦闘曲並みに忙しい）');
+  assert.notEqual(got.bgm.CHAPTER_1.silent, true, 'Chapter 1 は第5弾で HydroGene「Spirits Forest」を仮採用（第3弾の候補 Epic Quest・Forest of Mysteries は使わない）');
+  for (const f of ['action_4', 'action_5']) assert.ok(!JSON.stringify(got.bgm).includes(f), f);
 });
 
 test('AUDIO-23：2026-10-03 第4弾の試遊で NG の音は無音（silent＝合成音にも落とさない・代わりの音を選ばない）。OK の音（CHAPTER_START・MARKET など）はそのまま。NG のファイルは置かない', () => {
   const { got } = loadRegistry();
-  for (const k of ['TOWN', 'FARM', 'TOURNAMENT_ENTRY', 'TOURNAMENT_LOBBY_LOW', 'TOURNAMENT_LOBBY_HIGH', 'TOURNAMENT_MATCHUP', 'RESULT']) assert.deepEqual(got.bgm[k], { silent: true }, `BGM ${k}`);
+  // BGM の TOWN・FARM・大会（受付〜結果）は第4弾で無音 → 第5弾で別の曲（HydroGene）を仮採用（AUDIO-24）。NG の曲そのものは使わない（下）
   for (const k of ['TITLE_START', 'UI_CONFIRM', 'DICE_THROW', 'DICE_LAND', 'DICE_ROLL', 'DICE_STOP', 'TILE_STOP', 'TOURNAMENT_ARRIVAL', 'MATCHUP']) assert.deepEqual(got.se[k], { silent: true }, `SE ${k}`);
   assert.match(srcsOf(got.se.CHAPTER_START)[0], /fx_2\.ogg$/, 'Chapter 開始の音は OK（そのまま）'); assert.match(srcsOf(got.bgm.MARKET)[0], /town_village_theme_2\.ogg$/, '市場の曲は OK（そのまま）');
   const all = JSON.stringify(got);
-  for (const f of ['ambient_4_tranquil_radiance', 'ambient_3_lost_river', 'event_music_4', 'confirm_style_1_004', 'confirm_style_5_001', 'pluck_3', 'pluck_5', 'fx_1.ogg']) assert.ok(!all.includes(f), `NG の音 ${f} を別の場面へ使い回さない`);
+  for (const f of ['ambient_4_tranquil_radiance', 'ambient_3_lost_river', 'event_music_4', 'event_music_3', 'town_village_theme_1', 'dungeon_exploration', 'confirm_style_1_004', 'confirm_style_5_001', 'pluck_3', 'pluck_5', 'fx_1.ogg']) assert.ok(!all.includes(f), `NG の音 ${f} を別の場面へ使い回さない`);
   const HTML = readFileSync(path.join(ROOT, 'index.html'), 'utf8'), intro = HTML.slice(HTML.indexOf('function p9TourIntro('), HTML.indexOf('// ---- Phase 9：公式大会（大会掲示板'));
   assert.doesNotMatch(intro, /sfx\(/, '大会開始の演出で音を鳴らさない（風切り音は NG）');
   const DR = readFileSync(path.join(ROOT, 'js/chapter/dice-renderer.js'), 'utf8'), GF = readFileSync(path.join(ROOT, 'js/feel/game-feel.js'), 'utf8');
   assert.match(GF, /'dice\.stop': \{ level: 2, se: 'DICE_STOP' \}/, '停止の音の差し込み口＝dice.stop → DICE_STOP（今は無音）');
   assert.match(DR, /await frame\(\);   \/\/ 止まった姿が描かれたフレームで「完全停止」\n    ov\.dataset\.stopped = '1'; feel\('dice\.stop'\);/, 'dice.stop はサイコロが見た目の上で止まったフレーム');
+});
+
+test('AUDIO-24：2026-10-03 第5弾の仮採用（HydroGene 16-bit・CC0）：街・ファーム・特訓・Chapter 1〜4・大会。大会は受付 → 順位表 → 対戦前 → 結果を Royal Castle 1曲で続け（fallback＝同じファイルなので頭出ししない）、実戦の曲は変えない', async () => {
+  const { got } = loadRegistry(), HG = /hydrogene_16bit_rpg\//;
+  const want = { TOWN: '02_lively_city', FARM: '04_peaceful_village', TRAINING: '20_military_base', CHAPTER_1: '07_spirits_forest_full', CHAPTER_2: '17_unknown_island', CHAPTER_3: '14_traveling_the_sky', CHAPTER_4: '15_volcanic_crater', TOURNAMENT_ENTRY: '03_royal_castle' };
+  for (const [k, f] of Object.entries(want)) { const s = srcsOf(got.bgm[k])[0]; assert.match(s, HG, k); assert.ok(s.endsWith(f + '.ogg'), `${k}：${s}`); }
+  for (const k of ['TOURNAMENT_LOBBY_LOW', 'TOURNAMENT_LOBBY_HIGH', 'TOURNAMENT_MATCHUP', 'RESULT']) assert.deepEqual(got.bgm[k], { fallback: 'TOURNAMENT_ENTRY' }, k);
+  // 変えない：タイトル・市場・牧場・研究所・野生・ライバル・大会の実戦
+  const keep = { TITLE: 'event_music_1', MARKET: 'town_village_theme_2', RANCH: 'town_village_theme_3', LABORATORY: 'event_music_2', WILD_BATTLE: 'battle_music_1', RIVAL_BATTLE: 'action_2_battle_of_the_skies', TOURNAMENT_BATTLE_LOW: 'battle_music_2', TOURNAMENT_BATTLE_HIGH: 'action_1_clash_of_arcane_titans' };
+  for (const [k, f] of Object.entries(keep)) assert.ok(srcsOf(got.bgm[k])[0].endsWith(f + '.ogg'), k);
+  assert.deepEqual([got.bgm.CHAPTER_1.loopStart, got.bgm.CHAPTER_1.loopEnd], [27.344, 81.98], 'Spirits Forest は前奏のあとのループ部へ戻る（配布の intro 27.34秒＋loop 54.64秒＝full）');
+  // 受付 → 順位表 → 対戦前 → 結果：<audio> は1本のまま（鳴らし直さない）。実戦で止めて戦闘曲 → 結果で Royal Castle
+  const { A, log } = env(); A.registerAll({ bgm: got.bgm, se: got.se });
+  A.scene('TOURNAMENT_ENTRY'); await tick(5); A.scene('TOURNAMENT_LOBBY_LOW'); A.scene('TOURNAMENT_MATCHUP'); await tick(5);
+  const rc = log.audios.filter((x) => /03_royal_castle/.test(x.src)); assert.equal(rc.length, 1); assert.equal(rc[0].plays, 1, '受付 → 順位表 → 対戦前で頭出ししない（play() は1回）'); assert.equal(active(A).length, 1);
+  A.stopBgm({ fade: 'quick' }); A.scene('TOURNAMENT_BATTLE_LOW'); await tick(800); assert.equal(active(A).length, 1); assert.match(active(A)[0].src, /battle_music_2/);
+  A.scene('RESULT'); await tick(800); assert.equal(active(A).length, 1, '二重再生しない'); assert.match(active(A)[0].src, /03_royal_castle/);
 });
