@@ -59,7 +59,7 @@ test('QU-05：対戦前の画面を1つに：練習試合は BATTLE 画面（p9P
   assert.match(fnOf('bBattleGo'), /^function bBattleGo\(\)\{const m=S\.m;if\(bBusy\|\|!m\)return;const bt=[^;]*,rk=bt=="rival"&&window\.MMRIVAL\?MMRIVAL\.rankFor\(m\):MMP8\.practiceRank\(m\);[^\n]*if\(!MMP8\.beginBattle\(S,m,\{kind:"practice",rank:rk\}\)\.ok\)return board\(\);save\(\);fight\(rk\)\}/);
   assert.doesNotMatch(HTML.replace(/function p9PreBattle\(/, ''), /p9PreBattle\(/, 'p9PreBattle はどこからも呼ばない（関数は残す）');
   assert.doesNotMatch(HTML.replace(/function p9VsScr\(/, ''), /p9VsScr\(\)/, 'VS 画面（p9VsScr）は流れから外した（関数は残す）');
-  assert.match(fnOf('p8TourScr'), /\$\{p9Cmp\(m,o\)\}<button class="p9btn p9go" data-nsfx="1" onclick="p9VsGo\(this\)">⚔️ 対戦開始<\/button>/);
+  assert.match(fnOf('p8TourScr'), /onclick="p9CompareScr\(\)">⚔️ 対戦開始<\/button>/, '2026-10-04（PHASE D）：大会進行 →「対戦開始」→ パラメーター比較'); assert.match(fnOf('p9CompareScr'), /data-nsfx="1" onclick="p9VsGo\(this\)">⚔️ 対戦開始<\/button>/, 'パラメーター比較の「対戦開始」（2度押し）→ fight()');
 });
 
 test('QU-06：セーブ・ロードの「最初からやり直す」（2度押し）→ タイトル画面（タイトルの曲と画面が一致）。押しただけではセーブを消さない＝タイトルで始めたときに従来の初期化。つづきからにもどれる', () => {

@@ -406,8 +406,9 @@ T('QA-RL4：Chapter 3（旧ボード）のゴール → ランク選択（クリ
   const nx = await textOf(pg, '.p9next');
   assert.match(nx, /第2試合 \/ 全7試合/);
   assert.ok(nx.includes(opp), '次の相手＝次の対戦相手');
-  assert.equal(await pg.evaluate(() => document.querySelectorAll('.p9next .p9cmp .c').length), 6);
-  await pg.click('.p9next .p9go'); await pg.waitForTimeout(100); assert.equal(await pg.evaluate(() => S.m.raise.battle), null, '1回目では試合は始まらない');
+  await pg.click('.p9next .p9go'); await pg.waitForSelector('.p9cmps .pcgo'); await pg.waitForTimeout(SETTLE);   // 2026-10-04（PHASE D）：大会進行 → パラメーター比較（6能力のゲージ）
+  assert.equal(await pg.evaluate(() => document.querySelectorAll('.pcgs .pcg').length), 6);
+  await pg.click('.pcgo'); await pg.waitForTimeout(100); assert.equal(await pg.evaluate(() => S.m.raise.battle), null, '1回目では試合は始まらない');
   const raw = await rawSave(pg);
   await reloadAndStart(pg, '.p9tour');
   assert.equal(await rawSave(pg), raw);

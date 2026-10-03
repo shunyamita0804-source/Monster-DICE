@@ -179,7 +179,7 @@ test('CH1-B8：ゴール（14 の最後のマス＝大会会場の門前）→ �
   await pg.click('.rcv-row.ok[data-rank="0"]', { force: true }); await pg.waitForTimeout(450);
   assert.equal(await pg.evaluate(() => !!S.m.raise.tour), false, 'ランクを選んだだけでは始まらない（決めるのはプレイヤーの「参加する」）');
   await pg.click('#p9join', { force: true });
-  const ok = await pg.waitForSelector('.p9next [onclick="p9VsGo(this)"]', { timeout: 15000 }).then(() => true, () => false);
+  const ok = await pg.waitForSelector('.p9next .p9go[onclick="p9CompareScr()"]', { timeout: 15000 }).then(() => true, () => false);   // 2026-10-04：大会進行 →「対戦開始」→ パラメーター比較
   if (!ok) assert.fail('大会へ進まない：' + JSON.stringify(await pg.evaluate(() => ({ tour: S.m.raise.tour, goal: S.m.raise.goal, busy: bBusy, app: document.querySelector('#app').innerText.slice(0, 300) }))));
   assert.deepEqual(await pg.evaluate(() => [S.m.raise.tour.rank, S.m.raise.tour.league.size]), [0, 6], 'ランクE・6体');
   assert.equal(await pg.evaluate(() => MMCH.fatigue(S.m)), f0, '大会に入っても疲れは変わらない');

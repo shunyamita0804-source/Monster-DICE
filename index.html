@@ -730,11 +730,11 @@ button.dclose{position:absolute;right:10px;top:10px;width:30px;height:30px;paddi
 @keyframes kb{from{transform:scale(1.18)}to{transform:scale(1)}}
 .inm{position:absolute;bottom:20%;padding:4px 14px;color:#fff;text-shadow:0 2px 4px #000;z-index:2}
 .p0 .inm{right:5%;text-align:right}.p1 .inm{left:5%;bottom:12%}
-.inm small{display:block;font-size:.62rem;letter-spacing:.2em;color:#ffe9b0;font-weight:900}
+.inm small{display:inline-block;padding:2px 10px;border-radius:4px;font-size:.62rem;letter-spacing:.2em;color:#ffe9b0;font-weight:900;background:rgba(8,15,34,.8);border:1px solid rgba(240,210,130,.8)}   /* 2026-10-04：CHALLENGER／YOUR MONSTER の札（デザイン参考 04） */
 .inm b{display:block;font-size:1.9rem;font-weight:900;line-height:1.1;color:#fff;text-shadow:0 3px 0 rgba(0,0,0,.6),0 0 12px rgba(0,0,0,.6)}
 .inm span{display:inline-block;margin-top:2px;padding:0 10px;border-radius:999px;background:rgba(0,0,0,.5);border:1px solid #e8c86a;font-weight:900;font-size:.8rem}
 .ivs{position:absolute;left:50%;top:48%;transform:translate(-50%,-50%);display:flex;gap:0;z-index:5;animation:vsin .5s cubic-bezier(.2,1.6,.4,1) both 1.8s}
-.ivs b{font:900 5.2rem/1 Georgia,"Times New Roman",serif;font-style:italic;color:#fff3c0;-webkit-text-stroke:3px #7a3a00;text-shadow:0 5px 0 #5a2a04,0 0 26px #ffb020,0 0 60px #ff6a00}
+.ivs b{font:900 5.2rem/1 Georgia,"Times New Roman",serif;font-style:italic;color:#ffe08a;-webkit-text-stroke:3px #6a4a08;text-shadow:0 5px 0 #4a3204,0 0 26px #ffd060,0 0 60px #ff9a20}   /* 2026-10-04：金の VS（デザイン参考 04） */
 .ivs b+b{margin-left:-.12em;margin-top:.18em}
 @keyframes vsin{0%{transform:translate(-50%,-50%) scale(4) rotate(-12deg);opacity:0}60%{opacity:1}100%{transform:translate(-50%,-50%) scale(1) rotate(-6deg);opacity:1}}
 .iflash{position:absolute;inset:0;background:#fff;opacity:0;animation:ifl .5s ease-out forwards 1.85s;pointer-events:none;z-index:4}
@@ -2137,6 +2137,43 @@ main:has(>#app>.lab) h1{display:none}#app:has(>.lab){overflow:hidden}
 .lab .labmsg{position:relative;z-index:2;margin-top:8px;padding:8px 12px;border-radius:8px;background:rgba(8,15,34,.9);border:1px solid rgba(240,232,212,.5);font-size:13px}
 .lab .labmsg[hidden]{display:none}
 
+/* ===== 公式大会（2026-10-04 第二段階 PHASE D）：大会進行（デザイン参考 02）・パラメーター比較（03） ===== */
+.tp2 .tp2ban{margin:6px 0 10px;text-align:center}.tp2 .tp2ban small{display:block;font-size:11px;letter-spacing:.12em;color:#e8d29a}
+.tp2 .tp2bn{display:inline-flex;align-items:center;gap:10px;margin-top:4px;padding:6px 18px;border-radius:8px;background:linear-gradient(#8a1d26,#5a0f17);border:1.5px solid #d9b465;box-shadow:inset 0 0 0 2px rgba(60,8,12,.9),0 4px 12px rgba(0,0,0,.45)}
+.tp2 .tp2bn b{font-family:var(--mm-font-head);font-size:22px;letter-spacing:.14em;color:#ffe6a8}.tp2 .tp2no{padding:3px 10px;border-radius:6px;font-family:var(--mm-font-head);font-weight:800;font-size:14px;color:#ffe6a8;background:rgba(8,15,34,.85);border:1px solid rgba(240,210,130,.8)}
+.tp2 .tp2box{margin-top:10px;padding:10px 10px 12px;border-radius:12px;color:#f3ecd9;background:linear-gradient(rgba(14,24,56,.96),rgba(8,15,34,.98));border:1px solid rgba(240,232,212,.6);box-shadow:inset 0 0 0 3px rgba(8,15,34,.95),inset 0 0 0 3.6px rgba(217,180,101,.75),0 6px 14px rgba(0,0,0,.45)}
+.tp2 .tp2box h3{margin:-16px auto 8px;width:max-content;padding:3px 18px;border-radius:999px;font-family:var(--mm-font-head);font-size:14px;letter-spacing:.14em;color:#ffe6a8;background:linear-gradient(#2a3f78,#0b1838);border:1px solid #d9b465}
+.tp2 .tp2rows{display:grid;gap:5px}
+.tp2 .tp2r{display:grid;grid-template-columns:64px 1fr;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;font-size:14px;background:rgba(8,15,34,.7);border:1px solid rgba(240,232,212,.35)}
+.tp2 .tp2rn{font-family:var(--mm-font-head);font-weight:800;letter-spacing:.08em}.tp2 .tp2rs{display:flex;align-items:center;gap:6px;font-weight:700}.tp2 .tp2rs svg{width:18px;height:18px}.tp2 .tp2rs i{font-style:normal;color:#8a93ad}
+.tp2 .tp2r.win .tp2rs{color:#ffe08a}.tp2 .tp2r.lose .tp2rs{color:#ff8a8a}.tp2 .tp2r.todo{color:#8a93ad}
+.tp2 .tp2r.next{background:linear-gradient(rgba(70,56,20,.95),rgba(40,30,8,.95));border-color:#ffd25a;box-shadow:0 0 12px rgba(255,210,90,.45)}.tp2 .tp2r.next .tp2rs{color:#ffe6a8}
+.tp2 .p9next{text-align:center}.tp2 .tp2vs{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:6px;margin:6px 0 8px}
+.tp2 .tp2p{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}.tp2 .tp2p .p9pt{width:72px;height:72px}
+.tp2 .tp2nm{padding:4px 8px;border-radius:8px;background:rgba(8,15,34,.8);border:1px solid rgba(240,210,130,.7);max-width:100%}.tp2 .tp2nm small{display:block;font-size:10px;color:#e8d29a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tp2 .tp2nm b{display:block;font-family:var(--mm-font-head);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tp2 .p9ced{margin:4px 0 8px;text-align:left}.tp2 .tp2go{width:100%;margin-top:4px}
+.p9cmps{position:relative;margin:-16px;height:100dvh;min-height:560px;box-sizing:border-box;padding:calc(env(safe-area-inset-top,0px) + 10px) 14px calc(env(safe-area-inset-bottom,0px) + 10px);display:flex;flex-direction:column;gap:8px;overflow:hidden;color:#f3ecd9;background:#0a1430}
+main:has(>#app>.p9cmps) h1{display:none}#app:has(>.p9cmps){overflow:hidden}
+.p9cmps>.pcbg{position:absolute;inset:0;z-index:0;background-size:cover;background-position:center 30%}.p9cmps>.pcbg::after{content:"";position:absolute;inset:0;background:linear-gradient(rgba(6,12,30,.5),rgba(6,12,30,.15) 30%,rgba(6,12,30,.6) 70%,rgba(6,12,30,.9))}
+.p9cmps>*:not(.pcbg){position:relative;z-index:2}
+.pchd{align-self:center;padding:6px 22px;text-align:center;border-radius:8px;background:rgba(8,15,34,.85);border:1px solid rgba(240,232,212,.62);box-shadow:inset 0 0 0 3px rgba(8,15,34,.9),inset 0 0 0 3.6px rgba(217,180,101,.6)}
+.pchd b{display:block;font-family:var(--mm-font-head);font-size:18px;letter-spacing:.12em}.pchd small{display:block;font-size:11px;color:#e8d29a;letter-spacing:.1em}
+.pcduo{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:end;margin-top:4px}
+.pcs{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}
+.pcped{width:min(100%,160px);aspect-ratio:1;display:grid;place-items:center;border-radius:50%;background:radial-gradient(circle at 50% 70%,rgba(255,220,150,.35),rgba(20,30,70,.2) 60%,transparent 72%)}
+.pcped .p9pt{width:100%;height:100%}
+.pcs b{max-width:100%;padding:4px 12px;border-radius:999px;font-family:var(--mm-font-head);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:rgba(8,15,34,.85);border:1px solid rgba(240,210,130,.8)}
+.pcgs{display:grid;gap:7px;margin-top:6px}
+.pcg{display:grid;grid-template-columns:1fr 84px 1fr;align-items:center;gap:6px}
+.pcl{padding:4px 2px;border-radius:6px;text-align:center;font-size:12px;font-weight:700;color:#f3ecd9;background:rgba(8,15,34,.88);border:1px solid rgba(240,210,130,.7)}
+.pcb{height:14px;border-radius:7px;background:rgba(8,15,34,.8);border:1px solid rgba(240,232,212,.45);overflow:hidden;position:relative}
+.pcb i{position:absolute;top:0;bottom:0;background:var(--c);box-shadow:0 0 8px var(--c);min-width:6px;border-radius:7px;transition:width .5s ease-out}
+.pcb.l i{left:0}.pcb.r i{left:0}
+.pcacts{margin-top:auto;display:flex;flex-direction:column;gap:8px;align-items:center}.pcacts .pcgo{width:100%;margin:0}
+.pcback{padding:8px 22px;border-radius:999px;color:#f3ecd9;font:inherit;font-size:13px;background:rgba(8,15,34,.85);border:1px solid rgba(240,232,212,.6)}
+.p9newroad{margin-top:8px;padding:8px 12px;border-radius:10px;background:rgba(8,15,34,.75);border:1px solid #ffd25a;color:#ffe6a8}.p9newroad b{display:block;font-family:var(--mm-font-head);font-size:16px}.p9newroad span{font-size:12px}
+@media (max-height:700px){.pcped{width:min(100%,120px)}.pcgs{gap:5px}.pcb{height:12px}}
+
 /* ===== 研究所（2026-10-04 第二段階）：図鑑・合体・配合表。デザイン参考 06（濃紺＋金・魔法図鑑・2列） ===== */
 .lab .labbody{position:relative;z-index:2;flex:1 1 auto;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;margin-top:10px;padding:2px 2px 8px}
 .lab .labnav{margin-top:8px;grid-template-columns:1fr 1fr 1fr}
@@ -3484,17 +3521,34 @@ function p9Matrix(lg){const mk={win:"○",loss:"×",self:"",next:"◎",pending:"
  return `<section class="p9board2"><h3>対戦表</h3><div class="p9mx-w"><table class="p9mx"><thead><tr><th class="stk">参加者</th>${lg.entrants.map((e,i)=>`<th>${i+1}</th>`).join("")}</tr></thead><tbody>${lg.entrants.map(e=>{
   return `<tr class="${e.player?"me":""}"><th class="stk"><span class="no">${e.id+1}</span>${p9Pt(p9Npc(lg,e.id),"xs")}<span class="nm">${p11Esc(p9Short(lg,e.id))}</span></th>${lg.entrants.map(o=>{const c=MMP8L.resultCell(lg,e.id,o.id);return `<td class="c-${c}">${mk[c]}</td>`}).join("")}</tr>`}).join("")}</tbody></table></div>
  <div class="p9mx-lg"><span><b class="c-win">○</b>勝ち</span><span><b class="c-loss">×</b>負け</span><span><b class="c-next">◎</b>次の試合</span><span><b class="c-pending">・</b>未対戦</span></div></section>`}
+const TP2_IC={crown:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18h18l-1.5-9-4.5 4-3-7-3 7-4.5-4z" fill="currentColor"/><rect x="4" y="19" width="16" height="2" fill="currentColor"/></svg>',x:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>',swords:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3v18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M7 4h11l-3.5 4.5L18 13H7z" fill="currentColor"/></svg>'};   // 次の試合＝旗（敗北の × と見分ける）
+// 公式大会の進行（2026-10-04 第二段階 PHASE D。デザイン参考 02）：上＝CHAPTER・公式大会・第N戦、現在の成績（第1戦 勝利／敗北／次の試合／未定）、次の対戦相手（自分 VS 相手）、セドリックの一言、「対戦開始」→ パラメーター比較（p9CompareScr）→ 2度押し → fight()。
+//  順位表・対戦表は下に残す（スクロール）。大会の処理（MMP8L・startTournament・tourNext・settle）は変えない
 function p8TourScr(msg){const m=S.m,t=m.raise.tour,lg=t.league;bgm(t.status=="settled"?"result":"tour");p9Immersive(true);p9MenuClose();
  if(t.status=="settled")return p9TourResult(msg);
- const st=MMP8L.standings(lg),pm=MMP8.tourNext(m),o=p9Npc(lg,pm.opp);
- $("#app").innerHTML=`<div class="p9tour">${p9TourHead(m,t)}
- ${p9Ced(lg.round==0?CEDRIC_TALK.first:CEDRIC_TALK.next[lg.round%CEDRIC_TALK.next.length])}<div class="p9next"><div class="lb">第${pm.round+1}試合 / 全${lg.rounds.length}試合　次の相手</div><div class="vsrow">${p9Pt(m,"me")}<span class="p9vsl">VS</span>${p9Pt(o)}</div><div class="nm"><b>${p11Esc(m.name)}</b><span>vs</span><b>${p11Esc(o.name)}</b></div>${p9Cmp(m,o)}<button class="p9btn p9go" data-nsfx="1" onclick="p9VsGo(this)">⚔️ 対戦開始</button></div>
+ const st=MMP8L.standings(lg),pm=MMP8.tourNext(m),o=p9Npc(lg,pm.opp),cur=lg.round;
+ const rows=lg.rounds.map((rd,i)=>{const mt=rd.find(x=>x.a===0||x.b===0),won=i<cur&&!!mt&&mt.winner===0,lost=i<cur&&!!mt&&mt.winner!=null&&mt.winner!==0,cls=i<cur?(won?"win":"lose"):i===cur?"next":"todo";
+  return `<div class="tp2r ${cls}"><span class="tp2rn">第${i+1}戦</span><span class="tp2rs">${won?`${TP2_IC.crown}勝利`:lost?`${TP2_IC.x}敗北`:i===cur?`${TP2_IC.swords}次の試合`:`<i>―</i>未定`}</span></div>`}).join("");
+ $("#app").innerHTML=`<div class="p9tour tp2">${p9TourHead(m,t)}
+ <header class="tp2ban"><small>CHAPTER ${m.raise.ch}　${MMP8.chapterName(m.raise.ch)}</small><div class="tp2bn"><b>公式大会</b><span class="tp2no">第${pm.round+1}戦</span></div></header>
+ <section class="tp2box tp2res"><h3>現在の成績</h3><div class="tp2rows">${rows}</div></section>
+ <section class="tp2box p9next"><h3>次の対戦相手</h3><div class="lb">第${pm.round+1}試合 / 全${lg.rounds.length}試合</div><div class="tp2vs"><div class="tp2p me">${p9Pt(m,"me")}<div class="tp2nm"><small>聖獣士</small><b>${p11Esc(m.name)}</b></div></div><span class="p9vsl">VS</span><div class="tp2p op">${p9Pt(o)}<div class="tp2nm"><small>${p11Esc(o.name)}</small><b>？？？</b></div></div></div>
+ ${p9Ced(lg.round==0?CEDRIC_TALK.first:CEDRIC_TALK.next[lg.round%CEDRIC_TALK.next.length])}<button class="p9btn p9go tp2go" onclick="p9CompareScr()">⚔️ 対戦開始</button></section>
  ${msg?`<div class="p9msg p9tmsg">${msg}</div>`:""}${p9Standings(lg,st,false)}${p9Matrix(lg)}
  <p class="p9prov">【暫定】大会参加者の名前・種族は仮のデータです。実際の試合では、ランク${RN[t.rank]}相当の相手と戦います。</p></div>`;try{window.scrollTo(0,0)}catch(e){}}
+// パラメーター比較（デザイン参考 03）：両者（正式画像）と6能力のゲージ（999 を最大とした絶対の目盛り・正式色。数字・戦力・勝率・有利は出さない）→「対戦開始」（2度押し）→ fight()（導入の VS → FIGHT! → 実戦）。「順位表にもどる」で大会進行へ
+function p9CompareScr(){const m=S.m,t=m&&m.raise&&m.raise.tour;if(!t||t.status!="league")return board();const lg=t.league,pm=MMP8.tourNext(m);if(!pm)return board();const o=p9Npc(lg,pm.opp);bgm("tour");p9Immersive(true);p9MenuClose();
+ const pct=v=>Math.round(Math.min(999,Math.max(0,v|0))/999*100);
+ const g=KS.map(k=>`<div class="pcg"><div class="pcb l" style="--c:${STAT_COLOR[k]}"><i style="width:${pct(m[k])}%"></i></div><span class="pcl">${LAB[k]}</span><div class="pcb r" style="--c:${STAT_COLOR[k]}"><i style="width:${pct(o[k])}%"></i></div></div>`).join("");
+ $("#app").innerHTML=`<div class="p9cmps"><div class="pcbg" style="background-image:url(${BTB[t.rank][0]})"></div><header class="pchd"><b>公式ランク${RN[t.rank]}大会</b><small>第${pm.round+1}試合 ／ 全${lg.rounds.length}試合</small></header>
+ <div class="pcduo"><div class="pcs me"><div class="pcped">${p9Pt(m,"me")}</div><b>${p11Esc(m.name)}</b></div><div class="pcs op"><div class="pcped">${p9Pt(o)}</div><b>${p11Esc(o.name)}</b></div></div>
+ <div class="pcgs" aria-label="能力の比較（999 を最大とした目安）">${g}</div>
+ <div class="pcacts"><button class="p9btn p9go pcgo" data-nsfx="1" onclick="p9VsGo(this)">⚔️ 対戦開始</button><button class="pcback" data-nav="back" onclick="board()">順位表にもどる</button></div></div>`;try{window.scrollTo(0,0)}catch(e){}}
+
 function p9TourResult(msg){const m=S.m,t=m.raise.tour,lg=t.league,rs=t.result,w=rs.reward,st=MMP8L.standings(lg);
  const cf=Array.from({length:18},(_,i)=>`<i style="left:${(i*37)%100}%;animation-delay:${(i%6)*.35}s"></i>`).join("");
  $("#app").innerHTML=`<div class="p9tour ${rs.won?"p9won":""}">${p9TourHead(m,t)}
- ${rs.won?`<div class="p9win"><div class="cf">${cf}</div>${P9_TROPHY}<b class="big">優勝！</b><div class="sub">ランク${RN[t.rank]}大会を制した！（${st[0].w}勝${st[0].l}敗）</div></div>`
+ ${rs.won?`<div class="p9win"><div class="cf">${cf}</div>${P9_TROPHY}<b class="big">優勝！</b><div class="sub">ランク${RN[t.rank]}大会を制した！（${st[0].w}勝${st[0].l}敗）</div>${t.rank===5?`<div class="p9newroad"><b>S ランク制覇！</b><span>新たな道が開かれた…（Chapter 5 は準備中）</span></div>`:""}</div>`
   :`<div class="p9lose"><div class="plc">${rs.place}<small>位</small></div><div class="sub">大会終了。優勝（1位）できなかったため、報酬はありません。</div></div>`}
  ${p9Ced(rs.won?CEDRIC_TALK.won:CEDRIC_TALK.lost)}
  ${w?`<section class="p9board2 p9rw"><h3>${w.firstClear?"初回優勝の報酬":"再優勝の報酬"}</h3>${w.firstClear?`<div class="it">🪙 賞金 <b>${w.prize}G</b></div><div class="it">${MMP9ART.ticketIcon(24)} 特訓チケット <b>×${w.tickets}</b></div>`:`<div class="it dim">クリア済みランクのため、賞金・特訓チケットはありません</div>`}<div class="it">⬆ ステータスボーナス <b>${w.bonus.map(b=>`${LAB[b.key]}+${b.amount}`).join("　")}</b></div>${w.bagUnlocked?`<div class="it">🎒 バッグが6枠に拡張された！</div>`:""}</section>`:""}
@@ -3557,7 +3611,8 @@ function p10LegacyBattle(m,run){const had=Object.prototype.hasOwnProperty.call(m
 fight=function(i,teach){const m=S.m;if(!m||!m.raise||!m.raise.battle||m.raise.battle.done)return;return p10LegacyBattle(m,()=>P8_FIGHT(i,teach))}; // 戦闘前状態の記録が無い呼び出し（旧腕試し大会など）は実行しない
 const P8_AFTER=after;
 after=function(t){const m=S.m;if(m&&m.raise&&m.raise.battle){const f=MMP8.finishBattle(S,m);save();return p8AfterBattle(f)}P8_AFTER(t)};
-function p8AfterBattle(f){if(f.kind=="league"){if(f.interrupted)return board("大会の試合は途中で終わった。同じ試合をもう一度行えます。");return board(`第${f.round+1}試合：${(f.matchWon??f.won)?"勝ち！":"負け…"}`+(f.settled?(f.won?" 大会全体で1位になった！":` 大会は${f.place}位で終わった。`):""))}const tail=f.goal?" ゴールに到着した！":f.timeUp?" ターンを使い切った…":"";return board((f.interrupted?"練習試合は途中で終わった。":f.won?"練習試合に勝った！（練習試合のため賞金・ランクアップ・実績はありません）":"練習試合に負けた…（練習試合のため影響はありません）")+tail)}
+// 2026-10-04：S ランク制覇＝Chapter 5 の解放フラグ S.npcFlags.chapter5（画面は未実装＝「新たな道が開かれた」の導線だけ）
+function p8AfterBattle(f){if(f.kind=="league"){if(f.settled&&f.won&&S.m&&S.m.raise&&S.m.raise.tour&&S.m.raise.tour.rank===5&&!finaFlags().chapter5){finaFlags().chapter5=1;save()}if(f.interrupted)return board("大会の試合は途中で終わった。同じ試合をもう一度行えます。");return board(`第${f.round+1}試合：${(f.matchWon??f.won)?"勝ち！":"負け…"}`+(f.settled?(f.won?" 大会全体で1位になった！":` 大会は${f.place}位で終わった。`):""))}const tail=f.goal?" ゴールに到着した！":f.timeUp?" ターンを使い切った…":"";return board((f.interrupted?"練習試合は途中で終わった。":f.won?"練習試合に勝った！（練習試合のため賞金・ランクアップ・実績はありません）":"練習試合に負けた…（練習試合のため影響はありません）")+tail)}
 
 /* ===== Chapterマップの登録（計算・状態変更は MMP7 / MMP8） ===== */
 // Phase 9：正式Chapter 1〜4 の育成ボードを登録する（データは js/phase9/chapters.js）。

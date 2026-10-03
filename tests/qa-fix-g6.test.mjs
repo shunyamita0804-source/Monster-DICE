@@ -128,7 +128,7 @@ function playTour(seed, pattern) {
   }
   return { S, out };
 }
-const afterBattle = new Function('board', `${lineOf('function p8AfterBattle(f){')}\nreturn p8AfterBattle;`)((m) => m);
+const afterBattle = new Function('board', 'S', 'finaFlags', 'save', `${lineOf('function p8AfterBattle(f){')}\nreturn p8AfterBattle;`)((m) => m, { m: null }, () => ({}), () => {});   // 2026-10-04：S ランク制覇のフラグ（finaFlags().chapter5）は空の入れ物で受ける
 
 test('QA-G6-5：大会の最終試合に勝ったが大会は1位でない → 「第5試合：勝ち！ 大会は○位で終わった。」（以前は「負け…」と出ていた）', () => {
   const { out } = playTour(7, [false, false, false, false, true]);

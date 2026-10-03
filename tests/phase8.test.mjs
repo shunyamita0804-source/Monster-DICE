@@ -577,7 +577,7 @@ test('S6-8：画面：ゴールで挑戦できるランクだけを表示し、�
   assert.match(goal, /MMP8\.eligibleRanks\(m,r\.ch\)/); assert.match(goal, /辞退/);
   assert.match(fnLine('function p8TourStart('), /arm\(b,/);
   const scr = between('function p8TourScr(msg){', '\nfunction p9TourResult(');
-  assert.match(scr, /MMP8L\.standings\(lg\)/); assert.match(scr, /次の相手/); assert.match(scr, /\$\{p9Cmp\(m,o\)\}<button class="p9btn p9go" data-nsfx="1" onclick="p9VsGo\(this\)">⚔️ 対戦開始<\/button>/, '2026-10-03：次の相手の能力比較と「対戦開始」（2度押し）を順位表に。VS・対面は fight() の導入だけ（二重にしない）');
+  assert.match(scr, /MMP8L\.standings\(lg\)/); assert.match(scr, /次の対戦相手/); assert.match(scr, /onclick="p9CompareScr\(\)">⚔️ 対戦開始<\/button>/, '2026-10-04：大会進行 →「対戦開始」→ パラメーター比較'); assert.match(between('function p9CompareScr(){', '\nfunction '), /data-nsfx="1" onclick="p9VsGo\(this\)">⚔️ 対戦開始<\/button>/, 'パラメーター比較の「対戦開始」（2度押し）→ fight()。VS・対面は fight() の導入だけ（二重にしない）');
   assert.match(fnLine('function p9VsGo('), /p9arm\(b,[^)]*\)\)return;p8TourFight\(\)/);
   assert.match(fnLine('function p8TourFight('), /MMP8\.beginBattle\(S,m,\{kind:"league",rank:t\.rank\}\)[^;]*;save\(\);fight\(t\.rank\)/);
   assert.ok(HTML.indexOf('js/phase8/league.js') < HTML.indexOf('js/phase8/raising.js'), 'league.js を先に読み込む');

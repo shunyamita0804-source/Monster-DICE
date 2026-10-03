@@ -62,7 +62,7 @@ test('CED-4：表示場所：ゴールのランク選択・順位表（次の相
   assert.doesNotMatch(between('function p8GoalHtml(', '\nconst P9_PADLOCK'), /p9Ced|CEDRIC/, 'ランク選択の画面にセドリックは出さない');
   assert.ok(between('function p9TourIntro(', '\n// セドリック').includes('CEDRIC_TALK.open') || HTML.includes('${CEDRIC_TALK.open.replace("{R}",RN[k])}'), '大会開始の演出でセドリックの一言');
   const tour = between('function p8TourScr(msg){', '\nfunction p9TourResult(');
-  assert.ok(tour.includes('${p9Ced(lg.round==0?CEDRIC_TALK.first:CEDRIC_TALK.next[lg.round%CEDRIC_TALK.next.length])}<div class="p9next">'));
+  assert.ok(tour.includes('${p9Ced(lg.round==0?CEDRIC_TALK.first:CEDRIC_TALK.next[lg.round%CEDRIC_TALK.next.length])}<button class="p9btn p9go tp2go" onclick="p9CompareScr()">'), '2026-10-04：大会進行＝次の対戦相手のあとにセドリックの一言 →「対戦開始」（パラメーター比較へ）');
   assert.ok(tour.includes('${msg?`<div class="p9msg p9tmsg">${msg}</div>`:""}'), '試合結果などの通知は顔・名前なしのまま');
   assert.ok(between('function p9VsScr(){', '\nfunction p9VsGo(').includes('${p9Ced(CEDRIC_TALK.vs)}<div class="p9vs-fr">'));
   assert.ok(between('function p9TourResult(msg){', '\nfunction p8RewardText(').includes('${p9Ced(rs.won?CEDRIC_TALK.won:CEDRIC_TALK.lost)}'));
@@ -144,8 +144,10 @@ test('CED-B1：ゴールのランク選択 → 順位表 → 試合後 → VS画
   assert.ok(await sysClean(pg), '試合結果の通知にセドリックの顔・名前は付かない');
   assert.deepEqual((await ceds(pg)).map((c) => c.text), [T.next[1]]);
   // 2026-10-03 品質向上：対戦前の画面を1つに＝順位表の「次の相手」に能力の比較と「対戦開始」（2度押し）。VS 画面（p9VsScr）は流れから外した
-  assert.equal(await pg.evaluate(() => document.querySelectorAll('.p9next .p9cmp .c').length), 6, '次の相手との6能力の比較');
-  await pg.waitForTimeout(550); await pg.click('.p9next .p9go'); await pg.waitForTimeout(100);
+  assert.equal(await pg.evaluate(() => document.querySelectorAll('.tp2res .tp2r').length), 5, '現在の成績＝E は5試合');
+  await pg.waitForTimeout(550); await pg.click('.p9next .p9go'); await pg.waitForSelector('.p9cmps .pcgo'); await pg.waitForTimeout(500);
+  assert.equal(await pg.evaluate(() => document.querySelectorAll('.pcgs .pcg').length), 6, 'パラメーター比較＝6能力のゲージ（2026-10-04）');
+  await pg.click('.pcgo'); await pg.waitForTimeout(100);
   assert.equal(await pg.evaluate(() => S.m.raise.battle), null, '1回目の押下では試合はまだ始まらない（2度押し）');
   await pg.evaluate(() => board()); await pg.waitForSelector('.p9tour .p9next');
   // 残り4試合も勝って優勝 → 結果画面

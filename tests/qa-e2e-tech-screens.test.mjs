@@ -297,8 +297,10 @@ describe('QA-TS：390×844 の通し（JS エラー・読み込み・壊れた�
     await check(pg, 'ゴール（大会受付）', SEL.goal, { fixed: ['.rcv-join', '.rcv-dec'] });
     await pg.click('#chrcv .rcv-row.ok'); await pg.waitForTimeout(450); await pg.click('.rcv-join');   // ランクを選んで「この大会に参加する」（選んだ直後0.35秒は無視）
     await waitSel(pg, '.p9next .p9go');
-    await check(pg, '大会の順位表（次の相手の能力比較・対戦開始）', ['.p9mbtn', '.p9next .p9go']);
-    await press2(pg, '.p9next .p9go');
+    await check(pg, '大会進行（現在の成績・次の対戦相手・対戦開始）', ['.p9mbtn', '.p9next .p9go']);
+    await pg.click('.p9next .p9go'); await waitSel(pg, '.p9cmps .pcgo');   // 2026-10-04（PHASE D）：パラメーター比較（6能力のゲージ）
+    await check(pg, '大会のパラメーター比較（対戦開始は2度押し）', ['.pcgo', '.pcback']);
+    await press2(pg, '.pcgo');
     // 2026-10-03 品質向上：順位表の次の相手（能力比較）から「対戦開始」（2度押し）で直接 fight()（VS・対面の重複は fight() の導入だけ）
     await pg.waitForFunction(() => !!document.getElementById('bt'), null, { timeout: 15000 });
     await pg.waitForTimeout(800);

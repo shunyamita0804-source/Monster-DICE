@@ -164,10 +164,11 @@ for (const size of [H.SIZES.base, H.SIZES.se]) {
     await toGoal(pg);
     await pg.evaluate(() => { MMP8.startTournament(S, S.m, 0); save(); board(); });
     await pg.waitForSelector('.p9next .p9go'); await pg.waitForTimeout(500);
-    const pre = await pg.evaluate(() => { const st = [...document.querySelectorAll('.p9next .p9cmp .c')].map((r) => [...r.querySelectorAll('b')].map((x) => +x.textContent)); const go = document.querySelector('.p9next .p9go').getBoundingClientRect(); return { battle: S.m.raise.battle, bt: !!document.querySelector('#bt'), st, opp: MMP8L.PROVISIONAL_OPPONENT_STAT[0], go: [go.top, go.bottom] }; });
+    await pg.click('.p9next .p9go'); await pg.waitForSelector('.p9cmps .pcgo'); await pg.waitForTimeout(400);   // 2026-10-04（PHASE D）：大会進行 →「対戦開始」→ パラメーター比較（数字なしのゲージ）→ 2度押しで fight()
+    const pre = await pg.evaluate(() => { const st = [...document.querySelectorAll('.pcgs .pcg')].map((r) => [...r.querySelectorAll('.pcb i')].map((x) => parseFloat(x.style.width))); const go = document.querySelector('.pcgo').getBoundingClientRect(); return { battle: S.m.raise.battle, bt: !!document.querySelector('#bt'), st, digits: /\d/.test(document.querySelector('.pcgs').textContent), opp: MMP8L.PROVISIONAL_OPPONENT_STAT[0], go: [go.top, go.bottom] }; });
     assert.equal(pre.battle, null, '対戦開始までは試合を始めない'); assert.equal(pre.bt, false, 'fight() は動いていない');
-    assert.deepEqual(pre.st, [[100, pre.opp], [100, pre.opp], [100, pre.opp], [100, pre.opp], [100, pre.opp], [100, pre.opp]], '能力の比較＝自分の6能力と、fight() が作る相手と同じ値（MMP8L.PROVISIONAL_OPPONENT_STAT）');
-    await pg.click('.p9next .p9go'); await pg.waitForTimeout(600); await pg.click('.p9next .p9go');
+    const pc = (v) => Math.round(v / 999 * 100); assert.deepEqual(pre.st, Array(6).fill([pc(100), pc(pre.opp)]), '能力の比較＝999 を最大とした絶対のゲージ（自分の6能力と、fight() が作る相手と同じ値 MMP8L.PROVISIONAL_OPPONENT_STAT）'); assert.equal(pre.digits, false, '比較の画面に数字は出さない');
+    await pg.click('.pcgo'); await pg.waitForTimeout(600); await pg.click('.pcgo');
     await pg.waitForSelector('#bt'); await pg.waitForTimeout(600);
     const after = await pg.evaluate(() => ({ kind: S.m.raise.battle && S.m.raise.battle.kind, pbt: !!document.querySelector('#pbt'), vs: !!document.querySelector('.p9vs'), bt: !!document.querySelector('#bt') }));
     assert.deepEqual(after, { kind: 'league', pbt: false, vs: false, bt: true }, '対戦開始で、間の画面なしに従来の fight() が始まる');
