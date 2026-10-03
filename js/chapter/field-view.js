@@ -613,8 +613,9 @@
     f.introSeen = true; doSave();   // 先に「見た」を保存（演出の途中で再読み込みしても二度出ない）。この個体のこの Chapter の配置と一緒に消える
     const w = $('#chfw'); V.intro = true; busySet(true); lockUi(true);
     if (w) w.classList.add('chf-intro');   // イントロ中は UI・ソラモ・マスを出さない
-    let res = null;
-    try { res = await MMCHI.play(V.cfg, { key, host: w, chapterId: V.cfg.chapterId, title: V.cfg.title, patternId: f.patternId, calm: V.calm }); }
+    let res = null, cued = false;
+    const onTitle = () => { cued = true; feel('chapter.start'); };   // 開始の音：Chapter 名が読めるようになった瞬間（ズームの前）。飛ばしたときは最後に1回
+    try { res = await MMCHI.play(V.cfg, { key, host: w, chapterId: V.cfg.chapterId, title: V.cfg.title, patternId: f.patternId, calm: V.calm, onTitle }); }
     catch (e) {}
     finally {
       // FIELD 1 の正式な開始状態：ソラモ・マス・UI を出す（飛ばしたときも同じ。途中の状態では止まらない）
@@ -622,7 +623,7 @@
       if (res && res.skipped) await wait(350);   // 飛ばしたタップが下の START に届かないよう少し待ってから操作できる
       V.intro = false; busySet(false);
     }
-    if (onField() && chfActive(m) && P8().boardPhase(m) === 'roll') { refreshDeck(m); feel('chapter.start'); setTimeout(() => { if (onField() && !busyGet()) storyAt(m, 'start'); }, 350); }
+    if (onField() && chfActive(m) && P8().boardPhase(m) === 'roll') { refreshDeck(m); if (!cued) feel('chapter.start'); setTimeout(() => { if (onField() && !busyGet()) storyAt(m, 'start'); }, 350); }
   }
   // ---------------------------------------------------------
   // 大会会場への到着（config.arrival）：最後のマス（ゴール）に着いたら、通常のフィールド進行を終える。
@@ -705,6 +706,12 @@
   function chfOpen(id) { const m = gS() && gS().m; if (!chfActive(m) || busyGet() || P8().boardPhase(m) !== 'roll') return; try { hall(id); } catch (e) {} }
   function lockUi(on, except) { document.querySelectorAll('#chf-ui button').forEach((b) => { if (on && !(except && b.matches(except))) b.disabled = true; }); }
 
+  /** メインの操作（START）の手ごたえ：沈む → 小さく跳ね返る → 元へ（transform だけ。光らせない）。視差を減らす設定では待たない */
+  function pressKick(el) {
+    if (!el || V.calm || !el.animate) return Promise.resolve();
+    const a = el.animate([{ transform: 'scale(1)' }, { transform: 'scale(.9)', offset: 0.35, easing: 'cubic-bezier(.3,0,.6,1)' }, { transform: 'scale(1.05)', offset: 0.72, easing: 'ease-out' }, { transform: 'scale(1)' }], { duration: 210, easing: 'ease-out' });
+    return Promise.race([a.finished.catch(() => {}), wait(260)]);
+  }
   /**
    * START（1タップ）：出目・ターン消費・疲れを確定して保存（演出の前。中断・再読み込みで振り直せない）→ サイコロが START の位置から出現して回り、
    *  自動で減速して停止面（dice_stop_N）→ 少し見せて消える → 1地点ずつ移動 → 停止処理 → START に戻る。
@@ -720,6 +727,7 @@
       const from = bt ? (() => { const b = bt.getBoundingClientRect(); return { x: b.left + b.width / 2 - hr.left, y: b.top + b.height / 2 - hr.top }; })() : null;   // START の位置から出現する
       const fv = $('#chf'), fr = fv ? fv.getBoundingClientRect() : hr;
       refreshDeck(m, 'サイコロを振った…'); lockUi(true);
+      await pressKick($('#brollbtn'));   // START の手ごたえ：押す → 小さく戻る → サイコロが出る（約0.2秒。強い光り方はしない）
       if (root.MMCHD) await MMCHD.play(r.value, { host, from, land: { x: fr.left + fr.width / 2 - hr.left, y: fr.top + fr.height * 0.44 - hr.top } });   // 着地はモンスターの頭より上（モンスターを隠さない）。自動停止
       rollToast(r.value, m.raise.pend ? m.raise.pend.fatigueAdded || 0 : 0); refreshDeck(m, ''); lockUi(true);
     } finally { busySet(false); }
@@ -834,18 +842,31 @@
   async function encounter(m, bt) {
     const fx = $('#chffx'), w = $('#bmonw'); if (!fx || !w || !V.monPos) return;
     V.moving = false; anim('idle');
-    await wait(beatOf(4));   // 止まった直後の静止（「何かいる…」の間）
+    // 2026-10-03（試遊で「UI が一瞬光るだけ」）：移動が止まる → 短い静止 → 予兆（草むら・！）→ 遭遇の演出（絵と文を同時に）→ 見せる → バトルの案内
+    const BT = (V.cfg.battleTypes || {})[bt] || {};
+    await wait(V.calm ? 0 : Math.max(380, beatOf(4)));   // 止まった直後の静止（「何かいる…」の間）
+    if (BT.noRustle) return encounterShow(BT, bt);
     const d = V.monPos.d, side = V.facing >= 0 ? 1 : -1, x = V.monPos.x + side * 92 * d, y = V.monPos.y + 10 * d, src = asset(V.cfg, (V.cfg.nodeLook && V.cfg.nodeLook.tuft) || 'grass_front');
     fx.insertAdjacentHTML('beforeend', `<i class="chf-rustle" style="left:${x.toFixed(1)}px;top:${y.toFixed(1)}px;width:${(190 * d).toFixed(0)}px;height:${(72 * d).toFixed(0)}px;background-image:url(${src});background-position:${(-rnd01() * 700).toFixed(0)}px 100%"></i>`);
     camFocus({ x, y }, 0.3, CA().zoom.focus);
-    await wait(V.calm ? 0 : 260);   // 草むらが揺れる（予兆）
+    await wait(V.calm ? 0 : 300);   // 草むらが揺れる（予兆）
     fx.insertAdjacentHTML('beforeend', `<i class="chf-alert" style="left:${V.monPos.x.toFixed(1)}px;top:${(V.monPos.y - monH() * d * 1.02).toFixed(1)}px;--d:${d}">！</i>`);
-    feel('wild.alert', { battleType: bt });
-    const cut = effectAsset(((V.cfg.battleTypes || {})[bt] || {}).cutin);   // 野生バトル突入のカットイン（config.battleTypes.wild.cutin。レア・ライバルには付けない）
-    await wait(V.calm ? 0 : 280);
-    if (cut && !V.calm) { const ui = $('#chf-ui'); if (ui) { ui.insertAdjacentHTML('beforeend', `<div class="chf-cutin"><img src="${esc(cut)}" alt="" draggable="false"></div>`); const c = ui.querySelector('.chf-cutin:last-child'); setTimeout(() => c && c.remove(), 700); } }
-    await wait(V.calm ? 120 : 620);
+    await wait(V.calm ? 0 : 260);   // 「！」を見せてから
+    await encounterShow(BT, bt);
     fx.querySelectorAll('.chf-rustle,.chf-alert').forEach((e) => e.remove());
+  }
+  /**
+   * 遭遇の演出（2026-10-03）：絵（野生だけカットイン config.battleTypes.wild.cutin）と文（battleTypes[bt].encounter）を同じフレームで出す（ずらさない）。
+   *  出た瞬間に wild.alert（遭遇の音）→ 読める間だけ見せる → 消えてからバトルの案内。帯の色は tone（野生・レア・ライバルを見分ける）
+   */
+  async function encounterShow(BT, bt) {
+    const ui = $('#chf-ui'), cut = BT.cutin ? effectAsset(BT.cutin) : null, text = BT.encounter || '';
+    if (!ui || V.calm || (!cut && !text)) { feel('wild.alert', { battleType: bt }); if (text) setMsg(text); await wait(V.calm ? 300 : 600); return; }
+    ui.insertAdjacentHTML('beforeend', `<div class="chf-enc t-${esc(BT.tone || bt)}" role="status">${cut ? `<img class="chf-enc-art" src="${esc(cut)}" alt="" draggable="false">` : '<i class="chf-enc-art chf-enc-flare"></i>'}<b class="chf-enc-tx">${esc(text)}</b></div>`);
+    const el = ui.querySelector('.chf-enc:last-child');
+    feel('wild.alert', { battleType: bt });   // 絵と文が出た瞬間
+    await wait(1250);   // 読める間（文＋絵）
+    if (el) { el.classList.add('out'); await wait(180); el.remove(); }
   }
   /** 通常マス（LEVEL 1）：足元のマスが軽く光るだけ（何も起きない。テンポを落とさない） */
   function touchTile(tile) { if (!tile) return; tile.classList.remove('touch'); void tile.offsetWidth; tile.classList.add('touch'); feel('tile.stop'); }

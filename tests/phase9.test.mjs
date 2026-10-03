@@ -318,7 +318,9 @@ test('T4-1：ファームは正式デザインの1画面（育成開始前・Cha
 
 test('T4-2：ファームのコマンド：主要4つ（特訓・ステータス・技管理・アイテム）と最下部の進行ボタン1つ。「ボード」コマンドは無い（Chapterへの進行は進行ボタン）。遷移先は従来の関数', () => {
   const f = between('function fmScr(msg){', '\n// ---- Phase 8：育成中の画面遷移');
-  assert.match(f, /const cmd=\[\["hall\('s'\)","train","特訓"\],\["hall\('st'\)","status","ステータス"\],\["hall\('w'\)","moves","技管理"\],\["shopScr\(\)","item","アイテム"\]\];/);
+  assert.match(f, /const cmd=\[\["hall\('s'\)","train","特訓","train"\],\["hall\('st'\)","status","ステータス","status"\],\["hall\('w'\)","moves","技管理","moves"\],\["shopScr\(\)","item","アイテム","item"\]\];/);
+  // 2026-10-03：4コマンドは背景の絵の光る目印の上（訓練場＝特訓・牛舎＝ステータス・石柱＝技管理・屋台＝アイテム）。進行ボタンは上の門
+  assert.match(HTML, /const FM_SPOT=\{train:\[17\.9,43\.6\],item:\[71\.2,38\.9\],status:\[74\.7,72\.6\],moves:\[20\.6,78\.8\]\};/); assert.match(f, /<div class="fmgate"><button class="fmgo\$\{go\.c\}" onclick="\$\{go\.on\}">/);
   assert.doesNotMatch(f, /"ボード"|ボード閲覧/, 'ボードのコマンドは置かない');
   // 進行ボタン（1つ）：開始前＝育成を始める／Chapter間＝Chapter Nへ進む（どちらも従来の出発準備 prepScr。出発の確認＝フィナの選択肢はそこから）／完了＝街へ戻る
   assert.match(f, /const go=st=="none"\?\{t:"育成を始める",s:`\$\{chNm\(k\)\}「\$\{chSub\(k\)\}」へ出発`,on:"prepScr\(\)",c:""\}/);
@@ -333,7 +335,7 @@ test('T4-2：ファームのコマンド：主要4つ（特訓・ステータス
 
 test('T4-3：正式背景・ダン（正式アップ画像）が寄り添い、育成中の個体（正式画像）が主役。情報パネルは名前・種族／大会ランク・特訓チケット／育成状態・Chapter だけ（所持金・6能力は出さない）', () => {
   const f = between('function fmScr(msg){', '\n// ---- Phase 8：育成中の画面遷移');
-  assert.match(HTML, /const FARM_BG="assets\/farm\/farm_main\.jpg";/); assert.ok(existsSync(path.join(ROOT, 'assets/farm/farm_main.jpg')));
+  assert.match(HTML, /const FARM_BG="assets\/farm\/farm_prep_main\.jpg";/); assert.ok(existsSync(path.join(ROOT, 'assets/farm/farm_prep_main.jpg')));   // 2026-10-03：冒険準備の拠点（正式参照画像）
   assert.match(HTML, /const DAN_FIG="assets\/npc\/dan\/closeup\/smile\.webp";/); assert.ok(existsSync(path.join(ROOT, 'assets/npc/dan/closeup/smile.webp')));
   assert.match(f, /<img class="fmdan" src="\$\{DAN_FIG\}" alt="" aria-hidden="true"><div class="fmmon mon">\$\{msv\(m\)\}<\/div>/, '育成中の個体は msv（正式画像）で表示。種族は固定しない');
   for (const w of ['${p11Esc(m.name)}', '${sp?sp.kind:""}', '<dt>大会ランク</dt><dd>${MMP8.rankLabel(m)}</dd>', '<dt>特訓チケット</dt><dd>${S.trainTix}枚</dd>', '<span class="fmbadge">${state}</span>']) assert.ok(f.includes(w), w);

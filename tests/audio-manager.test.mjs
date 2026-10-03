@@ -376,8 +376,22 @@ test('AUDIO-22：registry のループ区間・maxMs は正しい値（loopEnd �
   const { got } = loadRegistry(), { A } = env(); A.registerAll({ bgm: got.bgm, se: got.se });
   const R = A.registryOf('bgm');
   for (const [k, v] of Object.entries(got.bgm)) if (v.loopEnd != null) assert.ok(R[k].loopRange, `${k} のループ区間が有効`);
-  for (const k of ['TOWN', 'FARM', 'RIVAL_BATTLE', 'TOURNAMENT_BATTLE_HIGH']) assert.match(srcsOf(got.bgm[k])[0], /alkakrab_fantasy_rpg_vol3\//, k);
-  for (const k of ['CHAPTER_START', 'WILD_ALERT', 'MATCHUP']) assert.match(srcsOf(got.se[k])[0], /alkakrab_fantasy_rpg_vol3\//, k);
+  for (const k of ['RIVAL_BATTLE', 'TOURNAMENT_BATTLE_HIGH']) assert.match(srcsOf(got.bgm[k])[0], /alkakrab_fantasy_rpg_vol3\//, k);   // TOWN・FARM は 2026-10-03 第4弾の試遊で NG → silent（AUDIO-23）
+  for (const k of ['CHAPTER_START', 'WILD_ALERT']) assert.match(srcsOf(got.se[k])[0], /alkakrab_fantasy_rpg_vol3\//, k);   // MATCHUP は第4弾で NG → silent
   for (const [k, v] of Object.entries(got.se)) if (v.maxMs != null) assert.ok(v.maxMs >= 300 && v.maxMs <= 4000 && (v.fadeMs == null || v.fadeMs <= v.maxMs), k);
   assert.equal(got.bgm.CHAPTER_1.silent, true, 'Chapter 1 は第3弾でも見送り（候補が戦闘曲並みに忙しい）');
+});
+
+test('AUDIO-23：2026-10-03 第4弾の試遊で NG の音は無音（silent＝合成音にも落とさない・代わりの音を選ばない）。OK の音（CHAPTER_START・MARKET など）はそのまま。NG のファイルは置かない', () => {
+  const { got } = loadRegistry();
+  for (const k of ['TOWN', 'FARM', 'TOURNAMENT_ENTRY', 'TOURNAMENT_LOBBY_LOW', 'TOURNAMENT_LOBBY_HIGH', 'TOURNAMENT_MATCHUP', 'RESULT']) assert.deepEqual(got.bgm[k], { silent: true }, `BGM ${k}`);
+  for (const k of ['TITLE_START', 'UI_CONFIRM', 'DICE_THROW', 'DICE_LAND', 'DICE_ROLL', 'DICE_STOP', 'TILE_STOP', 'TOURNAMENT_ARRIVAL', 'MATCHUP']) assert.deepEqual(got.se[k], { silent: true }, `SE ${k}`);
+  assert.match(srcsOf(got.se.CHAPTER_START)[0], /fx_2\.ogg$/, 'Chapter 開始の音は OK（そのまま）'); assert.match(srcsOf(got.bgm.MARKET)[0], /town_village_theme_2\.ogg$/, '市場の曲は OK（そのまま）');
+  const all = JSON.stringify(got);
+  for (const f of ['ambient_4_tranquil_radiance', 'ambient_3_lost_river', 'event_music_4', 'confirm_style_1_004', 'confirm_style_5_001', 'pluck_3', 'pluck_5', 'fx_1.ogg']) assert.ok(!all.includes(f), `NG の音 ${f} を別の場面へ使い回さない`);
+  const HTML = readFileSync(path.join(ROOT, 'index.html'), 'utf8'), intro = HTML.slice(HTML.indexOf('function p9TourIntro('), HTML.indexOf('// ---- Phase 9：公式大会（大会掲示板'));
+  assert.doesNotMatch(intro, /sfx\(/, '大会開始の演出で音を鳴らさない（風切り音は NG）');
+  const DR = readFileSync(path.join(ROOT, 'js/chapter/dice-renderer.js'), 'utf8'), GF = readFileSync(path.join(ROOT, 'js/feel/game-feel.js'), 'utf8');
+  assert.match(GF, /'dice\.stop': \{ level: 2, se: 'DICE_STOP' \}/, '停止の音の差し込み口＝dice.stop → DICE_STOP（今は無音）');
+  assert.match(DR, /await frame\(\);   \/\/ 止まった姿が描かれたフレームで「完全停止」\n    ov\.dataset\.stopped = '1'; feel\('dice\.stop'\);/, 'dice.stop はサイコロが見た目の上で止まったフレーム');
 });

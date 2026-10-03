@@ -1264,12 +1264,16 @@ button.mkc b{font-size:.9rem}button.mkc small{font-size:.66rem;color:#ffe9b0}
 /* 押せるときの光の脈動：opacity だけを動かす（box-shadow を毎フレーム変えると待機中もスタイル計算が走る） */
 .chstop-rim::after{content:"";position:absolute;inset:-5px;border-radius:50%;box-shadow:0 0 26px 6px rgba(255,200,90,.85);opacity:0;pointer-events:none}
 .chstopw.on .chstop-rim::after{animation:chstopglow 1.6s ease-in-out infinite}
-@keyframes chstopglow{50%{opacity:1}}
+@keyframes chstopglow{50%{opacity:.5}}
 .chstop:disabled{filter:saturate(.3) brightness(.7) drop-shadow(0 4px 8px rgba(0,0,0,.5))}
 .chstop.wait .chstop-dome{background:radial-gradient(circle at 50% 30%,#8391c4 0,#2f4280 40%,#131c3e 100%)}
 .chstop.wait b{font-size:30px;text-shadow:0 2px 0 #0a1030}
 /* 2026-10-01 リアル巨大ボード方式：画像の操作欄（START／STOP の2状態の正式画像。押せる領域は透明なボタン）・宙で回るサイコロ・Chapter開始の俯瞰図・フィナの一言 */
-.chdeck-img{padding-bottom:calc(2px + env(safe-area-inset-bottom,0px))}
+.chdeck-img{padding-bottom:calc(2px + env(safe-area-inset-bottom,0px));padding-left:2px;padding-right:2px}
+/* 2026-10-03：操作欄を少し縦に大きく（フィールドの高さ --chdeck は変えない。左右の余白を詰めて画像の幅＝高さを広げる）。START の光はゆっくり控えめに（押下の手ごたえは field-view の pressKick） */
+#app>.chfw{--chcmd:128px;--chdeck:clamp(128px,19.7vh,172px)}
+@supports (height:1dvh){#app>.chfw{--chdeck:clamp(128px,19.7dvh,172px)}}
+.chstopw.chstopw-img.on::after{animation-duration:2.6s}
 .chcmd-img{position:relative;height:auto;width:min(100%,calc(var(--chcmd) * var(--deckar,3.116)));aspect-ratio:var(--deckar,3.116);margin:0 auto;max-height:var(--chcmd)}
 .chdeck-bg{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:contain;pointer-events:none;user-select:none;-webkit-user-select:none;filter:drop-shadow(0 3px 6px rgba(0,0,0,.45))}
 .chwing.chwing-img{position:absolute;max-width:none;height:auto;margin:0;padding:0;border:0;border-radius:10px;background:transparent;box-shadow:none;transform:none;color:transparent;font-size:0;z-index:2}
@@ -1336,7 +1340,21 @@ button.mkc b{font-size:.9rem}button.mkc small{font-size:.66rem;color:#ffe9b0}
 .chf-twarn{position:absolute;left:50%;top:22%;width:min(88vw,340px);aspect-ratio:900/221;transform:translateX(-50%);background:center/contain no-repeat;display:flex;align-items:center;justify-content:center;z-index:19;pointer-events:none;animation:chftw 1.4s ease both}
 .chf-twarn b{font:800 18px/1 var(--mm-font-head);color:#fff3cf;letter-spacing:.06em;text-shadow:0 2px 0 rgba(40,20,0,.75),0 0 10px rgba(0,0,0,.6)}
 @keyframes chftw{0%{opacity:0;transform:translate(-50%,-8px)}15%,80%{opacity:1;transform:translate(-50%,0)}100%{opacity:0}}
-@media (prefers-reduced-motion:reduce){.chf-cutin,.chf-twarn{animation-duration:.01s}}
+/* 遭遇の演出（2026-10-03）：絵（野生はカットイン）と文を同時に出し、約1.35秒見せる。帯の色で 野生（赤金）・レア（深紅）・ライバル（紫）を分ける */
+.chf-enc{position:absolute;left:0;right:0;top:40%;z-index:21;pointer-events:none;display:flex;flex-direction:column;align-items:center;transform:translateY(-50%);transition:opacity .18s ease}
+.chf-enc.out{opacity:0}
+.chf-enc::before{content:"";position:absolute;left:0;right:0;top:50%;height:clamp(150px,30vh,230px);transform:translateY(-50%);background:linear-gradient(90deg,rgba(40,6,4,0),rgba(40,6,4,.62) 18%,rgba(40,6,4,.62) 82%,rgba(40,6,4,0));animation:chfencband .32s ease-out both}
+.chf-enc.t-rare::before{background:linear-gradient(90deg,rgba(60,0,12,0),rgba(70,0,16,.7) 18%,rgba(70,0,16,.7) 82%,rgba(60,0,12,0))}
+.chf-enc.t-rival::before{background:linear-gradient(90deg,rgba(26,8,52,0),rgba(30,10,64,.72) 18%,rgba(30,10,64,.72) 82%,rgba(26,8,52,0))}
+.chf-enc-art{position:relative;display:block;width:min(78vw,320px);height:auto;animation:chfencart .45s cubic-bezier(.2,1.25,.4,1) both}
+.chf-enc-flare{height:min(40vw,150px);background:radial-gradient(closest-side,rgba(214,170,255,.9),rgba(140,80,220,.45) 45%,rgba(90,40,170,0));border-radius:50%}
+.chf-enc.t-rare .chf-enc-flare{background:radial-gradient(closest-side,rgba(255,170,170,.9),rgba(200,20,40,.5) 45%,rgba(120,0,20,0))}
+.chf-enc-tx{position:relative;margin-top:-4px;padding:6px 26px 7px;font:900 clamp(17px,5.3vw,24px)/1.25 var(--mm-font-head);letter-spacing:.04em;white-space:nowrap;color:#fff;text-align:center;text-shadow:0 2px 0 #3a0a04,0 0 6px rgba(0,0,0,.9);background:linear-gradient(90deg,rgba(30,4,2,0),rgba(30,4,2,.88) 16%,rgba(30,4,2,.88) 84%,rgba(30,4,2,0));border-top:1px solid rgba(240,200,110,.55);border-bottom:1px solid rgba(240,200,110,.55);animation:chfenctx .45s cubic-bezier(.2,1.25,.4,1) both}
+.chf-enc.t-rival .chf-enc-tx{text-shadow:0 2px 0 #1a0638,0 0 6px rgba(0,0,0,.9);background:linear-gradient(90deg,rgba(20,6,44,0),rgba(26,8,58,.9) 16%,rgba(26,8,58,.9) 84%,rgba(20,6,44,0));border-color:rgba(200,160,255,.55)}
+@keyframes chfencband{from{opacity:0;transform:translateY(-50%) scaleY(.2)}to{opacity:1;transform:translateY(-50%) scaleY(1)}}
+@keyframes chfencart{0%{opacity:0;transform:scale(.5) rotate(-10deg)}60%{opacity:1;transform:scale(1.06) rotate(0)}100%{opacity:1;transform:scale(1)}}
+@keyframes chfenctx{0%{opacity:0;transform:scale(1.35)}60%{opacity:1;transform:scale(.97)}100%{opacity:1;transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){.chf-cutin,.chf-twarn,.chf-enc::before,.chf-enc-art,.chf-enc-tx{animation-duration:.01s}}
 .chpop.out{opacity:0;transform:translate(-50%,-60%);transition:opacity .16s,transform .16s}
 @keyframes chpop{from{opacity:0;transform:translate(-50%,-40%) scale(.9)}}
 /* サイコロ：1枚の正式画像を translate・rotate・scale で動かす（連番画像は使わない）。STOP の上から飛び、フィールドの手前に落ちて正式の角度で止まる。止まったら金色の光の輪と出目 */
@@ -1344,6 +1362,9 @@ button.mkc b{font-size:.9rem}button.mkc small{font-size:.66rem;color:#ffe9b0}
 .chdz-mv{position:absolute;width:88px;height:88px;transform:translate(-50%,-50%);will-change:transform}
 .chdz-img{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 6px 8px rgba(0,0,0,.35));transition:opacity .16s}
 .chdz-img.off{opacity:0}
+/* 既存の正式10コマ（assets/dice/std。投げる → 着地。2026-10-03）：サイコロ本体の位置・大きさは停止面と揃える（frameBox から JS が寸法を入れる） */
+.chdz-fr{position:absolute;display:block;max-width:none;pointer-events:none;user-select:none;-webkit-user-select:none;transition:opacity .1s}
+.chdz-fr.off{opacity:0}
 .chdz-stop{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 6px 8px rgba(0,0,0,.35));opacity:0;transition:opacity .16s}
 .chdz-stop.on{opacity:1}
 .chdz-stop.pop{animation:chdzpop .34s var(--mm-ease-snap,ease-out)}@keyframes chdzpop{0%{scale:1.22}100%{scale:1}}
@@ -1533,6 +1554,10 @@ button.mkc b{font-size:.9rem}button.mkc small{font-size:.66rem;color:#ffe9b0}
 .p9vs.p9vs-anim .p9vs-fr .fr:not(.me){animation:p9vsR .46s cubic-bezier(.2,.9,.3,1.1) both .48s}
 .p9vs.p9vs-anim .p9vs-tb,.p9vs.p9vs-anim .p9go,.p9vs.p9vs-anim .p9btn2,.p9vs.p9vs-anim .p9prov{animation:p9vsfade .4s ease-out both 1s}
 .p9vs.p9vs-anim{animation:p9vsimp .32s ease-out .9s}
+/* 2026-10-03：対戦相手の発表と能力比較を1枚に（旧 Battle 開始前の導入のバトル背景をここへ）。相手の種族を名前の下に */
+.p9vs.p9vs-bt{background:linear-gradient(rgba(8,10,26,.5),rgba(8,10,26,.18) 34%,rgba(8,10,26,.62) 70%,rgba(8,10,26,.85)),var(--vsbg) center 30%/cover no-repeat,#10152c}
+.p9vs-fr .fr .sp{margin-top:3px;font-size:.72rem;color:#f0dfb0;text-shadow:0 1px 0 #000}
+@media (max-height:720px){.p9vs .p9pt.l{width:92px;height:92px}.p9vs .vsx{font-size:2.1rem}.p9vs-fr{margin-bottom:8px}.p9vs .vr{height:29px}.p9vs .vr .lb{padding:2px 0}.p9vs .p9prov{font-size:.68rem;padding:2px 8px;margin:6px 0 0}.p9vs .p9go{padding:11px 10px;margin-top:8px}.p9vs .p9btn2{padding-top:8px;padding-bottom:8px}.p9vs .p9vs-top{margin-bottom:6px}}
 @keyframes p9vsx{from{opacity:0;transform:scale(2.2)}to{opacity:1;transform:scale(1)}}
 @keyframes p9vsL{from{opacity:0;transform:translateX(-120%)}to{opacity:1;transform:none}}
 @keyframes p9vsR{from{opacity:0;transform:translateX(120%)}to{opacity:1;transform:none}}
@@ -1948,6 +1973,34 @@ button.p10karen img{display:block;width:100%;height:auto;margin-top:2px;transfor
  .fmcmd{gap:6px 8px;margin-top:7px}.fm button.fmb{height:44px;font-size:16px}
  .fmft{margin-top:7px}.fm button.fmgo{height:56px}.fm .fmgo b{font-size:20px}.fm button.fmrd{width:56px;height:56px}
 }
+/* ===== ファーム 2026-10-03（冒険準備の拠点。正式参照画像 farm_prep_main.jpg）=====
+   .fmmap＝背景の絵（864×1536）を画面の幅いっぱい・上寄せで置いた「地図」。コマンド・進行ボタン・ダン・育成中の個体は地図の上の割合で置くので、どの画面幅でも絵の目印と揃う。
+   地図の下に余った所は同じ絵を暗くして敷く（.fmblur。半透明の紺を重ねるだけ）。情報パネルと 街へ戻る／中断 は画面の下に固定（.fmbot）。絵に「Farm」の札が描かれているので、上の札（.fmplq）は出さない */
+.fm.fm2{display:block;padding:0;background:#0c1630}
+.fm.fm2::before{display:none}
+.fm2 .fmblur{position:absolute;inset:0;background:linear-gradient(rgba(12,22,48,.7),rgba(12,22,48,.86)),var(--fm-bg) 50% 100%/cover no-repeat;pointer-events:none}
+.fm2 .fmmap{position:absolute;left:0;top:0;width:100%;aspect-ratio:864/1536;background:var(--fm-bg) 0 0/100% 100% no-repeat;z-index:1}
+.fm2 .fmmap::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:10%;background:linear-gradient(rgba(12,22,48,0),rgba(12,22,48,.6));pointer-events:none}
+.fm2 .fmhd{position:absolute;left:0;right:0;top:0;z-index:5;padding:0;display:block;pointer-events:none}
+.fm2 .fmplq{display:none}
+.fm2 .fmab{position:absolute;right:10px;top:calc(env(safe-area-inset-top,0px) + 54px);margin:0;pointer-events:auto}
+.fm2 .fmcmd{position:absolute;inset:0;display:block;margin:0;z-index:3;pointer-events:none}
+.fm2 .fmcmd button.fmb{position:absolute;pointer-events:auto;transform:translate(-50%,calc(-100% - 7px));width:auto;height:42px;padding:0 13px 0 9px;gap:6px;border-radius:21px;font-size:15px;white-space:nowrap;box-shadow:0 0 0 1px rgba(12,22,48,.6),0 4px 10px rgba(0,0,0,.45)}
+.fm2 .fmcmd button.fmb::after{content:"";position:absolute;left:50%;top:100%;width:2px;height:7px;margin-left:-1px;background:linear-gradient(#e0b861,rgba(224,184,97,0));pointer-events:none}
+.fm2 .fmcmd button.fmb svg{width:21px;height:21px}
+.fm2 .fmgate{position:absolute;left:50%;top:19.5%;width:min(64%,250px);transform:translate(-50%,-50%);z-index:3}
+.fm2 .fmgate button.fmgo{width:100%;height:58px}
+.fm2 .fmgate .fmgo b{font-size:20px}
+.fm2 .fmmon{left:36%;right:auto;width:34%;top:45%;bottom:auto;height:22%;z-index:2}
+.fm2 .fmdan{left:5%;top:44%;bottom:auto;height:26%;z-index:1;-webkit-mask-image:linear-gradient(#000 64%,transparent 97%);mask-image:linear-gradient(#000 64%,transparent 97%)}
+.fm2 .fmstage{position:absolute;left:0;top:0;width:100%;aspect-ratio:864/1536;z-index:4;pointer-events:none}
+.fm2 .fmstage>*{pointer-events:auto}
+.fm2 .kbub{top:24.5%;left:2%;right:auto;width:min(52%,200px)}
+.fm2 .kav{top:calc(24.5% + 5px);left:calc(2% + 5px);right:auto}
+.fm2 .fmbot{position:absolute;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:5;display:flex;align-items:center;gap:8px}
+.fm2 .fminfo{flex:1;min-width:0;margin:0}
+.fm2 .fmbot button.fmrd{position:absolute;left:50%;bottom:calc(100% + 10px);width:58px;height:58px;transform:translateX(-50%)}
+@media (max-height:700px){.fm2 .fmgate button.fmgo{height:52px}.fm2 .fmcmd button.fmb{height:38px;font-size:14px}.fm2 .fminfo{padding:6px 10px}}
 /* ===== 牧場（正式UI 2026-09-30。farm()）：正式背景 RANCH_BG（そのまま）＋ニックの一言、下に4コマンド（2×2）。
    街・ファームと同じ濃紺・金の二重線・金色の線画アイコン。合体は淡い青紫の光と金の飾りで少しだけ特別に、売るは暗い赤茶の差し色で注意を ===== */
 .rn{margin:-16px -16px 0;padding:calc(env(safe-area-inset-top,0px) + 8px) 12px calc(14px + env(safe-area-inset-bottom,0px));min-height:100dvh;box-sizing:border-box;background:linear-gradient(#0c1630,#14234a 40%,#0c1630);color:#fff}
@@ -3143,7 +3196,7 @@ function p9TourIntro(k){return new Promise(res=>{const calm=!!(window.matchMedia
  d.innerHTML=`<div class="p9ibg"></div><div class="p9iem"><span class="p9iem-w"><i class="p9iem-rays"></i><svg class="p9iem-lau" viewBox="0 0 200 200" aria-hidden="true"><path d="M58 168C22 140 14 92 34 52M142 168c36-28 44-76 24-116"/><path d="M40 140l-14 2M32 118l-14-2M30 96l-13-5M34 74l-11-8M46 150l-8 12M154 150l8 12M160 140l14 2M168 118l14-2M170 96l13-5M166 74l11-8"/></svg><span class="p9iem-l">${RN[k]}</span></span><span class="p9iem-r">RANK</span><b>公式ランク${RN[k]}大会</b></div><div class="p9iced"><img src="${im?im.src:CEDRIC_FACE}" alt=""><div class="tx"><b>セドリック</b>${CEDRIC_TALK.open.replace("{R}",RN[k])}</div></div><small class="p9iskip">タップで飛ばす</small>`;
  document.body.appendChild(d);let done=false;const T=[];const fin=()=>{if(done)return;done=true;T.forEach(clearTimeout);d.classList.add("out");setTimeout(()=>{d.remove();res()},calm?0:240)};d.onclick=fin;
  if(calm){setTimeout(fin,80);return}
- T.push(setTimeout(()=>d.classList.add("em"),60),setTimeout(()=>{if(window.sfx)sfx(6)},120),setTimeout(()=>d.classList.add("em-out"),1350),setTimeout(()=>d.classList.add("ced"),1650),setTimeout(()=>d.classList.add("ced-out"),3150),setTimeout(fin,3450))})}
+ T.push(setTimeout(()=>d.classList.add("em"),60),setTimeout(()=>d.classList.add("em-out"),1350),setTimeout(()=>d.classList.add("ced"),1650),setTimeout(()=>d.classList.add("ced-out"),3150),setTimeout(fin,3450))})}
 // ---- Phase 9：公式大会（大会掲示板＝順位表・対戦表／VS画面／結果） ----
 // 大会参加者（NPC）は【暫定】データ（js/phase8/league.js）。表示の元は MMP8L.entrantView だけにしてあり、
 // 後のバトルPhaseで正式な対戦相手データに差し替えても、この画面は変えずに済む。
@@ -3182,7 +3235,8 @@ function p9TourResult(msg){const m=S.m,t=m.raise.tour,lg=t.league,rs=t.result,w=
  ${msg?`<div class="p9msg p9tmsg">${msg}</div>`:""}${p9Standings(lg,st,true)}${p9Matrix(lg)}
  <button class="p9btn" onclick="p8EndChapter()">Chapterを終えてファームへ</button></div>`;try{window.scrollTo(0,0)}catch(e){}}
 function p8RewardText(w){return `<br>ステータスボーナス：${w.bonus.map(b=>`${LAB[b.key]}+${b.amount}`).join("・")}`+(w.firstClear?`<br>初回優勝：賞金 ${w.prize}G・🎫特訓チケット×${w.tickets}`+(w.bagUnlocked?"・バッグが6枠に拡張！":""):"<br>（クリア済みのランクのため、賞金・チケットはありません）")}
-function p8TourFight(){const m=S.m,t=m&&m.raise.tour;if(bBusy||!t||t.status!="league")return board();p9PreBattle("league",t.rank,()=>{if(!MMP8.beginBattle(S,m,{kind:"league",rank:t.rank}).ok)return board();save();fight(t.rank)})}
+// 2026-10-03（試遊で「対戦前の画面が多く遅い」）：大会は VS 画面（相手の発表＋能力比較＝1枚）から直接 fight() へ。Battle 開始前の導入（p9PreBattle）は練習試合だけ
+function p8TourFight(){const m=S.m,t=m&&m.raise.tour;if(bBusy||!t||t.status!="league")return board();if(!MMP8.beginBattle(S,m,{kind:"league",rank:t.rank}).ok)return board();save();fight(t.rank)}
 // ---- Battle 開始前の導入（表示だけ）：バトルの背景（fight() と同じ BTB）の上に両者が登場 → 個性スキル → 主要パラメーター → 「BATTLE START」→ go()（beginBattle と fight()）
 //  Battle Engine の処理は go() の中でだけ動く（二重発動なし）。相手の能力は MMP8L.PROVISIONAL_OPPONENT_STAT（fight() が作る相手と同じ値）を参照し、別の値を持たない
 //  個性スキルは正式データが未登録（未決）のため「―（未登録）」の枠だけ。練習試合の相手は fight() が種族を決めるため、姿は「？」で出す
@@ -3203,9 +3257,9 @@ function p9PreBattle(kind,rank,go){const m=S.m;bgm("matchup");if(!m||window.MM_Q
 function p9PreBattleGo(){const d=$("#pbt");if(!d||tapSoon(d,350))return;const go=P9_PRE;P9_PRE=null;d.classList.add("out");setTimeout(()=>{d.remove();if(go)go()},220)}
 // ---- VS画面：試合の直前に、自分（左）と相手（右）の6能力をくらべる ----
 function p9VsScr(){const m=S.m,t=m&&m.raise&&m.raise.tour;if(!t||t.status!="league")return board();const lg=t.league,pm=MMP8.tourNext(m),o=p9Npc(lg,pm.opp);bgm("matchup");try{MMFEEL.emit("battle.matchup")}catch(e){}p9Immersive(true);p9MenuClose();
- const rows=P9_STAT.map(([k,lb,col])=>{const a=m[k]|0,b=o[k]|0,mx=Math.max(a,b,1);return `<div class="vr"><span class="v ${a>b?"hi":""}">${a}</span><span class="p9bar l"><i style="width:${(a/mx*100).toFixed(1)}%;background:${col}"></i></span><span class="lb">${lb}</span><span class="p9bar r"><i style="width:${(b/mx*100).toFixed(1)}%;background:${col}"></i></span><span class="v ${b>a?"hi":""}">${b}</span></div>`}).join("");
- $("#app").innerHTML=`<div class="p9vs p9vs-anim"><div class="p9vs-top"><small>公式ランク${RN[t.rank]}大会　CHAPTER ${m.raise.ch}</small><b>第${pm.round+1}試合 / 全${lg.rounds.length}試合</b></div>
- ${p9Ced(CEDRIC_TALK.vs)}<div class="p9vs-fr"><div class="fr me">${p9Pt(m,"l me")}<div class="np">${p11Esc(m.name)}</div></div><div class="vsx">VS</div><div class="fr">${p9Pt(o,"l")}<div class="np">${p11Esc(o.name)}</div></div></div>
+ const bg=(typeof BTB!="undefined"&&BTB[t.rank]&&BTB[t.rank][0])||"";const rows=P9_STAT.map(([k,lb,col])=>{const a=m[k]|0,b=o[k]|0,mx=Math.max(a,b,1);return `<div class="vr"><span class="v ${a>b?"hi":""}">${a}</span><span class="p9bar l"><i style="width:${(a/mx*100).toFixed(1)}%;background:${col}"></i></span><span class="lb">${lb}</span><span class="p9bar r"><i style="width:${(b/mx*100).toFixed(1)}%;background:${col}"></i></span><span class="v ${b>a?"hi":""}">${b}</span></div>`}).join("");
+ $("#app").innerHTML=`<div class="p9vs p9vs-anim${bg?" p9vs-bt":""}"${bg?` style="--vsbg:url(${bg})"`:""}><div class="p9vs-top"><small>公式ランク${RN[t.rank]}大会　CHAPTER ${m.raise.ch}</small><b>第${pm.round+1}試合 / 全${lg.rounds.length}試合</b></div>
+ ${p9Ced(CEDRIC_TALK.vs)}<div class="p9vs-fr"><div class="fr me">${p9Pt(m,"l me")}<div class="np">${p11Esc(m.name)}</div></div><div class="vsx">VS</div><div class="fr">${p9Pt(o,"l")}<div class="np">${p11Esc(o.name)}</div><small class="sp">${p9Species(o)}</small></div></div>
  <div class="p9vs-tb">${rows}</div>
  <p class="p9prov">【暫定】対戦相手の名前・種族は仮の表示です。能力値は、実際の試合でのランク${RN[t.rank]}相当の相手と同じ値です。</p>
  <button class="p9btn p9go" onclick="p9VsGo(this)">⚔️ 対戦開始</button><button class="p9btn2" onclick="board()">順位表にもどる</button></div>`;try{window.scrollTo(0,0)}catch(e){}}
@@ -3257,15 +3311,19 @@ function p8FarmPanel(){const m=S.m,st=MMP7.raiseState(m),r=m.raise||{},last=(r.l
 // ---- Phase 9：Chapter間ファーム（育成中のモンスターを主役に、右側に細いコマンド列。街へ戻るコマンドは無い） ----
 function p9FarmScr(msg){return fmScr(msg)} // Chapter間ファーム：正式デザインのファーム画面（fmScr）へ。関数名は互換のため残す
 
-// ---- ファーム（正式デザイン 2026-09-30）：育成開始前・Chapter間・育成完了を1画面で見せる ----
+// ---- ファーム（正式デザイン 2026-09-30 → 2026-10-03 冒険準備の拠点）：育成開始前・Chapter間・育成完了を1画面で見せる ----
+//  2026-10-03：正式参照画像（farm_prep_main.jpg）を背景の「地図」（.fmmap：画面の幅いっぱい・上寄せ。足りない所は暗くした同じ絵）にし、
+//   絵の光る目印に4コマンドを立てる（訓練場＝特訓・屋台＝アイテム・牛舎＝ステータス・石柱＝技管理）。上の門＝進行ボタン、下の小道の側＝街へ戻る／中断。
+//   コマンド・遷移先・ダン・情報パネル・通知は従来のまま（配置だけ。新しい機能は無い）。目印の位置は FM_SPOT（絵に対する割合）
 //  正式背景 FARM_BG の上に、ダン（正式アップ画像）と育成中の個体、情報パネル（名前・種族／大会ランク・特訓チケット／育成状態・Chapter）、
 //  4コマンド（特訓・ステータス・技管理・アイテム）、最下部の進行ボタン（1つ）。遷移先は従来の関数のまま：
 //  特訓 hall('s')・ステータス hall('st')・技管理 hall('w')・アイテム shopScr()・出発準備 prepScr()（出発の確認＝フィナの選択肢はここから）・中断 p8Suspend()・育成放棄 p8AbandonAsk()・街 lobby()
 //  状態はセーブから判断するだけ（新しいデータは持たない）。育成中（Chapter間）は街へ戻るボタンを出さず、中断を出す
-const FARM_BG="assets/farm/farm_main.jpg";
+const FARM_BG="assets/farm/farm_prep_main.jpg"; // 2026-10-03：冒険準備の拠点としてのファーム（正式参照画像。assets/farm/README.md）。旧背景 farm_main.jpg はファイルだけ残す
 const DAN_FIG="assets/npc/dan/closeup/smile.webp"; // ファームに立つダン（正式アップ画像）。顔は吹き出しの DAN_FACE
 const FM_IC={train:'<path d="M3 13h3v6H3zM26 13h3v6h-3zM6 10h3v12H6zM23 10h3v12h-3zM9 16h14"/>',status:'<path d="M16 3l11 6.5v13L16 29 5 22.5v-13z"/><path d="M16 9l6 3.5v7L16 23l-6-3.5v-7z" class="f"/>',moves:'<path d="M6 5h15a3 3 0 013 3v19H9a3 3 0 01-3-3z"/><path d="M6 24a3 3 0 013-3h15"/><path d="M15 9l1.6 3.3 3.6.5-2.6 2.5.6 3.6-3.2-1.7-3.2 1.7.6-3.6-2.6-2.5 3.6-.5z"/>',item:'<path d="M9 11h14l2 17H7z"/><path d="M12 11V8a4 4 0 018 0v3"/><path d="M11 17h10"/>',town:'<path d="M5 15L16 6l11 9"/><path d="M8 13v13h16V13"/><path d="M13 26v-7h6v7"/>',pause:'<path d="M12 9v14M20 9v14"/><circle cx="16" cy="16" r="12"/>'};
 const fmIc=k=>`<svg viewBox="0 0 32 32" aria-hidden="true">${FM_IC[k]}</svg>`;
+const FM_SPOT={train:[17.9,43.6],item:[71.2,38.9],status:[74.7,72.6],moves:[20.6,78.8]}; // 背景の絵（864×1536）の光る目印の位置（%）。コマンドはこの点の真上に立つ
 function fmScr(msg){const m=S.m;if(!m)return lobby();p9MenuClose();
  const st=MMP7.raiseState(m),r=m.raise||{},k=MMP8.nextChapterKey(m),fin=k==MMP8.FINAL,last=(r.log||[]).slice(-1)[0],sp=MMP10M.byId(m.sp),done=st=="done",can=done?{ok:true}:MMP8.canDepart(S,m);
  bgm("farm");p9Immersive(true);ht="t";
@@ -3283,16 +3341,16 @@ function fmScr(msg){const m=S.m;if(!m)return lobby();p9MenuClose();
   :{t:fin?"最終ルートへ進む":`${chNm(k)}へ進む`,s:fin?"":`「${chSub(k)}」`,on:"prepScr()",c:" p9c-go"};
  const side=st=="none"?`<button class="back fmrd" onclick="lobby()">${fmIc("town")}<span>街へ戻る</span></button>`
   :st=="farm"?`<button class="fmrd" onclick="p8Suspend()">${fmIc("pause")}<span>中断</span></button>`:"";
- const cmd=[["hall('s')","train","特訓"],["hall('st')","status","ステータス"],["hall('w')","moves","技管理"],["shopScr()","item","アイテム"]];
- $("#app").innerHTML=`<div class="fm fm-${st}${st=="farm"?" p9farm p15f":""}" style="--fm-bg:url(${FARM_BG})">
+ const cmd=[["hall('s')","train","特訓","train"],["hall('st')","status","ステータス","status"],["hall('w')","moves","技管理","moves"],["shopScr()","item","アイテム","item"]];
+ $("#app").innerHTML=`<div class="fm fm2 fm-${st}${st=="farm"?" p9farm p15f":""}" style="--fm-bg:url(${FARM_BG})"><div class="fmblur" aria-hidden="true"></div>
+ <div class="fmmap"><img class="fmdan" src="${DAN_FIG}" alt="" aria-hidden="true"><div class="fmmon mon">${msv(m)}</div>
+  <nav class="fmcmd" aria-label="コマンド">${cmd.map(([on,ic,lb,sp])=>`<button class="p15b fmb" data-spot="${sp}" style="left:${FM_SPOT[sp][0]}%;top:${FM_SPOT[sp][1]}%" onclick="${on}">${fmIc(ic)}<span>${lb}</span></button>`).join("")}</nav>
+  <div class="fmgate"><button class="fmgo${go.c}" onclick="${go.on}">${go.s||warn?`<small>${warn||go.s}</small>`:""}<b>${go.t}</b></button></div></div>
  <header class="fmhd"><div class="fmplq"><b>ファーム</b></div>${st=="farm"?`<button class="fmab p8danger" onclick="p8AbandonAsk()">育成放棄</button>`:""}</header>
- <div class="fmstage">${msg?`<div class="kbub kt ksys">${msg}</div>`:""}<div class="kbub kdan${msg?"":" kt"}"><b>ダン</b><br>${bcomm()}</div><div class="kav" onclick="const p=this.parentNode,s=p.querySelector('.ksys'),b=p.querySelector('.kdan');if(s)s.remove();if(b){b.classList.remove('kt');void b.offsetWidth;b.classList.add('kt')}" aria-label="ダンのコメントを見る"><img src="${DAN_FACE}" alt=""></div>
-  <img class="fmdan" src="${DAN_FIG}" alt="" aria-hidden="true"><div class="fmmon mon">${msv(m)}</div></div>
- <section class="fminfo" aria-label="育成中のモンスター"><div class="fmnm"><b>${p11Esc(m.name)}</b><span class="fmtag">${sp?sp.kind:""}</span></div>
+ <div class="fmstage">${msg?`<div class="kbub kt ksys">${msg}</div>`:""}<div class="kbub kdan${msg?"":" kt"}"><b>ダン</b><br>${bcomm()}</div><div class="kav" onclick="const p=this.parentNode,s=p.querySelector('.ksys'),b=p.querySelector('.kdan');if(s)s.remove();if(b){b.classList.remove('kt');void b.offsetWidth;b.classList.add('kt')}" aria-label="ダンのコメントを見る"><img src="${DAN_FACE}" alt=""></div></div>
+ <div class="fmbot"><section class="fminfo" aria-label="育成中のモンスター"><div class="fmnm"><b>${p11Esc(m.name)}</b><span class="fmtag">${sp?sp.kind:""}</span></div>
   <dl class="fmmid"><div><dt>大会ランク</dt><dd>${MMP8.rankLabel(m)}</dd></div><div><dt>特訓チケット</dt><dd>${S.trainTix}枚</dd></div></dl>
-  <div class="fmst"><span class="fmbadge">${state}</span><small>${chL}</small><b>${ch}</b>${chS?`<small class="fmchs">${chS}</small>`:""}</div></section>
- <nav class="fmcmd" aria-label="コマンド">${cmd.map(([on,ic,lb])=>`<button class="p15b fmb" onclick="${on}">${fmIc(ic)}<span>${lb}</span></button>`).join("")}</nav>
- <div class="fmft"><button class="fmgo${go.c}" onclick="${go.on}">${go.s||warn?`<small>${warn||go.s}</small>`:""}<b>${go.t}</b></button>${side}</div>
+  <div class="fmst"><span class="fmbadge">${state}</span><small>${chL}</small><b>${ch}</b>${chS?`<small class="fmchs">${chS}</small>`:""}</div></section>${side}</div>
 </div>`;try{window.scrollTo(0,0)}catch(e){}}
 
 // ---- Phase 8：育成中の画面遷移（街への帰還禁止・起動／中断からの復帰） ----

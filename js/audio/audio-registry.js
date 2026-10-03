@@ -25,21 +25,22 @@
   const BGM_REGISTRY = {
     // ---- 開始画面・街・施設 ----
     TITLE:      { src: PGS + 'event_music_1.ogg', gain: 0.85 },        // 開始画面は最初のタップまで音を出せない（ブラウザの制約）→ 名前登録の画面まで続ける【暫定】
-    TOWN:       { src: AK + 'ambient_4_tranquil_radiance.ogg', gain: 0.8, loopStart: 0, loopEnd: 119, loopXfade: 3 },   // 第3弾試遊候補：alkakrab「Tranquil Radiance」129秒・65BPM。静かに始まり 100秒前後で盛り上がる。119秒からの最後のフェードの前で頭へ戻る
+    TOWN:       { silent: true },                                     // 2026-10-03 第4弾の試遊で NG → 無音（代わりの音は選ばない）。旧：alkakrab「Tranquil Radiance」（AUDIO_CREDITS.md に記録）
     MARKET:     { src: PGS + 'town_village_theme_2.ogg', gain: 0.9 },   // 試遊で OK（変更しない）
     RANCH:      { src: PGS + 'town_village_theme_3.ogg', gain: 0.8 },   // 77秒・温かい【暫定】
     LABORATORY: { src: PGS + 'event_music_2.ogg', gain: 0.65 },        // 103秒・ゆっくり・神秘的【暫定】
-    FARM:       { src: AK + 'ambient_3_lost_river.ogg', gain: 0.85, loopStart: 0, loopEnd: 105, loopXfade: 3 },        // 第3弾試遊候補（仮の「冒険準備の拠点」。ファームは後で再設計）：alkakrab「Lost River」111秒・65BPM。105秒からのフェードの前で頭へ戻る
+    FARM:       { silent: true },                                     // 2026-10-03 第4弾の試遊で NG → 無音（代わりの音は選ばない）。旧：alkakrab「Lost River」（AUDIO_CREDITS.md に記録）
     // TRAINING：合う曲が無い → 合成音（LEGACY_BGM）
     // ---- Chapter ----
     CHAPTER_1:  { silent: true },                                     // 待ち：Dungeon-Exploration Music 1 は試遊で NG。第3弾の候補 alkakrab「Epic Quest」「Forest of Mysteries」は解析で戦闘曲と同じくらい忙しい（40ターン聞くには強すぎる）ため見送り
     // CHAPTER_2〜4：追加パックで選定（今は合成音）
     // ---- 大会：受付（到着・ランク選択）→ 順位表 → 対戦相手の発表・能力比較 → 実戦 ----
-    TOURNAMENT_ENTRY:       { fallback: 'TOURNAMENT_LOBBY_LOW' },             // 大会会場への到着・受付・ランク選択（専用曲が届くまで順位表と同じ曲）
-    TOURNAMENT_LOBBY_LOW:   { src: PGS + 'event_music_4.ogg', gain: 0.68 },   // 順位表（E〜C）。88秒・105BPM【暫定】
-    TOURNAMENT_LOBBY_HIGH:  { fallback: 'TOURNAMENT_LOBBY_LOW' },
-    TOURNAMENT_MATCHUP:     { silent: true },                                 // 対戦相手の発表（VS）・能力比較：BGM を止めて緊張感（発表の音 MATCHUP だけ）。専用曲を使うならここ
-    RESULT:                 { fallback: 'TOURNAMENT_LOBBY_LOW' },             // 結果画面は受付の曲（専用曲は未選定）
+    //  受付・順位表・結果の曲（PGS Event Music 4）は 2026-10-03 第4弾の試遊で NG → 無音（代わりの音は選ばない）
+    TOURNAMENT_ENTRY:       { silent: true },   // 大会会場への到着・受付・ランク選択
+    TOURNAMENT_LOBBY_LOW:   { silent: true },   // 順位表（E〜C）
+    TOURNAMENT_LOBBY_HIGH:  { silent: true },   // 順位表（B〜S）
+    TOURNAMENT_MATCHUP:     { silent: true },   // 対戦相手の発表・能力比較（1枚の画面）
+    RESULT:                 { silent: true },   // 大会の結果
     // ---- 実戦（「FIGHT!」の開始音のあとで始まる）----
     WILD_BATTLE:            { src: PGS + 'battle_music_1.ogg', gain: 0.58 },   // 104秒・147BPM【暫定】
     RARE_WILD_BATTLE:       { fallback: 'WILD_BATTLE' },                       // 専用曲が届くまで野生と同じ
@@ -51,8 +52,8 @@
 
   const SE_REGISTRY = {
     // ---- UI（Interface SFX Pack 1）----
-    TITLE_START: { src: UI + 'confirm_style_1_004.ogg', gain: 0.5 },   // 開始画面の「タップしてはじめる」（これ1つだけ鳴る。旧：合成音のファンファーレ）【要試聴】
-    UI_CONFIRM:  { src: UI + 'confirm_style_5_001.ogg', gain: 0.68 },  // ボタン全般・街のコマンド：短く控えめ（0.57秒・style 5 で一番低く柔らかい音）【要試聴】
+    TITLE_START: { silent: true },   // 開始画面の「タップしてはじめる」：2026-10-03 第4弾の試遊で NG → 無音（代わりの音は選ばない）（合成のファンファーレにも落とさない）
+    UI_CONFIRM:  { silent: true },   // ボタン全般・街のコマンド（通常のコマンドのタップ）：2026-10-03 第4弾の試遊で NG → 無音（代わりの音は選ばない）
     UI_CANCEL:   { src: UI + 'back_style_4_002.ogg', gain: 0.95 },
     UI_ERROR:    { src: UI + 'error_style_4_002.ogg', gain: 0.7 },
     UI_OPEN:     { src: UI + 'confirm_style_4_001.ogg', gain: 0.8 },
@@ -61,18 +62,19 @@
     // ---- Chapter ----
     CHAPTER_START: { src: AKSE + 'fx_2.ogg', gain: 3.0 },              // 第3弾試遊候補：alkakrab Fx 2（2秒・低くふくらんで消える音）。元が小さい（-28 LUFS）
     DICE_THROW: { silent: true },                                     // 待ち：jump_2 は試遊で NG（投げる音＝振る・転がる音を追加パックから）
-    DICE_LAND:  { src: IV + 'pluck_3.ogg', gain: 3.1 },               // 着地：0.14秒・低い短い音（投げる音と役割を分ける。旧 bass_thud）【要試聴】
-    DICE_ROLL:  { src: IV + 'ping.ogg', gain: 6.0 },                  // 出目が決まった（元が小さい -32 LUFS）
+    DICE_LAND:  { silent: true },   // サイコロが地面に最初に触れた：2026-10-03 第4弾の試遊で NG → 無音（代わりの音は選ばない）
+    DICE_ROLL:  { silent: true },   // 出目の面を見せ始めた（停止のあと）：2026-10-03 第4弾の試遊で NG → 無音（代わりの音は選ばない）
+    DICE_STOP:  { silent: true },   // サイコロが見た目の上で完全に止まったフレーム（dice-renderer の dice.stop）。停止の音を将来入れるならここ（今は無音）
     STEP:       { silent: true },                                     // 待ち：1マスごとの足音（pluck_4）は試遊で NG。耳障りでない短い低い足音を追加パックから（止まるマスでは鳴らさない）
-    TILE_STOP:  { src: IV + 'pluck_5.ogg', gain: 2.0 },               // 通常マスに止まった
+    TILE_STOP:  { silent: true },   // 通常マスに止まった：2026-10-03 第4弾の試遊で NG → 無音（代わりの音は選ばない）（マスの光る演出は残す）
     STAT_UP:    { src: UI + 'confirm_style_3_004.ogg', gain: 0.47 },  // 能力UP：1秒ほどの明るい決定音（旧 powerup は NG）【要試聴】
     GOLD_GET:   { src: IV + 'bell.ogg', gain: 7.0 },                  // 元が小さい（-36 LUFS）
     CHEST_OPEN: { src: UI + 'confirm_style_6_001.ogg', gain: 0.85 },
     EVENT:      { src: IV + 'ping.ogg', gain: 5.0 },
     WILD_ALERT: { src: AKSE + 'fx_3.ogg', gain: 5.0, maxMs: 2000, fadeMs: 700 },   // 第3弾試遊候補：alkakrab Fx 3（低い一撃。元は8秒の余韻 → 再生を2秒にして最後の0.7秒で下げる。ファイルは変えない）
-    TOURNAMENT_ARRIVAL: { silent: true },                             // 待ち：第3弾のパックにもファンファーレが無い（Fx 1 は低い響きで「到着」に合わないため MATCHUP へ）
+    TOURNAMENT_ARRIVAL: { silent: true },   // 大会会場への到着：2026-10-03 第4弾の試遊で NG → 無音（代わりの音は選ばない）（ほかの Fx を使い回さない）
     // ---- 大会・バトル ----
-    MATCHUP:       { src: AKSE + 'fx_1.ogg', gain: 4.5, maxMs: 2600, fadeMs: 900 },   // 第3弾試遊候補：alkakrab Fx 1（低くふくらむ響き＝緊張感。元は7秒 → 2.6秒）。旧 bass_thud（1回の低い一撃）から変更。能力比較の画面では鳴らさない
+    MATCHUP:       { silent: true },   // 対戦相手の発表（大会の対戦前の画面）：2026-10-03 第4弾の試遊で NG → 無音（代わりの音は選ばない）。旧：alkakrab Fx 1
     BATTLE_START:  { src: IV + 'bass_thud_electric.ogg', gain: 1.5 }, // 実戦の開始（「FIGHT!」）→ 0.45秒後に戦闘の BGM【要試聴】
     ROULETTE_STOP: { src: UI + 'confirm_style_2_004.ogg', gain: 0.45 },  // 技ルーレットの STOP（旧：攻撃の音 attack_1 が鳴っていた）【要試聴】
     BATTLE_ATTACK: { src: IV + 'attack_1.ogg', gain: 2.8 },

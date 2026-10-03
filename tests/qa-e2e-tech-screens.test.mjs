@@ -298,7 +298,7 @@ describe('QA-TS：390×844 の通し（JS エラー・読み込み・壊れた�
     await waitSel(pg, '.p9go');
     await check(pg, 'VS', ['.p9go', '.p9vs .p9btn2']);
     await press2(pg, '.p9go');
-    await waitSel(pg, '#pbt.in'); await check(pg, 'Battle 開始前', ['.pbtgo'], { fixed: ['.pbtgo', '.pbtvs'], wait: 450 }); await pg.click('.pbtgo');   // Battle 開始前の導入（2026-09-30）→ BATTLE START
+    // 2026-10-03：大会は VS（相手の発表＋能力比較）から直接 fight()（Battle 開始前の導入は練習試合だけ）
     await pg.waitForFunction(() => !!document.getElementById('bt'), null, { timeout: 15000 });
     await pg.waitForTimeout(800);
     const before = await pg.evaluate(() => ({ round: S.m.raise.tour.league.round, battle: !!S.m.raise.battle }));

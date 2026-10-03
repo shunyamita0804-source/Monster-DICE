@@ -24,7 +24,7 @@
   /** 出来事 → 重さ・SE・ハプティクス（ハプティクスの強さは将来のネイティブ側で解釈する名前） */
   const EVENTS = fz({
     'ui.confirm': { level: 0, se: 'UI_CONFIRM' }, 'ui.cancel': { level: 0, se: 'UI_CANCEL' }, 'ui.error': { level: 0, se: 'UI_ERROR', haptic: 'warning' }, 'ui.open': { level: 1, se: 'UI_OPEN' },
-    'dice.throw': { level: 1, se: 'DICE_THROW', haptic: 'light' }, 'dice.land': { level: 2, se: 'DICE_LAND', haptic: 'medium' }, 'dice.result': { level: 2, se: 'DICE_ROLL' },
+    'dice.throw': { level: 1, se: 'DICE_THROW', haptic: 'light' }, 'dice.land': { level: 2, se: 'DICE_LAND', haptic: 'medium' }, 'dice.stop': { level: 2, se: 'DICE_STOP' }, 'dice.result': { level: 2, se: 'DICE_ROLL' },
     'step': { level: 0, se: 'STEP' }, 'tile.stop': { level: 1, se: 'TILE_STOP' }, 'stat.up': { level: 3, se: 'STAT_UP', haptic: 'success' }, 'gold.get': { level: 3, se: 'GOLD_GET', haptic: 'light' },
     'chest.open': { level: 3, se: 'CHEST_OPEN', haptic: 'medium' }, 'event': { level: 2, se: 'EVENT' }, 'wild.alert': { level: 4, se: 'WILD_ALERT', haptic: 'heavy' },
     'battle.matchup': { level: 4, se: 'MATCHUP', haptic: 'medium' }, 'battle.start': { level: 4, se: 'BATTLE_START', haptic: 'heavy' }, 'victory': { level: 5, se: 'VICTORY', haptic: 'success' }, 'chapter.start': { level: 5, se: 'CHAPTER_START' },

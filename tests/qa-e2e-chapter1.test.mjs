@@ -78,7 +78,7 @@ for (const size of [H.SIZES.base, H.SIZES.se]) {
   });
 }
 
-test('CH1-B2：サイコロ：START の1タップで無地の正式サイコロが出て回り、自動で止まると出目の停止面になる。演出・移動中はサイコロ・休むを重ねて押せない。出目の数だけ1地点ずつ歩き、疲れが増える', { skip: SKIP }, async () => {
+test('CH1-B2：サイコロ：START の1タップで正式サイコロ（既存の10コマ → 停止面）が投げられ、完全に止まると出目の停止面になる。演出・移動中はサイコロ・休むを重ねて押せない。出目の数だけ1地点ずつ歩き、疲れが増える', { skip: SKIP }, async () => {
   const p = await L.open(); const pg = p.page;
   await start(p);
   await pg.evaluate(() => { window.__nodes = []; new MutationObserver(() => { const n = document.querySelector('#bmonw') && document.querySelector('#bmonw').dataset.node; if (n && window.__nodes[window.__nodes.length - 1] !== n) window.__nodes.push(n); }).observe(document.querySelector('#chf'), { subtree: true, attributes: true, attributeFilter: ['data-node'] }); });
@@ -86,7 +86,7 @@ test('CH1-B2：サイコロ：START の1タップで無地の正式サイコロ�
   await rollAs(pg, 3);
   await pg.waitForSelector('.chdz');
   const d = await pg.evaluate(() => ({ imgs: [...document.querySelectorAll('.chdz img')].map((i) => i.getAttribute('src')), locked: MMCHD.isLocked(), btn: [...document.querySelectorAll('.chstop')].every((b) => b.disabled), rest: document.querySelector('.chrest') && document.querySelector('.chrest').disabled }));
-  assert.equal(d.imgs.length, 1, '回転中は正式サイコロ1枚'); assert.match(d.imgs[0], /dice_(blank|stop_[1-6])\.webp$/, '回転中は正式の停止画像の面を切り替えて見せる'); assert.equal(d.locked, true); assert.equal(d.btn, true); assert.equal(d.rest, true);
+  assert.ok(d.imgs.length >= 1 && d.imgs.length <= 2 && d.imgs.every((x) => /dice_(blank|stop_[1-6])\.webp$|assets\/dice\/std\/(0[1-9]|10)\.webp$/.test(x)), `正式サイコロだけ（既存の10コマ＝投げる〜着地、停止面＝転がる〜停止。2026-10-03）：${d.imgs}`); assert.equal(d.locked, true); assert.equal(d.btn, true); assert.equal(d.rest, true);
   const t0 = await st(pg); await pg.evaluate(() => { chfRoll(); chfRest(); }); assert.deepEqual(await st(pg), t0, '演出中の押下は無視（ターン・疲れ・位置は変わらない）');
   await pg.waitForSelector('.chdz-stop.on'); assert.deepEqual(await pg.evaluate(() => [document.querySelector('.chdz-stop').getAttribute('src'), getComputedStyle(document.querySelector('.chdz-res')).display]), ['./assets/fields/ch1a/dice/dice_stop_3.webp', 'none'], '出目3 → 3が上の停止面（数字の輪は出さない）');
   await idle(pg);
@@ -341,7 +341,7 @@ test('CH1-B15：1タップ：START を押すまでサイコロは画面に無い
   const look = () => pg.evaluate(() => [...document.querySelectorAll('.chwing')].map((w) => { const c = getComputedStyle(w); return { op: c.opacity, bg: c.backgroundColor, filter: c.filter, img: c.backgroundImage, border: c.borderWidth, shadow: c.boxShadow, deck: document.querySelector('.chdeck-bg').getAttribute('src') }; }));
   const during = await look(); assert.deepEqual(during.map((x) => [x.op, x.bg, x.filter]), [['1', 'rgba(0, 0, 0, 0)', 'none'], ['1', 'rgba(0, 0, 0, 0)', 'none'], ['1', 'rgba(0, 0, 0, 0)', 'none'], ['1', 'rgba(0, 0, 0, 0)', 'none']], 'サイコロ処理中も4コマンドは暗くならない（半透明の覆い・opacity・filter なし）');
   const wingLook0 = during; assert.match(sp.img, /deck_start\.webp$/, '操作欄は START の画像のまま（STOP の画像は使わない）'); assert.deepEqual(sp.wings, [true, true, true, true]); assert.deepEqual(sp.btn, [[true, '2']], '中央のボタンは押せない（移動中）');
-  assert.equal(sp.imgs.length, 1); assert.match(sp.imgs[0], /dice_(blank|stop_[1-6])\.webp$/, '回転中は正式サイコロ1枚（面を切り替えて見せる）');
+  assert.ok(sp.imgs.length >= 1 && sp.imgs.length <= 2 && sp.imgs.every((s) => /dice_(blank|stop_[1-6])\.webp$|assets\/dice\/std\/(0[1-9]|10)\.webp$/.test(s)), `正式サイコロ（既存の10コマ＋停止面）だけ：${sp.imgs}`);
   assert.deepEqual([sp.pend.roll, sp.pend.stage, sp.saved.roll], [2, 'move', 2], '出目は START の時点で確定・保存（自動停止のタイミングで変わらない）');
   const t0 = await st(pg); await pg.evaluate(() => { chfRoll(); chfRoll(); chfRest(); }); assert.deepEqual(await st(pg), t0, '演出中の START・休むの連打は無視');
   await pg.waitForFunction(() => !!window.__res, null, { timeout: 15000 });
@@ -349,10 +349,11 @@ test('CH1-B15：1タップ：START を押すまでサイコロは画面に無い
   assert.ok(Math.abs(r.a - 1) < 0.02 && Math.abs(r.b) < 0.02, `止まったサイコロは正式の角度（matrix ${r.a}, ${r.b}）`); assert.equal(r.src, './assets/fields/ch1a/dice/dice_stop_2.webp', '出目2 → 2が上の停止面'); assert.match(r.roll, /dice_stop_2\.webp$/, '着地の前から出目の面に落ち着いている'); assert.equal(r.ring, 'none'); assert.equal(r.phase, 'result');
   await idle(pg);
   const tm = await pg.evaluate(() => ({ spin: window.__faceAt - window.__t0, face: window.__goneAt - window.__faceAt, moveAfterGone: window.__moveAt - window.__goneAt, last: MMCHD.lastTiming(), dice: document.querySelectorAll('.chdz,.chdf').length, text: document.querySelector('#brollbtn').textContent.trim(), on: !document.querySelector('#brollbtn').disabled, busy: bBusy }));
-  assert.ok(tm.spin >= 600 && tm.spin <= 1700, `出現〜停止面 ${tm.spin.toFixed(0)}ms（設計 約0.98秒＋クロスフェード。負荷で伸びることがある）`);
+  assert.ok(tm.spin >= 1300 && tm.spin <= 2800, `出現〜完全停止 ${tm.spin.toFixed(0)}ms（設計 約1.66秒。2026-10-03。負荷で伸びることがある）`);
+  const ev = (await pg.evaluate(() => MMFEEL.log())).filter((e) => /^dice\./.test(e)).slice(-4); assert.deepEqual(ev, ['dice.throw', 'dice.land', 'dice.stop', 'dice.result'], '完全に止まって（dice.stop）から出目（dice.result）');
   assert.ok(tm.face >= 300 && tm.face <= 1100, `停止面を見せる時間 ${tm.face.toFixed(0)}ms（設計 0.42秒＋消える0.16秒）`);
   assert.ok(tm.moveAfterGone >= -50, `サイコロが消えてから歩き出す（${tm.moveAfterGone.toFixed(0)}ms）`);
-  assert.ok(tm.last && tm.last.value === 2 && tm.last.manual === false && tm.last.spinMs >= 700 && tm.last.spinMs <= 1400 && tm.last.faceMs >= 400 && tm.last.faceMs <= 900, `実測 ${JSON.stringify(tm.last)}`);
+  assert.ok(tm.last && tm.last.value === 2 && tm.last.manual === false && tm.last.spinMs >= 1400 && tm.last.spinMs <= 2600 && tm.last.faceMs >= 400 && tm.last.faceMs <= 900, `実測 ${JSON.stringify(tm.last)}`);
   assert.deepEqual([tm.dice, tm.text, tm.on, tm.busy], [0, 'START', true, false], '移動が終わるとサイコロは消え、START が押せる');
   assert.deepEqual(await look(), wingLook0, '通常時とサイコロ処理中で4コマンドの見た目（色・画像・装飾）が同じ');
   assert.deepEqual((({ node, turns }) => ({ node, turns }))(await st(pg)), { node: 'p1_2', turns: 1 }, '1回の START で1ターン・2地点');

@@ -16,7 +16,11 @@
   //  1タップ（2026-10-01 正式）：play(value) は START の1回の押下で「出現 → 飛び上がって速く回る（約0.3秒）→ 落ちながら減速（約0.6秒）→ 着地・小さく跳ねる → 停止面（約0.42秒）→ 消える」まで
   //   自動で進む（合計約1.7秒。ms＝回転〜着地、resultMs＝停止面を見せる時間）。出目は play を呼ぶ前に決まっている（演出の長さ・止まる瞬間は確率を変えない）。
   //  manualStop:true（旧 START／STOP。通常の Chapter では使わない）：宙で回り続け、requestStop() で落ちて止まる。API は互換のため残す
-  const C = { rollingSprite: './assets/fields/ch1a/dice/dice_rolling.webp', resultSprites: {}, min: 1, max: 3, sides: 3, ms: 980, resultMs: 520, settleMs: 180, upMs: 360, landMs: 640 };
+  //  2026-10-03（試遊で「軽すぎる」）：throwFrames（既存の正式10コマ＝assets/dice/std/01〜10。描き直さない）があれば、投げる → 空中 → 着地の衝撃 → 跳ねる を10コマで見せ、
+  //   そのあと停止面（resultSprites）で短く転がって減速 → 完全に止まる → その瞬間に dice.stop（停止の音の差し込み口。今は無音）→ 出目を見せる（dice.result）。
+  //   ms＝出現〜完全停止、airMs＝投げて着地まで、impactMs＝着地の衝撃（08・09）、bounceMs＝小さく跳ねる、rollMs＝転がって減速。frameBox＝10コマの絵の中のサイコロ（10コマ目）の位置と高さ（画素）
+  const C = { rollingSprite: './assets/fields/ch1a/dice/dice_rolling.webp', resultSprites: {}, min: 1, max: 3, sides: 3, ms: 1660, resultMs: 520, settleMs: 180, upMs: 360, landMs: 640,
+    throwFrames: null, airMs: 560, impactMs: 200, bounceMs: 260, rollMs: 640, frameBox: { w: 561, h: 449, cx: 279.5, cy: 244, dh: 338 } };
   let locked = false, cache = null, phase = null, stopResolve = null, lastTiming = null;
   function configure(o) {
     if (o && typeof o === 'object') {
@@ -34,7 +38,10 @@
   /** 出目を決めて演出する：{ result, animationPromise } */
   function rollDice(opts = {}) { const result = roll(opts); return { result, animationPromise: opts.animate === false ? Promise.resolve(true) : play(result, opts) }; }
   const resultSprite = (v) => { const s = C.resultSprites && C.resultSprites[v]; return typeof s === 'string' && s ? s : null; };
-  function preload() { if (cache || typeof Image === 'undefined') return; cache = [C.rollingSprite, ...Object.values(C.resultSprites || {})].map((src) => { const im = new Image(); im.decoding = 'async'; im.src = src; return im; }); }
+  function preload() { if (cache || typeof Image === 'undefined') return; cache = [C.rollingSprite, ...Object.values(C.resultSprites || {}), ...(Array.isArray(C.throwFrames) ? C.throwFrames : [])].map((src) => { const im = new Image(); im.decoding = 'async'; im.src = src; return im; }); }
+  /** 先読みが終わった画像か（読み込み途中の画像へ差し替えない） */
+  const isReady = (src) => !!(src && cache && cache.some((im) => im.complete && im.naturalWidth > 0 && im.src.endsWith(String(src).replace(/^\.\//, ''))));
+  const frame = () => new Promise((ok) => (typeof requestAnimationFrame === 'function' ? requestAnimationFrame(() => ok()) : setTimeout(ok, 16)));
   const wait = (ms) => new Promise((ok) => setTimeout(ok, ms));
   /**
    * 回転の時間割（0〜1）：速く回る → 減速 → 着地でほぼ止まる → 跳ねと転がりで少し進む → 最後に正式の角度へ収束。
@@ -85,7 +92,7 @@
     ov.innerHTML = `<div class="chdz-sh" style="left:${(land.x + jx).toFixed(1)}px;top:${land.y.toFixed(1)}px"></div><div class="chdz-mv" style="left:${from.x.toFixed(1)}px;top:${from.y.toFixed(1)}px"><img class="chdz-img" alt="サイコロ" src="${C.rollingSprite}" draggable="false"></div><div class="chdz-res" hidden style="left:${(land.x + jx + dir * 22).toFixed(1)}px;top:${land.y.toFixed(1)}px"><span class="chdz-ring"></span><b>${value}</b><i>！</i></div>`;
     host.appendChild(ov);
     try {
-      const mv = ov.querySelector('.chdz-mv'), img = ov.querySelector('.chdz-img'), sh = ov.querySelector('.chdz-sh'), T = calm ? 260 : C.ms, settle = Math.min(0.3, C.settleMs / T);
+      const mv = ov.querySelector('.chdz-mv'), img = ov.querySelector('.chdz-img'), sh = ov.querySelector('.chdz-sh'), T = calm ? 260 : (C.legacyMs || 980), settle = Math.min(0.3, C.settleMs / T);
       if (opts.manualStop) {
         // START → 宙で回り続ける（spin）→ プレイヤーの STOP（requestStop）で落ちて止まる（land）。回転は止めた瞬間の角度から正式の角度へ収束
         const ax = lx * 0.5, ay = ly - 110;   // 宙に浮く位置（着地点の上）
@@ -114,6 +121,8 @@
           sh.animate([{ transform: 'translate(-50%,-50%) scale(.5)', opacity: 0.2 }, { transform: 'translate(-50%,-50%) scale(1)', opacity: 0.55, offset: 0.42 }, { transform: `translate(calc(-50% + ${dir * 22}px),-50%) scale(1)`, opacity: 0.55, offset: 1 }], { duration: T2, easing: 'linear', fill: 'forwards' });
           await Promise.race([a2.finished.catch(() => {}), wait(T2 + 200)]);
         } else { mv.style.transform = `translate(-50%,-50%) translate(${lx.toFixed(1)}px,${ly.toFixed(1)}px)`; await wait(T2); }
+      } else if (!calm && mv.animate && Array.isArray(C.throwFrames) && C.throwFrames.length >= 10 && C.throwFrames.every(isReady) && faceSet().length) {
+        await physical(ov, mv, img, sh, value, lx, ly, dir);
       } else if (!calm && mv.animate) {
         // 1タップ：START の位置から飛び上がって速く回る → 落ちながら減速 → 着地 → 小さく跳ねて止まる（自動。止める操作は無い）
         phase = 'auto'; ov.dataset.phase = 'auto';
@@ -135,6 +144,7 @@
         ], { duration: T, easing: 'linear', fill: 'forwards' });
         await Promise.race([a1.finished.catch(() => {}), wait(T + 200)]);
       } else { phase = 'auto'; ov.dataset.phase = 'auto'; mv.style.transform = `translate(-50%,-50%) translate(${lx.toFixed(1)}px,${ly.toFixed(1)}px)`; await wait(T); }
+      if (!ov.dataset.stopped) { ov.dataset.stopped = '1'; feel('dice.stop'); }   // 旧い見せ方・視差を減らす設定：ここで止まった
       tSpin = tick(); phase = 'result'; ov.dataset.phase = 'result'; feel('dice.result');
       // 停止：停止画像があれば差し替え、無ければ金色の光の輪＋数字
       //  停止面（出目ごとの画像）があれば、回転中の絵から停止面へ短くクロスフェード（急に差し替えない）。無ければ金色の光の輪＋数字
@@ -150,6 +160,61 @@
       lastTiming = { value, spinMs: Math.round(tSpin), faceMs: Math.round(tFace), totalMs: Math.round(tick()), calm, manual: !!opts.manualStop };
       return true;
     } catch (e) { if (root.MM_QA_DEBUG) console.warn('MMCHD.play', e); return false; } finally { clearTimeout(landT); ov.remove(); locked = false; phase = null; stopResolve = null; }
+  }
+  /** 停止面がそろっている出目（転がる間に見せる面） */
+  function faceSet() { const out = []; for (let v = C.min; v <= C.max; v++) { const s = resultSprite(v); if (!s || !isReady(s)) return []; out.push(v); } return out; }
+  /**
+   * 物理的な見せ方（2026-10-03）：投げる（01〜07）→ 着地の衝撃（08・09）→ 小さく跳ねる（10）→ 停止面で短く転がって減速 → 完全に止まる。
+   *  止まった絵＝出目の面（転がる最後の約0.3秒は出目の面のまま滑って止まる）。完全に止まったフレームで dice.stop（停止の音の差し込み口）。
+   *  出目は play の前に決まっている（見た目だけ。乱数・確率には触れない）
+   */
+  async function physical(ov, mv, img, sh, value, lx, ly, dir) {
+    phase = 'auto'; ov.dataset.phase = 'auto';
+    const B = C.frameBox, box = mv.clientWidth || 88, k = box / B.dh, F = C.throwFrames;
+    const fr = document.createElement('img'); fr.className = 'chdz-fr'; fr.alt = ''; fr.draggable = false; fr.src = F[0];
+    fr.style.cssText = `width:${(B.w * k).toFixed(1)}px;height:${(B.h * k).toFixed(1)}px;left:${(box / 2 - B.cx * k).toFixed(1)}px;top:${(box / 2 - B.cy * k).toFixed(1)}px`;
+    mv.appendChild(fr); img.classList.add('off');
+    const T = [];   // 予約したコマの切り替え（終わったら消す）
+    const at = (ms, fn) => T.push(setTimeout(() => { if (ov.isConnected) fn(); }, ms));
+    const air = C.airMs, imp = C.impactMs, bnc = C.bounceMs, rol = C.rollMs, total = air + imp + bnc + rol;
+    // ---- 投げる → 空中（01〜07）：START の位置から弧を描いて着地点へ ----
+    feel('dice.throw');
+    for (let i = 1; i <= 6; i++) at(Math.round(air * i / 7), () => { fr.src = F[i]; });
+    // ---- 着地の衝撃（08・09）→ 跳ねる（10）----
+    at(air, () => { fr.src = F[7]; ov.classList.add('landed'); feel('dice.land'); });
+    at(air + imp * 0.5, () => { fr.src = F[8]; });
+    at(air + imp, () => { fr.src = F[9]; });
+    // ---- 停止面で転がる：面の切り替えは減速に合わせて間隔が伸びる。最後の約0.3秒は出目の面のまま ----
+    const faces = faceSet(), r0 = air + imp + bnc * 0.55, lock = total - 300; let t = r0, n = 0, prev = 0;
+    at(r0, () => { img.src = resultSprite(faces[(n++ * 5 + 3) % faces.length]); img.classList.remove('off'); fr.classList.add('off'); });
+    while (true) { const p = (t - r0) / Math.max(1, lock - r0); t += 70 + 170 * p * p; if (t >= lock) break; let v; do { v = faces[(n++ * 5 + 3) % faces.length]; } while (v === prev && faces.length > 1); prev = v; const src = resultSprite(v); at(t, () => { img.src = src; }); }
+    at(lock, () => { img.src = resultSprite(value); });
+    img.dataset.faces = String(n + 1);
+    const P = (x, y, s = 1) => `translate(-50%,-50%) translate(${x.toFixed(1)}px,${y.toFixed(1)}px) scale(${s})`;
+    const o1 = air / total, o2 = (air + imp) / total, o3 = (air + imp + bnc * 0.5) / total, o4 = (air + imp + bnc) / total;
+    const a1 = mv.animate([
+      { transform: P(0, 0, 0.85), offset: 0, easing: 'cubic-bezier(.15,.7,.35,1)' },
+      { transform: P(lx * 0.4, ly - 96, 1.16), offset: o1 * 0.45, easing: 'cubic-bezier(.55,0,.85,.5)' },   // 投げ上げて頂点
+      { transform: P(lx, ly, 1), offset: o1, easing: 'linear' },                                              // 落ちて着地
+      { transform: P(lx + dir * 3, ly + 2, 1.04), offset: o2, easing: 'cubic-bezier(.2,.7,.4,1)' },           // 着地の衝撃（少し沈む）
+      { transform: P(lx + dir * 10, ly - 20, 1), offset: o3, easing: 'cubic-bezier(.6,0,.9,.6)' },           // 小さく跳ねる
+      { transform: P(lx + dir * 16, ly, 1), offset: o4, easing: 'cubic-bezier(.1,.6,.3,1)' },                // もう一度着地 → 転がって減速
+      { transform: P(lx + dir * 44, ly, 1), offset: 1 },                                                     // 完全に止まる
+    ], { duration: total, easing: 'linear', fill: 'forwards' });
+    const rr = img.animate([   // 転がる間の傾き：揺れながら小さくなり、正式の角度（0°）で止まる
+      { transform: `rotate(${dir * 28}deg)`, offset: 0 }, { transform: `rotate(${dir * 28}deg)`, offset: o3 },
+      { transform: `rotate(${-dir * 12}deg)`, offset: o4 + (1 - o4) * 0.3, easing: 'ease-in-out' }, { transform: `rotate(${dir * 4}deg)`, offset: o4 + (1 - o4) * 0.65, easing: 'ease-out' },
+      { transform: 'rotate(0deg)', offset: 1 },
+    ], { duration: total, easing: 'linear', fill: 'forwards' });
+    sh.animate([
+      { transform: 'translate(-50%,-50%) scale(.3)', opacity: 0 }, { transform: 'translate(-50%,-50%) scale(.45)', opacity: 0.18, offset: o1 * 0.45 },
+      { transform: 'translate(-50%,-50%) scale(1.05)', opacity: 0.6, offset: o1 }, { transform: `translate(calc(-50% + ${dir * 10}px),-50%) scale(.8)`, opacity: 0.4, offset: o3 },
+      { transform: `translate(calc(-50% + ${dir * 16}px),-50%) scale(1)`, opacity: 0.55, offset: o4 }, { transform: `translate(calc(-50% + ${dir * 44}px),-50%) scale(1)`, opacity: 0.55, offset: 1 },
+    ], { duration: total, easing: 'linear', fill: 'forwards' });
+    try { await Promise.race([Promise.all([a1.finished, rr.finished]).catch(() => {}), wait(total + 250)]); } finally { T.forEach(clearTimeout); }
+    img.src = resultSprite(value); fr.remove();
+    await frame();   // 止まった姿が描かれたフレームで「完全停止」
+    ov.dataset.stopped = '1'; feel('dice.stop');
   }
   /** STOP：宙で回っているサイコロを止める（出目は既に決まっている）。回っていなければ false */
   function requestStop() { if (!stopResolve) return false; const f = stopResolve; stopResolve = null; f(); return true; }

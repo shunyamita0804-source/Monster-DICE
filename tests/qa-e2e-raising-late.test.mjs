@@ -213,7 +213,7 @@ T('QA-RL1：Chapter 3（旧ボード）の20ターン目を使い切る → タ�
   assert.equal(await pg.evaluate(() => document.querySelector('.tcap').textContent), 'つづきからはじめます');
   await startFromTitle(pg, '.p9farm.p15f');
   assert.equal(await rawSave(pg), raw0, '中断・再開で状態は変わらない');
-  assert.match(await H.text(pg), /Chapter 3 終了[\s\S]*Chapter 4へ進む/);
+  { const tx = await H.text(pg); assert.ok(/Chapter 3 終了/.test(tx) && /Chapter 4へ進む/.test(tx), tx); }   // 2026-10-03：進行ボタンは上の門（情報パネルより前に並ぶ）
   noErrors(p);
 });
 

@@ -28,6 +28,24 @@ CC0 の2つは表記不要だが、礼儀として載せる。
 
 - PGS Fantasy RPG Music Pack の README には CC BY 4.0 と並んで「DO NOT REPOST OR SELL THIS MUSIC」とある。このリポジトリは公開（GitHub Pages）なので、採用した OGG ファイルは誰でも取得できる状態になる。ゲームの素材として置くことは CC BY の範囲（表記つき）だが、「パックの再配布」と受け取られないよう、**ZIP 全体や未採用の曲は置かない**（今は採用した10曲だけ）。公開のままでよいかは仕様側の判断。
 
+## 2026-10-03 第4弾の試遊で NG → 無音にした音（ファイルは外した。下の表の出どころ・ライセンスの記録は残す）
+
+「NG の音を別の場面へ使い回さない」「似た音を判断で選ばない」「素材が無ければ無音」（ユーザー指示）。registry は `silent: true`（合成音にも落とさない）。
+
+| 外した素材（パック・元ファイル） | 使っていた所 |
+|---|---|
+| alkakrab Vol.3「Ambient 4.ogg（Tranquil Radiance）」 | TOWN（街） |
+| alkakrab Vol.3「Ambient 3.ogg（Lost River）」 | FARM（旧ファーム） |
+| PGS「Event Music 4.ogg」 | 大会の受付・順位表・結果（TOURNAMENT_ENTRY・LOBBY_LOW／HIGH・RESULT） |
+| alkakrab Vol.3「Fx 1.ogg」 | MATCHUP（対戦相手の発表＝大会の対戦前の画面） |
+| Interface SFX Pack 1「confirm_style_1_004.ogg」 | TITLE_START（開始画面のタップ） |
+| Interface SFX Pack 1「confirm_style_5_001.ogg」 | UI_CONFIRM（通常のコマンドのタップ） |
+| Ivokard「pluck_3.ogg」 | DICE_LAND（サイコロの着地） |
+| Ivokard「ping.ogg」の DICE_ROLL への割り当て | DICE_ROLL（出目＝サイコロの停止の音。ping は EVENT ではそのまま） |
+| Ivokard「pluck_5.ogg」 | TILE_STOP（通常マスに止まった） |
+
+ほかに無音のまま：DICE_THROW（サイコロを振る）・DICE_STOP（サイコロが完全に止まったフレームの差し込み口）・STEP・TOURNAMENT_ARRIVAL（大会会場への到着）・TOURNAMENT_MATCHUP（BGM）・CHAPTER_1（BGM）。大会開始の演出の合成音（風切り音）も鳴らさない。OK のまま：CHAPTER_START（alkakrab Fx 2）・MARKET ほか。
+
 ## 使用したファイル（2026-10-03 の iPhone 試遊の結果で見直し）
 
 ### BGM（PGS Fantasy RPG Music Pack → assets/audio/bgm/pgs_fantasy_rpg/）
@@ -42,7 +60,7 @@ PGS の曲は「暫定の試遊用」。新しく採用しない（公開リポ�
 | Event Music 2.ogg | event_music_2.ogg | LABORATORY | 103秒 | -14.3 | 0.65 |
 | Battle Music 1.ogg | battle_music_1.ogg | WILD_BATTLE（RARE_WILD_BATTLE は fallback で同じ曲。RIVAL_BATTLE は第3弾で alkakrab へ） | 104秒 | -13.1 | 0.58 |
 | Battle Music 2.ogg | battle_music_2.ogg | TOURNAMENT_BATTLE_LOW（HIGH は第3弾で alkakrab へ） | 92秒 | -13.3 | 0.57 |
-| Event Music 4.ogg | event_music_4.ogg | TOURNAMENT_LOBBY_LOW（TOURNAMENT_ENTRY・LOBBY_HIGH・RESULT は fallback で同じ曲） | 88秒 | -14.6 | 0.68 |
+| Event Music 4.ogg | （外した）event_music_4.ogg | 旧 TOURNAMENT_LOBBY_LOW（受付・順位表・結果）→ 2026-10-03 第4弾で NG・無音 | 88秒 | -14.6 | 0.68 |
 
 外した曲（2026-10-03 の試遊で NG。ファイルも削除）：Town-Village Theme 1（TOWN）、Event Music 3（FARM）、Dungeon-Exploration Music 1（CHAPTER_1）。第3弾で TOWN・FARM は alkakrab へ。CHAPTER_1 はまだ無音（registry の silent）。
 
@@ -50,8 +68,8 @@ PGS の曲は「暫定の試遊用」。新しく採用しない（公開リポ�
 
 | ファイル | 出来事 |
 |---|---|
-| confirm_style_1_004.ogg | TITLE_START（開始画面のタップ） |
-| confirm_style_5_001.ogg | UI_CONFIRM（ボタン全般・街のコマンド） |
+| （外した）confirm_style_1_004.ogg | 旧 TITLE_START（開始画面のタップ）→ 第4弾で NG・無音 |
+| （外した）confirm_style_5_001.ogg | 旧 UI_CONFIRM（ボタン全般・街のコマンド）→ 第4弾で NG・無音 |
 | confirm_style_4_001.ogg | UI_OPEN |
 | back_style_4_002.ogg | UI_CANCEL |
 | error_style_4_002.ogg | UI_ERROR |
@@ -70,9 +88,9 @@ PGS の曲は「暫定の試遊用」。新しく採用しない（公開リポ�
 
 | ファイル | 出来事 |
 |---|---|
-| pluck_3.ogg | DICE_LAND |
-| ping.ogg | DICE_ROLL・EVENT |
-| pluck_5.ogg | TILE_STOP |
+| （外した）pluck_3.ogg | 旧 DICE_LAND → 第4弾で NG・無音 |
+| ping.ogg | EVENT（旧 DICE_ROLL は第4弾で NG・無音） |
+| （外した）pluck_5.ogg | 旧 TILE_STOP → 第4弾で NG・無音 |
 | bell.ogg | GOLD_GET |
 | bass_thud_electric.ogg | BATTLE_START（実戦の開始「FIGHT!」） |
 | attack_1.ogg | BATTLE_ATTACK |
@@ -87,13 +105,13 @@ PGS の曲は「暫定の試遊用」。新しく採用しない（公開リポ�
 
 | ZIP の元ファイル（曲名＝埋め込み情報） | リポジトリのファイル | 使う所 | 長さ | 元の音量（LUFS） | gain | ループ |
 |---|---|---|---:|---:|---:|---|
-| Ambient 4.ogg「Tranquil Radiance」 | bgm/…/ambient_4_tranquil_radiance.ogg | TOWN（街） | 129秒 | -16.3 | 0.8 | 0〜119秒・3秒のクロスフェード（119秒からの最後のフェードは使わない） |
-| Ambient 3.ogg「Lost River」 | bgm/…/ambient_3_lost_river.ogg | FARM（旧ファーム・仮の冒険準備の拠点） | 111秒 | -16.6 | 0.85 | 0〜105秒・3秒 |
+| Ambient 4.ogg「Tranquil Radiance」 | （外した）bgm/…/ambient_4_tranquil_radiance.ogg | 旧 TOWN（街）→ 第4弾で NG・無音 | 129秒 | -16.3 | 0.8 | 0〜119秒・3秒のクロスフェード（119秒からの最後のフェードは使わない） |
+| Ambient 3.ogg「Lost River」 | （外した）bgm/…/ambient_3_lost_river.ogg | 旧 FARM（旧ファーム）→ 第4弾で NG・無音 | 111秒 | -16.6 | 0.85 | 0〜105秒・3秒 |
 | Action 2.ogg「Battle of the Skies」 | bgm/…/action_2_battle_of_the_skies.ogg | RIVAL_BATTLE（ライバル戦） | 117秒 | -15.2 | 0.74 | 0〜110秒・0.2秒（終わりの一撃のあとの余韻は使わない） |
 | Action 1.ogg「Clash of Arcane Titans」 | bgm/…/action_1_clash_of_arcane_titans.ogg | TOURNAMENT_BATTLE_HIGH（大会 B〜S）・SPECIAL_BATTLE（fallback） | 89秒 | -14.8 | 0.71 | 0〜86.3秒・0.2秒 |
 | Fx 2.ogg | se/…/fx_2.ogg | CHAPTER_START（Chapter 開始・スタート地点へのズームのあと） | 2秒 | -27.7 | 3.0 | — |
 | Fx 3.ogg | se/…/fx_3.ogg | WILD_ALERT（野生モンスターの遭遇） | 8秒 → 再生は2秒（最後の0.7秒で下げる） | -32.3 | 5.0 | — |
-| Fx 1.ogg | se/…/fx_1.ogg | MATCHUP（対戦相手の発表） | 7秒 → 再生は2.6秒（最後の0.9秒で下げる） | -31.2 | 4.5 | — |
+| Fx 1.ogg | （外した）se/…/fx_1.ogg | 旧 MATCHUP（対戦相手の発表）→ 第4弾で NG・無音 | 7秒 → 再生は2.6秒（最後の0.9秒で下げる） | -31.2 | 4.5 | — |
 
 使っていない：Action 3「Stealthy Infiltration」（潜入の曲）、Action 4「Forest of Mysteries」・Action 5「Epic Quest」（Chapter 1 の候補だったが、解析で戦闘曲と同じくらい忙しい＝40ターン聞くには強すぎるため見送り）、Ambient 1・2・5〜10、Ambience 1〜5、Dark 1〜5（とても小さい・暗い環境音）。
 

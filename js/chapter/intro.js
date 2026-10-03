@@ -30,8 +30,10 @@
     return { S, tx, ty, w, h };
   }
   const tf = (f) => `translate3d(${f.tx.toFixed(2)}px,${f.ty.toFixed(2)}px,0) scale(${f.S.toFixed(5)})`;
-  // ---- 演出の時間（ms。config.intro.timing で上書き。全体で約3.9秒） ----
-  const TIMING = Object.freeze({ stillMs: 450, chapterInMs: 400, nameInMs: 350, titleHoldMs: 850, titleOutMs: 350, moveMs: 1250, joinMs: 450, uiInMs: 300 });
+  // ---- 演出の時間（ms。config.intro.timing で上書き。全体で約4.7秒） ----
+  //  2026-10-03（試遊）：画面が出てすぐズームしない。全景を止めて見せる（stillMs）→「Chapter N」→ Chapter 名 → 名前が出そろったところで開始の音（opts.onTitle）
+  //   → 読める間と余韻（titleHoldMs）→ タイトルが消える → 開始地点へズーム（moveMs）→ 操作できる
+  const TIMING = Object.freeze({ stillMs: 700, chapterInMs: 450, nameInMs: 400, titleHoldMs: 1350, titleOutMs: 350, moveMs: 1250, joinMs: 450, uiInMs: 300 });
   /**
    * カメラ（俯瞰図の上の焦点 { x, y }＝画像に対する割合、zoom＝画面いっぱい（cover）に対する倍率）。
    *  探す順：config.intro.patterns[patternId].camera → config.intro.camera → 旧形式（goalFocus・startFocus・zoom・via）
@@ -65,7 +67,8 @@
     host.appendChild(ov);
     const cam = ov.querySelector('.chintro-cam'), img = ov.querySelector('.chintro-img'), title = ov.querySelector('.chintro-title');
     const ch = ov.querySelector('.chintro-ch'), nm = ov.querySelector('.chintro-name');
-    let skipped = false, wake = null, anim = null;
+    let skipped = false, wake = null, anim = null, cued = false;
+    const titleCue = () => { if (cued) return; cued = true; try { if (typeof opts.onTitle === 'function') opts.onTitle(); } catch (e) {} };
     const skip = () => { if (skipped) return; skipped = true; if (wake) wake(); };   // 何回押しても1回だけ
     ov.addEventListener('pointerdown', (e) => { e.preventDefault(); skip(); });
     current = { skip };
@@ -82,7 +85,9 @@
         await race(T.stillMs);
         // Chapter N → Chapter 名 → 見せる → 消える
         fadeIn(title, 1); fadeIn(ch, T.chapterInMs); await race(T.chapterInMs);
-        fadeIn(nm, T.nameInMs); await race(T.nameInMs + T.titleHoldMs);
+        fadeIn(nm, T.nameInMs); await race(T.nameInMs);
+        if (!skipped) titleCue();   // Chapter 名が出そろって読める状態になった瞬間に開始の音（ズームより前）
+        await race(T.titleHoldMs);   // 読める間＋音の余韻（この間カメラは止めたまま）
         title.style.transition = `opacity ${T.titleOutMs}ms ease`; title.classList.remove('on'); await race(T.titleOutMs);
         // 全景の中を旅の開始地点へ。終わりの joinMs で FIELD 1 へクロスフェード（カメラは動いたまま＝止まってから切り替わらない）
         if (!skipped && cam.animate) {
@@ -93,13 +98,13 @@
           await race(T.joinMs);
         }
       } else {   // 視差効果を減らす設定：カメラは動かさず、タイトルを短く見せて切り替える
-        fadeIn(title, 1); fadeIn(ch, 200); fadeIn(nm, 200); await race(900);
+        fadeIn(title, 1); fadeIn(ch, 200); fadeIn(nm, 200); titleCue(); await race(900);
       }
       if (skipped) { try { if (anim) anim.cancel(); } catch (e) {} cam.style.transform = tf(f1); title.classList.remove('on'); }
       // 最後の状態：俯瞰図を消して FIELD 1（飛ばしたときは短いフェード。押した指の「クリック」が下の START に届かないよう、消えるまで俯瞰図が受け止める）
       ov.style.transition = `opacity ${skipped ? 160 : 200}ms ease`; ov.classList.add('out');
       await wait(skipped ? 180 : (ov.style.opacity === '0' ? 0 : 60));
-      return { played: true, skipped };
+      return { played: true, skipped, cued };
     } catch (e) { return { played: false, skipped }; } finally { ov.remove(); current = null; }
   }
   root.MMCHI = Object.freeze({ play, shown, mark, reset, overviewOf, imageOf, cameraOf, TIMING, fit, skip: () => { if (current) current.skip(); }, isPlaying: () => !!current });

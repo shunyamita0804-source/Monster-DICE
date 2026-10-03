@@ -186,7 +186,7 @@ T('QA-RB1：市場で購入 → ファーム → 出発準備：1回目の押下
   // 街 → ファーム（未育成の間は街へ戻るボタンがある）
   await pg.click('.hz[onclick="hall()"]');
   await pg.waitForSelector('button[onclick="prepScr()"]');
-  assert.match(await H.text(pg), /育成準備中[\s\S]*育成を始める/, 'ファーム：育成準備中・進行ボタン「育成を始める」');
+  { const tx = await H.text(pg); assert.ok(/育成準備中/.test(tx) && /育成を始める/.test(tx), 'ファーム：育成準備中・進行ボタン「育成を始める」（2026-10-03：進行ボタンは上の門＝情報パネルより前）'); }
   assert.ok(await lobbyButtons(pg) >= 1, '未育成の間はファームから街へ戻れる');
   await pg.click('button[onclick="prepScr()"]');
   const dep = 'button[onclick="p7Depart(this)"]';

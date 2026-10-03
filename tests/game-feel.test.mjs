@@ -50,9 +50,9 @@ test('GF-03：Audio Registry（js/audio/audio-registry.js）：BGM・SE の対�
   const w = loadAudio(); new Function('window', rd('js/audio/audio-registry.js'))(w);
   const A = w.MMAUDIO, R = w.MMAUDIO_REGISTRY;
   assert.ok(R && R.bgm && R.se);
-  const s = A.status(); assert.ok(s.files.bgm.includes('MARKET') && s.files.bgm.includes('WILD_BATTLE') && s.files.se.includes('UI_CONFIRM'));
-  assert.ok(s.silent.bgm.includes('CHAPTER_1') && s.silent.se.includes('STEP'), '合う音が無い場面・出来事は silent（追加パック待ち）');
-  assert.ok(s.inherits.includes('RARE_WILD_BATTLE') && s.inherits.includes('TOURNAMENT_ENTRY'), '専用曲が無い場面は fallback で曲を引き継ぐ（registry に明記）');
+  const s = A.status(); assert.ok(s.files.bgm.includes('MARKET') && s.files.bgm.includes('WILD_BATTLE') && s.files.se.includes('STAT_UP'));
+  assert.ok(s.silent.bgm.includes('CHAPTER_1') && s.silent.se.includes('STEP') && s.silent.se.includes('UI_CONFIRM'), '合う音が無い・試遊で NG の場面・出来事は silent');
+  assert.ok(s.inherits.includes('RARE_WILD_BATTLE') && s.inherits.includes('SPECIAL_BATTLE'), '専用曲が無い場面は fallback で曲を引き継ぐ（registry に明記）');
   assert.equal(A.resolveBgm('RARE_WILD_BATTLE').key, 'WILD_BATTLE');
   assert.equal(A.resolveBgm('CHAPTER_2'), null, '曲の無い場面は合成音（明日のパックで選定）');
   assert.ok(Object.values(R.bgm).every((v) => typeof v === 'object'), '値は { src, gain, loop, fallback }');
@@ -156,7 +156,7 @@ test('GF-09：Chapter の演出の流れ（field-view・サイコロ）：能力
   order(chest, ['beatOf(3)', "classList.remove('hid')", "classList.add('shake')", "feel('chest.open'", 'goldToHud(g0, g1']);
   assert.match(FV, /async function goldToHud\(from, to, srcEl\)/); assert.match(FV, /feel\('gold\.get'\); bump\(g\); await countUp\(b, from, to, 420\);/);
   const enc = FV.slice(FV.indexOf('  async function encounter(m, bt) {'), FV.indexOf('  /** 通常マス（LEVEL 1）'));
-  order(enc, ['await wait(beatOf(4))', 'chf-rustle', 'chf-alert', "feel('wild.alert'", 'chf-cutin']);
+  order(enc, ['Math.max(380, beatOf(4))', 'chf-rustle', 'chf-alert', 'await encounterShow(BT, bt)', 'async function encounterShow', 'chf-enc', "feel('wild.alert'", 'await wait(1250)']);   // 2026-10-03：静止 → 予兆 → 絵と文を同時に → 遭遇の音 → 読める間
   assert.match(res, /else touchTile\(tile\);/, '通常マスは足元が軽く光るだけ');
   assert.match(res, /await storyAt\(m, 'land', \{ fx \}\);/);
   assert.match(DR, /feel\('dice\.throw'\); landT = setTimeout\(\(\) => \{ ov\.classList\.add\('landed'\); feel\('dice\.land'\); \}, T \* 0\.6\);/);

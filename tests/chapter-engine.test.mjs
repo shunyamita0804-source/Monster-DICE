@@ -518,7 +518,7 @@ test('DICE-06：サイコロの回転は最後に 360° の倍数（正式の角
     assert.equal(Math.abs(deg % 360), 0, `${dir}×${spin}：${deg}`); assert.equal(last.offset, 1);
     const before = fr[fr.length - 2]; assert.ok(Math.abs(1 - before.offset - 0.19) < 1e-9, '収束の区間');
   }
-  const c = D.configure(); assert.ok(c.settleMs >= 150 && c.settleMs <= 200); assert.ok(c.ms >= 700 && c.ms <= 1200, '出現〜着地 0.7〜1.2秒'); assert.ok(c.resultMs >= 450 && c.resultMs <= 650, '停止面 0.45〜0.65秒（2026-10-02：出目を認識する間）');
+  const c = D.configure(); assert.ok(c.settleMs >= 150 && c.settleMs <= 200); assert.ok(c.ms >= 1400 && c.ms <= 2000 && c.airMs + c.impactMs + c.bounceMs + c.rollMs === c.ms, '出現〜完全停止 1.4〜2.0秒（2026-10-03：投げる・着地・跳ねる・転がる）'); assert.ok(c.resultMs >= 450 && c.resultMs <= 650, '停止面 0.45〜0.65秒（2026-10-02：出目を認識する間）');
 });
 
 test('BF-01：バトル画面の表示だけの補正（js/battle/fit.js）：fight()・.bt 系 CSS に触れず、寸法から「切れない最大の大きさ」を計算する', () => {
@@ -669,11 +669,11 @@ test('CH1-34：通常マスは止まれる公式のマス（2026-10-02 の60マ�
 });
 
 
-test('CH1-35：Chapter開始の演出（2026-10-02 正式）：全景を止めて見せる →「Chapter 1」→「はじまりの草原」→ 消える → 開始地点へカメラ移動 → FIELD 1。約3〜4秒。Chapter・Pattern ごとの違いは config.intro だけ（コードに Chapter 専用の値なし）', () => {
+test('CH1-35：Chapter開始の演出（2026-10-02 正式・2026-10-03 タイミング調整）：全景を止めて見せる →「Chapter 1」→「はじまりの草原」→ 開始の音 → 読める間と余韻 → 消える → 開始地点へカメラ移動 → FIELD 1。約4〜5秒。Chapter・Pattern ごとの違いは config.intro だけ（コードに Chapter 専用の値なし）', () => {
   const E = loadEngine(); new Function('window', rd('js/chapter/intro.js'))(E.w); const CI = E.w.MMCHI, cfg = E.CH.getConfig(1), I = cfg.intro;
   const T = CI.TIMING, total = T.stillMs + T.chapterInMs + T.nameInMs + T.titleHoldMs + T.titleOutMs + T.moveMs + T.uiInMs;
-  assert.ok(total >= 3000 && total <= 4200, `全体 ${total}ms（3〜4秒程度）`);
-  assert.ok(T.stillMs >= 400 && T.stillMs <= 600 && T.chapterInMs >= 350 && T.chapterInMs <= 450 && T.nameInMs >= 300 && T.nameInMs <= 400 && T.titleHoldMs >= 800 && T.titleHoldMs <= 1000 && T.titleOutMs >= 300 && T.titleOutMs <= 400 && T.moveMs >= 1000 && T.moveMs <= 1500, JSON.stringify(T));
+  assert.ok(total >= 4000 && total <= 5200, `全体 ${total}ms（4〜5秒程度）`);
+  assert.ok(T.stillMs >= 600 && T.stillMs <= 900 && T.chapterInMs >= 350 && T.chapterInMs <= 500 && T.nameInMs >= 300 && T.nameInMs <= 450 && T.titleHoldMs >= 1200 && T.titleHoldMs <= 1600 && T.titleOutMs >= 300 && T.titleOutMs <= 400 && T.moveMs >= 1000 && T.moveMs <= 1500, JSON.stringify(T));
   assert.deepEqual([I.label, I.name], ['Chapter 1', 'はじまりの草原']);
   const c = CI.cameraOf(I, 'A'); assert.deepEqual(c.from, { x: 0.5, y: 0.5, zoom: 1 }); assert.ok(c.to.y > 0.85 && c.to.zoom > 2, '開始地点（全景の下端の小道）へ寄る');
   assert.equal(CI.imageOf(cfg, 'A'), './assets/fields/ch1a/intro/ch1_intro_overview.webp');
@@ -708,5 +708,5 @@ test('CH1-36：ガウル・ノビトン・ジオルの歩行アニメ（2026-10-
   assert.deepEqual(cfg.effects, { statUp: 'fx_stat_up', turnWarning: { asset: 'fx_turn_warning', at: [] } }, '残りターンの警告は発火ターン未決＝出さない');
   for (const k of ['fx_battle_encounter', 'fx_stat_up', 'fx_turn_warning']) assert.ok(existsSync(path.join(ROOT, cfg.assets[k])), k);
   const FV = rd('js/chapter/field-view.js');
-  assert.match(FV, /if \(cut && !V\.calm\)/); assert.match(FV, /c: 'ok stat', frame: 'statUp'/); assert.match(FV, /if \(!W \|\| !Array\.isArray\(W\.at\) \|\| !W\.at\.length/, '発火ターンが空なら出さない');
+  assert.match(FV, /cut = BT\.cutin \? effectAsset\(BT\.cutin\) : null/); assert.match(FV, /if \(!ui \|\| V\.calm \|\| \(!cut && !text\)\)/);   // 2026-10-03：カットインは encounterShow（絵と文を同時に） assert.match(FV, /c: 'ok stat', frame: 'statUp'/); assert.match(FV, /if \(!W \|\| !Array\.isArray\(W\.at\) \|\| !W\.at\.length/, '発火ターンが空なら出さない');
 });

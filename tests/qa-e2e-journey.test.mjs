@@ -142,6 +142,7 @@ test('JR-7：大会開始：ランクを選んで「この大会に参加する�
   await pg.evaluate(() => { window.__seq = []; new MutationObserver(() => { const d = document.querySelector('#p9intro'); const k = !d ? 'none' : d.classList.contains('ced') ? 'cedric' : d.classList.contains('em') ? 'emblem' : 'dark'; if (window.__seq[window.__seq.length - 1] !== k) window.__seq.push(k); if (document.querySelector('.p9tour') && !window.__seq.includes('tour')) window.__seq.push('tour'); }).observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['class'] }); });
   await pg.click('.rcv-row.ok[data-rank="0"]', { force: true }); await pg.waitForTimeout(450); await pg.click('#p9join', { force: true });
   await pg.waitForSelector('#p9intro.em');
+  await pg.waitForFunction(() => { const e = document.querySelector('.p9iem-l'); return !!e && e.getBoundingClientRect().width >= 110; }, null, { timeout: 1300 }).catch(() => {});   // 拡大の登場アニメの途中で測らない（約0.5秒）
   const em = await pg.evaluate(() => ({ l: document.querySelector('.p9iem-l').textContent, r: document.querySelector('.p9iem-r').textContent, t: document.querySelector('.p9iem b').textContent, tour: !!S.m.raise.tour, w: Math.round(document.querySelector('.p9iem-l').getBoundingClientRect().width) }));
   assert.deepEqual({ ...em, w: em.w >= 110 }, { l: 'E', r: 'RANK', t: '公式ランクE大会', tour: true, w: true }, 'ランクのロゴを大きく（参加は確定済み）');
   await pg.waitForSelector('#p9intro.ced');
@@ -158,7 +159,7 @@ test('JR-7：大会開始：ランクを選んで「この大会に参加する�
 });
 
 for (const size of [H.SIZES.base, H.SIZES.se]) {
-  test(`JR-8（${size.join('×')}）：VS：中央の VS のあと、自分が左から・相手が右から入る。対戦開始 → Battle 開始前の導入（両者・個性スキル・主要パラメーター＝Battle Engine と同じ値・BATTLE START）。START までは試合が始まらず、START で従来の fight() が始まる`, { skip: SKIP }, async () => {
+  test(`JR-8（${size.join('×')}）：VS（相手の発表＋能力比較の1枚。2026-10-03）：バトルの背景の上で、中央の VS のあと、自分が左から・相手が右から入る。能力＝Battle Engine と同じ値。対戦開始（2度押し）で、間の画面なしに従来の fight() が始まる`, { skip: SKIP }, async () => {
     const p = await open({ size }); const pg = p.page;
     await toGoal(pg);
     await pg.evaluate(() => { MMP8.startTournament(S, S.m, 0); save(); p9VsScr(); });
@@ -166,16 +167,15 @@ for (const size of [H.SIZES.base, H.SIZES.se]) {
     const v = await pg.evaluate(() => { const me = document.querySelector('.p9vs-fr .fr.me'), op = document.querySelector('.p9vs-fr .fr:not(.me)'), vs = document.querySelector('.vsx'); const a = (e) => e.getAnimations().map((x) => x.animationName || (x.effect && x.effect.getKeyframes && x.effect.getKeyframes()[0] && 'kf')); return { me: a(me), op: a(op), vs: a(vs) }; });
     assert.ok(v.me.includes('p9vsL') && v.op.includes('p9vsR') && v.vs.includes('p9vsx'), `左右から入る（${JSON.stringify(v)}）`);
     await pg.waitForTimeout(1300);
+    const pre = await pg.evaluate(() => { const st = [...document.querySelectorAll('.p9vs-tb .vr')].map((r) => [...r.querySelectorAll('.v')].map((x) => +x.textContent)); const go = document.querySelector('.p9go').getBoundingClientRect(); return { battle: S.m.raise.battle, bt: !!document.querySelector('#bt'), names: [...document.querySelectorAll('.p9vs-fr .np')].map((b) => b.textContent), st, opp: MMP8L.PROVISIONAL_OPPONENT_STAT[0], inside: go.bottom <= innerHeight && go.top >= 0, bg: /url\(/.test(getComputedStyle(document.querySelector('.p9vs')).backgroundImage) }; });
+    assert.equal(pre.battle, null, '対戦開始までは試合を始めない'); assert.equal(pre.bt, false, 'fight() は動いていない');
+    assert.equal(pre.names[0], 'ソラ');
+    assert.deepEqual(pre.st, [[100, pre.opp], [100, pre.opp], [100, pre.opp], [100, pre.opp], [100, pre.opp], [100, pre.opp]], '能力の比較＝自分の6能力と、fight() が作る相手と同じ値（MMP8L.PROVISIONAL_OPPONENT_STAT）');
+    assert.ok(pre.inside && pre.bg, '対戦開始のボタンまで画面に収まり、バトルの背景の上');
     await pg.click('.p9go'); await pg.waitForTimeout(600); await pg.click('.p9go');
-    await pg.waitForSelector('#pbt.in'); await pg.waitForTimeout(500);
-    const pre = await pg.evaluate(() => { const st = [...document.querySelectorAll('.pbtst .vr')].map((r) => [...r.querySelectorAll('.v')].map((x) => +x.textContent)); const w = document.querySelector('.pbtwrap').getBoundingClientRect(); return { battle: S.m.raise.battle, bt: !!document.querySelector('#bt'), names: [...document.querySelectorAll('.pbtm b')].map((b) => b.textContent), skills: [...document.querySelectorAll('.pbtsk b')].map((b) => b.textContent), st, opp: MMP8L.PROVISIONAL_OPPONENT_STAT[0], inside: w.top >= 0 && w.bottom <= innerHeight && w.left >= 0 && w.right <= innerWidth, bg: /url\(/.test(document.querySelector('.pbtbg').style.backgroundImage) }; });
-    assert.equal(pre.battle, null, 'START までは試合を始めない（beginBattle は START のあと）'); assert.equal(pre.bt, false, 'fight() は動いていない');
-    assert.equal(pre.names[0], 'ソラ'); assert.deepEqual(pre.skills, ['―（未登録）', '―（未登録）'], '個性スキルの枠（正式データは未登録）');
-    assert.deepEqual(pre.st, [[100, pre.opp], [100, pre.opp], [100, pre.opp], [100, pre.opp], [100, pre.opp], [100, pre.opp]], '主要パラメーター＝自分の6能力と、fight() が作る相手と同じ値（MMP8L.PROVISIONAL_OPPONENT_STAT）');
-    assert.ok(pre.inside && pre.bg, '画面に収まり、バトルの背景の上');
-    await pg.click('.pbtgo'); await pg.waitForSelector('#bt'); await pg.waitForTimeout(600);
+    await pg.waitForSelector('#bt'); await pg.waitForTimeout(600);
     const after = await pg.evaluate(() => ({ kind: S.m.raise.battle && S.m.raise.battle.kind, pbt: !!document.querySelector('#pbt'), bt: !!document.querySelector('#bt') }));
-    assert.deepEqual(after, { kind: 'league', pbt: false, bt: true }, 'START で従来の fight() が始まる（導入は消える）');
+    assert.deepEqual(after, { kind: 'league', pbt: false, bt: true }, '対戦開始で、間の画面なしに従来の fight() が始まる');
     assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
   });
 }
@@ -247,7 +247,7 @@ test('JR-10：START の1タップだけで、サイコロは自動で止まっ�
   const saved = await pg.evaluate(() => JSON.parse(localStorage.getItem('mr4v6')).m.raise.pend.roll);
   await pg.waitForSelector('.chdz'); const t0 = Date.now();
   await pg.waitForFunction(() => !document.querySelector('.chdz'), null, { timeout: 8000 }); const gone = Date.now() - t0;
-  assert.ok(gone >= 1200 && gone <= 3500, `サイコロは自動で止まって消える（${gone}ms。設計 約1.7秒）`);
+  assert.ok(gone >= 1800 && gone <= 4500, `サイコロは自動で止まって消える（${gone}ms。設計 約2.4秒＝2026-10-03 投げる → 着地 → 跳ねる → 転がる → 完全停止 → 出目）`);
   assert.equal(await pg.evaluate(() => typeof window.chfStop), 'undefined', 'STOP の関数は無い');
   await idle(pg);
   assert.deepEqual(await pg.evaluate(() => [S.m.raise.node, S.m.raise.turnsUsed, document.querySelector('#brollbtn').textContent.trim(), !document.querySelector('#brollbtn').disabled]), ['p1_3', 1, 'START', true], `保存済みの出目 ${saved} で3地点 → START に戻る`); assert.equal(saved, 3);

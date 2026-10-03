@@ -160,9 +160,10 @@
     ],
     treasurePool: { tierWeights: { normal: 70, rare: 25, special: 5 }, contents: { handler: 'gold_table', params: { table: [{ w: 4, gold: 50 }, { w: 1, gold: 150 }] } } },
     battleTypes: {
-      wild: { label: '野生のモンスター', asset: 'battle_wild', cutin: 'fx_battle_encounter' },   // cutin：野生バトル突入のカットイン（2026-10-02 正式。赤と金の交差。レア・ライバルには付けない）
-      rare: { label: 'レアモンスター', asset: 'battle_wild' },   // レアモンスターマス（10%）。敵データ・報酬・遭遇演出は未登録＝【暫定】バトルの中身は野生と同じ
-      rival: { label: 'ライバル', asset: 'battle_rival', figure: null },
+      // encounter（2026-10-03）：遭遇の演出の文（絵と同時に出る）【暫定の文面】。tone＝帯の色（wild 赤金・rare 深紅・rival 紫）。ライバルは草むらの揺れ・野生のカットインを使わない
+      wild: { label: '野生のモンスター', asset: 'battle_wild', cutin: 'fx_battle_encounter', encounter: '野生のモンスターが現れた！', tone: 'wild' },   // cutin：野生バトル突入のカットイン（2026-10-02 正式。赤と金の交差。レア・ライバルには付けない）
+      rare: { label: 'レアモンスター', asset: 'battle_wild', encounter: 'レアモンスターが現れた！', tone: 'rare' },   // レアモンスターマス（10%）。敵データ・報酬・遭遇演出は未登録＝【暫定】バトルの中身は野生と同じ
+      rival: { label: 'ライバル', asset: 'battle_rival', figure: null, encounter: 'ライバルが立ちはだかった！', tone: 'rival', noRustle: true },
     },
     // ---- Chapter のイベント（2026-10-02。MMCH.storyEvents のデータ。本文は【暫定】）：フィナは節目だけ話す（通常マスごとには話さない）。
     //  trigger：'start'＝Chapter に入った最初、'land'＝止まったあと。when：field＝今回の移動で通った背景・今いる背景、branch＝選んだ道、fx／battleType＝止まったマスの結果、species＝種族、fatigueMin＝疲れ、chance＝確率。
@@ -185,7 +186,8 @@
     companion: { npc: 'fina', reactions: {} },
 
     // ---- サイコロ：回転中は無地の正式サイコロ（dice_blank）、停止面は正式の dice_stop_1〜6（上面＝出目） ----
-    dice: { rollingSprite: D + 'dice_blank.webp', resultSprites: { 1: D + 'dice_stop_1.webp', 2: D + 'dice_stop_2.webp', 3: D + 'dice_stop_3.webp', 4: D + 'dice_stop_4.webp', 5: D + 'dice_stop_5.webp', 6: D + 'dice_stop_6.webp' } },
+    // throwFrames（2026-10-03）：既存の正式10コマ（assets/dice/std/。投げる → 空中 → 着地の衝撃 → 静止）で投げて着地させ、停止面で転がって止まる（js/chapter/dice-renderer.js の physical）
+    dice: { throwFrames: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => `./assets/dice/std/${String(i).padStart(2, '0')}.webp`), rollingSprite: D + 'dice_blank.webp', resultSprites: { 1: D + 'dice_stop_1.webp', 2: D + 'dice_stop_2.webp', 3: D + 'dice_stop_3.webp', 4: D + 'dice_stop_4.webp', 5: D + 'dice_stop_5.webp', 6: D + 'dice_stop_6.webp' } },
 
     assets: {
       stat_li: A + 'nodes/stat_life.webp', stat_po: A + 'nodes/stat_power.webp', stat_in: A + 'nodes/stat_intelligence.webp',

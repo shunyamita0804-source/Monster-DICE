@@ -54,7 +54,7 @@ test('FE-2：能力UP：止まる → 間 → マスが光る → モンスタ�
   const firstPop = fx.findIndex((x) => x[0]), firstReact = fx.findIndex((x) => x[1]), firstHit = fx.findIndex((x) => x[2]);
   assert.ok(firstHit >= 0 && firstReact > firstHit && firstPop > firstReact, `マス → モンスター → 枠の順（${firstHit}・${firstReact}・${firstPop}）`);
   assert.ok(fx.filter((x) => x[0]).every((x) => x[3] !== false), '結果を見せている間は START を押せない（ボタンが無いか disabled）');
-  assert.deepEqual(r[2].filter((e) => e !== 'step').slice(-4), ['dice.throw', 'dice.land', 'dice.result', 'stat.up']);   // step＝1マスごとの足音（2026-10-02 夜）は数えない
+  assert.deepEqual(r[2].filter((e) => e !== 'step').slice(-5), ['dice.throw', 'dice.land', 'dice.stop', 'dice.result', 'stat.up']);   // dice.stop＝完全に止まったフレーム（2026-10-03）   // step＝1マスごとの足音（2026-10-02 夜）は数えない
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
 });
 
@@ -74,16 +74,18 @@ test('FE-3：宝箱：現れる → 揺れて開く → 報酬 →「+NG」が H
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
 });
 
-test('FE-4：野生：止まった瞬間には「！」を出さない（静止の間）→ 草むらが揺れる → 「！」→ カットイン → バトルの案内', { skip: SKIP }, async () => {
+test('FE-4：野生：止まった瞬間には「！」を出さない（静止の間）→ 草むらが揺れる → 「！」→ 遭遇の演出（カットインと文を同時に）→ バトルの案内', { skip: SKIP }, async () => {
   const p = await open(); const pg = p.page; await toField(pg);
   await pg.evaluate(() => { S.m.raise.field.nodeAssignments.p3_2.bt = 'wild'; save(); });
   await place(pg, 'p3_1'); await idle(pg);
-  await pg.evaluate(() => { window.__w = []; const t0 = performance.now(), t = () => { window.__w.push([Math.round(performance.now() - t0), S.m.raise.pend ? S.m.raise.pend.stage : null, !!document.querySelector('.chf-rustle'), !!document.querySelector('.chf-alert'), !!document.querySelector('.chf-cutin'), !!document.querySelector('.chbat')]); if (window.__w.length < 1200) requestAnimationFrame(t); }; requestAnimationFrame(t); });
+  await pg.evaluate(() => { window.__w = []; const t0 = performance.now(), t = () => { window.__w.push([Math.round(performance.now() - t0), S.m.raise.pend ? S.m.raise.pend.stage : null, !!document.querySelector('.chf-rustle'), !!document.querySelector('.chf-alert'), !!document.querySelector('.chf-enc .chf-enc-art') && !!document.querySelector('.chf-enc .chf-enc-tx'), !!document.querySelector('.chbat'), (document.querySelector('.chf-enc .chf-enc-tx') || {}).textContent || '']); if (window.__w.length < 1200) requestAnimationFrame(t); }; requestAnimationFrame(t); });
   await rollAs(pg, 1); await pg.waitForSelector('.chbat', { timeout: 20000 }); await pg.waitForTimeout(200);
   const W = await pg.evaluate(() => window.__w), at = (k) => (W.find((x) => x[k]) || [-1])[0];
   const stop = (W.find((x) => x[1] === 'resolve') || [-1])[0], rustle = at(2), alert = at(3), cut = at(4), sheet = at(5);
   assert.ok(stop >= 0 && rustle - stop >= 150, `止まってから静止の間（${rustle - stop}ms）`); assert.ok(alert > rustle && cut > alert && sheet > cut, `草むら ${rustle} → ！ ${alert} → カットイン ${cut} → 案内 ${sheet}`);
-  assert.ok(sheet - stop < 2600, `長すぎない（${sheet - stop}ms）`);
+  assert.ok(stop >= 0 && rustle - stop >= 350, `止まってから静止の間（${rustle - stop}ms）`);
+  assert.ok(sheet - cut >= 1200, `遭遇の演出を読める間（${sheet - cut}ms）`); assert.ok(sheet - stop < 3400, `長すぎない（${sheet - stop}ms）`);
+  assert.equal(W.find((x) => x[4])[6], '野生のモンスターが現れた！', '絵と文が同じフレームで出る');
   assert.equal((await pg.evaluate(() => MMFEEL.log())).slice(-1)[0], 'wild.alert');
   assert.deepEqual(p.errors, []);
 });
@@ -120,6 +122,6 @@ test('FE-7：BGM の場面：街＝TOWN、市場＝MARKET、Chapter＝CHAPTER_1�
   await pg.evaluate(() => market()); await pg.waitForTimeout(300); assert.equal(await pg.evaluate(() => MMAUDIO.status().scene), 'MARKET');
   await pg.evaluate(() => { const m = mk(0); m.name = 'ソラ'; MMP7.ensureProg(m); S.m = m; save(); MMP8.depart(S, m, () => 0.37); save(); board(); }); await pg.waitForSelector('#chf .chf-bg');
   const c = await pg.evaluate(() => { const n = MMAUDIO.status().plays; board(); board(); return [MMAUDIO.status(), n]; });
-  assert.equal(c[0].scene, 'CHAPTER_1'); assert.equal(c[0].plays, c[1], '同じ場面は鳴らし直さない'); assert.deepEqual(c[0].errors, []); assert.ok(c[0].files.bgm.includes('MARKET') && c[0].files.se.includes('UI_CONFIRM'), '正式な音源は registry から登録されている'); assert.equal(c[0].source, 'silent', 'Chapter 1 の曲は試遊で NG → 追加パック待ちの間は無音（合成音にも落とさない）');
+  assert.equal(c[0].scene, 'CHAPTER_1'); assert.equal(c[0].plays, c[1], '同じ場面は鳴らし直さない'); assert.deepEqual(c[0].errors, []); assert.ok(c[0].files.bgm.includes('MARKET') && c[0].files.se.includes('STAT_UP') && c[0].silent.se.includes('UI_CONFIRM') && c[0].silent.bgm.includes('TOWN'), '正式な音源は registry から登録されている（街の曲・コマンドのタップ音は 2026-10-03 第4弾で NG → 無音）'); assert.equal(c[0].source, 'silent', 'Chapter 1 の曲は試遊で NG → 追加パック待ちの間は無音（合成音にも落とさない）');
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
 });
