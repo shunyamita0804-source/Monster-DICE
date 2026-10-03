@@ -98,6 +98,7 @@ test('FE-5：フィナの節目の一言（config.story）：Chapter に入っ�
   await pg.waitForSelector('.chf-fina', { timeout: 6000 });
   const b = await pg.evaluate(() => { const e = document.querySelector('.chf-fina'), r = e.getBoundingClientRect(); return { text: e.textContent, h: r.height, top: r.top, H: innerHeight }; });
   assert.match(b.text, /フィナ.*いよいよ出発だね/); assert.ok(b.h < b.H * 0.16 && b.top > b.H * 0.6, `小さな吹き出し（${Math.round(b.h)}px・上端 ${Math.round(b.top)}）`);
+  await pg.waitForTimeout(400);   // 2026-10-03 夜：出てから0.3秒の押下は無視（直前の操作の取り違え防止）
   await pg.click('.chf-fina', { force: true }); await pg.waitForFunction(() => !document.querySelector('.chf-fina'), null, { timeout: 3000 });
   assert.deepEqual(await pg.evaluate(() => S.m.raise.field.storySeen), ['ch1_start']);
   await pg.reload(); await pg.waitForFunction(() => typeof S === 'object' && S.m); await pg.evaluate(() => board()); await pg.waitForSelector('#chf .chf-bg'); await pg.waitForTimeout(1500);
