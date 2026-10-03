@@ -75,7 +75,7 @@ const read = (pg) => pg.evaluate(() => {
     return { name: c.querySelector('b').textContent, src: i.getAttribute('src'), ok: i.complete && i.naturalWidth > 0, text: c.querySelector('.tx').textContent.replace(/^ヴァルガス/, '') }; });
   const m = document.querySelector('#msg');
   return { v, msg: m.textContent, msgFace: !!m.querySelector('img') || /ヴァルガス/.test(m.textContent), town: !!document.querySelector('.map.town'),
-    lock: [...document.querySelectorAll('.tcmd.lock')].map((b) => b.getAttribute('onclick')) };
+    lock: [...document.querySelectorAll('.tpin.lock')].map((b) => b.getAttribute('onclick')) };
 });
 
 test('VAR-B1：街：闘技場（ロック中）を押すと、案内文はシステム表示のまま、その下にヴァルガスの名前・顔・一言。街のまま・セーブは変わらない・何度押しても1つだけ', { skip: SKIP }, async () => {
@@ -88,14 +88,15 @@ test('VAR-B1：街：闘技場（ロック中）を押すと、案内文はシ�
     await pg.waitForFunction(() => { const i = document.querySelector('.vgsay img'); return i && i.complete && i.naturalWidth > 0; });
     const r = await read(pg);
     assert.equal(r.v.length, 1, '一言は1つだけ（増えない）');
-    assert.deepEqual([r.v[0].name, r.v[0].src, r.v[0].ok], ['ヴァルガス', 'assets/npc/vargas/face.webp', true]);
+    assert.deepEqual([r.v[0].name, r.v[0].src, r.v[0].ok], ['ヴァルガス', 'assets/npc/vargas/closeup/stern.webp', true], '2026-10-03：半身の立ち絵（正式 closeup）');
     assert.ok(T.includes(r.v[0].text), r.v[0].text);
     assert.equal(r.msg, '闘技場は、まだ利用できません。'); assert.equal(r.msgFace, false, '案内文はシステム表示（顔・名前なし）');
-    assert.equal(r.town, true, '街のまま'); assert.deepEqual(r.lock, ['townArena()'], 'ロック表示のまま');
+    assert.equal(r.town, true, '街のまま'); assert.deepEqual(r.lock, ['townArena()', 'townGuild()'], 'ロック表示のまま（闘技場・聖獣士管理局）');
+    if (k < 2) { await pg.click('#app>.tlow .vgsay .tx'); await pg.waitForFunction(() => !document.querySelector('#app>.tlow.on')); }   // 案内はタップで閉じる（下の札を押せるように）
   }
   assert.deepEqual(await H.storedSave(pg), before, 'セーブは変わらない');
   // ほかの施設へ行って戻ると消える（街を開き直したとき）
-  await pg.evaluate(() => museum()); await pg.waitForSelector('.mgrid'); await pg.evaluate(() => lobby()); await pg.waitForSelector('.map.town');
+  await pg.evaluate(() => museum()); await pg.waitForSelector('.lab'); await pg.evaluate(() => lobby()); await pg.waitForSelector('.map.town');
   assert.equal(await pg.evaluate(() => document.querySelectorAll('.vgsay').length), 0);
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, [], '404なし');
   await p.ctx.close();
