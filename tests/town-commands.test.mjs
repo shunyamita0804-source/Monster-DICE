@@ -96,11 +96,11 @@ const cmds = (pg) => pg.evaluate(() => [...document.querySelectorAll('.map.town 
   label: (b.querySelector('b') || b.querySelector('span')).textContent, call: b.getAttribute('onclick'), disabled: b.disabled, lock: b.classList.contains('lock') })));
 const toTown = async (pg) => { await pg.locator('button', { hasText: '街にもどる' }).first().click(); await pg.waitForSelector('.tbar .tcmd'); };
 
-test('TW-B1：新規開始後の街：正式ミストリアの背景を読み込み、6つの施設の札と下のバー（ファーム・プロフィール・セーブ・ロード）が見える。ファームとアイテム屋はモンスターがいないので押せない', { skip: SKIP }, async () => {
+test('TW-B1：新規開始後の街：正式ミストリアの背景を読み込み、5つの施設の札（2026-10-04：アイテム屋は街に無い）と下のバー（ファーム・プロフィール・セーブ・ロード）が見える。ファームはモンスターがいないので押せない', { skip: SKIP }, async () => {
   const p = await L.open(); const pg = p.page;
   await town(p);
   assert.deepEqual((await cmds(pg)).map((c) => [c.label, c.call, c.disabled, c.lock]),
-    [['市場', 'market()', false, false], ['牧場', 'farm()', false, false], ['研究所', 'museum()', false, false], ['闘技場', 'townArena()', false, true], ['聖獣士管理局', 'townGuild()', false, true], ['アイテム屋', 'townShop()', true, false], ['ファーム', 'hall()', true, false], ['プロフィール', 'profileScr()', false, false], ['セーブロード', 'savescr()', false, false]]);
+    [['市場', 'market()', false, false], ['牧場', 'farm()', false, false], ['研究所', 'museum()', false, false], ['闘技場', 'townArena()', false, true], ['聖獣士管理局', 'townGuild()', false, true], ['ファーム', 'hall()', true, false], ['プロフィール', 'profileScr()', false, false], ['セーブロード', 'savescr()', false, false]]);
   assert.equal(await pg.evaluate(() => document.querySelectorAll('.tttl, .tpinfo, .tplate, .tlbl').length), 0, '上部の「街」の札・プレイヤー情報・押せない建物ラベルは無い');
   const bg = await pg.evaluate(() => getComputedStyle(document.querySelector('.map.town .tbg')).backgroundImage);
   assert.match(bg, /assets\/town\/mistria_main\.webp/);
@@ -119,10 +119,10 @@ test('TW-B2：各コマンドの遷移と「街にもどる」：市場・牧場
   // 研究所 → 詳細 → 研究所 → 街
   await pg.click('.hz[onclick="museum()"]'); await pg.waitForSelector('.lab .labnpc');
   assert.match(await H.text(pg), /モンスター研究所/);
-  await pg.click('.labc[onclick="museum(\'book\')"]'); await pg.waitForSelector('.mgrid');
-  await pg.click('.mgc[onclick="musd(0)"]'); await pg.waitForSelector('.mk2 .pcard');
+  await pg.click('.labnav .labc:nth-child(1)'); await pg.waitForSelector('.lbk .lbgrid');   // 2026-10-04（PHASE C）：図鑑＝2列のカード（.lbgrid .lbc）→ 詳細（.lbd）→ 図鑑 → 研究所
+  await pg.click('.lbgrid .lbc:nth-child(1)'); await pg.waitForSelector('.lbd .lbsts');
   assert.match(await H.text(pg), /◀ 図鑑/);
-  await pg.click('.mk2 .dback.wide'); await pg.waitForSelector('.mgrid'); await pg.click('.dtop .dback'); await pg.waitForSelector('.lab .labnpc'); await toTown(pg);
+  await pg.click('.lbd .dback'); await pg.waitForSelector('.lbk .lbgrid'); await pg.click('.lbk .dtop .dback'); await pg.waitForSelector('.lab .labnpc'); await toTown(pg);
   // 聖獣士管理局：準備中の案内だけ（中は作らない）
   const b0 = await H.storedSave(pg); await pg.click('.hz[onclick="townGuild()"]');
   assert.equal(await pg.evaluate(() => document.querySelector('#msg').textContent), '聖獣士管理局は、まだ利用できません。'); assert.deepEqual(await H.storedSave(pg), b0);
@@ -138,8 +138,7 @@ test('TW-B2：各コマンドの遷移と「街にもどる」：市場・牧場
   await pg.click('.hz[onclick="market()"]'); await H.marketDetail(pg); await pg.waitForSelector('.p10buy:not([disabled])'); await pg.waitForFunction(() => !P10_ANIM);
   await pg.waitForTimeout(500); await H.marketDetail(pg); await pg.click('.p10buy'); await pg.waitForSelector('#p10ov .p10ok'); await pg.waitForTimeout(600);
   await pg.click('#p10ov .p10ok'); await pg.waitForSelector('.tbar .tcmd');
-  assert.equal((await cmds(pg))[6].disabled, false); assert.equal((await cmds(pg))[5].disabled, false, 'モンスターがいればアイテム屋へ行ける');
-  await pg.click('.hz[onclick="townShop()"]'); await pg.waitForSelector('.ds.shop'); assert.equal(await pg.evaluate(() => document.querySelector('.ds.shop .dback').textContent), '◀ 街にもどる'); await toTown(pg);
+  assert.equal((await cmds(pg))[5].disabled, false, 'モンスターがいればファームへ行ける'); assert.equal(await pg.evaluate(() => document.querySelectorAll('.hz[onclick="townShop()"]').length), 0, '2026-10-04：街にアイテム屋の札は無い（ファームの屋台から）');
   await pg.click('.hz[onclick="hall()"]'); await pg.waitForSelector('#app button[onclick="prepScr()"]');
   assert.equal((await H.getS(pg)).m.raise.state, 'none', 'ファームへ行っただけでは育成は始まらない');
   await pg.evaluate(() => lobby()); await pg.waitForSelector('.tbar .tcmd');
@@ -151,7 +150,7 @@ test('TW-B2：各コマンドの遷移と「街にもどる」：市場・牧場
   assert.equal(pf.bar, 0, 'プロフィールでは街のコマンドバーを出さない');
   assert.deepEqual(await H.storedSave(pg), s0, 'プロフィールを開いてもセーブは変わらない');
   await toTown(pg);
-  assert.equal((await cmds(pg)).length, 9, '街へ戻ると施設の札6つ＋バーの3つ');
+  assert.equal((await cmds(pg)).length, 8, '街へ戻ると施設の札5つ＋バーの3つ');
   assert.deepEqual(p.errors, []); assert.deepEqual(p.bad, []);
 });
 
@@ -161,7 +160,7 @@ test('TW-B3：再読み込み→開始でも街はコマンド式で表示され
   const s1 = await H.storedSave(pg);
   await pg.reload(); await pg.waitForFunction(() => typeof S === 'object');
   await pg.click('[onclick*="startGame"]'); await pg.waitForSelector('.tbar .tcmd');
-  assert.equal((await cmds(pg)).length, 9);
+  assert.equal((await cmds(pg)).length, 8);
   const s2 = await H.storedSave(pg);
   assert.equal(s2.v, 6); assert.deepEqual(s2, s1);
   assert.deepEqual(p.errors, []);
@@ -184,7 +183,7 @@ for (const [k, size] of Object.entries(H.SIZES)) {
     assert.ok(Math.abs(r.bar.b - size[1]) <= 1 && r.bar.l <= 0.5 && Math.abs(r.bar.r - size[0]) <= 1, 'バーは画面の下端・幅いっぱい');
     assert.ok(Math.abs(r.map.b - r.bar.t) <= 1, '街の枠の下端＝バーの上端'); assert.ok(Math.abs(r.bg.b - r.bar.t) <= 1, '背景は下寄せ');
     assert.ok(r.bg.t <= 0.5, '背景の上に隙間を作らない'); assert.ok(r.arenaTop >= 0, `闘技場の上が画面の上で切れない（${Math.round(r.arenaTop)}）`);
-    assert.equal(r.pins.length, 6);
+    assert.equal(r.pins.length, 5);   // 2026-10-04：市場・牧場・研究所・闘技場・聖獣士管理局
     for (const x of r.pins) { assert.ok(x.l >= 0 && x.r <= r.iw && x.t >= 0 && x.b <= r.bar.t, `札「${x.name}」は画面内・バーより上`); assert.ok(x.h >= 44 && x.w >= 72, `札「${x.name}」は押せる大きさ（押せる範囲 ${x.w}×${x.h}）`); assert.ok(x.fs >= 13, '文字は13px以上'); assert.ok(x.hit, `札「${x.name}」は他の要素に隠れていない`); }
     for (let a = 0; a < r.pins.length; a++) for (let b = a + 1; b < r.pins.length; b++) { const A = r.pins[a], B = r.pins[b]; assert.ok(A.r <= B.l || B.r <= A.l || A.b <= B.t || B.b <= A.t, `札が重ならない（${A.name}／${B.name}）`); }
     assert.equal(r.b.length, 3); assert.equal(new Set(r.b.map((b) => Math.round(b.t))).size, 1, 'バーは1段');

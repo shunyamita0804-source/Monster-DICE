@@ -182,13 +182,13 @@ test('QA-G4-B1：実ブラウザ：新規開始→市場で「<!--」「<b>X</b>
   assert.deepEqual(await txt(pg, '.wpanel .card .info b'), [CM]); assert.equal(await count(pg, '.wpanel button[onclick="dep()"]'), 1, '「このモンスターを預ける」が残る');
   await pg.click(`.ftile[onclick="farm('','b')"]`);
   assert.deepEqual(await txt(pg, '.wpanel .row .info b'), [BOLD, XSS8]); assert.equal(await count(pg, '.wpanel button[onclick^="wd("]'), 2, '「受け取る」が2つ');
-  await pg.evaluate(() => farm('', 'c'));   // 合体は研究所へ移す（牧場のコマンドには無い）。合体の処理・選択画面は内部に残しているので直接開く
+  await pg.evaluate(() => farm('', 'c')); await pg.waitForSelector('.lbf .wpanel');   // 2026-10-04：合体は研究所（museum('fuse')）。farm('','c') は研究所へ送る
   assert.equal(await count(pg, '.wpanel button[onclick^="selm("]'), 3);
   await pg.click('.wpanel button[onclick="selm(0)"]'); await pg.click('.wpanel button[onclick="selm(1)"]');
   assert.deepEqual(await txt(pg, '.wpanel .fz .slot b'), [CM, BOLD], '合体の枠');
   assert.ok((await txt(pg, '.wpanel .card b'))[0] === `生まれるモンスター：${CM.slice(0, 2)}${BOLD.slice(-2)}`, '生まれるモンスターの名前（従来どおり前2文字＋後2文字）');
   assert.equal(await count(pg, '.wpanel button[onclick="fuse()"]'), 1, '「合体させる！」が残る');
-  await pg.click('.fsell');
+  await pg.evaluate(() => farm('', 'd')); await pg.waitForSelector('#app .ftiles');   // 牧場の「売る」へ
   assert.deepEqual(await txt(pg, '.wpanel .row .info b'), [CM, BOLD, XSS8]); assert.equal(await count(pg, '.wpanel button[onclick^="pfSellPick("]:not([disabled])'), 3);
   await pg.click('.wpanel button[onclick="pfSellPick(2)"]');
   assert.deepEqual((await txt(pg, '.wpanel .pfsell > b')).slice(1), [XSS8], '売却の確認の名前'); assert.equal(await count(pg, '.wpanel button[onclick="pfSellGo(this)"]'), 1);
@@ -243,10 +243,12 @@ test('QA-G4-B3：実ブラウザ：大会（次の相手・順位表・星取表
   for (const n of [CM, XSS]) {
     const M = load(); const p = await open({ save: j(inTour(M, n)) }); const pg = p.page;
     await start(p, '#app .p9tour');
-    assert.equal((await txt(pg, '#app .p9next .nm b'))[0], n, '次の相手（自分の名前）');
-    assert.equal(await count(pg, '#app .p9next button[onclick="p9VsGo(this)"]'), 1, '「対戦開始」が残る（2026-10-03：順位表の次の相手から。VS 画面は fight() の導入）');
+    assert.equal((await txt(pg, '#app .p9next .tp2p.me .tp2nm b'))[0], n, '次の対戦相手（自分の名前。2026-10-04 PHASE D）');
+    assert.equal(await count(pg, '#app .p9next button[onclick="p9CompareScr()"]'), 1, '「対戦開始」が残る（大会進行 → パラメーター比較）');
     assert.deepEqual(await txt(pg, '#app .p9r.me .nm'), [`${n}あなた`], '順位表');
     assert.ok((await txt(pg, '#app tr.me .nm')).includes(n), '星取表');
+    await pg.evaluate(() => p9CompareScr()); await pg.waitForSelector('#app .p9cmps');   // パラメーター比較（2026-10-04）でも名前は文字のまま
+    assert.equal((await txt(pg, '#app .p9cmps .pcs b'))[0], n, 'パラメーター比較'); assert.equal(await count(pg, '#app .p9cmps button'), 2, '「対戦開始」「順位表にもどる」');
     await pg.evaluate(() => p9VsScr()); await pg.waitForSelector('#app .p9vs');   // 流れから外した VS 画面（関数は残す）でも名前は文字のまま
     assert.equal((await txt(pg, '#app .p9vs-fr .np'))[0], n, 'VS画面');
     assert.equal(await count(pg, '#app .p9vs button'), 2, '「対戦開始」「順位表にもどる」');

@@ -2748,7 +2748,7 @@ function finaMsg(t){return `<span class="fmsg" data-npc="fina">${t}</span>`}
 /** 街のフィナ（2026-10-03 品質向上）：小さな顔ではなく半身の立ち絵（正式 closeup の guide＝案内）を案内欄の右上に立たせる */
 function finaStandSrc(){const im=window.MMNPC&&MMNPC.imageOf("fina","closeup","guide");return im?im.src:""}
 /** 施設の背景・立ち絵の先読み（2026-10-03：大きな絵を足した画面へ移ったときの読み込みのちらつきを防ぐ。街を出したとき1回だけ） */
-function townPreload(){if(townPreload.done||typeof Image=="undefined")return;townPreload.done=1;setTimeout(()=>{[LAB_BG,RANCH_BG,SHOP_BG,SHOP_NPC,NICK_STAND,ELLIOT_STAND,VARGAS_STAND,finaStandSrc()].filter(Boolean).forEach(src=>{const im=new Image();im.decoding="async";im.src=src})},600)}
+function townPreload(){if(townPreload.done||typeof Image=="undefined")return;townPreload.done=1;setTimeout(()=>{[LAB_BG,RANCH_BG,SHOP_BG,SHOP_NPC,FARM_BG,DAN_FIG,NICK_STAND,ELLIOT_STAND,VARGAS_STAND,finaStandSrc()].filter(Boolean).forEach(src=>{const im=new Image();im.decoding="async";im.src=src})},600)}
 /** 街の案内欄：タップで閉じる（下の施設の札を押せるように。システム通知も同じ） */
 function townMsgClose(d){const w=d&&d.closest(".tlow");if(w)w.classList.remove("on")}
 function finaFaceSrc(){const im=window.MMNPC&&MMNPC.imageOf("fina","closeup","smile");return im?im.src:""}
